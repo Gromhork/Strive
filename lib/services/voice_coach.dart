@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-/// Spoken cues during runs/rides (km splits, step changes, pace guidance).
+/// Spoken cues during runs, rides and swims (splits, step changes, pace guidance).
 /// Music is ducked while speaking (Android audio focus "may duck").
 class VoiceCoach {
   VoiceCoach(this.lang);
@@ -55,10 +55,23 @@ class VoiceCoach {
 String spokenDuration(int sec, String lang) {
   final h = sec ~/ 3600, m = (sec % 3600) ~/ 60, s = sec % 60;
   if (lang == 'de') {
-    return [if (h > 0) '$h Stunde${h > 1 ? 'n' : ''}', if (m > 0) '$m Minute${m == 1 ? '' : 'n'}', if (s > 0 && h == 0) '$s Sekunden'].join(' ');
+    return [
+      if (h > 0) '$h Stunde${h > 1 ? 'n' : ''}',
+      if (m > 0) '$m Minute${m == 1 ? '' : 'n'}',
+      if (s > 0 && h == 0) '$s Sekunden',
+    ].join(' ');
   }
   return [if (h > 0) '$h hour${h > 1 ? 's' : ''}', if (m > 0) '$m minute${m == 1 ? '' : 's'}', if (s > 0 && h == 0) '$s seconds'].join(' ');
 }
+
+/// 28.44 → "28,4" (de) / "28.4" (en) for speech.
+String spokenNum(double v, String lang, [int digits = 1]) {
+  final s = v.toStringAsFixed(digits);
+  return lang == 'de' ? s.replaceAll('.', ',') : s;
+}
+
+/// 105 → "1:45" (swim pace per 100 m).
+String spokenClock(int sec) => '${sec ~/ 60}:${(sec % 60).toString().padLeft(2, '0')}';
 
 String spokenPace(int secPerKm, String lang) {
   final m = secPerKm ~/ 60, s = secPerKm % 60;

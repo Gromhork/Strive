@@ -14,7 +14,18 @@ import '../data/models.dart';
 import '../features/session/step_text.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../providers.dart';
+import 'step_progress.dart';
 import 'voice_coach.dart';
+
+/// Step state before a pool length was counted – lets "undo" revert an auto-advance.
+class StepMark {
+  const StepMark(this.stepIndex, this.stepStartSec, this.stepStartDist, this.stepsDone, this.lastLengthAt);
+  final int stepIndex;
+  final int stepStartSec;
+  final double stepStartDist;
+  final bool stepsDone;
+  final int lastLengthAt;
+}
 
 /// Live state of a run / ride / swim being recorded.
 class CardioState {
@@ -39,11 +50,17 @@ class CardioState {
   final int stepStartSec;
   final double stepStartDist;
   final bool stepsDone;
-  // Live pace (sec/km) over the last ~20–30 s, null when not moving.
+  // Live pace (sec/km) over the last ~10–25 s, null when not moving.
   final int? currentPace;
   final List<int> paceHistory; // one value per ~5 s (for the mini chart)
   final bool autoPaused;
   final bool voice;
+  // Pool swimming: seconds per length, elapsed time of the last wall touch (or the
+  // end of the last rest), and the step state before each length (for undo).
+  final List<int> lengthSecs;
+  final int lastLengthAt;
+  final List<StepMark> lengthMarks;
+  final int? bestPace; // fastest live pace (sec/km) – shown as max speed on rides
 
   const CardioState({
     required this.sport,
@@ -70,11 +87,20 @@ class CardioState {
     this.paceHistory = const [],
     this.autoPaused = false,
     this.voice = true,
+    this.lengthSecs = const [],
+    this.lastLengthAt = 0,
+    this.lengthMarks = const [],
+    this.bestPace,
   });
 
   bool get paused => runningSince == null;
   int get elapsed => accumulatedSec + (runningSince == null ? 0 : DateTime.now().difference(runningSince!).inSeconds);
-  double get effectiveDistance => sport == Sport.swim && indoor ? laps * poolLengthM.toDouble() : distanceM;
+
+  bool get poolMode => sport == Sport.swim && indoor;
+
+  /// "33 m" pools are 33⅓ m (3 lengths = 100 m).
+  double get poolLen => poolLengthM == 33 ? 100 / 3 : poolLengthM.toDouble();
+  double get effectiveDistance => poolMode ? laps * poolLen : distanceM;
 
   bool get structured => steps.isNotEmpty;
   WorkoutStep? get step => structured && !stepsDone && stepIndex < steps.length ? steps[stepIndex] : null;
@@ -91,6 +117,94 @@ class CardioState {
     return 0;
   }
 
+  /// Whether the current step's target (distance or time) has been reached.
+  /// In the pool a distance step is done at the wall closest to the target.
+  bool get stepComplete {
+    final s = step;
+    if (s == null) return false;
+    if (s.distanceM != null) return poolMode ? stepDistance + poolLen / 2 > s.distanceM! : stepDistance >= s.distanceM!;
+    return s.durationSec != null && stepElapsed >= s.durationSec!;
+  }
+
+  /// Pool lengths still to swim in the current distance step.
+  int? get lengthsLeft {
+    final s = step;
+    if (!poolMode || s?.distanceM == null) return null;
+    return max(0, ((s!.distanceM! - stepDistance) / poolLen).round());
+  }
+
+  /// Lengths swum since the current step started.
+  int get stepLengths => poolMode ? (stepDistance / poolLen).round() : 0;
+
+  int? _pace100(int n) {
+    if (n <= 0 || lengthSecs.length < n) return null;
+    final t = lengthSecs.sublist(lengthSecs.length - n).fold<int>(0, (a, b) => a + b);
+    return (t / (n * poolLen) * 100).round();
+  }
+
+  /// Rolling swim pace (sec/100 m) over the last ≤ 4 lengths, null before the first length.
+  int? get swimPace100 => _pace100(min(4, lengthSecs.length));
+
+  /// Average swim pace (sec/100 m) over swimming time only (timed rests excluded).
+  int? get avgSwimPace100 => _pace100(lengthSecs.length);
+
+  /// Live pace in the unit of the step targets: sec/km (run) or sec/100 m (swim).
+  int? get targetPace {
+    if (poolMode) return _pace100(min(4, stepLengths));
+    if (currentPace == null) return null;
+    return sport == Sport.swim ? (currentPace! / 10).round() : currentPace;
+  }
+
+  /// Estimated seconds left in the whole structured workout.
+  int get workoutLeftSec =>
+      structured && !stepsDone ? workoutRemainingSec(steps, stepIndex, sport, stepElapsed: stepElapsed, stepDistance: stepDistance) : 0;
+
+  /// Moves to the next step (or marks the workout as done).
+  CardioState advanceStep() {
+    final s = step;
+    if (s == null) return this;
+    final next = stepIndex + 1;
+    // Leaving a timed step in the pool (rest): the next length starts now, not at the last wall touch.
+    final restEnded = poolMode && s.distanceM == null;
+    if (next >= steps.length) return copyWith(stepsDone: true, lastLengthAt: restEnded ? elapsed : null);
+    return copyWith(stepIndex: next, stepStartSec: elapsed, stepStartDist: effectiveDistance, lastLengthAt: restEnded ? elapsed : null);
+  }
+
+  /// Pool: one length swum. Ends a running rest early, adds the length and
+  /// auto-advances a distance step once its distance is reached.
+  CardioState addLength() {
+    final mark = StepMark(stepIndex, stepStartSec, stepStartDist, stepsDone, lastLengthAt);
+    var s = this;
+    // Touching the wall during a rest means the swimmer left early: end the rest, but
+    // time this length from the previous wall touch.
+    if (s.step?.kind == 'recovery' && s.step?.distanceM == null) s = s.advanceStep().copyWith(lastLengthAt: lastLengthAt);
+    final now = s.elapsed;
+    s = s.copyWith(
+      laps: s.laps + 1,
+      lengthSecs: [...s.lengthSecs, max(1, now - s.lastLengthAt)],
+      lastLengthAt: now,
+      lengthMarks: [...s.lengthMarks, mark],
+    );
+    if (s.step?.distanceM != null && s.stepComplete) s = s.advanceStep();
+    return s;
+  }
+
+  /// Pool: removes the last length and restores the step state from before it.
+  CardioState undoLength() {
+    if (laps == 0) return this;
+    final m = lengthMarks.isNotEmpty ? lengthMarks.last : null;
+    return copyWith(
+      laps: laps - 1,
+      lengthSecs: lengthSecs.isEmpty ? null : lengthSecs.sublist(0, lengthSecs.length - 1),
+      lengthMarks: lengthMarks.isEmpty ? null : lengthMarks.sublist(0, lengthMarks.length - 1),
+      stepIndex: m?.stepIndex,
+      stepStartSec: m?.stepStartSec,
+      stepStartDist: m?.stepStartDist,
+      stepsDone: m?.stepsDone,
+      lastLengthAt: m?.lastLengthAt,
+    );
+  }
+
   /// Remaining amount: meters (distance steps) or seconds (time steps).
   (double? meters, int? seconds) get stepRemaining {
     final s = step;
@@ -103,10 +217,11 @@ class CardioState {
   /// -1 too fast, 0 on target, 1 too slow, null = no target / no pace.
   int? get paceStatus {
     final s = step;
-    final p = currentPace;
+    final p = targetPace;
     if (s == null || p == null || s.paceMin == null || s.paceMax == null) return null;
-    if (p < s.paceMin! - 5) return -1;
-    if (p > s.paceMax! + 5) return 1;
+    final tol = sport == Sport.swim ? 3 : 5;
+    if (p < s.paceMin! - tol) return -1;
+    if (p > s.paceMax! + tol) return 1;
     return 0;
   }
 
@@ -132,6 +247,10 @@ class CardioState {
     List<int>? paceHistory,
     bool? autoPaused,
     bool? voice,
+    List<int>? lengthSecs,
+    int? lastLengthAt,
+    List<StepMark>? lengthMarks,
+    int? bestPace,
   }) => CardioState(
     sport: sport,
     title: title,
@@ -157,8 +276,23 @@ class CardioState {
     paceHistory: paceHistory ?? this.paceHistory,
     autoPaused: autoPaused ?? this.autoPaused,
     voice: voice ?? this.voice,
+    lengthSecs: lengthSecs ?? this.lengthSecs,
+    lastLengthAt: lastLengthAt ?? this.lastLengthAt,
+    lengthMarks: lengthMarks ?? this.lengthMarks,
+    bestPace: bestPace ?? this.bestPace,
   );
 }
+
+/// Voice preference key per sport: swims default to silent (phone lies at the pool edge).
+String voicePrefKey(Sport sport) => sport == Sport.swim ? 'voiceCuesSwim' : 'voiceCues';
+bool voiceDefault(Sport sport) => sport != Sport.swim;
+
+/// Auto-pause: (moving if live pace below this many sec/km, seconds standing still before pausing).
+/// Rides: < 5 km/h for 6 s (short window, bikes stop and start quickly). Runs: < 3 km/h for 10 s.
+(int, int) autoPauseRule(Sport sport) => sport == Sport.ride ? (720, 6) : (1200, 10);
+
+/// Rides announce every 5 km (every km would be every ~2 min); runs/swims every km.
+int splitAnnounceEvery(Sport sport) => sport == Sport.ride ? 5 : 1;
 
 class TrackerNotifier extends Notifier<CardioState?> {
   StreamSubscription<Position>? _sub;
@@ -201,8 +335,8 @@ class TrackerNotifier extends Notifier<CardioState?> {
     _l = l;
     _lang = lang;
     _u = ref.read(profileOrDefaultProvider).units;
-    final voiceOn = ref.read(prefsProvider).getBool('voiceCues') ?? true;
-    _voice = VoiceCoach(lang)..enabled = voiceOn && sport != Sport.swim;
+    final voiceOn = ref.read(prefsProvider).getBool(voicePrefKey(sport)) ?? voiceDefault(sport);
+    _voice = VoiceCoach(lang)..enabled = voiceOn;
     state = CardioState(
       sport: sport,
       title: title,
@@ -211,7 +345,7 @@ class TrackerNotifier extends Notifier<CardioState?> {
       runningSince: DateTime.now(),
       indoor: indoor,
       poolLengthM: poolLengthM,
-      steps: sport == Sport.swim ? const [] : steps,
+      steps: steps,
       voice: voiceOn,
     );
     WakelockPlus.enable();
@@ -259,9 +393,10 @@ class TrackerNotifier extends Notifier<CardioState?> {
     var s = state;
     if (s == null) return;
     if (!s.paused || s.autoPaused) {
-      // Live pace from the samples of the last 25 s.
+      // Live pace from the recent samples (rides: 10 s, runs/swims: 25 s).
       final now = s.elapsed;
-      _samples.removeWhere((e) => now - e.$1 > 25);
+      final window = s.sport == Sport.ride ? 10 : 25;
+      _samples.removeWhere((e) => now - e.$1 > window);
       int? pace;
       if (_samples.length >= 2) {
         final d = _samples.last.$2 - _samples.first.$2;
@@ -270,7 +405,9 @@ class TrackerNotifier extends Notifier<CardioState?> {
       }
       var hist = s.paceHistory;
       if (now % 5 == 0 && pace != null) hist = [...hist.length > 120 ? hist.sublist(hist.length - 120) : hist, pace];
-      s = s.copyWith(currentPace: pace, clearPace: pace == null, paceHistory: hist);
+      // Max speed (rides): ignore implausible spikes (> 100 km/h).
+      final best = pace != null && !s.paused && pace >= 36 && (s.bestPace == null || pace < s.bestPace!) ? pace : null;
+      s = s.copyWith(currentPace: pace, clearPace: pace == null, paceHistory: hist, bestPace: best);
       state = s;
       _autoPause(s);
     } else {
@@ -282,10 +419,11 @@ class TrackerNotifier extends Notifier<CardioState?> {
 
   void _autoPause(CardioState s) {
     if (s.indoor || s.sport == Sport.swim || !(ref.read(prefsProvider).getBool('autoPause') ?? true)) return;
-    final moving = s.currentPace != null && s.currentPace! < (s.sport == Sport.ride ? 600 : 1200);
+    final (movingPace, stillSec) = autoPauseRule(s.sport);
+    final moving = s.currentPace != null && s.currentPace! < movingPace;
     if (!s.paused && !moving && s.elapsed > 30) {
       if (_stillSince < 0) _stillSince = s.elapsed;
-      if (s.elapsed - _stillSince >= 10) {
+      if (s.elapsed - _stillSince >= stillSec) {
         state = s.copyWith(accumulatedSec: s.elapsed, pause: true, autoPaused: true);
         if (_l != null) _voice?.say(_l!.vcAutoPaused);
       }
@@ -298,32 +436,40 @@ class TrackerNotifier extends Notifier<CardioState?> {
     final s = state;
     final st = s?.step;
     if (s == null || st == null || s.paused) return;
-    final done =
-        (st.distanceM != null && s.stepDistance >= st.distanceM!) ||
-        (st.distanceM == null && st.durationSec != null && s.stepElapsed >= st.durationSec!);
-    // Countdown beeps for the last 3 seconds of timed steps.
+    // Countdown haptics for the last 3 seconds of timed steps.
     if (st.distanceM == null && st.durationSec != null) {
       final left = st.durationSec! - s.stepElapsed;
       if (left > 0 && left <= 3) HapticFeedback.selectionClick();
     }
-    if (done) _advance();
+    if (s.stepComplete) _advance();
   }
 
   void _advance() {
     final s = state;
     if (s == null) return;
-    final next = s.stepIndex + 1;
+    final next = s.advanceStep();
+    state = next;
+    _announceStep(s, next);
+  }
+
+  /// Haptics + voice when the step changed between [before] and [after].
+  void _announceStep(CardioState before, CardioState after) {
+    if (after.stepIndex == before.stepIndex && after.stepsDone == before.stepsDone) return;
     if (ref.read(settingsProvider).vibrate) {
       HapticFeedback.heavyImpact();
       Future.delayed(const Duration(milliseconds: 250), HapticFeedback.heavyImpact);
     }
-    if (next >= s.steps.length) {
-      state = s.copyWith(stepsDone: true);
-      if (_l != null) _voice?.say(_l!.vcAllDone);
-      return;
+    final l = _l;
+    if (l == null) return;
+    if (after.stepsDone) {
+      _voice?.say(switch (after.sport) {
+        Sport.ride => l.vcAllDoneRide,
+        Sport.swim => l.vcAllDoneSwim,
+        _ => l.vcAllDone,
+      });
+    } else {
+      _voice?.say(stepSpeech(l, after.steps, after.stepIndex, _u, after.sport, _lang));
     }
-    state = s.copyWith(stepIndex: next, stepStartSec: s.elapsed, stepStartDist: s.effectiveDistance);
-    if (_l != null) _voice?.say(stepSpeech(_l!, s.steps, next, _u, s.sport, _lang));
   }
 
   /// Manually skip to the next step.
@@ -333,7 +479,7 @@ class TrackerNotifier extends Notifier<CardioState?> {
 
   void _paceCue() {
     final s = state;
-    if (s == null || s.paused || _l == null) return;
+    if (s == null || s.paused || _l == null || s.sport == Sport.swim) return;
     final st = s.paceStatus;
     if (st == null || st == 0 || s.stepElapsed < 20) return;
     _voice?.paceCue(st < 0 ? _l!.vcSlowDown : _l!.vcSpeedUp);
@@ -381,7 +527,8 @@ class TrackerNotifier extends Notifier<CardioState?> {
       _splitStartSec = now;
       if (ref.read(settingsProvider).vibrate) HapticFeedback.heavyImpact();
       if (_l != null && !(s.step?.isWork ?? false)) {
-        _voice?.say(_l!.vcKm(splits.length, spokenDuration(now, _lang), spokenPace(split, _lang)));
+        final speech = splitSpeech(_l!, s.sport, splits, now, _lang);
+        if (speech != null) _voice?.say(speech);
       }
     }
     state = s.copyWith(
@@ -413,25 +560,32 @@ class TrackerNotifier extends Notifier<CardioState?> {
     final s = state;
     if (s == null) return;
     final v = !s.voice;
-    ref.read(prefsProvider).setBool('voiceCues', v);
+    ref.read(prefsProvider).setBool(voicePrefKey(s.sport), v);
     _voice?.enabled = v;
     if (!v) _voice?.stop();
     state = s.copyWith(voice: v);
   }
 
+  /// Lap button. In the pool this is one length (adds distance, advances steps).
   void lap() {
     final s = state;
     if (s == null) return;
     HapticFeedback.mediumImpact();
+    if (s.poolMode) {
+      final next = s.addLength();
+      state = next;
+      _announceStep(s, next);
+      return;
+    }
     state = s.copyWith(laps: s.laps + 1);
-    // Pool: a lap also advances distance-based steps.
     _checkStep();
   }
 
   void undoLap() {
     final s = state;
     if (s == null || s.laps == 0) return;
-    state = s.copyWith(laps: s.laps - 1);
+    HapticFeedback.selectionClick();
+    state = s.poolMode ? s.undoLength() : s.copyWith(laps: s.laps - 1);
   }
 
   void setPoolLength(int m) => state = state?.copyWith(poolLengthM: m);
@@ -476,6 +630,29 @@ class TrackerNotifier extends Notifier<CardioState?> {
     _ticker = null;
     _voice?.stop();
     WakelockPlus.disable();
+  }
+}
+
+/// Spoken split announcement, or null when this split is not announced.
+/// * Run: "Kilometer 3. Time 15 minutes 30 seconds. Last kilometer 5:10 per kilometer."
+/// * Ride (every 5 km): "Kilometer 10. Time 21 minutes. Last 5 kilometers at 28.6 kilometers per hour."
+/// * Open-water swim: "Kilometer 1. Time 22 minutes. Pace 2:12 per 100 meters."
+String? splitSpeech(AppLocalizations l, Sport sport, List<int> splits, int elapsed, String lang) {
+  final n = splits.length;
+  if (n == 0) return null;
+  final time = spokenDuration(elapsed, lang);
+  switch (sport) {
+    case Sport.ride:
+      final every = splitAnnounceEvery(sport);
+      if (n % every != 0) return null;
+      final sec = splits.sublist(n - every).fold<int>(0, (a, b) => a + b);
+      if (sec <= 0) return null;
+      final kmh = every * 3600 / sec;
+      return l.vcSplitRide(n, time, every, l.vcKmh(spokenNum(kmh, lang)));
+    case Sport.swim:
+      return l.vcSplitSwim(n, time, l.vcPer100m(spokenClock((splits.last / 10).round())));
+    default:
+      return l.vcKm(n, time, spokenPace(splits.last, lang));
   }
 }
 

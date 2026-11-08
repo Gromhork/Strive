@@ -443,7 +443,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get poolLength => 'Pool length';
 
   @override
-  String get poolHint => 'Tap \"Lap\" after every length. Distance is calculated automatically.';
+  String get poolHint => 'Tap \"Length\" after every length. Distance is calculated automatically.';
 
   @override
   String get indoorHint => 'Treadmill / trainer: enter the distance when you finish.';
@@ -2329,4 +2329,123 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get linkGoogleSub => 'Sign in with Google next time – your data stays';
+
+  @override
+  String vcStepN(int x, int y) {
+    return 'Interval $x of $y';
+  }
+
+  @override
+  String vcSplitRide(int n, String time, int km, String speed) {
+    return 'Kilometer $n. Time $time. Last $km kilometers at $speed.';
+  }
+
+  @override
+  String vcSplitSwim(int n, String time, String pace) {
+    return 'Kilometer $n. Time $time. Pace $pace.';
+  }
+
+  @override
+  String vcKmh(String speed) {
+    return '$speed kilometers per hour';
+  }
+
+  @override
+  String vcPer100m(String pace) {
+    return '$pace per 100 meters';
+  }
+
+  @override
+  String vcPaceRange100(String a, String b) {
+    return '$a to $b per 100 meters';
+  }
+
+  @override
+  String vcPowerRange(int lo, int hi) {
+    return '$lo to $hi watts';
+  }
+
+  @override
+  String vcHrRange(int lo, int hi) {
+    return 'heart rate $lo to $hi';
+  }
+
+  @override
+  String get vcAllDoneRide => 'All sections done. Great work! Spin out easy.';
+
+  @override
+  String get vcAllDoneSwim => 'All sets done. Great work! Swim a few easy lengths.';
+
+  @override
+  String get allStepsDoneRide => 'All sections done! Spin out easy and finish when ready.';
+
+  @override
+  String get allStepsDoneSwim => 'All sets done! Swim out easy and finish when ready.';
+
+  @override
+  String freeRideHint(int lo, int hi) {
+    return 'Easy ride? Stay at $lo–$hi bpm (Zone 2) – you should be able to chat comfortably.';
+  }
+
+  @override
+  String get stepRest => 'Rest';
+
+  @override
+  String get stepSteadyRide => 'Endurance ride';
+
+  @override
+  String get stepSteadySwim => 'Steady swim';
+
+  @override
+  String get stepDrillsTitle => 'Drills';
+
+  @override
+  String get zThresholdRide => 'threshold';
+
+  @override
+  String get lengthBtn => 'Length';
+
+  @override
+  String get lengths => 'Lengths';
+
+  @override
+  String nLengths(int lengths) {
+    String _temp0 = intl.Intl.pluralLogic(
+      lengths,
+      locale: localeName,
+      other: '$lengths lengths',
+      one: '1 length',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get undoLength => 'Undo';
+
+  @override
+  String get lengthUndone => 'Last length removed';
+
+  @override
+  String get lastLength => 'Last length';
+
+  @override
+  String get pace100 => 'Pace /100 m';
+
+  @override
+  String get avgPace100 => 'Avg. /100 m';
+
+  @override
+  String get maxSpeed => 'Max. speed';
+
+  @override
+  String get workoutLeft => 'Workout left';
+
+  @override
+  String get section => 'Section';
+
+  @override
+  String get poolTapHint => 'Tap LENGTH each time you touch the wall.';
+
+  @override
+  String get noLengthsYet => 'Your lengths appear here after the first tap.';
 }

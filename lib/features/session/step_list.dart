@@ -36,11 +36,7 @@ class WorkoutProfileBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final secs = steps.map((s) => max(20, _approxSec(s, sport))).toList();
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: CustomPaint(painter: _ProfilePainter(steps, secs, current)),
-    );
+    return SizedBox(height: height, width: double.infinity, child: CustomPaint(painter: _ProfilePainter(steps, secs, current)));
   }
 }
 
@@ -70,10 +66,13 @@ class _ProfilePainter extends CustomPainter {
       );
       canvas.drawRRect(r, Paint()..color = zoneColor(steps[i].zone).withValues(alpha: alpha));
       if (current == i) {
-        canvas.drawRRect(r, Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5);
+        canvas.drawRRect(
+          r,
+          Paint()
+            ..color = Colors.white
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5,
+        );
       }
       x += w + gap;
     }
@@ -140,8 +139,12 @@ class StepList extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     Widget line(WorkoutStep s, int index) {
       final target = stepTarget(l, s, units, sport);
-      return Padding(
-        padding: EdgeInsets.symmetric(vertical: dense ? 3 : 6),
+      final isCurrent = index == current;
+      return Container(
+        // Live screen: highlight the step being done right now.
+        decoration:
+            isCurrent ? BoxDecoration(color: zoneColor(s.zone).withValues(alpha: 0.14), borderRadius: BorderRadius.circular(8)) : null,
+        padding: EdgeInsets.symmetric(vertical: dense ? 3 : 6, horizontal: isCurrent ? 4 : 0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -156,7 +159,7 @@ class StepList extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${s.isWork ? '' : '${stepTitle(l, steps, index)} · '}${stepAmount(s, units, sport)} · ${zoneLabel(l, s.zone)}',
+                    '${s.isWork ? '' : '${stepTitle(l, steps, index, sport: sport)} · '}${stepAmount(s, units, sport)} · ${zoneLabel(l, s.zone, sport: sport)}',
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: dense ? 13 : 14),
                   ),
                   if (target.isNotEmpty) Text(target, style: t.bodySmall),

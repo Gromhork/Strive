@@ -950,7 +950,7 @@ abstract class AppLocalizations {
   /// No description provided for @poolHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap \"Lap\" after every length. Distance is calculated automatically.'**
+  /// **'Tap \"Length\" after every length. Distance is calculated automatically.'**
   String get poolHint;
 
   /// No description provided for @indoorHint.
@@ -4546,6 +4546,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in with Google next time – your data stays'**
   String get linkGoogleSub;
+
+  /// No description provided for @vcStepN.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval {x} of {y}'**
+  String vcStepN(int x, int y);
+
+  /// No description provided for @vcSplitRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Kilometer {n}. Time {time}. Last {km} kilometers at {speed}.'**
+  String vcSplitRide(int n, String time, int km, String speed);
+
+  /// No description provided for @vcSplitSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'Kilometer {n}. Time {time}. Pace {pace}.'**
+  String vcSplitSwim(int n, String time, String pace);
+
+  /// No description provided for @vcKmh.
+  ///
+  /// In en, this message translates to:
+  /// **'{speed} kilometers per hour'**
+  String vcKmh(String speed);
+
+  /// No description provided for @vcPer100m.
+  ///
+  /// In en, this message translates to:
+  /// **'{pace} per 100 meters'**
+  String vcPer100m(String pace);
+
+  /// No description provided for @vcPaceRange100.
+  ///
+  /// In en, this message translates to:
+  /// **'{a} to {b} per 100 meters'**
+  String vcPaceRange100(String a, String b);
+
+  /// No description provided for @vcPowerRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{lo} to {hi} watts'**
+  String vcPowerRange(int lo, int hi);
+
+  /// No description provided for @vcHrRange.
+  ///
+  /// In en, this message translates to:
+  /// **'heart rate {lo} to {hi}'**
+  String vcHrRange(int lo, int hi);
+
+  /// No description provided for @vcAllDoneRide.
+  ///
+  /// In en, this message translates to:
+  /// **'All sections done. Great work! Spin out easy.'**
+  String get vcAllDoneRide;
+
+  /// No description provided for @vcAllDoneSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'All sets done. Great work! Swim a few easy lengths.'**
+  String get vcAllDoneSwim;
+
+  /// No description provided for @allStepsDoneRide.
+  ///
+  /// In en, this message translates to:
+  /// **'All sections done! Spin out easy and finish when ready.'**
+  String get allStepsDoneRide;
+
+  /// No description provided for @allStepsDoneSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'All sets done! Swim out easy and finish when ready.'**
+  String get allStepsDoneSwim;
+
+  /// No description provided for @freeRideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy ride? Stay at {lo}–{hi} bpm (Zone 2) – you should be able to chat comfortably.'**
+  String freeRideHint(int lo, int hi);
+
+  /// No description provided for @stepRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get stepRest;
+
+  /// No description provided for @stepSteadyRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance ride'**
+  String get stepSteadyRide;
+
+  /// No description provided for @stepSteadySwim.
+  ///
+  /// In en, this message translates to:
+  /// **'Steady swim'**
+  String get stepSteadySwim;
+
+  /// No description provided for @stepDrillsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drills'**
+  String get stepDrillsTitle;
+
+  /// No description provided for @zThresholdRide.
+  ///
+  /// In en, this message translates to:
+  /// **'threshold'**
+  String get zThresholdRide;
+
+  /// No description provided for @lengthBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Length'**
+  String get lengthBtn;
+
+  /// No description provided for @lengths.
+  ///
+  /// In en, this message translates to:
+  /// **'Lengths'**
+  String get lengths;
+
+  /// No description provided for @nLengths.
+  ///
+  /// In en, this message translates to:
+  /// **'{lengths, plural, =1{1 length} other{{lengths} lengths}}'**
+  String nLengths(int lengths);
+
+  /// No description provided for @undoLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undoLength;
+
+  /// No description provided for @lengthUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'Last length removed'**
+  String get lengthUndone;
+
+  /// No description provided for @lastLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Last length'**
+  String get lastLength;
+
+  /// No description provided for @pace100.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace /100 m'**
+  String get pace100;
+
+  /// No description provided for @avgPace100.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. /100 m'**
+  String get avgPace100;
+
+  /// No description provided for @maxSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Max. speed'**
+  String get maxSpeed;
+
+  /// No description provided for @workoutLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout left'**
+  String get workoutLeft;
+
+  /// No description provided for @section.
+  ///
+  /// In en, this message translates to:
+  /// **'Section'**
+  String get section;
+
+  /// No description provided for @poolTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap LENGTH each time you touch the wall.'**
+  String get poolTapHint;
+
+  /// No description provided for @noLengthsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your lengths appear here after the first tap.'**
+  String get noLengthsYet;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
