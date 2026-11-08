@@ -5,10 +5,10 @@ Placeholders {name} keep their order; names in INT become int, all others String
 """
 import json, re, sys, ast, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-INT = {'count','level','xp','days','hours','done','target','n','x','y','total','min','sec','km','weeks','reps','pct','bpm','zone','steps','meters','rir','lo','hi','sets','each','age','kg','sessions','laps','lengths','m'}
+INT = {'count','level','xp','days','hours','done','target','n','x','y','total','min','sec','km','weeks','reps','pct','bpm','zone','steps','meters','rir','lo','hi','sets','each','age','kg','sessions','laps','lengths'}
 src = ast.literal_eval(open(sys.argv[1], encoding='utf-8').read())
 for idx, lang in enumerate(['en', 'de']):
-    p = rf'D:\AI-Master\Strive\lib\l10n\app_{lang}.arb'
+    p = os.path.join(ROOT, 'lib', 'l10n', f'app_{lang}.arb')
     arb = json.load(open(p, encoding='utf-8'))
     for k, v in src.items():
         arb[k] = v[idx]
