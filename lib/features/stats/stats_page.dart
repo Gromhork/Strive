@@ -17,6 +17,7 @@ import '../session/session_summary_page.dart' show badgeTitle;
 import '../train/exercise_detail_page.dart';
 import 'body_page.dart';
 import 'session_detail_page.dart';
+import '../../widgets/segments.dart';
 
 class StatsPage extends ConsumerWidget {
   const StatsPage({super.key});
@@ -75,16 +76,10 @@ class _PerformanceState extends ConsumerState<_Performance> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: [
-        SegmentedButton<int>(
-          showSelectedIcon: false,
-          segments: [
-            ButtonSegment(value: 0, label: Text(l.range4w)),
-            ButtonSegment(value: 1, label: Text(l.range3m)),
-            ButtonSegment(value: 2, label: Text(l.range1y)),
-            ButtonSegment(value: 3, label: Text(l.rangeAll)),
-          ],
-          selected: {_range},
-          onSelectionChanged: (v) => setState(() => _range = v.first),
+        Segments<int>(
+          segments: [Seg(0, label: l.range4w), Seg(1, label: l.range3m), Seg(2, label: l.range1y), Seg(3, label: l.rangeAll)],
+          value: _range,
+          onChanged: (v) => setState(() => _range = v),
         ),
         const SizedBox(height: 12),
         SectionCard(
@@ -100,12 +95,7 @@ class _PerformanceState extends ConsumerState<_Performance> {
               Row(
                 children: [
                   Expanded(
-                    child: StatTile(
-                      label: l.distance,
-                      value: u.dist(dist, digits: 1),
-                      icon: Icons.straighten,
-                      color: AppColors.run,
-                    ),
+                    child: StatTile(label: l.distance, value: u.dist(dist, digits: 1), icon: Icons.straighten, color: AppColors.run),
                   ),
                   Expanded(
                     child: StatTile(
@@ -122,11 +112,7 @@ class _PerformanceState extends ConsumerState<_Performance> {
                 Row(
                   children: [
                     Expanded(
-                      child: StatTile(
-                        label: l.avgGymDays,
-                        value: avgGymDaysPerMonth(all).toStringAsFixed(1),
-                        icon: Icons.calendar_month,
-                      ),
+                      child: StatTile(label: l.avgGymDays, value: avgGymDaysPerMonth(all).toStringAsFixed(1), icon: Icons.calendar_month),
                     ),
                     Expanded(
                       child: StatTile(
@@ -142,10 +128,7 @@ class _PerformanceState extends ConsumerState<_Performance> {
           ),
         ),
         const SizedBox(height: 12),
-        SectionCard(
-          title: l.heatmap,
-          child: TrainingHeatmap(minutesByDay: minutesByDay, color: filter?.color ?? AppColors.brand),
-        ),
+        SectionCard(title: l.heatmap, child: TrainingHeatmap(minutesByDay: minutesByDay, color: filter?.color ?? AppColors.brand)),
         const SizedBox(height: 12),
         SectionCard(title: l.weeklyMinutes, child: SizedBox(height: 180, child: _WeeklyBars(sessions: all, filter: filter))),
         const SizedBox(height: 12),
@@ -162,10 +145,7 @@ class _PerformanceState extends ConsumerState<_Performance> {
                 for (final r in records.take(25))
                   DropdownMenuItem(
                     value: r.exId,
-                    child: SizedBox(
-                      width: 150,
-                      child: Text(r.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
-                    ),
+                    child: SizedBox(width: 150, child: Text(r.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
                   ),
               ],
               onChanged: (v) => setState(() => _exId = v),
@@ -334,8 +314,7 @@ class _Records extends ConsumerWidget {
     final u = ref.watch(profileOrDefaultProvider).units;
     final g = ref.watch(gameStatsProvider);
     final db = ref.watch(exerciseDbProvider).value;
-    final recs =
-        exerciseRecords(all).values.where((r) => r.exId != 'manual').toList()..sort((a, b) => b.bestE1rm.compareTo(a.bestE1rm));
+    final recs = exerciseRecords(all).values.where((r) => r.exId != 'manual').toList()..sort((a, b) => b.bestE1rm.compareTo(a.bestE1rm));
 
     Session? best(Sport s, double Function(Session) f) {
       final list = all.where((x) => x.sport == s && x.distanceM > 0).toList();
@@ -364,10 +343,7 @@ class _Records extends ConsumerWidget {
               if (fastest != null && fastest.distanceM >= (s == Sport.swim ? 400 : 5000))
                 _half(
                   context,
-                  StatTile(
-                    label: s.usesPace ? l.bestPace : l.bestSpeed,
-                    value: u.paceOrSpeed(s, fastest.distanceM, fastest.durationSec),
-                  ),
+                  StatTile(label: s.usesPace ? l.bestPace : l.bestSpeed, value: u.paceOrSpeed(s, fastest.distanceM, fastest.durationSec)),
                 ),
               _half(context, StatTile(label: l.totalDistance, value: d(total))),
             ],
@@ -396,10 +372,7 @@ class _Records extends ConsumerWidget {
                             subtitle: Text(
                               '${l.maxWeight} ${u.weight(r.maxWeight)} · ${DateFormat.yMMMd(context.localeName).format(r.date)}',
                             ),
-                            trailing: Text(
-                              'e1RM ${u.weight(r.bestE1rm, digits: 0)}',
-                              style: const TextStyle(fontWeight: FontWeight.w700),
-                            ),
+                            trailing: Text('e1RM ${u.weight(r.bestE1rm, digits: 0)}', style: const TextStyle(fontWeight: FontWeight.w700)),
                             onTap: () {
                               final e = db?.byId(r.exId);
                               if (e != null) {
@@ -464,12 +437,7 @@ class BadgeView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            badgeTitle(context.l10n, b.def.id),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            style: const TextStyle(fontSize: 10),
-          ),
+          Text(badgeTitle(context.l10n, b.def.id), textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontSize: 10)),
         ],
       ),
     );
@@ -502,10 +470,7 @@ class _History extends ConsumerWidget {
             if (showMonth)
               Padding(
                 padding: const EdgeInsets.only(top: 8, bottom: 8),
-                child: Text(
-                  DateFormat.yMMMM(context.localeName).format(s.start),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
+                child: Text(DateFormat.yMMMM(context.localeName).format(s.start), style: const TextStyle(fontWeight: FontWeight.w700)),
               ),
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -521,10 +486,7 @@ class _History extends ConsumerWidget {
                       if (s.distanceM > 0) s.sport == Sport.swim ? u.swimDist(s.distanceM) : u.dist(s.distanceM, digits: 1),
                     ].join(' · '),
                   ),
-                  trailing: Text(
-                    '+${xp[s.id] ?? 0}',
-                    style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w700),
-                  ),
+                  trailing: Text('+${xp[s.id] ?? 0}', style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w700)),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: s.id))),
                 ),
               ),

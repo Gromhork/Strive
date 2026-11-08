@@ -11,6 +11,7 @@ import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../session/start_helpers.dart';
 import 'exercise_picker.dart';
+import '../../widgets/segments.dart';
 
 /// Create / edit a program (gym exercises with sets, or a cardio session target).
 class TemplateEditorPage extends ConsumerStatefulWidget {
@@ -95,14 +96,10 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
           if (_isNew)
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: SegmentedButton<Sport>(
-                segments: [
-                  for (final s in Sport.values)
-                    ButtonSegment(value: s, icon: Icon(s.icon), label: Text(s.label(l), style: const TextStyle(fontSize: 11))),
-                ],
-                selected: {_sport},
-                showSelectedIcon: false,
-                onSelectionChanged: (s) => setState(() => _sport = s.first),
+              child: Segments<Sport>(
+                segments: [for (final s in Sport.values) Seg(s, label: s.label(l), icon: s.icon)],
+                value: _sport,
+                onChanged: (v) => setState(() => _sport = v),
               ),
             ),
           TextField(controller: _name, decoration: InputDecoration(labelText: l.name)),

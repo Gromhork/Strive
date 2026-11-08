@@ -14,6 +14,7 @@ import '../../widgets/common.dart';
 import '../stats/session_detail_page.dart';
 import 'plan_editor.dart';
 import 'planned_workout_page.dart';
+import '../../widgets/segments.dart';
 
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
@@ -56,15 +57,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   icon: const Icon(Icons.auto_fix_high_rounded),
                 ),
                 const SizedBox(width: 4),
-                SegmentedButton<bool>(
-                  showSelectedIcon: false,
-                  style: const ButtonStyle(visualDensity: VisualDensity.compact),
-                  segments: const [
-                    ButtonSegment(value: false, icon: Icon(Icons.view_agenda_outlined)),
-                    ButtonSegment(value: true, icon: Icon(Icons.calendar_view_month)),
-                  ],
-                  selected: {_month},
-                  onSelectionChanged: (s) => setState(() => _month = s.first),
+                Segments<bool>(
+                  dense: true,
+                  segments: [Seg(false, icon: Icons.view_agenda_outlined), Seg(true, icon: Icons.calendar_view_month)],
+                  value: _month,
+                  onChanged: (v) => setState(() => _month = v),
                 ),
               ],
             ),
@@ -103,10 +100,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           child: SectionCard(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
             title: '${df.format(week)} – ${df.format(week.add(const Duration(days: 6)))}',
-            trailing:
-                label == null
-                    ? null
-                    : Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.brand)),
+            trailing: label == null ? null : Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.brand)),
             child: Column(
               children: [for (var d = 0; d < 7; d++) _DayRow(day: week.add(Duration(days: d)), plans: plans, sessions: sessions)],
             ),
@@ -152,9 +146,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           children: [
             for (var i = 0; i < 7; i++)
               Expanded(
-                child: Center(
-                  child: Text(names.format(gridStart.add(Duration(days: i))), style: Theme.of(context).textTheme.labelSmall),
-                ),
+                child: Center(child: Text(names.format(gridStart.add(Duration(days: i))), style: Theme.of(context).textTheme.labelSmall)),
               ),
           ],
         ),
@@ -208,10 +200,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                       width: 7,
                                       height: 7,
                                       margin: const EdgeInsets.all(1),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: x.color, width: 1.5),
-                                      ),
+                                      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: x.color, width: 1.5)),
                                     ),
                                 ],
                               ),
@@ -229,8 +218,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         const SizedBox(height: 8),
         if (dayPlans.isEmpty && daySessions.isEmpty) Text(l.nothingPlanned, style: Theme.of(context).textTheme.bodySmall),
         for (final s in daySessions) _SessionChip(session: s),
-        for (final p in dayPlans.where((p) => !p.isDone))
-          Padding(padding: const EdgeInsets.only(bottom: 6), child: PlanCard(plan: p)),
+        for (final p in dayPlans.where((p) => !p.isDone)) Padding(padding: const EdgeInsets.only(bottom: 6), child: PlanCard(plan: p)),
       ],
     );
   }
@@ -321,9 +309,7 @@ class _DayRow extends ConsumerWidget {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               context.l10n.rest,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
                             ),
                           ),
                         ),
@@ -421,12 +407,7 @@ class _SessionChip extends ConsumerWidget {
                 Icon(s.sport.icon, color: s.sport.color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    s.title,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: Text(s.title, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
                 Text(
                   s.sport == Sport.gym

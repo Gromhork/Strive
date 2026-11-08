@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/segments.dart';
 
 /// Body composition: weight, BMI, body fat, muscle.
 class BodyPage extends ConsumerWidget {
@@ -102,23 +103,15 @@ class _BodyCompositionCardState extends ConsumerState<BodyCompositionCard> {
               Expanded(child: StatTile(label: l.weight, value: last == null ? u.weight(p.weightKg) : u.weight(last.weightKg))),
               Expanded(child: StatTile(label: 'BMI', value: (last == null ? p.bmi : last.weightKg / (h * h)).toStringAsFixed(1))),
               Expanded(child: StatTile(label: l.bodyFat, value: last?.fatPct == null ? '–' : '${Units.num(last!.fatPct!)}%')),
-              Expanded(
-                child: StatTile(label: l.muscle, value: last?.musclePct == null ? '–' : '${Units.num(last!.musclePct!)}%'),
-              ),
+              Expanded(child: StatTile(label: l.muscle, value: last?.musclePct == null ? '–' : '${Units.num(last!.musclePct!)}%')),
             ],
           ),
           const SizedBox(height: 12),
-          SegmentedButton<int>(
-            showSelectedIcon: false,
-            style: const ButtonStyle(visualDensity: VisualDensity.compact),
-            segments: [
-              ButtonSegment(value: 0, label: Text(l.weight, style: const TextStyle(fontSize: 11))),
-              const ButtonSegment(value: 1, label: Text('BMI', style: TextStyle(fontSize: 11))),
-              ButtonSegment(value: 2, label: Text(l.bodyFat, style: const TextStyle(fontSize: 11))),
-              ButtonSegment(value: 3, label: Text(l.muscle, style: const TextStyle(fontSize: 11))),
-            ],
-            selected: {_metric},
-            onSelectionChanged: (s) => setState(() => _metric = s.first),
+          Segments<int>(
+            dense: true,
+            segments: [Seg(0, label: l.weight), Seg(1, label: 'BMI'), Seg(2, label: l.bodyFat), Seg(3, label: l.muscle)],
+            value: _metric,
+            onChanged: (v) => setState(() => _metric = v),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -155,8 +148,7 @@ class _BodyCompositionCardState extends ConsumerState<BodyCompositionCard> {
                         lineBarsData: [
                           LineChartBarData(
                             spots: [
-                              for (final x in pts)
-                                FlSpot(x.$1.millisecondsSinceEpoch.toDouble(), double.parse(x.$2.toStringAsFixed(1))),
+                              for (final x in pts) FlSpot(x.$1.millisecondsSinceEpoch.toDouble(), double.parse(x.$2.toStringAsFixed(1))),
                             ],
                             isCurved: pts.length > 2,
                             preventCurveOverShooting: true,
@@ -255,9 +247,7 @@ Future<void> showBodyEntrySheet(BuildContext context, WidgetRef ref, {BodyEntry?
                             repo.saveBody(entry);
                             final body = ref.read(bodyProvider).value ?? const [];
                             if (body.isEmpty || !date.isBefore(body.last.date)) {
-                              repo.saveProfile(
-                                p.copyWith(weightKg: entry.weightKg, fatPct: entry.fatPct, musclePct: entry.musclePct),
-                              );
+                              repo.saveProfile(p.copyWith(weightKg: entry.weightKg, fatPct: entry.fatPct, musclePct: entry.musclePct));
                             }
                             Navigator.pop(c);
                           },

@@ -12,6 +12,7 @@ import 'cardio_session_page.dart';
 import 'step_list.dart';
 import 'gym_session_page.dart';
 import 'manual_entry_page.dart';
+import '../../widgets/segments.dart';
 
 /// Starts a planned workout from the calendar / home screen.
 Future<void> startPlanned(BuildContext context, WidgetRef ref, PlannedWorkout p) async {
@@ -23,13 +24,7 @@ Future<void> startPlanned(BuildContext context, WidgetRef ref, PlannedWorkout p)
   }
 }
 
-Future<void> startGym(
-  BuildContext context,
-  WidgetRef ref, {
-  required String title,
-  WorkoutTemplate? template,
-  String? planId,
-}) async {
+Future<void> startGym(BuildContext context, WidgetRef ref, {required String title, WorkoutTemplate? template, String? planId}) async {
   if (!await _ensureNothingRunning(context, ref)) return;
   ref
       .read(activeGymProvider.notifier)
@@ -143,41 +138,30 @@ Future<void> showCardioStart(
                         ],
                       ),
                       const SizedBox(height: 20),
-                      SegmentedButton<bool>(
+                      Segments<bool>(
                         segments: [
-                          ButtonSegment(
-                            value: false,
-                            icon: const Icon(Icons.gps_fixed),
-                            label: Text(sport == Sport.swim ? l.openWater : l.outdoor),
-                          ),
-                          ButtonSegment(
-                            value: true,
-                            icon: Icon(sport == Sport.swim ? Icons.pool : Icons.home_outlined),
-                            label: Text(sport == Sport.swim ? l.pool : l.indoor),
+                          Seg(false, label: sport == Sport.swim ? l.openWater : l.outdoor, icon: Icons.gps_fixed),
+                          Seg(
+                            true,
+                            label: sport == Sport.swim ? l.pool : l.indoor,
+                            icon: sport == Sport.swim ? Icons.pool : Icons.home_outlined,
                           ),
                         ],
-                        selected: {indoor},
-                        onSelectionChanged: (s) => setS(() => indoor = s.first),
+                        value: indoor,
+                        onChanged: (v) => setS(() => indoor = v),
                       ),
                       const SizedBox(height: 12),
                       if (sport == Sport.swim && indoor) ...[
                         Text(l.poolLength),
                         const SizedBox(height: 8),
-                        SegmentedButton<int>(
-                          segments: const [
-                            ButtonSegment(value: 25, label: Text('25 m')),
-                            ButtonSegment(value: 33, label: Text('33 m')),
-                            ButtonSegment(value: 50, label: Text('50 m')),
-                          ],
-                          selected: {pool},
-                          onSelectionChanged: (s) => setS(() => pool = s.first),
+                        Segments<int>(
+                          segments: [Seg(25, label: '25 m'), Seg(33, label: '33 m'), Seg(50, label: '50 m')],
+                          value: pool,
+                          onChanged: (v) => setS(() => pool = v),
                         ),
                         const SizedBox(height: 8),
                       ],
-                      Text(
-                        indoor ? (sport == Sport.swim ? l.poolHint : l.indoorHint) : l.gpsHint,
-                        style: Theme.of(c).textTheme.bodySmall,
-                      ),
+                      Text(indoor ? (sport == Sport.swim ? l.poolHint : l.indoorHint) : l.gpsHint, style: Theme.of(c).textTheme.bodySmall),
                       if (steps.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         SwitchListTile(

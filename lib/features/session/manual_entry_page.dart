@@ -8,6 +8,7 @@ import '../../data/models.dart';
 import '../../providers.dart';
 import '../shell/health_sync.dart';
 import '../../widgets/common.dart';
+import '../../widgets/segments.dart';
 
 /// Log a past activity (e.g. a treadmill run or a swim without the phone).
 class ManualEntryPage extends ConsumerStatefulWidget {
@@ -54,11 +55,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
     );
     repo.saveSession(s);
     ref.read(healthServiceProvider).writeSession(s);
-    final plan =
-        ref
-            .read(planListProvider)
-            .where((p) => sameDay(p.date, _start) && p.sport == _sport && p.status == 'planned')
-            .firstOrNull;
+    final plan = ref.read(planListProvider).where((p) => sameDay(p.date, _start) && p.sport == _sport && p.status == 'planned').firstOrNull;
     if (plan != null) repo.updatePlan(plan.id, {'status': 'done', 'sessionId': s.id});
     toast(context, l.saved);
     Navigator.pop(context);
@@ -74,10 +71,10 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          SegmentedButton<Sport>(
-            segments: [for (final s in Sport.values) ButtonSegment(value: s, icon: Icon(s.icon))],
-            selected: {_sport},
-            onSelectionChanged: (s) => setState(() => _sport = s.first),
+          Segments<Sport>(
+            segments: [for (final s in Sport.values) Seg(s, icon: s.icon)],
+            value: _sport,
+            onChanged: (v) => setState(() => _sport = v),
           ),
           const SizedBox(height: 16),
           TextField(controller: _title, decoration: InputDecoration(labelText: l.title, hintText: _sport.label(l))),
@@ -87,12 +84,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
             leading: const Icon(Icons.event),
             title: Text(df.format(_start)),
             onTap: () async {
-              final d = await showDatePicker(
-                context: context,
-                initialDate: _start,
-                firstDate: DateTime(2015),
-                lastDate: DateTime.now(),
-              );
+              final d = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2015), lastDate: DateTime.now());
               if (d == null || !context.mounted) return;
               final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_start));
               setState(() => _start = DateTime(d.year, d.month, d.day, t?.hour ?? _start.hour, t?.minute ?? _start.minute));
