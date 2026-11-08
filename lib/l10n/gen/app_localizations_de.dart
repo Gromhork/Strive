@@ -2700,4 +2700,123 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get exerciseLoadError => 'Übungen konnten nicht geladen werden.';
+
+  @override
+  String vcStepN(int x, int y) {
+    return 'Intervall $x von $y';
+  }
+
+  @override
+  String vcSplitRide(int n, String time, int km, String speed) {
+    return 'Kilometer $n. Zeit $time. Letzte $km Kilometer mit $speed.';
+  }
+
+  @override
+  String vcSplitSwim(int n, String time, String pace) {
+    return 'Kilometer $n. Zeit $time. Pace $pace.';
+  }
+
+  @override
+  String vcKmh(String speed) {
+    return '$speed Kilometer pro Stunde';
+  }
+
+  @override
+  String vcPer100m(String pace) {
+    return '$pace pro 100 Meter';
+  }
+
+  @override
+  String vcPaceRange100(String a, String b) {
+    return '$a bis $b pro 100 Meter';
+  }
+
+  @override
+  String vcPowerRange(int lo, int hi) {
+    return '$lo bis $hi Watt';
+  }
+
+  @override
+  String vcHrRange(int lo, int hi) {
+    return 'Puls $lo bis $hi';
+  }
+
+  @override
+  String get vcAllDoneRide => 'Alle Abschnitte geschafft. Stark! Jetzt locker ausrollen.';
+
+  @override
+  String get vcAllDoneSwim => 'Alle Abschnitte geschafft. Stark! Jetzt locker ausschwimmen.';
+
+  @override
+  String get allStepsDoneRide => 'Alle Abschnitte geschafft! Locker ausrollen und dann beenden.';
+
+  @override
+  String get allStepsDoneSwim => 'Alle Abschnitte geschafft! Locker ausschwimmen und dann beenden.';
+
+  @override
+  String freeRideHint(int lo, int hi) {
+    return 'Lockere Ausfahrt? Bleib bei $lo–$hi bpm (Zone 2) – du solltest dich gut unterhalten können.';
+  }
+
+  @override
+  String get stepRest => 'Pause';
+
+  @override
+  String get stepSteadyRide => 'Grundlagenfahrt';
+
+  @override
+  String get stepSteadySwim => 'Gleichmäßig schwimmen';
+
+  @override
+  String get stepDrillsTitle => 'Technik';
+
+  @override
+  String get zThresholdRide => 'Schwelle';
+
+  @override
+  String get lengthBtn => 'Bahn';
+
+  @override
+  String get lengths => 'Bahnen';
+
+  @override
+  String nLengths(int lengths) {
+    String _temp0 = intl.Intl.pluralLogic(
+      lengths,
+      locale: localeName,
+      other: '$lengths Bahnen',
+      one: '1 Bahn',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get undoLength => 'Rückgängig';
+
+  @override
+  String get lengthUndone => 'Letzte Bahn entfernt';
+
+  @override
+  String get lastLength => 'Letzte Bahn';
+
+  @override
+  String get pace100 => 'Pace /100 m';
+
+  @override
+  String get avgPace100 => 'Ø /100 m';
+
+  @override
+  String get maxSpeed => 'Max. Tempo';
+
+  @override
+  String get workoutLeft => 'Noch gesamt';
+
+  @override
+  String get section => 'Abschnitt';
+
+  @override
+  String get poolTapHint => 'Tippe bei jedem Anschlag auf BAHN.';
+
+  @override
+  String get noLengthsYet => 'Deine Bahnen erscheinen hier nach dem ersten Tippen.';
 }
