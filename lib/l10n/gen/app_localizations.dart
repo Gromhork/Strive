@@ -4546,6 +4546,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in with Google next time – your data stays'**
   String get linkGoogleSub;
+
+  /// No description provided for @wGymTimeCapNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {min} min available: do one set less per exercise or skip the last exercise.'**
+  String wGymTimeCapNote(int min);
+
+  /// No description provided for @wShakeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Shake-out run'**
+  String get wShakeout;
+
+  /// No description provided for @wShakeoutDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'15 min very easy plus a few strides – loosen up, nothing more. Prepare your race kit tonight.'**
+  String get wShakeoutDesc;
+
+  /// No description provided for @wRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Race: {name}'**
+  String wRace(String name);
+
+  /// No description provided for @wRaceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Start controlled, find your rhythm, finish strong. Good luck!'**
+  String get wRaceDesc;
+
+  /// No description provided for @wRaceGoalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal time {time}. Start controlled (first km not faster than goal pace), finish strong. Good luck!'**
+  String wRaceGoalDesc(String time);
+
+  /// No description provided for @stepRaceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Race pace – even splits'**
+  String get stepRaceNote;
+
+  /// No description provided for @intensityRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Race'**
+  String get intensityRace;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

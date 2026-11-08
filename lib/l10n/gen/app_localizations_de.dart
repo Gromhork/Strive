@@ -2329,4 +2329,34 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get linkGoogleSub => 'Künftig mit Google anmelden – deine Daten bleiben erhalten';
+
+  @override
+  String wGymTimeCapNote(int min) {
+    return 'Nur $min min Zeit: pro Übung einen Satz weniger oder die letzte Übung weglassen.';
+  }
+
+  @override
+  String get wShakeout => 'Lockerer Auftakt';
+
+  @override
+  String get wShakeoutDesc => '15 min ganz locker plus ein paar Steigerungen – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.';
+
+  @override
+  String wRace(String name) {
+    return 'Wettkampf: $name';
+  }
+
+  @override
+  String get wRaceDesc => 'Kontrolliert starten, Rhythmus finden, stark finishen. Viel Erfolg!';
+
+  @override
+  String wRaceGoalDesc(String time) {
+    return 'Zielzeit $time. Kontrolliert starten (erster km nicht schneller als Zieltempo), stark finishen. Viel Erfolg!';
+  }
+
+  @override
+  String get stepRaceNote => 'Wettkampftempo – gleichmäßig einteilen';
+
+  @override
+  String get intensityRace => 'Wettkampf';
 }

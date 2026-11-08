@@ -2329,4 +2329,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get linkGoogleSub => 'Sign in with Google next time – your data stays';
+
+  @override
+  String wGymTimeCapNote(int min) {
+    return 'Only $min min available: do one set less per exercise or skip the last exercise.';
+  }
+
+  @override
+  String get wShakeout => 'Shake-out run';
+
+  @override
+  String get wShakeoutDesc => '15 min very easy plus a few strides – loosen up, nothing more. Prepare your race kit tonight.';
+
+  @override
+  String wRace(String name) {
+    return 'Race: $name';
+  }
+
+  @override
+  String get wRaceDesc => 'Start controlled, find your rhythm, finish strong. Good luck!';
+
+  @override
+  String wRaceGoalDesc(String time) {
+    return 'Goal time $time. Start controlled (first km not faster than goal pace), finish strong. Good luck!';
+  }
+
+  @override
+  String get stepRaceNote => 'Race pace – even splits';
+
+  @override
+  String get intensityRace => 'Race';
 }

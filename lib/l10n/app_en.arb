@@ -1137,5 +1137,34 @@
   "middleDistance": "Middle distance (70.3)",
   "maxReps": "Max reps",
   "roundLap": "Lap",
-  "linkGoogleSub": "Sign in with Google next time – your data stays"
+  "linkGoogleSub": "Sign in with Google next time – your data stays",
+  "wGymTimeCapNote": "Only {min} min available: do one set less per exercise or skip the last exercise.",
+  "@wGymTimeCapNote": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "wShakeout": "Shake-out run",
+  "wShakeoutDesc": "15 min very easy plus a few strides – loosen up, nothing more. Prepare your race kit tonight.",
+  "wRace": "Race: {name}",
+  "@wRace": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wRaceDesc": "Start controlled, find your rhythm, finish strong. Good luck!",
+  "wRaceGoalDesc": "Goal time {time}. Start controlled (first km not faster than goal pace), finish strong. Good luck!",
+  "@wRaceGoalDesc": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "stepRaceNote": "Race pace – even splits",
+  "intensityRace": "Race"
 }

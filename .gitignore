@@ -50,3 +50,6 @@ yarn-error.log*
 
 # Research PDFs (large, local only)
 docs/papers/
+
+# Claude Code worktrees
+.claude/

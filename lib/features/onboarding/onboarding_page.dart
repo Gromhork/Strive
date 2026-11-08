@@ -8,7 +8,7 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
-import '../../data/repository.dart';
+import '../../data/default_programs.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/plan_generator.dart';

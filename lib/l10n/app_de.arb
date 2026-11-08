@@ -741,5 +741,13 @@
   "middleDistance": "Mitteldistanz (70.3)",
   "maxReps": "Max. Wdh.",
   "roundLap": "Runde",
-  "linkGoogleSub": "Künftig mit Google anmelden – deine Daten bleiben erhalten"
+  "linkGoogleSub": "Künftig mit Google anmelden – deine Daten bleiben erhalten",
+  "wGymTimeCapNote": "Nur {min} min Zeit: pro Übung einen Satz weniger oder die letzte Übung weglassen.",
+  "wShakeout": "Lockerer Auftakt",
+  "wShakeoutDesc": "15 min ganz locker plus ein paar Steigerungen – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.",
+  "wRace": "Wettkampf: {name}",
+  "wRaceDesc": "Kontrolliert starten, Rhythmus finden, stark finishen. Viel Erfolg!",
+  "wRaceGoalDesc": "Zielzeit {time}. Kontrolliert starten (erster km nicht schneller als Zieltempo), stark finishen. Viel Erfolg!",
+  "stepRaceNote": "Wettkampftempo – gleichmäßig einteilen",
+  "intensityRace": "Wettkampf"
 }

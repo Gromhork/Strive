@@ -34,6 +34,7 @@ class UserProfile {
   final int? maxHr;
   final bool onboarded;
   final AthleteData athlete;
+  final List<String> folderOrder; // program folders on the Train page, in display order
 
   const UserProfile({
     this.name = '',
@@ -53,6 +54,7 @@ class UserProfile {
     this.maxHr,
     this.onboarded = false,
     this.athlete = const AthleteData(),
+    this.folderOrder = const [],
   });
 
   int? get age => birthYear == null ? null : DateTime.now().year - birthYear!;
@@ -79,6 +81,7 @@ class UserProfile {
     maxHr: m['maxHr'],
     onboarded: m['onboarded'] ?? false,
     athlete: AthleteData.fromMap((m['athlete'] as Map?)?.cast<String, dynamic>() ?? const {}),
+    folderOrder: List<String>.from(m['folderOrder'] ?? const []),
   );
 
   Map<String, dynamic> toMap() => {
@@ -99,6 +102,7 @@ class UserProfile {
     'maxHr': maxHr,
     'onboarded': onboarded,
     'athlete': athlete.toMap(),
+    'folderOrder': folderOrder,
   };
 
   UserProfile copyWith({
@@ -119,6 +123,7 @@ class UserProfile {
     int? maxHr,
     bool? onboarded,
     AthleteData? athlete,
+    List<String>? folderOrder,
   }) => UserProfile(
     name: name ?? this.name,
     birthYear: birthYear ?? this.birthYear,
@@ -137,6 +142,7 @@ class UserProfile {
     maxHr: maxHr ?? this.maxHr,
     onboarded: onboarded ?? this.onboarded,
     athlete: athlete ?? this.athlete,
+    folderOrder: folderOrder ?? this.folderOrder,
   );
 }
 
@@ -146,7 +152,8 @@ class AthleteData {
   final String setupMode; // simple | advanced
   final String difficulty; // easy | balanced | challenging
   final int planWeeks;
-  final int sessionMinutes; // typical time available per session
+  final int sessionMinutes; // max. training time per day (minutes) – default for every day
+  final Map<int, int> dayMinutes; // optional per-weekday override (1..7 → minutes)
   final int sessionsPerDay; // 1 | 2
   final Map<int, List<Sport>> dayPlan; // weekday (1..7) → sports on that day
   final String preferredTime; // morning | midday | evening
@@ -172,6 +179,7 @@ class AthleteData {
   // Gym
   final String equipment; // gym | home | bodyweight
   final String gymGoal; // strength | hypertrophy | general
+  final String gymSplit; // auto | fullbody | upperlower | ppl | ulppl | bro
   final Map<String, double> oneRm; // squat | bench | deadlift | ohp → kg
   // Event
   final String? eventDistance; // 5k | 10k | hm | m | sprint | olympic | 70.3
@@ -183,6 +191,7 @@ class AthleteData {
     this.difficulty = 'balanced',
     this.planWeeks = 8,
     this.sessionMinutes = 60,
+    this.dayMinutes = const {},
     this.sessionsPerDay = 1,
     this.dayPlan = const {},
     this.preferredTime = 'evening',
@@ -204,6 +213,7 @@ class AthleteData {
     this.poolLength = 25,
     this.equipment = 'gym',
     this.gymGoal = 'general',
+    this.gymSplit = 'auto',
     this.oneRm = const {},
     this.eventDistance,
     this.eventDate,
@@ -212,11 +222,15 @@ class AthleteData {
 
   bool get advanced => setupMode == 'advanced';
 
+  /// Minutes available on [weekday] (per-day override or the global maximum).
+  int minutesOn(int weekday) => dayMinutes[weekday] ?? sessionMinutes;
+
   factory AthleteData.fromMap(Map<String, dynamic> m) => AthleteData(
     setupMode: m['setupMode'] ?? 'simple',
     difficulty: m['difficulty'] ?? 'balanced',
     planWeeks: _i(m['planWeeks'], 8),
     sessionMinutes: _i(m['sessionMinutes'], 60),
+    dayMinutes: {for (final e in ((m['dayMinutes'] as Map?) ?? {}).entries) int.parse('${e.key}'): (e.value as num).toInt()},
     sessionsPerDay: _i(m['sessionsPerDay'], 1),
     dayPlan: {
       for (final e in ((m['dayPlan'] as Map?) ?? {}).entries)
@@ -241,6 +255,7 @@ class AthleteData {
     poolLength: _i(m['poolLength'], 25),
     equipment: m['equipment'] ?? 'gym',
     gymGoal: m['gymGoal'] ?? 'general',
+    gymSplit: m['gymSplit'] ?? 'auto',
     oneRm: {for (final e in ((m['oneRm'] as Map?) ?? {}).entries) '${e.key}': (e.value as num).toDouble()},
     eventDistance: m['eventDistance'],
     eventDate: m['eventDate'] == null ? null : _date(m['eventDate']),
@@ -252,6 +267,7 @@ class AthleteData {
     'difficulty': difficulty,
     'planWeeks': planWeeks,
     'sessionMinutes': sessionMinutes,
+    'dayMinutes': {for (final e in dayMinutes.entries) '${e.key}': e.value},
     'sessionsPerDay': sessionsPerDay,
     'dayPlan': {for (final e in dayPlan.entries) '${e.key}': e.value.map((s) => s.name).toList()},
     'preferredTime': preferredTime,
@@ -273,6 +289,7 @@ class AthleteData {
     'poolLength': poolLength,
     'equipment': equipment,
     'gymGoal': gymGoal,
+    'gymSplit': gymSplit,
     'oneRm': oneRm,
     'eventDistance': eventDistance,
     'eventDate': eventDate == null ? null : Timestamp.fromDate(eventDate!),
@@ -287,6 +304,9 @@ class AthleteData {
     if (c['eventDate'] is DateTime) c['eventDate'] = Timestamp.fromDate(c['eventDate']);
     if (c['dayPlan'] is Map<int, List<Sport>>) {
       c['dayPlan'] = {for (final e in (c['dayPlan'] as Map<int, List<Sport>>).entries) '${e.key}': e.value.map((s) => s.name).toList()};
+    }
+    if (c['dayMinutes'] is Map<int, int>) {
+      c['dayMinutes'] = {for (final e in (c['dayMinutes'] as Map<int, int>).entries) '${e.key}': e.value};
     }
     return AthleteData.fromMap({...m, ...c});
   }
@@ -528,6 +548,9 @@ class WorkoutTemplate {
   final int? targetMin;
   final String intensity; // easy | moderate | tempo | intervals | long | technique
   final String description;
+  final List<WorkoutStep> steps; // structured endurance workout (phases)
+  final String? key; // stable id of a built-in program (e.g. 'ul_upper_a'), used by the plan generator
+  final int order; // position inside its folder
 
   WorkoutTemplate({
     required this.id,
@@ -539,6 +562,9 @@ class WorkoutTemplate {
     this.targetMin,
     this.intensity = 'easy',
     this.description = '',
+    this.steps = const [],
+    this.key,
+    this.order = 0,
   });
 
   factory WorkoutTemplate.fromMap(String id, Map<String, dynamic> m) => WorkoutTemplate(
@@ -551,7 +577,26 @@ class WorkoutTemplate {
     targetMin: m['targetMin'],
     intensity: m['intensity'] ?? 'easy',
     description: m['description'] ?? '',
+    steps: ((m['steps'] as List?) ?? []).map((e) => WorkoutStep.fromMap(e as Map)).toList(),
+    key: m['key'],
+    order: _i(m['order']),
   );
+
+  WorkoutTemplate copyWith({String? name, String? folder, int? order, List<GymExercise>? exercises, List<WorkoutStep>? steps}) =>
+      WorkoutTemplate(
+        id: id,
+        name: name ?? this.name,
+        sport: sport,
+        folder: folder ?? this.folder,
+        exercises: exercises ?? this.exercises,
+        targetKm: targetKm,
+        targetMin: targetMin,
+        intensity: intensity,
+        description: description,
+        steps: steps ?? this.steps,
+        key: key,
+        order: order ?? this.order,
+      );
 
   Map<String, dynamic> toMap() => {
     'name': name,
@@ -562,14 +607,35 @@ class WorkoutTemplate {
     'targetMin': targetMin,
     'intensity': intensity,
     'description': description,
+    if (steps.isNotEmpty) 'steps': steps.map((e) => e.toMap()).toList(),
+    if (key != null) 'key': key,
+    'order': order,
   };
 
   int get estimatedMinutes {
     if (targetMin != null) return targetMin!;
-    if (sport != Sport.gym) return 45;
-    final sets = exercises.fold<int>(0, (a, e) => a + e.sets.length);
-    return (sets * 2.5).round().clamp(15, 150);
+    if (sport != Sport.gym) {
+      if (steps.isEmpty) return 45;
+      final sec = steps.fold<int>(0, (a, s) => a + (s.durationSec ?? ((s.distanceM ?? 0) / 1000 * 360).round()));
+      return (sec / 60).round().clamp(10, 400);
+    }
+    return estimateGymMinutes(exercises);
   }
+}
+
+/// Session length estimate: ~40 s per set plus its rest (supersets rest once per round),
+/// plus ~6 min general warm-up.
+int estimateGymMinutes(List<GymExercise> exercises) {
+  var sec = 360.0;
+  for (var i = 0; i < exercises.length; i++) {
+    final e = exercises[i];
+    final next = i + 1 < exercises.length ? exercises[i + 1] : null;
+    final inSupersetBeforeLast = e.group != null && next?.group == e.group;
+    for (final st in e.sets) {
+      sec += 40 + (inSupersetBeforeLast ? 15 : (st.warmup ? 60 : e.restSec));
+    }
+  }
+  return (sec / 60).round().clamp(10, 180);
 }
 
 // ───────────────────────────── Calendar plan ─────────────────────────────

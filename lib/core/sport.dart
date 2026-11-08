@@ -78,6 +78,7 @@ String intensityLabel(AppLocalizations l, String i) => switch (i) {
   'tempo' => l.intensityTempo,
   'intervals' => l.intensityIntervals,
   'long' => l.intensityLong,
+  'race' => l.intensityRace,
   'technique' => l.intensityTechnique,
   _ => i,
 };
