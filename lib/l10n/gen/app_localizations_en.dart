@@ -853,7 +853,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiUnavailable => 'The AI coach is not available right now. Check your connection or enable Firebase AI Logic.';
 
   @override
-  String get syncCalendar => 'Sync with Google Calendar';
+  String get syncCalendar => 'Export calendar';
 
   @override
   String get currentWeek => 'Current';
@@ -871,7 +871,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nothingToExport => 'No upcoming workouts to export.';
 
   @override
-  String get icsShareText => 'My Strive training plan – open with Google Calendar to import.';
+  String get icsShareText => 'My Strive training plan (.ics) – open it with a calendar app to import it.';
 
   @override
   String get planGymDesc => 'Strength session – progressive overload: add weight or reps when all sets feel good.';
@@ -1202,7 +1202,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get googleCalendar => 'Google Calendar';
 
   @override
-  String get googleCalendarSub => 'Export your plan as a calendar file';
+  String get googleCalendarSub => 'Sync your plan into a separate \"Strive\" calendar';
 
   @override
   String get account => 'Account';
@@ -2329,4 +2329,111 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get linkGoogleSub => 'Sign in with Google next time – your data stays';
+
+  @override
+  String gcalConnectedSub(String account) {
+    return 'Connected · $account';
+  }
+
+  @override
+  String get gcalHeroTitle => 'Your plan in Google Calendar';
+
+  @override
+  String get gcalHeroSub => 'Strive creates its own calendar called \"Strive\" and keeps it up to date automatically. Your other appointments are never read.';
+
+  @override
+  String get gcalConnect => 'Connect Google Calendar';
+
+  @override
+  String get gcalDisconnect => 'Disconnect';
+
+  @override
+  String get gcalSyncNow => 'Sync now';
+
+  @override
+  String get gcalSyncing => 'Syncing…';
+
+  @override
+  String get gcalAccount => 'Google account';
+
+  @override
+  String get gcalLastSync => 'Last sync';
+
+  @override
+  String get gcalEvents => 'Events';
+
+  @override
+  String get gcalAutoInfo => 'Automatic sync is on – changes to your plan show up in Google Calendar a few seconds later.';
+
+  @override
+  String gcalSynced(int count) {
+    return '$count workouts synced';
+  }
+
+  @override
+  String get gcalConnectedToast => 'Google Calendar connected';
+
+  @override
+  String get gcalDisconnectTitle => 'Disconnect Google Calendar?';
+
+  @override
+  String get gcalDisconnectBody => 'Strive will stop updating the calendar. Do you also want to delete the \"Strive\" calendar and all its events from your Google account?';
+
+  @override
+  String get gcalDeleteCalendar => 'Delete calendar';
+
+  @override
+  String get gcalKeepCalendar => 'Keep calendar';
+
+  @override
+  String get gcalDisconnected => 'Google Calendar disconnected';
+
+  @override
+  String get gcalHowTitle => 'How it works';
+
+  @override
+  String get gcalHow1 => 'Strive only gets access to calendars it created itself – it cannot see your other calendars or appointments.';
+
+  @override
+  String gcalHow2(String time) {
+    return 'Workouts from the last 7 days up to 6 months ahead are entered at your preferred training time ($time).';
+  }
+
+  @override
+  String get gcalHow3 => 'To hide the workouts, untick the \"Strive\" calendar in Google Calendar – syncing continues in the background.';
+
+  @override
+  String get gcalHow4 => 'Changes made in Google Calendar are overwritten on the next sync – edit your workouts in Strive.';
+
+  @override
+  String get gcalOpen => 'Open Google Calendar';
+
+  @override
+  String get gcalReconnect => 'Connect again';
+
+  @override
+  String get gcalErrApiDisabled => 'The Google Calendar API is not enabled for this app yet. The developer needs to enable it in the Google Cloud console (project strive-fitness-app).';
+
+  @override
+  String get gcalErrAuth => 'Google access has expired or was revoked. Please connect again.';
+
+  @override
+  String get gcalErrOffline => 'No connection to Google. Strive will try again automatically.';
+
+  @override
+  String get gcalErrRateLimit => 'Google is limiting requests right now. Please try again in a few minutes.';
+
+  @override
+  String gcalErrGeneric(String detail) {
+    return 'Sync failed: $detail';
+  }
+
+  @override
+  String get gcalCalendarDescription => 'Training plan from the Strive app. Managed automatically – changes made here will be overwritten.';
+
+  @override
+  String get gcalStructure => 'Structure';
+
+  @override
+  String get gcalEventFooter => 'Synced from Strive – edit this workout in the app.';
 }

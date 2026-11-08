@@ -357,13 +357,13 @@
     }
   },
   "aiUnavailable": "The AI coach is not available right now. Check your connection or enable Firebase AI Logic.",
-  "syncCalendar": "Sync with Google Calendar",
+  "syncCalendar": "Export calendar",
   "currentWeek": "Current",
   "nextWeek": "Next",
   "lastWeek": "Last",
   "nothingPlanned": "Nothing planned.",
   "nothingToExport": "No upcoming workouts to export.",
-  "icsShareText": "My Strive training plan – open with Google Calendar to import.",
+  "icsShareText": "My Strive training plan (.ics) – open it with a calendar app to import it.",
   "planGymDesc": "Strength session – progressive overload: add weight or reps when all sets feel good.",
   "planDeloadGym": "Deload week: same exercises, ~60 % of the usual sets, leave 3–4 reps in reserve.",
   "planEasyRun": "Easy run",
@@ -508,7 +508,7 @@
   "integrations": "Integrations",
   "comingSoon": "Soon",
   "googleCalendar": "Google Calendar",
-  "googleCalendarSub": "Export your plan as a calendar file",
+  "googleCalendarSub": "Sync your plan into a separate \"Strive\" calendar",
   "account": "Account",
   "upgradeAccount": "Save guest account",
   "upgradeAccountSub": "Link an email so you never lose your data",
@@ -1137,5 +1137,66 @@
   "middleDistance": "Middle distance (70.3)",
   "maxReps": "Max reps",
   "roundLap": "Lap",
-  "linkGoogleSub": "Sign in with Google next time – your data stays"
+  "linkGoogleSub": "Sign in with Google next time – your data stays",
+  "gcalConnectedSub": "Connected · {account}",
+  "@gcalConnectedSub": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "gcalHeroTitle": "Your plan in Google Calendar",
+  "gcalHeroSub": "Strive creates its own calendar called \"Strive\" and keeps it up to date automatically. Your other appointments are never read.",
+  "gcalConnect": "Connect Google Calendar",
+  "gcalDisconnect": "Disconnect",
+  "gcalSyncNow": "Sync now",
+  "gcalSyncing": "Syncing…",
+  "gcalAccount": "Google account",
+  "gcalLastSync": "Last sync",
+  "gcalEvents": "Events",
+  "gcalAutoInfo": "Automatic sync is on – changes to your plan show up in Google Calendar a few seconds later.",
+  "gcalSynced": "{count} workouts synced",
+  "@gcalSynced": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gcalConnectedToast": "Google Calendar connected",
+  "gcalDisconnectTitle": "Disconnect Google Calendar?",
+  "gcalDisconnectBody": "Strive will stop updating the calendar. Do you also want to delete the \"Strive\" calendar and all its events from your Google account?",
+  "gcalDeleteCalendar": "Delete calendar",
+  "gcalKeepCalendar": "Keep calendar",
+  "gcalDisconnected": "Google Calendar disconnected",
+  "gcalHowTitle": "How it works",
+  "gcalHow1": "Strive only gets access to calendars it created itself – it cannot see your other calendars or appointments.",
+  "gcalHow2": "Workouts from the last 7 days up to 6 months ahead are entered at your preferred training time ({time}).",
+  "@gcalHow2": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "gcalHow3": "To hide the workouts, untick the \"Strive\" calendar in Google Calendar – syncing continues in the background.",
+  "gcalHow4": "Changes made in Google Calendar are overwritten on the next sync – edit your workouts in Strive.",
+  "gcalOpen": "Open Google Calendar",
+  "gcalReconnect": "Connect again",
+  "gcalErrApiDisabled": "The Google Calendar API is not enabled for this app yet. The developer needs to enable it in the Google Cloud console (project strive-fitness-app).",
+  "gcalErrAuth": "Google access has expired or was revoked. Please connect again.",
+  "gcalErrOffline": "No connection to Google. Strive will try again automatically.",
+  "gcalErrRateLimit": "Google is limiting requests right now. Please try again in a few minutes.",
+  "gcalErrGeneric": "Sync failed: {detail}",
+  "@gcalErrGeneric": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "gcalCalendarDescription": "Training plan from the Strive app. Managed automatically – changes made here will be overwritten.",
+  "gcalStructure": "Structure",
+  "gcalEventFooter": "Synced from Strive – edit this workout in the app."
 }

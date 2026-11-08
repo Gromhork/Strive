@@ -33,6 +33,25 @@ class Repository {
   Stream<UserProfile?> profile() => _user.snapshots().map((d) => d.exists ? UserProfile.fromMap(d.data()!) : null);
   void saveProfile(UserProfile p) => _fire(_user.set(p.toMap(), SetOptions(merge: true)));
 
+  // ── Google Calendar: id of the "Strive" calendar per Google account (survives reinstalls,
+  // shared by all devices so no duplicate calendars are created).
+  Future<String?> gcalCalendarId(String account) async {
+    try {
+      final d = await _user.get();
+      final m = d.data()?['gcalCalendars'];
+      return m is Map ? m[account] as String? : null;
+    } catch (e) {
+      debugPrint('gcal id lookup failed: $e');
+      return null;
+    }
+  }
+
+  void saveGcalCalendarId(String account, String? id) => _fire(
+    _user.set({
+      'gcalCalendars': {account: id ?? FieldValue.delete()},
+    }, SetOptions(merge: true)),
+  );
+
   // ── Sessions
   Stream<List<Session>> sessions() =>
       _sessions.orderBy('start', descending: true).snapshots().map((q) => q.docs.map(Session.fromDoc).toList());
