@@ -616,7 +616,14 @@ class WorkoutTemplate {
     if (targetMin != null) return targetMin!;
     if (sport != Sport.gym) {
       if (steps.isEmpty) return 45;
-      final sec = steps.fold<int>(0, (a, s) => a + (s.durationSec ?? ((s.distanceM ?? 0) / 1000 * 360).round()));
+      // Typical pace per km when a step is distance-based: swim ~2:00/100 m incl. walls,
+      // ride ~30 km/h, run ~6:00/km.
+      final perKm = switch (sport) {
+        Sport.swim => 1250,
+        Sport.ride => 120,
+        _ => 360,
+      };
+      final sec = steps.fold<int>(0, (a, s) => a + (s.durationSec ?? ((s.distanceM ?? 0) / 1000 * perKm).round()));
       return (sec / 60).round().clamp(10, 400);
     }
     return estimateGymMinutes(exercises);

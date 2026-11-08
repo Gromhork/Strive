@@ -295,7 +295,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        FilledButton(onPressed: chosen.isEmpty ? null : () => Navigator.pop(c, true), child: Text(l.addN(chosen.length))),
+                        FilledButton(onPressed: chosen.isEmpty ? null : () => Navigator.pop(c, true), child: Text(l.addN(chosen.fold<int>(0, (n, f) => n + byFolder[f]!.length)))),
                       ],
                     ),
                   ),
