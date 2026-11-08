@@ -108,6 +108,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final repo = ref.read(repoProvider)!;
     final l = context.l10n;
     final de = context.localeName.startsWith('de');
+    // Sports that are no longer part of the focus (e.g. after switching from
+    // triathlon to hybrid) are removed from the week plan.
+    final sports = _sports;
+    a = a.merge({
+      'dayPlan': {
+        for (final e in a.dayPlan.entries) e.key: e.value.where(sports.contains).toList(),
+      },
+    });
     var days = p.trainingDays;
     if (_advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) {
       days = (a.dayPlan.entries.where((e) => e.value.isNotEmpty).map((e) => e.key).toList()..sort());
@@ -715,7 +723,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Widget _weekPlan(AppLocalizations l) {
     final sports = _sports.toList()..sort((x, y) => x.index.compareTo(y.index));
     final plan = {
-      for (final e in a.dayPlan.entries) e.key: [...e.value],
+      for (final e in a.dayPlan.entries) e.key: e.value.where(_sports.contains).toList(),
     };
     final perSport = {for (final s in sports) s: plan.values.where((v) => v.contains(s)).length};
     final total = plan.values.fold<int>(0, (n, v) => n + v.length);
@@ -1086,7 +1094,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     if (a.equipment != 'gym') {
       return Padding(padding: const EdgeInsets.only(top: 16), child: Text(l.splitHomeNote, style: Theme.of(context).textTheme.bodySmall));
     }
-    String freq(String s) => l.splitFreq(Units.num(splitFrequency(s, days)));
+    String freq(String s) => l.splitFreq(NumberFormat('0.#', context.localeName).format(splitFrequency(s, days)));
     Widget card(String key, IconData icon, String sub) => _choiceCard(
       selected: a.gymSplit == key,
       title: key == 'auto' ? l.splitAuto : _splitName(l, key),

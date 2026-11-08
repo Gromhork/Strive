@@ -126,22 +126,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
     final ex = widget.existing;
     final est = _structured ? _estimate(profile) : null;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(ex == null ? l.planWorkout : l.editWorkout),
-        actions: [
-          if (ex != null)
-            IconButton(
-              tooltip: l.delete,
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () async {
-                if (!await confirm(context, l.delete, body: ex.title, ok: l.delete, danger: true)) return;
-                ref.read(repoProvider)!.deletePlan(ex.id);
-                if (context.mounted) Navigator.pop(context);
-              },
-            ),
-          TextButton(onPressed: _save, child: Text(l.save)),
-        ],
-      ),
+      appBar: AppBar(title: Text(ex == null ? l.planWorkout : l.editWorkout), actions: [TextButton(onPressed: _save, child: Text(l.save))]),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
@@ -284,6 +269,17 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
               child: Text(l.markSkipped),
             ),
           ],
+          if (ex != null)
+            TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+              icon: const Icon(Icons.delete_outline),
+              label: Text(l.delete),
+              onPressed: () async {
+                if (!await confirm(context, l.delete, body: ex.title, ok: l.delete, danger: true)) return;
+                ref.read(repoProvider)!.deletePlan(ex.id);
+                if (context.mounted) Navigator.pop(context);
+              },
+            ),
         ],
       ),
     );

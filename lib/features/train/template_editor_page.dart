@@ -104,19 +104,28 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
         appBar: AppBar(
           title: Text(_isNew ? l.newProgram : l.editProgram),
           actions: [
-            if (!_isNew) IconButton(tooltip: l.share, icon: const Icon(Icons.share_outlined), onPressed: _share),
+            TextButton(onPressed: _save, child: Text(l.save)),
             if (!_isNew)
-              IconButton(
-                tooltip: l.delete,
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () async {
+              PopupMenuButton<String>(
+                onSelected: (v) async {
+                  if (v == 'share') return _share();
                   if (await confirm(context, l.deleteProgram, ok: l.delete, danger: true)) {
                     ref.read(repoProvider)!.deleteTemplate(widget.template!.id);
                     if (context.mounted) Navigator.pop(context);
                   }
                 },
+                itemBuilder:
+                    (_) => [
+                      PopupMenuItem(value: 'share', child: ListTile(leading: const Icon(Icons.share_outlined), title: Text(l.share))),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: ListTile(
+                          leading: const Icon(Icons.delete_outline, color: AppColors.danger),
+                          title: Text(l.delete, style: const TextStyle(color: AppColors.danger)),
+                        ),
+                      ),
+                    ],
               ),
-            TextButton(onPressed: _save, child: Text(l.save)),
           ],
         ),
         body: ListView(

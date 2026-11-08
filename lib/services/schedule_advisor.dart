@@ -53,9 +53,19 @@ class ScheduleAdvisor {
     // Fit into the available sessions (days × sessions/day, keep rest days).
     final cap = maxDays * a.sessionsPerDay;
     var total = res.values.fold<int>(0, (x, y) => x + y);
+    final main = _mainSport([Sport.run, Sport.ride, Sport.swim].where(res.containsKey).toList()..add(Sport.run));
     while (total > cap) {
-      // Trim the sport with the most sessions (gym last for endurance focus).
-      final s = res.entries.reduce((x, y) => x.value > y.value || (x.value == y.value && y.key == Sport.gym) ? x : y).key;
+      // Endurance focus: strength goes down to 1× first; then the sport with the most
+      // sessions (on ties not the main sport).
+      Sport s;
+      if (multi > 0 && (res[Sport.gym] ?? 0) > 1) {
+        s = Sport.gym;
+      } else {
+        s = res.entries.reduce((x, y) {
+          if (x.value != y.value) return x.value > y.value ? x : y;
+          return x.key == main ? y : x;
+        }).key;
+      }
       res[s] = res[s]! - 1;
       total--;
     }
@@ -70,18 +80,18 @@ class ScheduleAdvisor {
   /// same-sport sessions on non-consecutive days where possible.
   Map<int, List<Sport>> autoSchedule(Map<Sport, int> freq) {
     final perDay = a.sessionsPerDay;
-    final total = freq.values.fold<int>(0, (x, y) => x + y);
-    final nDays = min(maxDays, max((total / perDay).ceil(), min(total, maxDays)));
-    final days = _spreadDays(nDays);
+    const days = [1, 2, 3, 4, 5, 6, 7];
     final plan = {for (final d in days) d: <Sport>[]};
 
-    final endurance =
-        [Sport.run, Sport.ride, Sport.swim].where((s) => (freq[s] ?? 0) > 0).toList()..sort((x, y) => freq[y]!.compareTo(freq[x]!));
+    final endurance = [Sport.run, Sport.ride, Sport.swim].where((s) => (freq[s] ?? 0) > 0).toList()
+      ..sort((x, y) => freq[y]!.compareTo(freq[x]!));
     final main = endurance.isEmpty ? null : _mainSport(endurance);
-    final longDay = profile.longDay != null && days.contains(profile.longDay) ? profile.longDay! : (days.contains(6) ? 6 : days.last);
+    final longDay = profile.longDay ?? 6;
 
-    bool canAdd(int d, Sport s) => plan[d]!.length < perDay && !plan[d]!.contains(s);
-    int load(int d) => plan[d]!.length;
+    int usedDays() => plan.values.where((v) => v.isNotEmpty).length;
+    // A session may go to a day with capacity; a new day only while rest days remain.
+    bool canAdd(int d, Sport s) =>
+        plan[d]!.length < perDay && !plan[d]!.contains(s) && (plan[d]!.isNotEmpty || usedDays() < maxDays);
 
     void place(Sport s, int n, {int? first}) {
       final placed = <int>[];
@@ -90,14 +100,15 @@ class ScheduleAdvisor {
         placed.add(first);
       }
       while (placed.length < n) {
-        // Best day: free capacity, far from other sessions of the same sport, low load.
+        // Best day: far from other sessions of the same sport, low load, recovery rules.
         int? best;
-        double bestScore = -1e9;
+        var bestScore = -1e9;
         for (final d in days) {
           if (!canAdd(d, s)) continue;
           final gap = placed.isEmpty ? 3 : placed.map((p) => _circDist(p, d)).reduce(min);
-          var score = gap * 10.0 - load(d) * 6;
-          if (s == Sport.gym && d == longDay - 1) score -= 25; // C3: no legs before the long session
+          final spread = placed.fold<int>(0, (a, p) => a + _circDist(p, d));
+          var score = gap * 10.0 + spread * 0.5 - plan[d]!.length * 6;
+          if (s == Sport.gym && d == (longDay + 5) % 7 + 1) score -= 25; // C3: no legs the day before the long session
           if (s == Sport.gym && d == longDay) score -= 8;
           if (s != Sport.gym && s != main && d == longDay) score -= 12;
           if (score > bestScore) {
@@ -117,7 +128,6 @@ class ScheduleAdvisor {
     }
     if ((freq[Sport.gym] ?? 0) > 0) place(Sport.gym, freq[Sport.gym]!);
     plan.removeWhere((_, v) => v.isEmpty);
-    // Keep a stable order inside a day: endurance first, gym last.
     for (final v in plan.values) {
       v.sort((x, y) => (x == Sport.gym ? 1 : 0).compareTo(y == Sport.gym ? 1 : 0));
     }
@@ -136,17 +146,6 @@ class ScheduleAdvisor {
     final d = (a - b).abs();
     return min(d, 7 - d);
   }
-
-  /// Picks [n] weekdays spread over the week (rest days distributed, weekend kept).
-  static List<int> _spreadDays(int n) => switch (n) {
-    <= 1 => [6],
-    2 => [3, 6],
-    3 => [2, 4, 6],
-    4 => [2, 4, 6, 7],
-    5 => [1, 2, 4, 6, 7],
-    6 => [1, 2, 3, 5, 6, 7],
-    _ => [1, 2, 3, 4, 5, 6, 7],
-  };
 
   /// Recommended split for the gym days in [plan].
   String splitFor(Map<int, List<Sport>> plan) {

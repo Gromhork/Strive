@@ -142,9 +142,11 @@ class _SportRow extends StatelessWidget {
                   Text(
                     [
                       humanDuration(sec),
-                      if (sport != Sport.gym && km > 0) '${Units.num(units.distOut(km), 1)} ${units.distUnit}',
-                      if (sport != Sport.gym && planKm > 0) '/ ${Units.num(units.distOut(planKm * 1000), 1)}',
-                    ].join(' '),
+                      if (sport != Sport.gym && (km > 0 || planKm > 0))
+                        planKm > 0
+                            ? '${Units.num(units.distOut(km), 1)} / ${Units.num(units.distOut(planKm * 1000), 1)} ${units.distUnit}'
+                            : '${Units.num(units.distOut(km), 1)} ${units.distUnit}',
+                    ].join(' · '),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
