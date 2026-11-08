@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,17 +12,18 @@ import '../../services/coach_service.dart';
 import '../../services/plan_generator.dart';
 import '../../widgets/common.dart';
 import '../session/start_helpers.dart';
+import '../session/step_editor.dart';
+import '../../services/zones.dart';
 import '../../widgets/segments.dart';
 import '../../core/theme.dart';
 import '../../data/default_programs.dart';
 import '../onboarding/onboarding_page.dart';
 
-/// Add or edit a planned workout.
+/// Add or edit a planned workout (full-screen editor with phases for endurance).
 Future<void> showPlanEditor(BuildContext context, WidgetRef ref, {PlannedWorkout? existing, DateTime? date}) {
-  return showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    builder: (_) => _PlanEditor(existing: existing, date: date ?? DateTime.now()),
+  return Navigator.push(
+    context,
+    MaterialPageRoute(fullscreenDialog: existing == null, builder: (_) => _PlanEditor(existing: existing, date: date ?? DateTime.now())),
   );
 }
 
@@ -42,175 +45,246 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
   late int _min = widget.existing?.durationMin ?? 45;
   late String _intensity = widget.existing?.intensity ?? 'easy';
   late String? _templateId = widget.existing?.templateId;
+  late List<WorkoutStep> _steps = [...?widget.existing?.steps];
+  late bool _isKey = widget.existing?.isKey ?? false;
+  int _editorGen = 0; // forces a fresh StepEditor when steps are replaced from outside
+
+  bool get _structured => _sport != Sport.gym && _steps.isNotEmpty;
+
+  /// Duration / distance estimate of the structured workout.
+  (int, double?) _estimate(UserProfile p) {
+    var sec = 0;
+    var m = 0.0;
+    final pz = PaceZones(Vdot.of(p.athlete) ?? Vdot.defaultFor(p.level));
+    for (final s in _steps) {
+      if (s.durationSec != null) {
+        sec += s.durationSec!;
+        if (_sport == Sport.run && s.zone != 'walk') m += s.durationSec! / ((s.paceMin ?? pz.easySlow) + (s.paceMax ?? pz.easySlow)) * 2000;
+        if (_sport == Sport.ride) m += s.durationSec! / 3600 * (s.zone == 'Z1' ? 20000 : 27000);
+      } else if (s.distanceM != null) {
+        m += s.distanceM!;
+        sec +=
+            _sport == Sport.swim
+                ? (s.distanceM! / 100 * (s.paceMax ?? 130)).round()
+                : (s.distanceM! / 1000 * ((s.paceMin ?? pz.easySlow) + (s.paceMax ?? pz.easySlow)) / 2).round();
+      }
+    }
+    return (max(5, (sec / 60).round()), m <= 0 ? null : double.parse((m / 1000).toStringAsFixed(1)));
+  }
 
   void _save() {
+    _persist();
+    Navigator.pop(context);
+  }
+
+  PlannedWorkout _persist() {
     final repo = ref.read(repoProvider)!;
     final l = context.l10n;
-    repo.savePlan(
-      PlannedWorkout(
-        id: widget.existing?.id ?? repo.newId(),
-        date: _date,
-        sport: _sport,
-        title: _title.text.trim().isEmpty ? _sport.label(l) : _title.text.trim(),
-        description: _desc.text.trim(),
-        durationMin: _min,
-        distanceKm: parseNum(_km.text),
-        intensity: _intensity,
-        templateId: _templateId,
-        status: widget.existing?.status ?? 'planned',
-        sessionId: widget.existing?.sessionId,
-        // Keep the generated structure unless the sport changed.
-        steps: widget.existing?.sport == _sport ? widget.existing!.steps : const [],
-        phase: widget.existing?.phase,
-        isKey: widget.existing?.isKey ?? false,
-      ),
+    final p = ref.read(profileOrDefaultProvider);
+    final est = _structured ? _estimate(p) : null;
+    final plan = PlannedWorkout(
+      id: widget.existing?.id ?? repo.newId(),
+      date: _date,
+      sport: _sport,
+      title: _title.text.trim().isEmpty ? _sport.label(l) : _title.text.trim(),
+      description: _desc.text.trim(),
+      durationMin: est?.$1 ?? _min,
+      distanceKm: est != null ? est.$2 : parseNum(_km.text),
+      intensity: _intensity,
+      templateId: _templateId,
+      status: widget.existing?.status ?? 'planned',
+      sessionId: widget.existing?.sessionId,
+      steps: _sport == Sport.gym ? const [] : _steps,
+      phase: widget.existing?.phase,
+      isKey: _isKey,
     );
-    Navigator.pop(context);
+    repo.savePlan(plan);
+    return plan;
+  }
+
+  void _applyTemplate(WorkoutTemplate t) {
+    final p = ref.read(profileOrDefaultProvider);
+    setState(() {
+      _templateId = t.id;
+      _title.text = t.name;
+      _min = t.estimatedMinutes;
+      _intensity = t.intensity;
+      if (t.description.isNotEmpty) _desc.text = t.description;
+      if (t.targetKm != null) _km.text = Units.num(t.targetKm!);
+      if (t.steps.isNotEmpty) {
+        _steps = [for (final s in t.steps) withTargets(s, t.sport, p)];
+        _editorGen++;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final templates = ref.watch(templateListProvider).where((t) => t.sport == _sport).toList();
+    final profile = ref.watch(profileOrDefaultProvider);
     final ex = widget.existing;
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      ex == null ? l.planWorkout : l.editWorkout,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  if (ex != null)
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () {
-                        ref.read(repoProvider)!.deletePlan(ex.id);
-                        Navigator.pop(context);
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Segments<Sport>(
-                segments: [for (final s in Sport.values) Seg(s, icon: s.icon)],
-                value: _sport,
-                onChanged:
-                    (v) => setState(() {
-                      _sport = v;
-                      _templateId = null;
-                    }),
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.event),
-                title: Text(DateFormat.yMMMMEEEEd(context.localeName).format(_date)),
-                onTap: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: _date,
-                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                    lastDate: DateTime.now().add(const Duration(days: 730)),
-                  );
-                  if (d != null) setState(() => _date = d);
-                },
-              ),
-              if (templates.isNotEmpty)
-                DropdownButtonFormField<String?>(
-                  value: templates.any((t) => t.id == _templateId) ? _templateId : null,
-                  decoration: InputDecoration(labelText: l.program),
-                  items: [
-                    DropdownMenuItem(value: null, child: Text(l.none)),
-                    for (final t in templates) DropdownMenuItem(value: t.id, child: Text(t.name)),
-                  ],
-                  onChanged:
-                      (v) => setState(() {
-                        _templateId = v;
-                        final t = templates.where((t) => t.id == v).firstOrNull;
-                        if (t != null) {
-                          _title.text = t.name;
-                          _min = t.estimatedMinutes;
-                          _intensity = t.intensity;
-                          if (t.description.isNotEmpty) _desc.text = t.description;
-                          if (t.targetKm != null) _km.text = Units.num(t.targetKm!);
-                        }
-                      }),
-                ),
-              const SizedBox(height: 12),
-              TextField(controller: _title, decoration: InputDecoration(labelText: l.title)),
-              const SizedBox(height: 12),
-              TextField(controller: _desc, minLines: 1, maxLines: 4, decoration: InputDecoration(labelText: l.description)),
-              const SizedBox(height: 8),
-              LabeledSlider(
-                label: l.duration,
-                value: _min.toDouble(),
-                min: 10,
-                max: 300,
-                divisions: 58,
-                format: (v) => humanDuration(v.round() * 60),
-                onChanged: (v) => setState(() => _min = v.round()),
-              ),
-              if (_sport != Sport.gym) ...[
-                TextField(
-                  controller: _km,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(labelText: l.targetDistance, suffixText: 'km'),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    for (final i in intensities)
-                      ChoiceChip(
-                        label: Text(intensityLabel(l, i)),
-                        selected: _intensity == i,
-                        onSelected: (_) => setState(() => _intensity = i),
-                      ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  if (ex != null && !ex.isDone) ...[
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: Text(l.start),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          startPlanned(context, ref, ex);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  Expanded(child: FilledButton(onPressed: _save, child: Text(l.save))),
-                ],
-              ),
-              if (ex != null && ex.status == 'planned') ...[
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () {
-                    ref.read(repoProvider)!.updatePlan(ex.id, {'status': 'skipped'});
-                    Navigator.pop(context);
-                  },
-                  child: Text(l.markSkipped),
-                ),
-              ],
-            ],
+    final est = _structured ? _estimate(profile) : null;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(ex == null ? l.planWorkout : l.editWorkout),
+        actions: [
+          if (ex != null)
+            IconButton(
+              tooltip: l.delete,
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                if (!await confirm(context, l.delete, body: ex.title, ok: l.delete, danger: true)) return;
+                ref.read(repoProvider)!.deletePlan(ex.id);
+                if (context.mounted) Navigator.pop(context);
+              },
+            ),
+          TextButton(onPressed: _save, child: Text(l.save)),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        children: [
+          Segments<Sport>(
+            segments: [for (final s in Sport.values) Seg(s, icon: s.icon, color: s.color, tooltip: s.label(l))],
+            value: _sport,
+            onChanged:
+                (v) => setState(() {
+                  if (v == _sport) return;
+                  _sport = v;
+                  _templateId = null;
+                  _steps = [];
+                  _editorGen++;
+                }),
           ),
-        ),
+          const SizedBox(height: 8),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.event),
+            title: Text(DateFormat.yMMMMEEEEd(context.localeName).format(_date)),
+            trailing: const Icon(Icons.edit_calendar_outlined, size: 20),
+            onTap: () async {
+              final d = await showDatePicker(
+                context: context,
+                initialDate: _date,
+                firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                lastDate: DateTime.now().add(const Duration(days: 730)),
+              );
+              if (d != null) setState(() => _date = d);
+            },
+          ),
+          if (templates.isNotEmpty) ...[
+            DropdownButtonFormField<String?>(
+              value: templates.any((t) => t.id == _templateId) ? _templateId : null,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: l.program, prefixIcon: const Icon(Icons.folder_copy_outlined)),
+              items: [
+                DropdownMenuItem(value: null, child: Text(l.none)),
+                for (final t in templates) DropdownMenuItem(value: t.id, child: Text(t.name, overflow: TextOverflow.ellipsis)),
+              ],
+              onChanged: (v) {
+                final t = templates.where((t) => t.id == v).firstOrNull;
+                if (t == null) {
+                  setState(() => _templateId = null);
+                } else {
+                  _applyTemplate(t);
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+          TextField(controller: _title, decoration: InputDecoration(labelText: l.title)),
+          const SizedBox(height: 12),
+          TextField(controller: _desc, minLines: 1, maxLines: 4, decoration: InputDecoration(labelText: l.description)),
+          if (_sport != Sport.gym) ...[
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.star_outline_rounded),
+              title: Text(l.keySession),
+              subtitle: Text(l.keySessionSub),
+              value: _isKey,
+              onChanged: (v) => setState(() => _isKey = v),
+            ),
+            const SizedBox(height: 4),
+            Text(l.workoutPhases, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            Text(l.structuredWorkoutSub, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 10),
+            StepEditor(
+              key: ValueKey('$_sport-$_editorGen'),
+              steps: _steps,
+              sport: _sport,
+              profile: profile,
+              onChanged: (s) => setState(() => _steps = s),
+            ),
+            if (est != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  '${l.duration}: ~${humanDuration(est.$1 * 60)}${est.$2 == null ? '' : ' · ${Units.num(est.$2!)} km'}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+          ],
+          if (!_structured) ...[
+            const SizedBox(height: 8),
+            LabeledSlider(
+              label: l.duration,
+              value: _min.toDouble(),
+              min: 10,
+              max: 300,
+              divisions: 58,
+              format: (v) => humanDuration(v.round() * 60),
+              onChanged: (v) => setState(() => _min = v.round()),
+            ),
+            if (_sport != Sport.gym)
+              TextField(
+                controller: _km,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(labelText: l.targetDistance, suffixText: 'km'),
+              ),
+          ],
+          if (_sport != Sport.gym) ...[
+            const SizedBox(height: 16),
+            Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final i in intensities)
+                  ChoiceChip(
+                    label: Text(intensityLabel(l, i)),
+                    selected: _intensity == i,
+                    onSelected: (_) => setState(() => _intensity = i),
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 24),
+          if (ex != null && !ex.isDone)
+            FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: _sport.color, foregroundColor: Colors.black),
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(l.start),
+              onPressed: () async {
+                final route = ModalRoute.of(context);
+                await startPlanned(context, ref, _persist());
+                // The session runs on top now – drop the editor underneath it.
+                if (route != null && route.isActive && !route.isCurrent && context.mounted) Navigator.removeRoute(context, route);
+              },
+            ),
+          if (ex != null && ex.status == 'planned') ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () {
+                ref.read(repoProvider)!.updatePlan(ex.id, {'status': 'skipped'});
+                Navigator.pop(context);
+              },
+              child: Text(l.markSkipped),
+            ),
+          ],
+        ],
       ),
     );
   }

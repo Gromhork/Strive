@@ -5398,6 +5398,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your lengths appear here after the first tap.'**
   String get noLengthsYet;
+
+  /// No description provided for @keySessionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Important session of the week – Strive keeps hard days apart.'**
+  String get keySessionSub;
+
+  /// No description provided for @workoutPhases.
+  ///
+  /// In en, this message translates to:
+  /// **'Phases'**
+  String get workoutPhases;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

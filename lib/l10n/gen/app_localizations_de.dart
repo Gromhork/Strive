@@ -2819,4 +2819,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noLengthsYet => 'Deine Bahnen erscheinen hier nach dem ersten Tippen.';
+
+  @override
+  String get keySessionSub => 'Wichtige Einheit der Woche – Strive hält harte Tage auseinander.';
+
+  @override
+  String get workoutPhases => 'Phasen';
 }

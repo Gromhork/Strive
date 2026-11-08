@@ -883,5 +883,7 @@
   "workoutLeft": "Noch gesamt",
   "section": "Abschnitt",
   "poolTapHint": "Tippe bei jedem Anschlag auf BAHN.",
-  "noLengthsYet": "Deine Bahnen erscheinen hier nach dem ersten Tippen."
+  "noLengthsYet": "Deine Bahnen erscheinen hier nach dem ersten Tippen.",
+  "keySessionSub": "Wichtige Einheit der Woche – Strive hält harte Tage auseinander.",
+  "workoutPhases": "Phasen"
 }

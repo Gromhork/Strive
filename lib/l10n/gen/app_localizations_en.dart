@@ -2819,4 +2819,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noLengthsYet => 'Your lengths appear here after the first tap.';
+
+  @override
+  String get keySessionSub => 'Important session of the week – Strive keeps hard days apart.';
+
+  @override
+  String get workoutPhases => 'Phases';
 }

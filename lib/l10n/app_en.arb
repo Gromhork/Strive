@@ -1512,5 +1512,7 @@
   "workoutLeft": "Workout left",
   "section": "Section",
   "poolTapHint": "Tap LENGTH each time you touch the wall.",
-  "noLengthsYet": "Your lengths appear here after the first tap."
+  "noLengthsYet": "Your lengths appear here after the first tap.",
+  "keySessionSub": "Important session of the week – Strive keeps hard days apart.",
+  "workoutPhases": "Phases"
 }
