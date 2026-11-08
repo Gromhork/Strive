@@ -128,6 +128,8 @@ class _BodyCompositionCardState extends ConsumerState<BodyCompositionCard> {
                     ? Center(child: Text(l.notEnoughData, style: Theme.of(context).textTheme.bodySmall))
                     : LineChart(
                       LineChartData(
+                        minY: paddedRange([for (final x in pts) x.$2], minSpan: 3).$1,
+                        maxY: paddedRange([for (final x in pts) x.$2], minSpan: 3).$2,
                         gridData: const FlGridData(show: true, drawVerticalLine: false),
                         borderData: FlBorderData(show: false),
                         titlesData: FlTitlesData(
@@ -156,8 +158,9 @@ class _BodyCompositionCardState extends ConsumerState<BodyCompositionCard> {
                               for (final x in pts)
                                 FlSpot(x.$1.millisecondsSinceEpoch.toDouble(), double.parse(x.$2.toStringAsFixed(1))),
                             ],
-                            isCurved: true,
+                            isCurved: pts.length > 2,
                             preventCurveOverShooting: true,
+                            curveSmoothness: 0.2,
                             color: colors[_metric],
                             barWidth: 3,
                             belowBarData: BarAreaData(show: true, color: colors[_metric].withValues(alpha: 0.12)),

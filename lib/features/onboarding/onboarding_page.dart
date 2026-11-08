@@ -621,7 +621,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         SegmentedButton<int>(
           segments: [ButtonSegment(value: 1, label: Text(l.oncePerDay)), ButtonSegment(value: 2, label: Text(l.twicePerDay))],
           selected: {a.sessionsPerDay},
-          onSelectionChanged: (s) => _setA({'sessionsPerDay': s.first}),
+          onSelectionChanged: (s) {
+            final n = s.first;
+            // Switching back to one session per day: keep only the first sport of each day.
+            if (n == 1) {
+              for (final d in plan.keys) {
+                if (plan[d]!.length > 1) plan[d] = [plan[d]!.first];
+              }
+            }
+            _setA({'sessionsPerDay': n, 'dayPlan': plan});
+          },
         ),
         const SizedBox(height: 16),
         Row(

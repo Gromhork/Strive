@@ -36,31 +36,51 @@ class WorkoutProfileBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final secs = steps.map((s) => max(20, _approxSec(s, sport))).toList();
-    final total = secs.fold<int>(0, (a, b) => a + b);
     return SizedBox(
       height: height,
-      child: LayoutBuilder(
-        builder: (_, c) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              for (var i = 0; i < steps.length; i++)
-                Container(
-                  width: max(2.0, c.maxWidth * secs[i] / total - 1.5),
-                  height: height * _intensity(steps[i].zone),
-                  margin: const EdgeInsets.only(right: 1.5),
-                  decoration: BoxDecoration(
-                    color: zoneColor(steps[i].zone).withValues(alpha: current == null || current == i ? 1 : (i < current! ? 0.35 : 0.7)),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-                    border: current == i ? Border.all(color: Colors.white, width: 1.5) : null,
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
+      width: double.infinity,
+      child: CustomPaint(painter: _ProfilePainter(steps, secs, current)),
     );
   }
+}
+
+/// Paints the bars proportionally to their duration. Painting (instead of a Row of
+/// fixed-width boxes) can never overflow, however many short steps a workout has.
+class _ProfilePainter extends CustomPainter {
+  _ProfilePainter(this.steps, this.secs, this.current);
+  final List<WorkoutStep> steps;
+  final List<int> secs;
+  final int? current;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (steps.isEmpty) return;
+    final total = secs.fold<int>(0, (a, b) => a + b);
+    final gap = steps.length > 40 ? 0.75 : 1.5;
+    final usable = size.width - gap * (steps.length - 1);
+    var x = 0.0;
+    for (var i = 0; i < steps.length; i++) {
+      final w = max(0.5, usable * secs[i] / total);
+      final h = size.height * _intensity(steps[i].zone);
+      final alpha = current == null || current == i ? 1.0 : (i < current! ? 0.35 : 0.7);
+      final r = RRect.fromRectAndCorners(
+        Rect.fromLTWH(x, size.height - h, w, h),
+        topLeft: Radius.circular(min(3, w / 2)),
+        topRight: Radius.circular(min(3, w / 2)),
+      );
+      canvas.drawRRect(r, Paint()..color = zoneColor(steps[i].zone).withValues(alpha: alpha));
+      if (current == i) {
+        canvas.drawRRect(r, Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5);
+      }
+      x += w + gap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ProfilePainter old) => old.steps != steps || old.current != current;
 }
 
 /// A group of identical repeats (e.g. 6 × [800 m I + 2:00 jog]) or a single step.
