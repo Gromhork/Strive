@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DEBUG ONLY: trusts the local antivirus TLS-inspection CA (Norton Web/Mail Shield)
+     so the emulator can reach Firebase from this dev machine. Not included in release builds. -->
+<network-security-config>
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/local_tls_proxy_ca" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

@@ -1,0 +1,1141 @@
+{
+  "@@locale": "en",
+  "tagline": "Gym · Run · Ride · Swim — all in one place.",
+  "sportGym": "Gym",
+  "sportRun": "Running",
+  "sportRide": "Cycling",
+  "sportSwim": "Swimming",
+  "focusHybrid": "Hybrid",
+  "focusDuathlon": "Duathlon",
+  "focusTriathlon": "Triathlon",
+  "intensityEasy": "Easy",
+  "intensityModerate": "Moderate",
+  "intensityTempo": "Tempo",
+  "intensityIntervals": "Intervals",
+  "intensityLong": "Long",
+  "intensityTechnique": "Technique",
+  "email": "Email",
+  "password": "Password",
+  "login": "Log in",
+  "register": "Create account",
+  "haveAccount": "Already have an account? Log in",
+  "noAccount": "No account yet? Register",
+  "or": "or",
+  "continueAsGuest": "Continue as guest",
+  "forgotPassword": "Forgot password?",
+  "authInvalidEmail": "Invalid email address.",
+  "authWrongCredentials": "Email or password is wrong.",
+  "authEmailInUse": "This email is already registered.",
+  "authWeakPassword": "Password must have at least 6 characters.",
+  "authNetwork": "No internet connection.",
+  "authNotEnabled": "This sign-in method is not enabled in Firebase yet.",
+  "authError": "Sign-in failed",
+  "authEnterEmail": "Please enter your email first.",
+  "authResetSent": "Reset link sent – check your inbox.",
+  "onboardingTitle": "Set up Strive",
+  "editProfile": "Edit profile",
+  "next": "Next",
+  "letsGo": "Let's go!",
+  "welcomeTitle": "Welcome to Strive",
+  "welcomeSub": "A few questions so your coach can build the right plan for you.",
+  "yourName": "Your name",
+  "aboutYou": "About you",
+  "aboutYouSub": "Used for training load, heart-rate zones and body stats.",
+  "gender": "Gender",
+  "male": "Male",
+  "female": "Female",
+  "diverse": "Diverse",
+  "age": "Age",
+  "height": "Height",
+  "weight": "Weight",
+  "bodyCompositionOptional": "Body composition (optional)",
+  "bodyFat": "Body fat",
+  "muscleMass": "Muscle mass",
+  "muscle": "Muscle",
+  "fitnessLevel": "Fitness level",
+  "fitnessLevelSub": "Be honest – the plan adapts as you improve.",
+  "beginner": "Beginner",
+  "beginnerDesc": "New or returning after a long break",
+  "intermediate": "Intermediate",
+  "intermediateDesc": "Training regularly for 6+ months",
+  "advanced": "Advanced",
+  "advancedDesc": "Years of structured training",
+  "experienceWith": "Experience with",
+  "focusTitle": "Your focus",
+  "focusSub": "What do you mainly train for?",
+  "yourGoals": "Your goals",
+  "goalStrength": "Get stronger",
+  "goalMuscle": "Build muscle",
+  "goalFatLoss": "Lose fat",
+  "goalEndurance": "Endurance",
+  "goalHealth": "Health",
+  "goalRace": "Race / event",
+  "scheduleTitle": "Training days",
+  "scheduleSub": "On which days do you want to train?",
+  "daysPerWeek": "{count} days per week",
+  "@daysPerWeek": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "longSessionDay": "Long session day",
+  "automatic": "Automatic",
+  "units": "Units",
+  "metric": "Metric (kg, km)",
+  "imperial": "Imperial (lb, mi)",
+  "eventTitle": "Training for an event?",
+  "eventSub": "Add a race (marathon, triathlon …) and get a countdown. Optional.",
+  "eventName": "Event name",
+  "eventDate": "Event date",
+  "eventDistance": "Distance",
+  "halfMarathon": "Half marathon",
+  "marathon": "Marathon",
+  "searchMarathonDe": "Find events on marathon.de",
+  "generatePlanNow": "Create my training plan",
+  "generatePlanNowSub": "Built from your answers – you can change everything later.",
+  "navHome": "Home",
+  "navTrain": "Train",
+  "navCalendar": "Calendar",
+  "navStats": "Stats",
+  "navCoach": "Coach",
+  "allSports": "All sports",
+  "weekStreakTooltip": "Weeks in a row with your training goal reached",
+  "goodMorning": "Good morning",
+  "goodAfternoon": "Good afternoon",
+  "goodEvening": "Good evening",
+  "todaysWorkout": "Today's workout",
+  "restDay": "Rest day",
+  "restDaySub": "Recovery is training too. Feel like moving anyway?",
+  "doneToday": "{count} done today 💪",
+  "@doneToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "train": "Train",
+  "start": "Start",
+  "edit": "Edit",
+  "add": "Add",
+  "comingUp": "Coming up",
+  "toCalendar": "Calendar",
+  "rest": "Rest",
+  "weather": "Weather",
+  "feelsLike": "feels",
+  "retry": "Retry",
+  "weatherNoLocation": "Allow location for local weather",
+  "weatherError": "Weather unavailable",
+  "thisWeek": "This week",
+  "trainedThisWeek": "trained this week",
+  "readyBuilding": "Building your baseline",
+  "readyBuildingText": "After about 3 weeks of training, Strive can judge your load and recovery.",
+  "readyFresh": "Fresh",
+  "readyFreshText": "Your load is low – a great time for a hard session or to increase volume.",
+  "readyOptimal": "Optimal load",
+  "readyOptimalText": "Your training load is in the sweet spot. Keep it up!",
+  "readyHigh": "High load",
+  "readyHighText": "Load is rising quickly. Prioritise sleep and keep the next session easy.",
+  "readyOver": "Recovery recommended",
+  "readyOverText": "Injury risk is elevated. Take a rest day or an easy alternative (walk, mobility).",
+  "weightLogHint": "Log your weight with + / – to see your trend",
+  "goals": "Goals",
+  "noGoalsYet": "No goals yet – set one to stay motivated.",
+  "levelN": "Level {level}",
+  "@levelN": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "xpToNext": "{xp} XP to next level",
+  "@xpToNext": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "freeWorkout": "Free workout",
+  "workoutRunning": "Workout in progress",
+  "workoutRunningBody": "Another workout is still running. Discard it and start a new one?",
+  "discardAndStart": "Discard & start",
+  "startTraining": "Start training",
+  "logManually": "Log manually",
+  "openWater": "Open water",
+  "outdoor": "Outdoor (GPS)",
+  "pool": "Pool",
+  "indoor": "Indoor",
+  "poolLength": "Pool length",
+  "poolHint": "Tap \"Lap\" after every length. Distance is calculated automatically.",
+  "indoorHint": "Treadmill / trainer: enter the distance when you finish.",
+  "gpsHint": "GPS records your route, distance and pace – also with the screen off.",
+  "gpsServiceOff": "Please turn on location services.",
+  "gpsPermissionDenied": "Location permission is required for GPS tracking.",
+  "noActiveWorkout": "No active workout.",
+  "noSetsDone": "No sets completed",
+  "noSetsDoneBody": "Discard this workout?",
+  "discard": "Discard",
+  "finishWorkout": "Finish workout?",
+  "finishWorkoutBody": "Your workout will be saved after the summary.",
+  "finish": "Finish",
+  "minimize": "Minimize",
+  "rename": "Rename",
+  "discardWorkout": "Discard workout",
+  "addExercise": "Add exercise",
+  "duration": "Duration",
+  "volume": "Volume",
+  "sets": "Sets",
+  "restTimeSeconds": "Rest time (seconds)",
+  "moveUp": "Move up",
+  "moveDown": "Move down",
+  "remove": "Remove",
+  "setShort": "Set",
+  "previous": "Previous",
+  "reps": "Reps",
+  "addSet": "Add set",
+  "skip": "Skip",
+  "enterDistance": "Distance covered",
+  "distance": "Distance",
+  "avgPace": "Avg. pace",
+  "avgSpeed": "Avg. speed",
+  "laps": "Laps",
+  "lap": "Lap",
+  "elevation": "Elevation",
+  "lastSplit": "Last km",
+  "undoLap": "Undo last lap",
+  "pauseToFinish": "Pause to finish",
+  "gpsError": "GPS error",
+  "gpsSearching": "Searching GPS …",
+  "summary": "Summary",
+  "greatJob": "Great job! 🎉",
+  "exercises": "Exercises",
+  "coachBattleWon": "Coach battle won! You beat the prediction based on your last session.",
+  "coachBattleLost": "Coach battle: the prediction was a bit higher this time – next time!",
+  "newPr": "New personal record!",
+  "howHard": "How hard was it?",
+  "notesHint": "Notes (how did it feel? sleep, nutrition …)",
+  "saveWorkout": "Save workout",
+  "discardSummaryBody": "This workout will not be saved.",
+  "rpeVeryEasy": "very easy",
+  "rpeEasy": "easy",
+  "rpeModerate": "moderate",
+  "rpeHard": "hard",
+  "rpeMax": "maximal",
+  "badgeFirst": "First workout",
+  "badgeTen": "10 workouts",
+  "badgeFifty": "50 workouts",
+  "badgeHundred": "100 workouts",
+  "badgeTon": "10 t in one session",
+  "badge5k": "5 km run",
+  "badge10k": "10 km run",
+  "badgeHalf": "Half marathon",
+  "badgeMarathon": "Marathon",
+  "badgeCentury": "100 km ride",
+  "badgeSwim1k": "1 km swim",
+  "badgeSwim3k": "3 km swim",
+  "badgeStreak4": "4-week streak",
+  "badgeStreak12": "12-week streak",
+  "badgeEarly": "Early bird",
+  "badgeAllround": "All-rounder",
+  "title": "Title",
+  "totalVolume": "Total volume",
+  "saved": "Saved",
+  "save": "Save",
+  "cancel": "Cancel",
+  "ok": "OK",
+  "delete": "Delete",
+  "share": "Share",
+  "newProgram": "New program",
+  "editProgram": "Edit program",
+  "quickStart": "Quick start",
+  "programs": "Programs",
+  "importCode": "Import code",
+  "noPrograms": "No programs for this sport yet.",
+  "noFolder": "Other",
+  "codeNotFound": "Code not found.",
+  "imported": "\"{name}\" imported",
+  "@imported": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineAction": "This needs an internet connection.",
+  "emptyWorkout": "Empty workout",
+  "recordGps": "Record activity",
+  "exerciseLibrary": "Exercise library",
+  "addN": "Add {count}",
+  "@addN": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchExercises": "Search exercises (e.g. bench press, kniebeuge)",
+  "bodyPart": "Body part",
+  "equipment": "Equipment",
+  "nResults": "{count} exercises",
+  "@nResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "all": "All",
+  "secondaryMuscles": "Secondary",
+  "watchVideo": "Watch video tutorial",
+  "yourRecords": "Your records",
+  "maxWeight": "Max weight",
+  "sessions": "Sessions",
+  "strengthProgress": "Strength progress (e1RM)",
+  "instructions": "Instructions",
+  "instructionsEnglishNote": "Instructions are currently available in English.",
+  "codeCopied": "Code {code} copied",
+  "@codeCopied": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "shareText": "Try my Strive program \"{name}\"! Import code: {code}",
+  "@shareText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteProgram": "Delete program?",
+  "name": "Name",
+  "folder": "Folder",
+  "description": "Description",
+  "startWorkout": "Start workout",
+  "targetDistance": "Target distance",
+  "intensity": "Intensity",
+  "planWorkout": "Plan workout",
+  "editWorkout": "Edit workout",
+  "program": "Program",
+  "none": "None",
+  "markSkipped": "Mark as skipped",
+  "generatePlan": "Generate plan",
+  "generatePlanSub": "Focus: {focus} · {days} days/week (change in profile)",
+  "@generatePlanSub": {
+    "placeholders": {
+      "focus": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "weeks": "Weeks",
+  "planLocal": "Smart rules",
+  "planAi": "AI (Gemini)",
+  "planLocalDesc": "Periodised plan based on sports science (80/20, progressive overload, deload every 4th week). Works offline.",
+  "planAiDesc": "Gemini creates an individual plan from your profile and recent training. Needs internet.",
+  "planWishHint": "Special wishes? e.g. \"focus on legs\", \"sub-50 10k\"",
+  "replaceExisting": "Replace upcoming planned workouts",
+  "generate": "Generate",
+  "planCreated": "{count} workouts planned",
+  "@planCreated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aiUnavailable": "The AI coach is not available right now. Check your connection or enable Firebase AI Logic.",
+  "syncCalendar": "Sync with Google Calendar",
+  "currentWeek": "Current",
+  "nextWeek": "Next",
+  "lastWeek": "Last",
+  "nothingPlanned": "Nothing planned.",
+  "nothingToExport": "No upcoming workouts to export.",
+  "icsShareText": "My Strive training plan – open with Google Calendar to import.",
+  "planGymDesc": "Strength session – progressive overload: add weight or reps when all sets feel good.",
+  "planDeloadGym": "Deload week: same exercises, ~60 % of the usual sets, leave 3–4 reps in reserve.",
+  "planEasyRun": "Easy run",
+  "planEasyRide": "Endurance ride",
+  "planEasyDesc": "Zone 2 – you should be able to talk in full sentences.",
+  "planLongRun": "Long run",
+  "planLongRunDesc": "Easy, steady pace. Take fluids/carbs after 60 min.",
+  "planRunIntervals": "Run intervals",
+  "planRunIntervalsDesc": "15 min warm-up · 6×800 m at 5k pace, 2 min jog · 10 min cool-down",
+  "planRunTempo": "Tempo run",
+  "planRunTempoDesc": "15 min easy · 20 min at threshold (comfortably hard) · 10 min easy",
+  "planLongRide": "Long ride",
+  "planLongRideDesc": "Zone 2, cadence 85–95 rpm. Eat every 45 min.",
+  "planRideIntervals": "VO2max intervals",
+  "planRideIntervalsDesc": "15 min warm-up · 5×4 min hard, 4 min easy · 10 min cool-down",
+  "planRideTempo": "Sweet spot",
+  "planRideTempoDesc": "3×12 min at 88–94 % FTP, 4 min easy between.",
+  "planLongSwim": "Endurance swim",
+  "planLongSwimDesc": "Continuous swimming at a relaxed pace, focus on breathing.",
+  "planSwimIntervals": "Swim intervals",
+  "planSwimIntervalsDesc": "400 warm-up · 10×100 at CSS, 15 s rest · 200 cool-down",
+  "planSwimTechnique": "Technique swim",
+  "planSwimTechniqueDesc": "300 warm-up · 8×50 drills · 6×100 steady · 200 cool-down",
+  "performance": "Performance",
+  "records": "Records",
+  "history": "History",
+  "range4w": "4W",
+  "range3m": "3M",
+  "range1y": "1Y",
+  "rangeAll": "All",
+  "time": "Time",
+  "avgGymDays": "Ø gym days / month",
+  "avgDuration": "Ø duration",
+  "heatmap": "Training heatmap",
+  "weeklyMinutes": "Minutes per week",
+  "weeklyDistance": "Distance per week",
+  "notEnoughData": "Not enough data yet",
+  "strengthRecords": "Strength records",
+  "noRecordsYet": "Complete a gym workout to see your records.",
+  "longestDistance": "Longest",
+  "longestDuration": "Longest time",
+  "bestPace": "Best pace",
+  "bestSpeed": "Best speed",
+  "totalDistance": "Total",
+  "badges": "Badges",
+  "noSessionsYet": "No workouts yet. Start your first one!",
+  "deleteSession": "Delete workout?",
+  "splits": "Splits",
+  "compareLast": "Compared to last time",
+  "notes": "Notes",
+  "sharedFromStrive": "Tracked with Strive 💪",
+  "bodyComposition": "Body composition",
+  "entries": "Entries",
+  "logBody": "Log body data",
+  "newChat": "New chat",
+  "coachTitle": "Your AI coach",
+  "coachSub": "Ask anything about training, recovery or nutrition. Answers use your profile and training data.",
+  "coachQ1": "How is my training going? What should I improve?",
+  "coachQ2": "How much protein do I need per day?",
+  "coachQ3": "How do I get faster over 10 km?",
+  "coachQ4": "I slept badly – should I still train today?",
+  "coachQ5": "What should I eat before a long run?",
+  "coachDisclaimer": "AI answers can be wrong and do not replace medical advice.",
+  "askCoach": "Ask your coach …",
+  "newGoal": "New goal",
+  "editGoal": "Edit goal",
+  "perWeekProgress": "{done} / {target} per week",
+  "@perWeekProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "daysLeft": "{days} days left",
+  "@daysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "eventPassed": "Event passed",
+  "onTrack": "On track",
+  "behindSchedule": "Behind",
+  "until": "until",
+  "goalTypeWeight": "Body weight",
+  "goalTypeDistance": "Distance",
+  "goalTypeFrequency": "Frequency",
+  "goalTypeStrength": "Strength",
+  "goalTypeEvent": "Event",
+  "perWeek": "per week",
+  "chooseExercise": "Choose exercise",
+  "target": "Target",
+  "deadlineOptional": "Deadline (optional)",
+  "profile": "Profile",
+  "athlete": "Athlete",
+  "guestAccount": "Guest account",
+  "settings": "Settings",
+  "language": "Language",
+  "system": "System",
+  "theme": "Theme",
+  "dark": "Dark",
+  "light": "Light",
+  "vibration": "Vibration",
+  "vibrationSub": "After rest timers and each km",
+  "reminders": "Reminders",
+  "hydrationReminder": "Drink reminder",
+  "everyNHours": "Every {hours} h (8–20 h)",
+  "@everyNHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingReminder": "Training reminder",
+  "trainingReminderSub": "On training days at {time}",
+  "@trainingReminderSub": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderTime": "Time",
+  "testNotification": "Send test notification",
+  "notificationsDenied": "Notifications are blocked in system settings.",
+  "hydrationTitle": "Time to drink 💧",
+  "hydrationBody": "A glass of water keeps your performance up.",
+  "trainingReminderTitle": "Today: {sport}",
+  "@trainingReminderTitle": {
+    "placeholders": {
+      "sport": {
+        "type": "String"
+      }
+    }
+  },
+  "integrations": "Integrations",
+  "comingSoon": "Soon",
+  "googleCalendar": "Google Calendar",
+  "googleCalendarSub": "Export your plan as a calendar file",
+  "account": "Account",
+  "upgradeAccount": "Save guest account",
+  "upgradeAccountSub": "Link an email so you never lose your data",
+  "accountLinked": "Account saved!",
+  "logout": "Log out",
+  "guestLogoutWarning": "As a guest, your data will be lost when you log out.",
+  "offlineReady": "works offline",
+  "viewFocus": "Focus view",
+  "viewTable": "Table view",
+  "upNext": "Up next",
+  "setXofY": "Set {x} of {y}",
+  "@setXofY": {
+    "placeholders": {
+      "x": {
+        "type": "int"
+      },
+      "y": {
+        "type": "int"
+      }
+    }
+  },
+  "exerciseXofY": "Exercise {x}/{y}",
+  "@exerciseXofY": {
+    "placeholders": {
+      "x": {
+        "type": "int"
+      },
+      "y": {
+        "type": "int"
+      }
+    }
+  },
+  "completeSet": "Complete set {n}",
+  "@completeSet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "nextExercise": "Next exercise",
+  "workoutComplete": "All sets done – great work!",
+  "superset": "Superset",
+  "linkSuperset": "Superset with next",
+  "unlinkSuperset": "Remove from superset",
+  "replaceExercise": "Replace exercise",
+  "warmupSets": "Warm-up sets",
+  "warmupAdded": "{n} warm-up sets added",
+  "@warmupAdded": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "plateCalculator": "Plates",
+  "plateCalcTitle": "Plate calculator",
+  "perSide": "per side",
+  "barWeight": "Bar",
+  "notLoadable": "{value} cannot be loaded exactly",
+  "@notLoadable": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "dropSet": "Drop set",
+  "note": "Note",
+  "setTypeNormal": "Working set",
+  "setTypeWarmup": "Warm-up",
+  "setTypeDrop": "Drop set",
+  "setTypeFailure": "To failure",
+  "rpeHint": "How hard was it? RPE 10 = no rep left, 8 = two reps left",
+  "progIncrease": "You hit the top of your rep range last time → try {value} today",
+  "@progIncrease": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "progAddReps": "Same weight – aim for {n} reps per set",
+  "@progAddReps": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "progDeload": "Last time was a grind – reset to {value} and build back up",
+  "@progDeload": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "progHold": "Keep the weight and own every rep",
+  "apply": "Apply",
+  "lastTime": "Last time",
+  "undo": "Undo",
+  "restHint": "Breathe, drink some water, get ready.",
+  "skipRest": "Skip rest",
+  "translating": "Translating…",
+  "translatedByAi": "Translated by AI",
+  "translationFailed": "Translation unavailable – showing English original",
+  "showOriginal": "Original",
+  "showTranslation": "Show translation",
+  "skyClear": "Clear",
+  "skyPartly": "Partly cloudy",
+  "skyCloudy": "Cloudy",
+  "skyFog": "Fog",
+  "skyDrizzle": "Drizzle",
+  "skyRain": "Rain",
+  "skySnow": "Snow",
+  "skyStorm": "Thunderstorm",
+  "clothShorts": "Shorts & T-shirt",
+  "clothLongTee": "Shorts & long sleeve",
+  "clothTights": "Tights & long sleeve, light gloves",
+  "clothJacket": "Tights, thermal top & light jacket, hat",
+  "clothWinter": "Winter tights, layers, gloves & hat",
+  "hintStorm": "Thunderstorm – train indoors today",
+  "hintRainAt": "Rain from {time} – go before",
+  "@hintRainAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "hintHot": "Hot – go early, drink more",
+  "hintCold": "Cold – warm up indoors first",
+  "hintBest": "Best time to train: {time}",
+  "@hintBest": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "hintIndoor": "So-so outside – good day for gym",
+  "bestTrainingWindow": "Best training window",
+  "rainChanceN": "{pct}% rain",
+  "@rainChanceN": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "next24h": "Next 24 hours",
+  "now": "Now",
+  "trainingScoreLegend": "Bar = conditions for outdoor training",
+  "wind": "Wind",
+  "humidity": "Humidity",
+  "uvIndex": "UV index",
+  "uvHigh": "High – use sunscreen",
+  "uvModerate": "Moderate",
+  "uvLow": "Low",
+  "airQuality": "Air quality",
+  "aqiGood": "Good",
+  "aqiModerate": "Moderate",
+  "aqiPoor": "Poor – go easy",
+  "sunrise": "Sunrise",
+  "sunset": "Sunset",
+  "whatToWear": "What to wear for a run",
+  "wearSunscreen": "Sunscreen & cap",
+  "wearRainJacket": "Pack a rain jacket",
+  "wearWindproof": "Windproof layer",
+  "drinkMore": "Drink extra",
+  "wearReflective": "Reflective gear / headlamp",
+  "next7Days": "7-day forecast",
+  "today": "Today",
+  "weatherSource": "Weather data: Open-Meteo.com",
+  "stepWarmupNote": "Easy jog, get loose",
+  "stepEasyNote": "Conversational pace – you can talk in full sentences",
+  "stepMpNote": "Goal marathon pace – controlled",
+  "stepTempoNote": "Comfortably hard – a few words only",
+  "stepFartlekNote": "Pick it up – strong but relaxed",
+  "stepIntervalNote": "Hard – 3–5k race effort",
+  "stepStrideNote": "Fast and relaxed, not a sprint",
+  "stepBriskWalk": "Brisk walk",
+  "stepTalkPace": "Very easy jog – you could chat",
+  "stepZ2RideNote": "Zone 2 – steady, you can talk",
+  "stepVo2Note": "Very hard – 106–120 % FTP",
+  "stepSsNote": "Sweet spot – 88–94 % FTP",
+  "stepThresholdNote": "Threshold – 95–105 % FTP",
+  "stepSwimWu": "Easy, mixed strokes",
+  "stepDrills": "Drills: catch-up, fist, 6-kick switch",
+  "stepCssNote": "At CSS pace – even splits",
+  "stepSwimEasyNote": "Relaxed, focus on long strokes",
+  "stepSwimEnNote": "Steady aerobic pace",
+  "wLongRunDesc": "Builds aerobic endurance and fat metabolism. Keep it easy – time on feet matters, not pace.",
+  "wLongRunMp": "Long run with race pace",
+  "wLongRunMpDesc": "Easy long run, finishing the last quarter at goal race pace – the key race-specific session.",
+  "wTempoDesc": "Threshold run: raises the pace you can hold for an hour.",
+  "wFartlek": "Fartlek",
+  "wFartlekDesc": "Easy run with short, playful surges – builds speed without much fatigue.",
+  "wIntervals": "Intervals {reps} × {meters} m",
+  "@wIntervals": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "wIntervalsDesc": "VO2max intervals at 3–5k race effort. Recovery jog between reps.",
+  "wMpRun": "Marathon-pace run",
+  "wMpRunDesc": "Continuous block at goal marathon pace to lock in the rhythm.",
+  "wCruise": "Cruise intervals {reps} × 1.6 km",
+  "@wCruise": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "wCruiseDesc": "Threshold pace with short jogs – more time at threshold with less strain (Daniels).",
+  "wEasyStrides": "Easy run + strides",
+  "wEasyStridesDesc": "Easy run, then short relaxed strides for running economy.",
+  "wRecoveryRun": "Recovery run",
+  "wEasyDesc": "Most of your running should feel like this – easy volume builds the engine.",
+  "wRunWalk": "Run/walk {n} × {min} min",
+  "@wRunWalk": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "wRunWalkDesc": "Alternate easy jogging and walking. Repeat the week if it felt hard.",
+  "wLongRideDesc": "Long Zone 2 ride – the backbone of cycling endurance. Eat and drink every 20–30 min.",
+  "wRideVo2": "VO2max {reps} × {min} min",
+  "@wRideVo2": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "wRideVo2Desc": "Hard intervals with equal recovery – raises your ceiling.",
+  "wSweetSpot": "Sweet spot {reps} × {each} min",
+  "@wSweetSpot": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "each": {
+        "type": "int"
+      }
+    }
+  },
+  "wSweetSpotDesc": "Just below threshold – very time-efficient FTP builder.",
+  "wThreshold": "Threshold {reps} × {each} min",
+  "@wThreshold": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "each": {
+        "type": "int"
+      }
+    }
+  },
+  "wThresholdDesc": "At FTP – the power you can hold for about an hour.",
+  "wRecoveryRide": "Recovery ride",
+  "wEasyRideDesc": "Easy endurance ride, steady cadence 85–95 rpm.",
+  "wSwimCss": "CSS set {n} × 100 m",
+  "@wSwimCss": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "wSwimCssDesc": "Threshold swim at critical swim speed with short rests.",
+  "wSwimTechDesc": "Technique first: drills, then relaxed repeats with good form.",
+  "wSwimEndurance": "Endurance {reps} × {meters} m",
+  "@wSwimEndurance": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "wSwimEnduranceDesc": "Aerobic swim set – steady pace, short rests.",
+  "wGymDesc": "{sets} sets × {lo}–{hi} reps, stop with {rir} reps in reserve. Add weight once you reach {hi} reps on all sets.",
+  "@wGymDesc": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "lo": {
+        "type": "int"
+      },
+      "hi": {
+        "type": "int"
+      },
+      "rir": {
+        "type": "int"
+      }
+    }
+  },
+  "wGymDeloadDesc": "Deload: {sets} sets per exercise, about 10 % lighter, nothing near failure.",
+  "@wGymDeloadDesc": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      }
+    }
+  },
+  "wGymConcurrentNote": "Key endurance session tomorrow – upper body focus, keep legs light.",
+  "setupModeTitle": "How detailed should we get?",
+  "setupQuick": "Quick start · ~2 min",
+  "setupQuickSub": "A few general questions. Your plan adapts as you log workouts.",
+  "setupDetailed": "Detailed · ~6 min",
+  "setupDetailedSub": "Race times, weekly volume, FTP, swim test, max lifts and a weekday plan – for a precise plan from day one.",
+  "recommended": "Recommended",
+  "heartRateOptional": "Heart rate (optional)",
+  "heartRateHint": "Resting HR: measured in bed after waking. Leave max HR empty to estimate it (208 − 0.7 × age).",
+  "restingHr": "Resting HR",
+  "maxHr": "Max HR",
+  "sessionLength": "Time per session",
+  "weekPlanTitle": "Your training week",
+  "weekPlanSub": "Tap which sport you want to do on which day. Your plan follows this structure.",
+  "oncePerDay": "1× per day",
+  "twicePerDay": "Up to 2× per day",
+  "sessionsPerWeekN": "{n} sessions / week",
+  "@sessionsPerWeekN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "longDayHint": "★ = day for your long session",
+  "noRestDayWarning": "No rest day – at least one easy or rest day per week is recommended.",
+  "preferredTime": "Preferred training time",
+  "morning": "Morning",
+  "midday": "Midday",
+  "evening": "Evening",
+  "runSetupTitle": "Running",
+  "runSetupSub": "Your current running fitness – this sets your pace zones and safe progression.",
+  "canRun30": "I can run 30 min without stopping",
+  "canRun30Sub": "If not, we start with a run/walk program.",
+  "raceTimesTitle": "Recent best times (optional)",
+  "raceTimesHint": "From the last ~6 months. One is enough – we calculate your VDOT (Daniels).",
+  "currentVolume": "Current training volume",
+  "weeklyKmNow": "Running km per week",
+  "longestRun4w": "Longest run (last 4 weeks)",
+  "notSure": "Not sure",
+  "rideSetupTitle": "Cycling",
+  "rideSetupSub": "Power or heart rate – we set your zones accordingly.",
+  "hasPowerMeter": "I have a power meter / smart trainer",
+  "hasIndoorTrainer": "I can ride indoors (trainer / rollers)",
+  "ftpTitle": "FTP (optional)",
+  "ftpHint": "Functional threshold power: 95 % of a 20-min all-out test.",
+  "weeklyHoursNow": "Cycling hours per week",
+  "longestRide4w": "Longest ride (last 4 weeks)",
+  "swimSetupTitle": "Swimming",
+  "swimSetupSub": "A quick test gives your critical swim speed (CSS) for pace targets.",
+  "canSwim400": "I can swim 400 m freestyle without stopping",
+  "cssTitle": "CSS test (optional)",
+  "cssHint": "All-out 400 m, rest, then all-out 200 m.",
+  "cssResult": "Your CSS: {pace} /100 m",
+  "@cssResult": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklySwimKm": "Swim km per week",
+  "gymSetupTitle": "Strength training",
+  "gymSetupSub": "Equipment and goal decide exercises, rep ranges and progression.",
+  "equipmentTitle": "Where do you train?",
+  "equipGym": "Gym",
+  "equipGymSub": "Barbells, machines, cables",
+  "equipHome": "Home gym",
+  "equipHomeSub": "Dumbbells, bench, maybe a rack",
+  "equipBodyweight": "Bodyweight",
+  "equipBodyweightSub": "No equipment, maybe bands",
+  "gymGoalTitle": "Strength goal",
+  "general": "General",
+  "oneRmTitle": "Max lifts (optional)",
+  "oneRmHint": "1-rep max or a good estimate – used for starting weights.",
+  "liftSquat": "Squat",
+  "liftBench": "Bench press",
+  "liftDeadlift": "Deadlift",
+  "liftOhp": "Overhead press",
+  "healthTitle": "Anything to consider?",
+  "healthSub": "We avoid risky progressions for affected areas.",
+  "limitKnee": "Knee",
+  "limitBack": "Back",
+  "limitShoulder": "Shoulder",
+  "limitHip": "Hip",
+  "limitAnkle": "Ankle / Achilles",
+  "limitHeart": "Heart / blood pressure",
+  "healthDisclaimer": "Strive does not replace medical advice. With pain or health conditions, talk to a doctor first.",
+  "olympicTri": "Olympic triathlon",
+  "targetTime": "Target time",
+  "targetTimeHint": "Optional – leave empty to just finish strong.",
+  "predictedTime": "Predicted from your current form: {time}",
+  "@predictedTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "planSetupTitle": "Your plan",
+  "planSetupSub": "How hard and how long? Based on sports-science guidelines.",
+  "difficultyTitle": "Difficulty",
+  "difficultyHint": "Compared to what you do now.",
+  "diffEasy": "Easy",
+  "diffEasySub": "+5 % volume/week, recovery every 3rd week, mostly easy sessions.",
+  "diffBalanced": "Balanced",
+  "diffBalancedSub": "+8 % volume/week, recovery every 4th week, ~80/20 easy/hard.",
+  "diffChallenging": "Challenging",
+  "diffChallengingSub": "+10 % volume/week, more quality sessions – for experienced athletes.",
+  "planLength": "Plan length",
+  "plan4w": "4 weeks · quick boost",
+  "plan8w": "8 weeks",
+  "plan12w": "12 weeks",
+  "plan16w": "16 weeks",
+  "plan20w": "20 weeks · max. build-up",
+  "planLengthHint": "Recommended for your goal: {lo}–{hi} weeks (👍).",
+  "@planLengthHint": {
+    "placeholders": {
+      "lo": {
+        "type": "int"
+      },
+      "hi": {
+        "type": "int"
+      }
+    }
+  },
+  "planToEvent": "Your plan runs {weeks} weeks until race day, including taper.",
+  "@planToEvent": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "planToEventShort": "Only {weeks} weeks to race day – {lo}+ are recommended. We focus on arriving fit rather than a time goal.",
+  "@planToEventShort": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      },
+      "lo": {
+        "type": "int"
+      }
+    }
+  },
+  "planScienceNote": "Plans follow e.g. Seiler (80/20), Daniels (VDOT paces), Bosquet (taper), Schoenfeld (strength volume). Details in the plan view.",
+  "yourPaceZones": "Your pace zones",
+  "zoneEasy": "Easy / long",
+  "zoneMarathon": "Marathon",
+  "zoneThreshold": "Threshold",
+  "zoneInterval": "Interval",
+  "zoneRepetition": "Repetition",
+  "hcTileSub": "Galaxy Watch, Samsung Health, Garmin & more",
+  "hcConnectedShort": "Connected – syncing automatically",
+  "hcTitle": "Connect your Galaxy Watch",
+  "hcSub": "Your watch syncs to Samsung Health, Samsung Health shares with Health Connect, and Strive reads your workouts, heart rate, sleep and steps – and writes your Strive workouts back.",
+  "hcUnavailable": "Health Connect is not available on this device.",
+  "hcInstall": "Health Connect needs to be installed or updated first.",
+  "hcInstallButton": "Install Health Connect",
+  "hcConnect": "Connect Health Connect",
+  "hcConnected": "Connected!",
+  "hcDenied": "Permissions were not granted.",
+  "hcImported": "{n} new workouts imported",
+  "@hcImported": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "hcConnectedInfo": "Connected. New watch workouts appear in your history automatically.",
+  "hcImportedLabel": "Imported",
+  "hcLastSync": "Last sync",
+  "hcSyncNow": "Sync now",
+  "hcDisconnect": "Disconnect",
+  "hcSetupTitle": "Set up your Galaxy Watch 6",
+  "hcStep1": "Pair the watch with the Galaxy Wearable app and sign in to Samsung Health.",
+  "hcStep2": "In Samsung Health: ⋮ → Settings → Health Connect → allow all data types to be shared.",
+  "hcStep3": "Tap \"Connect\" above and allow Strive to read and write.",
+  "hcStep4": "Record workouts on the watch as usual – Strive imports them on the next app start.",
+  "hcOpenSamsung": "Open Samsung Health",
+  "hcWhatSynced": "What is synced?",
+  "hcWhatSyncedBody": "Read: workouts (run, ride, swim, strength) incl. avg/max heart rate, distance and calories, resting heart rate, HRV, sleep, steps, weight, body fat. Write: Strive workouts and weight entries.",
+  "steps": "Steps",
+  "sleep": "Sleep",
+  "continueWithGoogle": "Continue with Google",
+  "linkGoogle": "Link Google account",
+  "guidedWorkout": "Guided workout",
+  "guidedWorkoutSub": "Step-by-step targets with voice cues",
+  "music": "Music",
+  "voiceCues": "Voice cues",
+  "lockScreen": "Lock screen",
+  "skipStep": "Next step",
+  "autoPaused": "AUTO-PAUSED",
+  "paused": "PAUSED",
+  "currentPace": "Current pace",
+  "currentSpeed": "Speed",
+  "allStepsDone": "All steps done! Cool down and finish when ready.",
+  "onPace": "On target",
+  "tooFast": "Too fast",
+  "tooSlow": "Too slow",
+  "left": "left",
+  "freeRunHint": "Easy run? Stay at {lo}–{hi} bpm (Zone 2) – you should be able to talk in full sentences.",
+  "@freeRunHint": {
+    "placeholders": {
+      "lo": {
+        "type": "int"
+      },
+      "hi": {
+        "type": "int"
+      }
+    }
+  },
+  "workoutStructure": "Workout structure",
+  "noSplitsYet": "Splits appear after the first kilometer.",
+  "holdToFinish": "Hold to finish",
+  "holdToUnlock": "Hold to unlock",
+  "musicSub": "Opens Spotify with music matching your workout tempo.",
+  "musicForNow": "Right now: {label}",
+  "@musicForNow": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "musicEasy": "Easy run",
+  "musicTempo": "Tempo run",
+  "musicIntervals": "Intervals",
+  "musicPodcasts": "Podcasts",
+  "musicPodcastsSub": "Great for long easy runs",
+  "musicOwn": "My playlist",
+  "musicSetOwn": "Set my Spotify playlist link",
+  "musicChangeOwn": "Change my playlist",
+  "vcGo": "Let's go!",
+  "vcAutoPaused": "Auto pause.",
+  "vcResumed": "Resumed.",
+  "vcAllDone": "All steps done. Great work! Cool down easy.",
+  "vcSlowDown": "A bit slower – stay in your zone.",
+  "vcSpeedUp": "Pick it up a little.",
+  "vcKm": "Kilometer {n}. Time {time}. Last kilometer {pace}.",
+  "@vcKm": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "zConversational": "conversational pace",
+  "zEasyLong": "easy",
+  "zMarathon": "marathon pace",
+  "zThreshold": "threshold pace",
+  "zInterval": "interval pace",
+  "zStride": "stride",
+  "zJog": "easy jog",
+  "zWalk": "walk",
+  "zRecovery": "recovery",
+  "zSprint": "sprint",
+  "zSwimEndurance": "endurance",
+  "zDrills": "drills",
+  "stepWarmup": "Warm-up",
+  "stepCooldown": "Cool-down",
+  "stepRecovery": "Recovery",
+  "stepWorkN": "Interval {x}/{y}",
+  "@stepWorkN": {
+    "placeholders": {
+      "x": {
+        "type": "int"
+      },
+      "y": {
+        "type": "int"
+      }
+    }
+  },
+  "stepWork": "Main set",
+  "stepSteady": "Steady",
+  "phaseBase": "Base phase",
+  "phaseBuild": "Build phase",
+  "phasePeak": "Peak phase",
+  "phaseTaper": "Taper",
+  "phaseRecovery": "Recovery week",
+  "keySession": "Key session",
+  "viewSession": "View workout",
+  "fitnessForm": "Fitness & form",
+  "fitness": "Fitness",
+  "fatigue": "Fatigue",
+  "form": "Form",
+  "formFresh": "Fresh – ready for a race or hard session",
+  "formNeutral": "Balanced – maintaining",
+  "formProductive": "Productive training – fitness is building",
+  "formOverload": "High fatigue – plan recovery",
+  "fitnessFormHint": "Fitness = 42-day training load, fatigue = 7-day load, form = difference (Banister model).",
+  "bestEfforts": "Running best efforts",
+  "racePredictions": "Race predictions",
+  "tomorrow": "Tomorrow",
+  "middleDistance": "Middle distance (70.3)",
+  "maxReps": "Max reps",
+  "roundLap": "Lap",
+  "linkGoogleSub": "Sign in with Google next time – your data stays"
+}

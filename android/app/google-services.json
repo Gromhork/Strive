@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1039847462198",
+    "project_id": "strive-fitness-app",
+    "storage_bucket": "strive-fitness-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1039847462198:android:8e883f70620c3dd652cf97",
+        "android_client_info": {
+          "package_name": "com.gromhork.strive"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1039847462198-2gduojat4l2fnk0e09427l35auvta0dp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gromhork.strive",
+            "certificate_hash": "e39257e37d8e4ff7a336e9f1bfe120b5e6d22874"
+          }
+        },
+        {
+          "client_id": "1039847462198-6v1prud0coe7jid3vdt7q5usckisn1is.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeP8y1EszSazwetkiOhQGpVkaoKQF2ork"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1039847462198-6v1prud0coe7jid3vdt7q5usckisn1is.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1039847462198-k10bkb14n27uesed6d3oe4mush6br8ko.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.gromhork.strive"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

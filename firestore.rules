@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Private user data: profile, sessions, templates, plans, body, goals
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    // Shared programs (import by code). Anyone signed in can read; only the owner can create/delete.
+    match /shared/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.owner == request.auth.uid
+                    && code.size() == 6;
+      allow delete: if request.auth != null && resource.data.owner == request.auth.uid;
+    }
+  }
+}

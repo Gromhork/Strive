@@ -26,3 +26,27 @@ yarn-error.log*
 
 # Environment files (local configs)
 /.env.*
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+*.iml
+.idea/
+.metadata.bak
+/android/.gradle/
+/android/local.properties
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/key.properties
+*.jks
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/ephemeral/
+
+# Research PDFs (large, local only)
+docs/papers/
