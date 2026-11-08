@@ -5410,6 +5410,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Phases'**
   String get workoutPhases;
+
+  /// No description provided for @planDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan done'**
+  String get planDone;
+
+  /// No description provided for @perSport.
+  ///
+  /// In en, this message translates to:
+  /// **'Per sport'**
+  String get perSport;
+
+  /// No description provided for @recoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery & load'**
+  String get recoveryTitle;
+
+  /// No description provided for @load7d.
+  ///
+  /// In en, this message translates to:
+  /// **'Load 7 days'**
+  String get load7d;
+
+  /// No description provided for @load28d.
+  ///
+  /// In en, this message translates to:
+  /// **'Ø week (28 d)'**
+  String get load28d;
+
+  /// No description provided for @daysInARow.
+  ///
+  /// In en, this message translates to:
+  /// **'Days in a row'**
+  String get daysInARow;
+
+  /// No description provided for @recoveryHowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How this works'**
+  String get recoveryHowTitle;
+
+  /// No description provided for @recoveryHowText.
+  ///
+  /// In en, this message translates to:
+  /// **'Every workout gets a load score (duration × intensity, from RPE or heart rate). Strive compares the last 7 days with your average week of the last 28 days (acute:chronic workload ratio, Gabbett 2016). Between 0.8 and 1.3 you build fitness with a low injury risk; above 1.5 the risk rises clearly – plan an easy day. Fitness, fatigue and form follow the Banister model: form = fitness − fatigue.'**
+  String get recoveryHowText;
+
+  /// No description provided for @nWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} workouts'**
+  String nWorkouts(int count);
+
+  /// No description provided for @sessionN.
+  ///
+  /// In en, this message translates to:
+  /// **'Session {n}'**
+  String sessionN(int n);
+
+  /// No description provided for @byDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day by day'**
+  String get byDay;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

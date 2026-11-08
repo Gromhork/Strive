@@ -13,6 +13,8 @@ import '../../widgets/common.dart';
 import '../profile/health_connect_page.dart';
 import '../shell/health_sync.dart';
 import 'weather_page.dart';
+import 'week_page.dart';
+import '../profile/profile_page.dart';
 import '../calendar/plan_editor.dart';
 import '../calendar/planned_workout_page.dart';
 import '../session/step_list.dart';
@@ -98,8 +100,7 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
     final l = context.l10n;
     final filter = ref.watch(sportFilterProvider);
     final today = dayOnly(DateTime.now());
-    final plans =
-        ref.watch(planListProvider).where((p) => sameDay(p.date, today) && (filter == null || p.sport == filter)).toList();
+    final plans = ref.watch(planListProvider).where((p) => sameDay(p.date, today) && (filter == null || p.sport == filter)).toList();
     final doneToday = ref.watch(sessionListProvider).where((s) => sameDay(s.start, today)).toList();
     if (_i >= plans.length) _i = 0;
 
@@ -178,53 +179,45 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                 borderRadius: BorderRadius.circular(12),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id))),
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(l.todaysWorkout, style: Theme.of(context).textTheme.labelMedium),
-                      if (plans.length > 1) Text('  ${_i + 1}/${plans.length}', style: Theme.of(context).textTheme.labelSmall),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      SportBadge(p.sport, size: 48, filled: true),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(p.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                            Text(
-                              [
-                                '${p.durationMin} min',
-                                if (p.distanceKm != null && p.distanceKm! > 0)
-                                  ref.watch(profileOrDefaultProvider).units.dist(p.distanceKm! * 1000, digits: 1),
-                                intensityLabel(l, p.intensity),
-                              ].join(' · '),
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (p.steps.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    WorkoutProfileBar(steps: p.steps, sport: p.sport, height: 26),
-                  ],
-                  if (p.description.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      p.description,
-                      style: Theme.of(context).textTheme.bodySmall,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(l.todaysWorkout, style: Theme.of(context).textTheme.labelMedium),
+                        if (plans.length > 1) Text('  ${_i + 1}/${plans.length}', style: Theme.of(context).textTheme.labelSmall),
+                      ],
                     ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        SportBadge(p.sport, size: 48, filled: true),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(p.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                              Text(
+                                [
+                                  '${p.durationMin} min',
+                                  if (p.distanceKm != null && p.distanceKm! > 0)
+                                    ref.watch(profileOrDefaultProvider).units.dist(p.distanceKm! * 1000, digits: 1),
+                                  intensityLabel(l, p.intensity),
+                                ].join(' · '),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (p.steps.isNotEmpty) ...[const SizedBox(height: 10), WorkoutProfileBar(steps: p.steps, sport: p.sport, height: 26)],
+                    if (p.description.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(p.description, style: Theme.of(context).textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ],
                   ],
-                ],
-              ),
+                ),
               ),
             ),
             const SizedBox(width: 4),
@@ -241,10 +234,8 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                       p.isDone
                           ? (p.sessionId == null
                               ? null
-                              : () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: p.sessionId!)),
-                              ))
+                              : () =>
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: p.sessionId!))))
                           : () => startPlanned(context, ref, p),
                   icon: Icon(p.isDone ? Icons.check_rounded : Icons.play_arrow_rounded),
                 ),
@@ -290,10 +281,7 @@ class _ComingUp extends ConsumerWidget {
         onTap: () => ref.read(navIndexProvider.notifier).set(2),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(l.toCalendar, style: Theme.of(context).textTheme.labelMedium),
-            const Icon(Icons.chevron_right, size: 18),
-          ],
+          children: [Text(l.toCalendar, style: Theme.of(context).textTheme.labelMedium), const Icon(Icons.chevron_right, size: 18)],
         ),
       ),
       child: Row(
@@ -306,11 +294,15 @@ class _ComingUp extends ConsumerWidget {
                 return Expanded(
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap:
-                        () =>
-                            dayPlans.isEmpty
-                                ? showPlanEditor(context, ref, date: d)
-                                : showPlanEditor(context, ref, existing: dayPlans.first),
+                    onTap: () {
+                      if (dayPlans.isEmpty) {
+                        showPlanEditor(context, ref, date: d);
+                      } else if (dayPlans.length == 1) {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: dayPlans.first.id)));
+                      } else {
+                        _showDay(context, ref, d, dayPlans);
+                      }
+                    },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Column(
@@ -318,27 +310,20 @@ class _ComingUp extends ConsumerWidget {
                           Text(fmt.format(d), style: Theme.of(context).textTheme.labelSmall),
                           Text('${d.day}', style: const TextStyle(fontWeight: FontWeight.w700)),
                           const SizedBox(height: 6),
-                          if (dayPlans.isEmpty)
-                            Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(11),
-                                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                              ),
-                              child: Icon(Icons.add, size: 16, color: Theme.of(context).colorScheme.outline),
-                            )
-                          else
-                            SportBadge(dayPlans.first.sport, size: 34),
+                          SizedBox(height: 40, child: Center(child: _DayBadges(plans: dayPlans))),
                           const SizedBox(height: 4),
                           SizedBox(
                             height: 28,
                             child: Text(
-                              dayPlans.isEmpty ? l.rest : dayPlans.map((p) => p.title).join('\n'),
+                              dayPlans.isEmpty ? l.rest : (dayPlans.length == 1 ? dayPlans.first.title : l.nWorkouts(dayPlans.length)),
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 9.5, height: 1.2),
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                height: 1.2,
+                                fontWeight: dayPlans.length > 1 ? FontWeight.w700 : FontWeight.w400,
+                              ),
                             ),
                           ),
                         ],
@@ -347,6 +332,114 @@ class _ComingUp extends ConsumerWidget {
                   ),
                 );
               },
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Bottom sheet listing all workouts of a day with several sessions.
+  void _showDay(BuildContext context, WidgetRef ref, DateTime d, List<PlannedWorkout> list) {
+    final l = context.l10n;
+    showModalBottomSheet(
+      context: context,
+      builder:
+          (c) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    DateFormat.MMMMEEEEd(context.localeName).format(d),
+                    style: Theme.of(c).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(l.nWorkouts(list.length), style: Theme.of(c).textTheme.bodySmall),
+                  const SizedBox(height: 12),
+                  for (final (i, p) in list.indexed)
+                    Card(
+                      child: ListTile(
+                        leading: SportBadge(p.sport),
+                        title: Text(p.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: Text(
+                          [
+                            l.sessionN(i + 1),
+                            '${p.durationMin} min',
+                            if (p.distanceKm != null) '${Units.num(p.distanceKm!)} km',
+                            if (p.isKey) '★',
+                          ].join(' · '),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.pop(c);
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id)));
+                        },
+                      ),
+                    ),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.pop(c);
+                      showPlanEditor(context, ref, date: d);
+                    },
+                    icon: const Icon(Icons.add),
+                    label: Text(l.planWorkout),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+}
+
+/// One badge, or overlapping badges for days with several workouts.
+class _DayBadges extends StatelessWidget {
+  const _DayBadges({required this.plans});
+  final List<PlannedWorkout> plans;
+
+  @override
+  Widget build(BuildContext context) {
+    if (plans.isEmpty) {
+      return Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
+        child: Icon(Icons.add, size: 16, color: Theme.of(context).colorScheme.outline),
+      );
+    }
+    if (plans.length == 1) return SportBadge(plans.first.sport, size: 34);
+    final shown = plans.take(2).toList();
+    return SizedBox(
+      width: 42,
+      height: 40,
+      child: Stack(
+        children: [
+          Positioned(left: 0, top: 0, child: SportBadge(shown[0].sport, size: 28)),
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerLow, width: 2),
+              ),
+              child: SportBadge(shown[1].sport, size: 28),
+            ),
+          ),
+          if (plans.length > 2)
+            Positioned(
+              right: 0,
+              top: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(color: AppColors.brand, borderRadius: BorderRadius.circular(8)),
+                child: Text('+${plans.length - 2}', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w800)),
+              ),
             ),
         ],
       ),
@@ -368,8 +461,7 @@ class _WeekCard extends ConsumerWidget {
     bool inWeek(DateTime d) => !d.isBefore(weekStart) && d.isBefore(weekEnd);
     final done = sessions.where((s) => inWeek(s.start)).toList();
     final planned = plans.where((p) => inWeek(p.date)).toList();
-    final sports =
-        {...planned.map((p) => p.sport), ...done.map((s) => s.sport)}.toList()..sort((a, b) => a.index.compareTo(b.index));
+    final sports = {...planned.map((p) => p.sport), ...done.map((s) => s.sport)}.toList()..sort((a, b) => a.index.compareTo(b.index));
     final values = <Sport, double>{};
     for (final s in sports) {
       final target = planned.where((p) => p.sport == s).length;
@@ -379,10 +471,16 @@ class _WeekCard extends ConsumerWidget {
     final totalSec = done.fold<int>(0, (a, s) => a + s.durationSec);
     return SectionCard(
       padding: const EdgeInsets.all(14),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeekPage())),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l.thisWeek, style: Theme.of(context).textTheme.labelMedium),
+          Row(
+            children: [
+              Expanded(child: Text(l.thisWeek, style: Theme.of(context).textTheme.labelMedium)),
+              Icon(Icons.chevron_right, size: 16, color: Theme.of(context).colorScheme.outline),
+            ],
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -428,10 +526,7 @@ class _WeekCard extends ConsumerWidget {
                       onTap: () => quickStart(context, ref, s),
                       child: Container(
                         height: 32,
-                        decoration: BoxDecoration(
-                          color: s.color.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        decoration: BoxDecoration(color: s.color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
                         child: Icon(s.icon, size: 17, color: s.color),
                       ),
                     ),
@@ -462,6 +557,7 @@ class _RecoveryCard extends ConsumerWidget {
       Readiness.overreaching => (AppColors.danger, Icons.hotel_rounded, l.readyOver, l.readyOverText),
     };
     return SectionCard(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RecoveryPage())),
       child: Row(
         children: [
           Container(
@@ -542,9 +638,7 @@ class _WeightCard extends ConsumerWidget {
               height: 70,
               child:
                   recent.length < 2
-                      ? Center(
-                        child: Text(l.weightLogHint, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
-                      )
+                      ? Center(child: Text(l.weightLogHint, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center))
                       : LineChart(
                         LineChartData(
                           // Keep at least ±1.5 kg of headroom so 0.1 kg noise doesn't look like a swing.
@@ -556,9 +650,7 @@ class _WeightCard extends ConsumerWidget {
                           lineTouchData: const LineTouchData(enabled: false),
                           lineBarsData: [
                             LineChartBarData(
-                              spots: [
-                                for (final b in recent) FlSpot(b.date.millisecondsSinceEpoch.toDouble(), u.weightOut(b.weightKg)),
-                              ],
+                              spots: [for (final b in recent) FlSpot(b.date.millisecondsSinceEpoch.toDouble(), u.weightOut(b.weightKg))],
                               isCurved: recent.length > 2,
                               preventCurveOverShooting: true,
                               curveSmoothness: 0.2,
@@ -619,6 +711,7 @@ class _LevelCard extends ConsumerWidget {
     final l = context.l10n;
     final g = ref.watch(gameStatsProvider);
     return SectionCard(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -658,7 +751,6 @@ class _LevelCard extends ConsumerWidget {
     );
   }
 }
-
 
 // ───────────────────────────── Watch vitals (Health Connect) ─────────────────────────────
 

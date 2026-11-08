@@ -2825,4 +2825,41 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get workoutPhases => 'Phasen';
+
+  @override
+  String get planDone => 'Plan erledigt';
+
+  @override
+  String get perSport => 'Pro Sportart';
+
+  @override
+  String get recoveryTitle => 'Erholung & Belastung';
+
+  @override
+  String get load7d => 'Last 7 Tage';
+
+  @override
+  String get load28d => 'Ø Woche (28 T)';
+
+  @override
+  String get daysInARow => 'Tage am Stück';
+
+  @override
+  String get recoveryHowTitle => 'So funktioniert es';
+
+  @override
+  String get recoveryHowText => 'Jedes Training bekommt einen Belastungswert (Dauer × Intensität, aus RPE oder Puls). Strive vergleicht die letzten 7 Tage mit deiner Durchschnittswoche der letzten 28 Tage (Acute:Chronic Workload Ratio, Gabbett 2016). Zwischen 0,8 und 1,3 baust du Fitness bei geringem Verletzungsrisiko auf; über 1,5 steigt das Risiko deutlich – plane einen lockeren Tag. Fitness, Ermüdung und Form folgen dem Banister-Modell: Form = Fitness − Ermüdung.';
+
+  @override
+  String nWorkouts(int count) {
+    return '$count Einheiten';
+  }
+
+  @override
+  String sessionN(int n) {
+    return 'Einheit $n';
+  }
+
+  @override
+  String get byDay => 'Tag für Tag';
 }

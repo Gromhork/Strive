@@ -2825,4 +2825,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workoutPhases => 'Phases';
+
+  @override
+  String get planDone => 'Plan done';
+
+  @override
+  String get perSport => 'Per sport';
+
+  @override
+  String get recoveryTitle => 'Recovery & load';
+
+  @override
+  String get load7d => 'Load 7 days';
+
+  @override
+  String get load28d => 'Ø week (28 d)';
+
+  @override
+  String get daysInARow => 'Days in a row';
+
+  @override
+  String get recoveryHowTitle => 'How this works';
+
+  @override
+  String get recoveryHowText => 'Every workout gets a load score (duration × intensity, from RPE or heart rate). Strive compares the last 7 days with your average week of the last 28 days (acute:chronic workload ratio, Gabbett 2016). Between 0.8 and 1.3 you build fitness with a low injury risk; above 1.5 the risk rises clearly – plan an easy day. Fitness, fatigue and form follow the Banister model: form = fitness − fatigue.';
+
+  @override
+  String nWorkouts(int count) {
+    return '$count workouts';
+  }
+
+  @override
+  String sessionN(int n) {
+    return 'Session $n';
+  }
+
+  @override
+  String get byDay => 'Day by day';
 }

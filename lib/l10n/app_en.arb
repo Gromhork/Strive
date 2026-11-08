@@ -1514,5 +1514,30 @@
   "poolTapHint": "Tap LENGTH each time you touch the wall.",
   "noLengthsYet": "Your lengths appear here after the first tap.",
   "keySessionSub": "Important session of the week – Strive keeps hard days apart.",
-  "workoutPhases": "Phases"
+  "workoutPhases": "Phases",
+  "planDone": "Plan done",
+  "perSport": "Per sport",
+  "recoveryTitle": "Recovery & load",
+  "load7d": "Load 7 days",
+  "load28d": "Ø week (28 d)",
+  "daysInARow": "Days in a row",
+  "recoveryHowTitle": "How this works",
+  "recoveryHowText": "Every workout gets a load score (duration × intensity, from RPE or heart rate). Strive compares the last 7 days with your average week of the last 28 days (acute:chronic workload ratio, Gabbett 2016). Between 0.8 and 1.3 you build fitness with a low injury risk; above 1.5 the risk rises clearly – plan an easy day. Fitness, fatigue and form follow the Banister model: form = fitness − fatigue.",
+  "nWorkouts": "{count} workouts",
+  "@nWorkouts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionN": "Session {n}",
+  "@sessionN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "byDay": "Day by day"
 }

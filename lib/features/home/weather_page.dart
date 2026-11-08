@@ -216,12 +216,18 @@ class _WeatherView extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(w.place.isEmpty ? l.weather : w.place, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600)),
+                          Text(
+                            w.place.isEmpty ? l.weather : w.place,
+                            style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
+                          ),
                           const Spacer(),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('${w.temp.round()}°', style: const TextStyle(color: Colors.white, fontSize: 84, fontWeight: FontWeight.w300, height: 1)),
+                              Text(
+                                '${w.temp.round()}°',
+                                style: const TextStyle(color: Colors.white, fontSize: 84, fontWeight: FontWeight.w300, height: 1),
+                              ),
                               const Spacer(),
                               Icon(weatherIcon(w.code, night: !w.isDay), color: Colors.white, size: 72),
                             ],
@@ -354,10 +360,7 @@ class _WeatherView extends ConsumerWidget {
                         icon: Icons.masks_outlined,
                         label: l.airQuality,
                         value: w.aqi == null ? '–' : '${w.aqi}',
-                        sub:
-                            w.aqi == null
-                                ? null
-                                : (w.aqi! <= 40 ? l.aqiGood : (w.aqi! <= 80 ? l.aqiModerate : l.aqiPoor)),
+                        sub: w.aqi == null ? null : (w.aqi! <= 40 ? l.aqiGood : (w.aqi! <= 80 ? l.aqiModerate : l.aqiPoor)),
                       ),
                       _Tile(icon: Icons.wb_twilight_rounded, label: l.sunrise, value: hm.format(w.sunrise)),
                       _Tile(icon: Icons.nights_stay_outlined, label: l.sunset, value: hm.format(w.sunset)),
@@ -535,7 +538,13 @@ class _RangeBar extends StatelessWidget {
         final width = max(6.0, (day.max - day.min) / span * c.maxWidth);
         return Stack(
           children: [
-            Container(height: 6, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(3))),
+            Container(
+              height: 6,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
             Positioned(
               left: left,
               child: Container(
