@@ -750,8 +750,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 final plan = adv.autoSchedule(freq);
                 final ld = plan.entries.where((e) => e.value.any((s) => s != Sport.gym)).map((e) => e.key).toList()..sort();
                 setState(() {
-                  if (ld.isNotEmpty && !ld.contains(p.longDay))
+                  if (ld.isNotEmpty && !ld.contains(p.longDay)) {
                     p = UserProfile.fromMap({...p.toMap(), 'longDay': ld.contains(6) ? 6 : ld.last});
+                  }
                 });
                 _setA({'dayPlan': plan});
                 toast(context, l.recApplied);

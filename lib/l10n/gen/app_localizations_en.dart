@@ -410,7 +410,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get freeWorkout => 'Free workout';
+  String get freeWorkout => 'Free';
 
   @override
   String get workoutRunning => 'Workout in progress';
@@ -1259,7 +1259,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get superset => 'Superset';
 
   @override
-  String get linkSuperset => 'Superset with next';
+  String get linkSuperset => 'Link as superset';
 
   @override
   String get unlinkSuperset => 'Remove from superset';
@@ -2586,4 +2586,118 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splitHomeNote => 'Training at home or with bodyweight uses full-body programs (2 alternating workouts).';
+
+  @override
+  String get newFolder => 'New folder';
+
+  @override
+  String get folderNameHint => 'e.g. Summer cut';
+
+  @override
+  String get folderExists => 'A folder with this name already exists.';
+
+  @override
+  String get sortPrograms => 'Sort folders & programs';
+
+  @override
+  String get sortHint => 'Drag folders and programs by the handle to reorder them.';
+
+  @override
+  String get addBuiltinPrograms => 'Add built-in programs';
+
+  @override
+  String get addBuiltinProgramsSub => 'Evidence-based programs for every split plus structured run, ride and swim workouts.';
+
+  @override
+  String get builtinsComplete => 'You already have all built-in programs.';
+
+  @override
+  String programsAdded(int count) {
+    return '$count programs added';
+  }
+
+  @override
+  String deleteFolderTitle(String name) {
+    return 'Delete \"$name\"?';
+  }
+
+  @override
+  String get deleteFolderEmpty => 'The folder is empty.';
+
+  @override
+  String deleteFolderBody(int count) {
+    return 'The folder contains $count programs. Keep them (without folder) or delete everything?';
+  }
+
+  @override
+  String get deleteFolderKeep => 'Keep programs';
+
+  @override
+  String get deleteFolderAll => 'Delete all';
+
+  @override
+  String programsCount(int count) {
+    return '$count programs';
+  }
+
+  @override
+  String get folderEmpty => 'No programs yet – add one via the menu.';
+
+  @override
+  String get duplicate => 'Duplicate';
+
+  @override
+  String get copy => 'copy';
+
+  @override
+  String get moveToFolder => 'Move to folder';
+
+  @override
+  String stepsCount(int count) {
+    return '$count sections';
+  }
+
+  @override
+  String get addSection => 'Section';
+
+  @override
+  String get addRepeat => 'Repeats';
+
+  @override
+  String get editSection => 'Edit section';
+
+  @override
+  String get byTime => 'Time';
+
+  @override
+  String get byDistance => 'Distance';
+
+  @override
+  String get discardChanges => 'Discard changes?';
+
+  @override
+  String setsN(int count) {
+    return '$count sets';
+  }
+
+  @override
+  String get structuredWorkout => 'Structured';
+
+  @override
+  String get structuredWorkoutSub => 'Phases with targets – guided step by step during the workout (voice, pace/power/HR).';
+
+  @override
+  String get freeWorkoutSub => 'Just a duration or distance goal, no sections.';
+
+  @override
+  String get supersetLinked => 'Superset – tap to unlink';
+
+  @override
+  String get repRange => 'Rep range';
+
+  @override
+  String get repRangeHint => 'Double progression: add reps until you hit the top of the range on all sets, then increase the weight.';
+
+  @override
+  String get exerciseLoadError => 'Exercises could not be loaded.';
 }

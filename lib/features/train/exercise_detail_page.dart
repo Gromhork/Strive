@@ -53,9 +53,7 @@ class ExerciseDetailPage extends ConsumerWidget {
             label: Text(l.watchVideo),
             onPressed:
                 () => launchUrl(
-                  Uri.parse(
-                    'https://www.youtube.com/results?search_query=${Uri.encodeComponent('${exercise.name} proper form')}',
-                  ),
+                  Uri.parse('https://www.youtube.com/results?search_query=${Uri.encodeComponent('${exercise.name} proper form')}'),
                   mode: LaunchMode.externalApplication,
                 ),
           ),
@@ -95,10 +93,7 @@ class ExerciseDetailPage extends ConsumerWidget {
                           getTitlesWidget: (v, _) {
                             final i = v.toInt();
                             if (i < 0 || i >= hist.length) return const SizedBox.shrink();
-                            return Text(
-                              DateFormat.Md(context.localeName).format(hist[i].$1),
-                              style: const TextStyle(fontSize: 10),
-                            );
+                            return Text(DateFormat.Md(context.localeName).format(hist[i].$1), style: const TextStyle(fontSize: 10));
                           },
                         ),
                       ),
@@ -106,9 +101,7 @@ class ExerciseDetailPage extends ConsumerWidget {
                     ),
                     lineBarsData: [
                       LineChartBarData(
-                        spots: [
-                          for (var i = 0; i < hist.length; i++) FlSpot(i.toDouble(), u.weightOut(hist[i].$2).roundToDouble()),
-                        ],
+                        spots: [for (var i = 0; i < hist.length; i++) FlSpot(i.toDouble(), u.weightOut(hist[i].$2).roundToDouble())],
                         isCurved: true,
                         color: AppColors.gym,
                         barWidth: 3,

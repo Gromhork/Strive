@@ -159,7 +159,7 @@
       }
     }
   },
-  "freeWorkout": "Free workout",
+  "freeWorkout": "Free",
   "workoutRunning": "Workout in progress",
   "workoutRunningBody": "Another workout is still running. Discard it and start a new one?",
   "discardAndStart": "Discard & start",
@@ -552,7 +552,7 @@
   "nextExercise": "Next exercise",
   "workoutComplete": "All sets done – great work!",
   "superset": "Superset",
-  "linkSuperset": "Superset with next",
+  "linkSuperset": "Link as superset",
   "unlinkSuperset": "Remove from superset",
   "replaceExercise": "Replace exercise",
   "warmupSets": "Warm-up sets",
@@ -1305,5 +1305,81 @@
       }
     }
   },
-  "splitHomeNote": "Training at home or with bodyweight uses full-body programs (2 alternating workouts)."
+  "splitHomeNote": "Training at home or with bodyweight uses full-body programs (2 alternating workouts).",
+  "newFolder": "New folder",
+  "folderNameHint": "e.g. Summer cut",
+  "folderExists": "A folder with this name already exists.",
+  "sortPrograms": "Sort folders & programs",
+  "sortHint": "Drag folders and programs by the handle to reorder them.",
+  "addBuiltinPrograms": "Add built-in programs",
+  "addBuiltinProgramsSub": "Evidence-based programs for every split plus structured run, ride and swim workouts.",
+  "builtinsComplete": "You already have all built-in programs.",
+  "programsAdded": "{count} programs added",
+  "@programsAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFolderTitle": "Delete \"{name}\"?",
+  "@deleteFolderTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteFolderEmpty": "The folder is empty.",
+  "deleteFolderBody": "The folder contains {count} programs. Keep them (without folder) or delete everything?",
+  "@deleteFolderBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFolderKeep": "Keep programs",
+  "deleteFolderAll": "Delete all",
+  "programsCount": "{count} programs",
+  "@programsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderEmpty": "No programs yet – add one via the menu.",
+  "duplicate": "Duplicate",
+  "copy": "copy",
+  "moveToFolder": "Move to folder",
+  "stepsCount": "{count} sections",
+  "@stepsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addSection": "Section",
+  "addRepeat": "Repeats",
+  "editSection": "Edit section",
+  "byTime": "Time",
+  "byDistance": "Distance",
+  "discardChanges": "Discard changes?",
+  "setsN": "{count} sets",
+  "@setsN": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "structuredWorkout": "Structured",
+  "structuredWorkoutSub": "Phases with targets – guided step by step during the workout (voice, pace/power/HR).",
+  "freeWorkoutSub": "Just a duration or distance goal, no sections.",
+  "supersetLinked": "Superset – tap to unlink",
+  "repRange": "Rep range",
+  "repRangeHint": "Double progression: add reps until you hit the top of the range on all sets, then increase the weight.",
+  "exerciseLoadError": "Exercises could not be loaded."
 }

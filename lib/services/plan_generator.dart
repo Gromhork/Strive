@@ -963,8 +963,9 @@ class PlanGenerator {
       if (s.distanceM != null) {
         meters += s.distanceM!;
       } else if (s.durationSec != null) {
-        if (sport == Sport.run && s.zone != 'walk')
+        if (sport == Sport.run && s.zone != 'walk') {
           meters += s.durationSec! / ((s.paceMin ?? pz.easySlow) + (s.paceMax ?? pz.easySlow)) * 2 * 1000;
+        }
         if (sport == Sport.ride) meters += s.durationSec! / 3600 * (s.zone == 'Z1' ? 20 : 27) * 1000;
       }
     }

@@ -884,7 +884,7 @@ abstract class AppLocalizations {
   /// No description provided for @freeWorkout.
   ///
   /// In en, this message translates to:
-  /// **'Free workout'**
+  /// **'Free'**
   String get freeWorkout;
 
   /// No description provided for @workoutRunning.
@@ -2522,7 +2522,7 @@ abstract class AppLocalizations {
   /// No description provided for @linkSuperset.
   ///
   /// In en, this message translates to:
-  /// **'Superset with next'**
+  /// **'Link as superset'**
   String get linkSuperset;
 
   /// No description provided for @unlinkSuperset.
@@ -5008,6 +5008,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Training at home or with bodyweight uses full-body programs (2 alternating workouts).'**
   String get splitHomeNote;
+
+  /// No description provided for @newFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get newFolder;
+
+  /// No description provided for @folderNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Summer cut'**
+  String get folderNameHint;
+
+  /// No description provided for @folderExists.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder with this name already exists.'**
+  String get folderExists;
+
+  /// No description provided for @sortPrograms.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort folders & programs'**
+  String get sortPrograms;
+
+  /// No description provided for @sortHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag folders and programs by the handle to reorder them.'**
+  String get sortHint;
+
+  /// No description provided for @addBuiltinPrograms.
+  ///
+  /// In en, this message translates to:
+  /// **'Add built-in programs'**
+  String get addBuiltinPrograms;
+
+  /// No description provided for @addBuiltinProgramsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence-based programs for every split plus structured run, ride and swim workouts.'**
+  String get addBuiltinProgramsSub;
+
+  /// No description provided for @builtinsComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have all built-in programs.'**
+  String get builtinsComplete;
+
+  /// No description provided for @programsAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} programs added'**
+  String programsAdded(int count);
+
+  /// No description provided for @deleteFolderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"?'**
+  String deleteFolderTitle(String name);
+
+  /// No description provided for @deleteFolderEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The folder is empty.'**
+  String get deleteFolderEmpty;
+
+  /// No description provided for @deleteFolderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The folder contains {count} programs. Keep them (without folder) or delete everything?'**
+  String deleteFolderBody(int count);
+
+  /// No description provided for @deleteFolderKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep programs'**
+  String get deleteFolderKeep;
+
+  /// No description provided for @deleteFolderAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all'**
+  String get deleteFolderAll;
+
+  /// No description provided for @programsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} programs'**
+  String programsCount(int count);
+
+  /// No description provided for @folderEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No programs yet – add one via the menu.'**
+  String get folderEmpty;
+
+  /// No description provided for @duplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get duplicate;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'copy'**
+  String get copy;
+
+  /// No description provided for @moveToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to folder'**
+  String get moveToFolder;
+
+  /// No description provided for @stepsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sections'**
+  String stepsCount(int count);
+
+  /// No description provided for @addSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Section'**
+  String get addSection;
+
+  /// No description provided for @addRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats'**
+  String get addRepeat;
+
+  /// No description provided for @editSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit section'**
+  String get editSection;
+
+  /// No description provided for @byTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get byTime;
+
+  /// No description provided for @byDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get byDistance;
+
+  /// No description provided for @discardChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get discardChanges;
+
+  /// No description provided for @setsN.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sets'**
+  String setsN(int count);
+
+  /// No description provided for @structuredWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Structured'**
+  String get structuredWorkout;
+
+  /// No description provided for @structuredWorkoutSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Phases with targets – guided step by step during the workout (voice, pace/power/HR).'**
+  String get structuredWorkoutSub;
+
+  /// No description provided for @freeWorkoutSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Just a duration or distance goal, no sections.'**
+  String get freeWorkoutSub;
+
+  /// No description provided for @supersetLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Superset – tap to unlink'**
+  String get supersetLinked;
+
+  /// No description provided for @repRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Rep range'**
+  String get repRange;
+
+  /// No description provided for @repRangeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Double progression: add reps until you hit the top of the range on all sets, then increase the weight.'**
+  String get repRangeHint;
+
+  /// No description provided for @exerciseLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercises could not be loaded.'**
+  String get exerciseLoadError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

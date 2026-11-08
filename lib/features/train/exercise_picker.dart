@@ -50,7 +50,24 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
               : null,
       body: dbAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        error:
+            (e, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline_rounded, size: 40),
+                    const SizedBox(height: 12),
+                    Text(l.exerciseLoadError, textAlign: TextAlign.center),
+                    const SizedBox(height: 4),
+                    Text('$e', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 12),
+                    FilledButton.tonal(onPressed: () => ref.invalidate(exerciseDbProvider), child: Text(l.retry)),
+                  ],
+                ),
+              ),
+            ),
         data: (db) {
           var list = db.search(_q, bodyPart: _body, equipment: _equip);
           // Exercises the user already did come first when not searching.
@@ -120,8 +137,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: e)));
                         }
                       },
-                      onLongPress:
-                          () => Navigator.push(context, MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: e))),
+                      onLongPress: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: e))),
                     );
                   },
                 ),
@@ -135,13 +151,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
 }
 
 class _FilterMenu extends StatelessWidget {
-  const _FilterMenu({
-    required this.label,
-    required this.active,
-    required this.options,
-    required this.lang,
-    required this.onSelected,
-  });
+  const _FilterMenu({required this.label, required this.active, required this.options, required this.lang, required this.onSelected});
   final String label;
   final bool active;
   final List<String> options;

@@ -56,7 +56,9 @@ final goalsProvider = StreamProvider<List<Goal>>((ref) {
   return r == null ? _empty(const []) : r.goals();
 });
 
-final exerciseDbProvider = FutureProvider<ExerciseDb>((ref) => ExerciseDb.load());
+/// Bundled exercise DB. No automatic retry: a failing load must surface as an error
+/// (Riverpod 3 would otherwise retry forever and show an endless spinner).
+final exerciseDbProvider = FutureProvider<ExerciseDb>((ref) => ExerciseDb.load(), retry: (_, __) => null);
 
 // ───────────────────────────── Derived ─────────────────────────────
 

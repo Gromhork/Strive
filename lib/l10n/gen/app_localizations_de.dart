@@ -410,7 +410,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get freeWorkout => 'Freies Training';
+  String get freeWorkout => 'Frei';
 
   @override
   String get workoutRunning => 'Training läuft';
@@ -1259,7 +1259,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get superset => 'Superset';
 
   @override
-  String get linkSuperset => 'Superset mit nächster Übung';
+  String get linkSuperset => 'Als Supersatz verbinden';
 
   @override
   String get unlinkSuperset => 'Aus Superset lösen';
@@ -2586,4 +2586,118 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get splitHomeNote => 'Bei Training zuhause oder mit Eigengewicht nutzt Strive Ganzkörper-Programme (2 im Wechsel).';
+
+  @override
+  String get newFolder => 'Neuer Ordner';
+
+  @override
+  String get folderNameHint => 'z. B. Sommerform';
+
+  @override
+  String get folderExists => 'Ein Ordner mit diesem Namen existiert bereits.';
+
+  @override
+  String get sortPrograms => 'Ordner & Programme sortieren';
+
+  @override
+  String get sortHint => 'Ziehe Ordner und Programme am Griff, um sie neu anzuordnen.';
+
+  @override
+  String get addBuiltinPrograms => 'Standardprogramme hinzufügen';
+
+  @override
+  String get addBuiltinProgramsSub => 'Wissenschaftlich fundierte Programme für jeden Split plus strukturierte Lauf-, Rad- und Schwimmeinheiten.';
+
+  @override
+  String get builtinsComplete => 'Du hast bereits alle Standardprogramme.';
+
+  @override
+  String programsAdded(int count) {
+    return '$count Programme hinzugefügt';
+  }
+
+  @override
+  String deleteFolderTitle(String name) {
+    return '„$name“ löschen?';
+  }
+
+  @override
+  String get deleteFolderEmpty => 'Der Ordner ist leer.';
+
+  @override
+  String deleteFolderBody(int count) {
+    return 'Der Ordner enthält $count Programme. Behalten (ohne Ordner) oder alles löschen?';
+  }
+
+  @override
+  String get deleteFolderKeep => 'Programme behalten';
+
+  @override
+  String get deleteFolderAll => 'Alles löschen';
+
+  @override
+  String programsCount(int count) {
+    return '$count Programme';
+  }
+
+  @override
+  String get folderEmpty => 'Noch keine Programme – füge eins über das Menü hinzu.';
+
+  @override
+  String get duplicate => 'Duplizieren';
+
+  @override
+  String get copy => 'Kopie';
+
+  @override
+  String get moveToFolder => 'In Ordner verschieben';
+
+  @override
+  String stepsCount(int count) {
+    return '$count Abschnitte';
+  }
+
+  @override
+  String get addSection => 'Abschnitt';
+
+  @override
+  String get addRepeat => 'Wiederholungen';
+
+  @override
+  String get editSection => 'Abschnitt bearbeiten';
+
+  @override
+  String get byTime => 'Zeit';
+
+  @override
+  String get byDistance => 'Distanz';
+
+  @override
+  String get discardChanges => 'Änderungen verwerfen?';
+
+  @override
+  String setsN(int count) {
+    return '$count Sätze';
+  }
+
+  @override
+  String get structuredWorkout => 'Strukturiert';
+
+  @override
+  String get structuredWorkoutSub => 'Phasen mit Zielen – während des Trainings Schritt für Schritt geführt (Sprache, Pace/Watt/Puls).';
+
+  @override
+  String get freeWorkoutSub => 'Nur ein Zeit- oder Distanzziel, ohne Abschnitte.';
+
+  @override
+  String get supersetLinked => 'Supersatz – tippen zum Lösen';
+
+  @override
+  String get repRange => 'Wiederholungsbereich';
+
+  @override
+  String get repRangeHint => 'Doppelte Progression: Wiederholungen steigern, bis du bei allen Sätzen oben im Bereich bist – dann mehr Gewicht.';
+
+  @override
+  String get exerciseLoadError => 'Übungen konnten nicht geladen werden.';
 }
