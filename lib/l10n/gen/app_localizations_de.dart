@@ -853,7 +853,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get aiUnavailable => 'Der KI-Coach ist gerade nicht erreichbar. Prüfe deine Verbindung oder aktiviere Firebase AI Logic.';
 
   @override
-  String get syncCalendar => 'Mit Google Kalender synchronisieren';
+  String get syncCalendar => 'Kalender exportieren';
 
   @override
   String get currentWeek => 'Aktuell';
@@ -871,7 +871,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get nothingToExport => 'Keine kommenden Trainings zum Exportieren.';
 
   @override
-  String get icsShareText => 'Mein Strive-Trainingsplan – mit Google Kalender öffnen zum Importieren.';
+  String get icsShareText => 'Mein Strive-Trainingsplan (.ics) – mit einer Kalender-App öffnen, um ihn zu importieren.';
 
   @override
   String get planGymDesc => 'Krafteinheit – progressive Überlastung: Gewicht oder Wdh. steigern, wenn alle Sätze gut laufen.';
@@ -1202,7 +1202,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get googleCalendar => 'Google Kalender';
 
   @override
-  String get googleCalendarSub => 'Plan als Kalenderdatei exportieren';
+  String get googleCalendarSub => 'Plan automatisch in einen eigenen „Strive“-Kalender übertragen';
 
   @override
   String get account => 'Konto';
@@ -2359,4 +2359,111 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get intensityRace => 'Wettkampf';
+
+  @override
+  String gcalConnectedSub(String account) {
+    return 'Verbunden · $account';
+  }
+
+  @override
+  String get gcalHeroTitle => 'Dein Plan im Google Kalender';
+
+  @override
+  String get gcalHeroSub => 'Strive legt einen eigenen Kalender „Strive“ an und hält ihn automatisch aktuell. Deine anderen Termine werden nie gelesen.';
+
+  @override
+  String get gcalConnect => 'Google Kalender verbinden';
+
+  @override
+  String get gcalDisconnect => 'Trennen';
+
+  @override
+  String get gcalSyncNow => 'Jetzt synchronisieren';
+
+  @override
+  String get gcalSyncing => 'Synchronisiere…';
+
+  @override
+  String get gcalAccount => 'Google-Konto';
+
+  @override
+  String get gcalLastSync => 'Letzter Abgleich';
+
+  @override
+  String get gcalEvents => 'Termine';
+
+  @override
+  String get gcalAutoInfo => 'Automatische Synchronisierung aktiv – Änderungen an deinem Plan erscheinen wenige Sekunden später im Google Kalender.';
+
+  @override
+  String gcalSynced(int count) {
+    return '$count Einheiten synchronisiert';
+  }
+
+  @override
+  String get gcalConnectedToast => 'Google Kalender verbunden';
+
+  @override
+  String get gcalDisconnectTitle => 'Google Kalender trennen?';
+
+  @override
+  String get gcalDisconnectBody => 'Strive aktualisiert den Kalender dann nicht mehr. Soll der Kalender „Strive“ mit allen Terminen auch aus deinem Google-Konto gelöscht werden?';
+
+  @override
+  String get gcalDeleteCalendar => 'Kalender löschen';
+
+  @override
+  String get gcalKeepCalendar => 'Kalender behalten';
+
+  @override
+  String get gcalDisconnected => 'Google Kalender getrennt';
+
+  @override
+  String get gcalHowTitle => 'So funktioniert es';
+
+  @override
+  String get gcalHow1 => 'Strive erhält nur Zugriff auf Kalender, die es selbst angelegt hat – deine anderen Kalender und Termine bleiben unsichtbar.';
+
+  @override
+  String gcalHow2(String time) {
+    return 'Einheiten der letzten 7 Tage bis 6 Monate im Voraus werden zu deiner bevorzugten Trainingszeit ($time) eingetragen.';
+  }
+
+  @override
+  String get gcalHow3 => 'Zum Ausblenden einfach den Kalender „Strive“ im Google Kalender abwählen – die Synchronisierung läuft im Hintergrund weiter.';
+
+  @override
+  String get gcalHow4 => 'Änderungen im Google Kalender werden beim nächsten Abgleich überschrieben – bearbeite deine Einheiten in Strive.';
+
+  @override
+  String get gcalOpen => 'Google Kalender öffnen';
+
+  @override
+  String get gcalReconnect => 'Erneut verbinden';
+
+  @override
+  String get gcalErrApiDisabled => 'Die Google Calendar API ist für diese App noch nicht aktiviert. Der Entwickler muss sie in der Google Cloud Console aktivieren (Projekt strive-fitness-app).';
+
+  @override
+  String get gcalErrAuth => 'Der Google-Zugriff ist abgelaufen oder wurde widerrufen. Bitte erneut verbinden.';
+
+  @override
+  String get gcalErrOffline => 'Keine Verbindung zu Google. Strive versucht es automatisch erneut.';
+
+  @override
+  String get gcalErrRateLimit => 'Google begrenzt gerade die Anfragen. Bitte in ein paar Minuten erneut versuchen.';
+
+  @override
+  String gcalErrGeneric(String detail) {
+    return 'Synchronisierung fehlgeschlagen: $detail';
+  }
+
+  @override
+  String get gcalCalendarDescription => 'Trainingsplan aus der Strive-App. Wird automatisch verwaltet – Änderungen hier werden überschrieben.';
+
+  @override
+  String get gcalStructure => 'Ablauf';
+
+  @override
+  String get gcalEventFooter => 'Aus Strive synchronisiert – bearbeite diese Einheit in der App.';
 }

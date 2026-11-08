@@ -13,6 +13,7 @@ import 'core/theme.dart';
 import 'features/auth/login_page.dart';
 import 'features/onboarding/onboarding_page.dart';
 import 'features/shell/home_shell.dart';
+import 'features/shell/gcal_sync.dart';
 import 'features/shell/health_sync.dart';
 import 'features/shell/reminder_sync.dart';
 import 'firebase_options.dart';
@@ -39,6 +40,7 @@ class StriveApp extends ConsumerWidget {
     // App-level (always active) so reminder scheduling is never paused by offstage routes.
     ref.watch(reminderSyncProvider);
     ref.watch(healthSyncProvider);
+    ref.watch(gcalAutoSyncProvider);
     return MaterialApp(
       title: 'Strive',
       debugShowCheckedModeBanner: false,

@@ -1742,7 +1742,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncCalendar.
   ///
   /// In en, this message translates to:
-  /// **'Sync with Google Calendar'**
+  /// **'Export calendar'**
   String get syncCalendar;
 
   /// No description provided for @currentWeek.
@@ -1778,7 +1778,7 @@ abstract class AppLocalizations {
   /// No description provided for @icsShareText.
   ///
   /// In en, this message translates to:
-  /// **'My Strive training plan – open with Google Calendar to import.'**
+  /// **'My Strive training plan (.ics) – open it with a calendar app to import it.'**
   String get icsShareText;
 
   /// No description provided for @planGymDesc.
@@ -2420,7 +2420,7 @@ abstract class AppLocalizations {
   /// No description provided for @googleCalendarSub.
   ///
   /// In en, this message translates to:
-  /// **'Export your plan as a calendar file'**
+  /// **'Sync your plan into a separate \"Strive\" calendar'**
   String get googleCalendarSub;
 
   /// No description provided for @account.
@@ -4594,6 +4594,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Race'**
   String get intensityRace;
+
+  /// No description provided for @gcalConnectedSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected · {account}'**
+  String gcalConnectedSub(String account);
+
+  /// No description provided for @gcalHeroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan in Google Calendar'**
+  String get gcalHeroTitle;
+
+  /// No description provided for @gcalHeroSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Strive creates its own calendar called \"Strive\" and keeps it up to date automatically. Your other appointments are never read.'**
+  String get gcalHeroSub;
+
+  /// No description provided for @gcalConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google Calendar'**
+  String get gcalConnect;
+
+  /// No description provided for @gcalDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get gcalDisconnect;
+
+  /// No description provided for @gcalSyncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get gcalSyncNow;
+
+  /// No description provided for @gcalSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get gcalSyncing;
+
+  /// No description provided for @gcalAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Google account'**
+  String get gcalAccount;
+
+  /// No description provided for @gcalLastSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sync'**
+  String get gcalLastSync;
+
+  /// No description provided for @gcalEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get gcalEvents;
+
+  /// No description provided for @gcalAutoInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic sync is on – changes to your plan show up in Google Calendar a few seconds later.'**
+  String get gcalAutoInfo;
+
+  /// No description provided for @gcalSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} workouts synced'**
+  String gcalSynced(int count);
+
+  /// No description provided for @gcalConnectedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Calendar connected'**
+  String get gcalConnectedToast;
+
+  /// No description provided for @gcalDisconnectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Google Calendar?'**
+  String get gcalDisconnectTitle;
+
+  /// No description provided for @gcalDisconnectBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Strive will stop updating the calendar. Do you also want to delete the \"Strive\" calendar and all its events from your Google account?'**
+  String get gcalDisconnectBody;
+
+  /// No description provided for @gcalDeleteCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete calendar'**
+  String get gcalDeleteCalendar;
+
+  /// No description provided for @gcalKeepCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep calendar'**
+  String get gcalKeepCalendar;
+
+  /// No description provided for @gcalDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Calendar disconnected'**
+  String get gcalDisconnected;
+
+  /// No description provided for @gcalHowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How it works'**
+  String get gcalHowTitle;
+
+  /// No description provided for @gcalHow1.
+  ///
+  /// In en, this message translates to:
+  /// **'Strive only gets access to calendars it created itself – it cannot see your other calendars or appointments.'**
+  String get gcalHow1;
+
+  /// No description provided for @gcalHow2.
+  ///
+  /// In en, this message translates to:
+  /// **'Workouts from the last 7 days up to 6 months ahead are entered at your preferred training time ({time}).'**
+  String gcalHow2(String time);
+
+  /// No description provided for @gcalHow3.
+  ///
+  /// In en, this message translates to:
+  /// **'To hide the workouts, untick the \"Strive\" calendar in Google Calendar – syncing continues in the background.'**
+  String get gcalHow3;
+
+  /// No description provided for @gcalHow4.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes made in Google Calendar are overwritten on the next sync – edit your workouts in Strive.'**
+  String get gcalHow4;
+
+  /// No description provided for @gcalOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Google Calendar'**
+  String get gcalOpen;
+
+  /// No description provided for @gcalReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect again'**
+  String get gcalReconnect;
+
+  /// No description provided for @gcalErrApiDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'The Google Calendar API is not enabled for this app yet. The developer needs to enable it in the Google Cloud console (project strive-fitness-app).'**
+  String get gcalErrApiDisabled;
+
+  /// No description provided for @gcalErrAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Google access has expired or was revoked. Please connect again.'**
+  String get gcalErrAuth;
+
+  /// No description provided for @gcalErrOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection to Google. Strive will try again automatically.'**
+  String get gcalErrOffline;
+
+  /// No description provided for @gcalErrRateLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Google is limiting requests right now. Please try again in a few minutes.'**
+  String get gcalErrRateLimit;
+
+  /// No description provided for @gcalErrGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed: {detail}'**
+  String gcalErrGeneric(String detail);
+
+  /// No description provided for @gcalCalendarDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Training plan from the Strive app. Managed automatically – changes made here will be overwritten.'**
+  String get gcalCalendarDescription;
+
+  /// No description provided for @gcalStructure.
+  ///
+  /// In en, this message translates to:
+  /// **'Structure'**
+  String get gcalStructure;
+
+  /// No description provided for @gcalEventFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced from Strive – edit this workout in the app.'**
+  String get gcalEventFooter;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

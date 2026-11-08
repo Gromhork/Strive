@@ -7,7 +7,9 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../shell/gcal_sync.dart';
 import '../shell/health_sync.dart';
+import 'google_calendar_page.dart';
 import 'health_connect_page.dart';
 import '../../services/google_auth.dart';
 import '../../services/notification_service.dart';
@@ -29,6 +31,7 @@ class ProfilePage extends ConsumerWidget {
     final setN = ref.read(settingsProvider.notifier);
     final user = FirebaseAuth.instance.currentUser;
     final repo = ref.read(repoProvider);
+    final gcal = ref.watch(gcalProvider);
 
     Future<void> enableReminder(Future<void> Function() apply) async {
       final ok = await NotificationService.instance.requestPermission();
@@ -285,12 +288,9 @@ class ProfilePage extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.calendar_month_outlined),
                   title: Text(l.googleCalendar),
-                  subtitle: Text(l.googleCalendarSub),
+                  subtitle: Text(gcal.enabled && gcal.account != null ? l.gcalConnectedSub(gcal.account!) : l.googleCalendarSub),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.pop(context);
-                    ref.read(navIndexProvider.notifier).set(2);
-                  },
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoogleCalendarPage())),
                 ),
               ],
             ),

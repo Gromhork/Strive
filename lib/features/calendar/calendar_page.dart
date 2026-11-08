@@ -46,7 +46,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
                     onPressed: _exportIcs,
-                    icon: const Icon(Icons.sync_rounded, size: 18),
+                    icon: const Icon(Icons.ios_share_rounded, size: 18),
                     label: Text(l.syncCalendar, overflow: TextOverflow.ellipsis),
                   ),
                 ),
