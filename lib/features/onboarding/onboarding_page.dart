@@ -12,19 +12,33 @@ import '../../data/default_programs.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/plan_generator.dart';
+import '../../services/schedule_advisor.dart';
 import '../../services/zones.dart';
 import '../../widgets/common.dart';
 import '../../widgets/segments.dart';
 
-/// First-time setup (and profile editing).
+/// What the setup flow edits.
+enum SetupMode {
+  /// First-time setup: everything.
+  setup,
+
+  /// Personal data only (name, body, level, health) – from the profile.
+  profile,
+
+  /// Training-plan inputs only (focus, week, times, sport data, event, plan) –
+  /// from "Plan neu erstellen"; regenerates the plan on finish.
+  plan,
+}
+
+/// First-time setup, profile editing and plan settings.
 ///
 /// Two paths: **Quick** (general questions, ~2 min) and **Detailed** (sport-specific
 /// data such as race times, weekly volume, FTP, CSS, 1RMs and a per-weekday plan).
 class OnboardingPage extends ConsumerStatefulWidget {
-  const OnboardingPage({super.key, this.edit = false});
+  const OnboardingPage({super.key, this.mode = SetupMode.setup});
 
-  /// When true the page edits an existing profile instead of first-time setup.
-  final bool edit;
+  final SetupMode mode;
+  bool get edit => mode != SetupMode.setup;
 
   @override
   ConsumerState<OnboardingPage> createState() => _OnboardingPageState();
@@ -53,7 +67,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     a = p.athlete;
     _name.text = p.name;
     _imperial = p.imperial;
-    _generatePlan = !widget.edit;
+    _generatePlan = widget.mode != SetupMode.profile;
   }
 
   bool get _advanced => a.setupMode == 'advanced';
@@ -61,20 +75,25 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   void _setA(Map<String, dynamic> changes) => setState(() => a = a.merge(changes));
 
-  List<_Step> get _steps => [
-    ('welcome', _welcome),
-    ('body', _body),
-    ('fitness', _fitness),
-    ('focus', _focus),
-    if (_advanced) ('week', _weekPlan) else ('schedule', _schedule),
-    if (_advanced && _sports.contains(Sport.run)) ('run', _running),
-    if (_advanced && _sports.contains(Sport.ride)) ('ride', _cycling),
-    if (_advanced && _sports.contains(Sport.swim)) ('swim', _swimming),
-    if (_advanced && _sports.contains(Sport.gym)) ('gym', _strength),
-    if (_advanced) ('health', _health),
-    ('event', _event),
-    ('plan', _plan),
-  ];
+  List<_Step> get _steps {
+    final setup = widget.mode == SetupMode.setup;
+    final plan = widget.mode != SetupMode.profile;
+    final profile = widget.mode != SetupMode.plan;
+    return [
+      if (setup) ('welcome', _welcome),
+      if (profile) ('body', _body),
+      if (profile) ('fitness', _fitness),
+      if (plan) ('focus', _focus),
+      if (plan) (_advanced ? 'week' : 'schedule', _advanced ? _weekPlan : _schedule),
+      if (plan && _advanced && _sports.contains(Sport.run)) ('run', _running),
+      if (plan && _advanced && _sports.contains(Sport.ride)) ('ride', _cycling),
+      if (plan && _advanced && _sports.contains(Sport.swim)) ('swim', _swimming),
+      if (plan && _sports.contains(Sport.gym)) ('gym', _strength),
+      if ((profile && _advanced) || widget.mode == SetupMode.profile) ('health', _health),
+      if (plan) ('event', _event),
+      if (plan) ('plan', _plan),
+    ];
+  }
 
   void _next() {
     FocusScope.of(context).unfocus();
@@ -88,39 +107,55 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   void _finish() {
     final repo = ref.read(repoProvider)!;
     final l = context.l10n;
+    final de = context.localeName.startsWith('de');
     var days = p.trainingDays;
     if (_advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) {
       days = (a.dayPlan.entries.where((e) => e.value.isNotEmpty).map((e) => e.key).toList()..sort());
     }
-    final profile = p.copyWith(name: _name.text.trim(), imperial: _imperial, onboarded: true, athlete: a, trainingDays: days);
+    final profile = p.copyWith(
+      name: _name.text.trim().isEmpty ? p.name : _name.text.trim(),
+      imperial: _imperial,
+      onboarded: true,
+      athlete: a,
+      trainingDays: days,
+    );
     repo.saveProfile(profile);
     final now = DateTime.now();
 
-    if (!widget.edit) {
+    if (widget.mode == SetupMode.setup) {
       repo.saveBody(
         BodyEntry(id: repo.newId(), date: now, weightKg: profile.weightKg, fatPct: profile.fatPct, musclePct: profile.musclePct),
       );
     }
+    if (widget.mode == SetupMode.profile) {
+      if (mounted) Navigator.pop(context);
+      return;
+    }
 
+    // Programs: all built-ins for new users; otherwise add the ones the split needs.
     var templates = ref.read(templateListProvider);
-    if (templates.isEmpty) {
-      templates = defaultTemplates(repo.newId);
-      for (final t in templates) {
-        repo.saveTemplate(t);
-      }
+    final added =
+        templates.isEmpty
+            ? defaultTemplates(repo.newId, de: de)
+            : missingBuiltins(templates, repo.newId, de: de, only: PlanGenerator.gymKeysFor(profile).toSet());
+    if (added.isNotEmpty) {
+      repo.saveTemplates(added);
+      templates = [...templates, ...added];
     }
 
     if (a.eventDate != null && (a.eventDistance != null || _eventName.text.trim().isNotEmpty)) {
       final km = _eventKm(a.eventDistance);
+      final goals = ref.read(goalsProvider).value ?? const <Goal>[];
+      final existing = goals.where((g) => g.type == GoalType.event && g.deadline != null && sameDay(g.deadline!, a.eventDate!)).firstOrNull;
       repo.saveGoal(
         Goal(
-          id: repo.newId(),
+          id: existing?.id ?? repo.newId(),
           type: GoalType.event,
           title: _eventName.text.trim().isEmpty ? _distanceLabel(l, a.eventDistance) : _eventName.text.trim(),
           sport: profile.focus.sports.last,
           target: km ?? 0,
           eventKm: km,
-          created: now,
+          created: existing?.created ?? now,
           deadline: a.eventDate,
         ),
       );
@@ -149,7 +184,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   onPressed: () => _pager.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
                 )
                 : (widget.edit ? const CloseButton() : null),
-        title: Text(widget.edit ? l.editProfile : l.onboardingTitle),
+        title: Text(switch (widget.mode) {
+          SetupMode.setup => l.onboardingTitle,
+          SetupMode.profile => l.editProfile,
+          SetupMode.plan => l.planSettings,
+        }),
         actions: [
           if (!widget.edit) IconButton(tooltip: l.logout, onPressed: () => FirebaseAuth.instance.signOut(), icon: const Icon(Icons.logout)),
         ],
@@ -182,7 +221,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 width: double.infinity,
                 height: 52,
                 child: FilledButton(
-                  onPressed: _page == 0 && _name.text.trim().isEmpty ? null : _next,
+                  onPressed: _page == 0 && widget.mode == SetupMode.setup && _name.text.trim().isEmpty ? null : _next,
                   child: Text(last ? (widget.edit ? l.save : l.letsGo) : l.next),
                 ),
               ),
@@ -342,6 +381,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _h(l.aboutYou, l.aboutYouSub, icon: Icons.person_outline_rounded),
+        if (widget.mode == SetupMode.profile) ...[
+          TextField(
+            controller: _name,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(labelText: l.yourName, prefixIcon: const Icon(Icons.badge_outlined)),
+          ),
+          const SizedBox(height: 16),
+        ],
         Segments<String>(
           segments: [Seg('m', label: l.male), Seg('f', label: l.female), Seg('d', label: l.diverse)],
           value: p.gender,
@@ -403,6 +450,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         ],
         const SizedBox(height: 8),
         Text('BMI ${p.bmi.toStringAsFixed(1)}', style: Theme.of(context).textTheme.bodySmall),
+        if (widget.mode == SetupMode.profile) ...[_label(l.units), _unitsSwitch(l)],
       ],
     );
   }
@@ -469,6 +517,20 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _h(l.focusTitle, l.focusSub, icon: Icons.center_focus_strong_rounded),
+        if (widget.mode == SetupMode.plan) ...[
+          Segments<String>(
+            segments: [
+              Seg('simple', label: l.setupQuick, icon: Icons.bolt_rounded),
+              Seg('advanced', label: l.setupDetailed, icon: Icons.tune_rounded),
+            ],
+            value: a.setupMode,
+            onChanged: (v) {
+              _setA({'setupMode': v});
+              if (v == 'advanced' && a.dayPlan.values.every((x) => x.isEmpty)) _setA({'dayPlan': PlanGenerator.deriveSchedule(p)});
+            },
+          ),
+          const SizedBox(height: 20),
+        ],
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
@@ -527,28 +589,41 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   String _dayName(int d) => DateFormat.E(context.localeName).format(startOfWeek(DateTime.now()).add(Duration(days: d - 1)));
 
-  /// Quick setup: training days + long day + units.
+  /// Quick setup: training days + long day + time + units.
   Widget _schedule(AppLocalizations l) {
+    final adv = ScheduleAdvisor(p, _sports);
+    final freq = adv.recommended();
+    final recDays = adv.autoSchedule(freq).keys.toList()..sort();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _h(l.scheduleTitle, l.scheduleSub, icon: Icons.calendar_month_rounded),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
+        _RecommendationCard(
+          freq: freq,
+          title: l.recDays(recDays.length),
+          action: l.recAutoDays,
+          applied: _listEq(recDays, [...p.trainingDays]..sort()),
+          onApply: () => setState(() => p = p.copyWith(trainingDays: recDays)),
+        ),
+        const SizedBox(height: 14),
+        Row(
           children: [
             for (var d = 1; d <= 7; d++)
-              ChoiceChip(
-                showCheckmark: false,
-                label: SizedBox(width: 30, child: Text(_dayName(d), textAlign: TextAlign.center)),
-                selected: p.trainingDays.contains(d),
-                onSelected:
-                    (v) => setState(() {
-                      final days = [...p.trainingDays];
-                      v ? days.add(d) : days.remove(d);
-                      days.sort();
-                      p = p.copyWith(trainingDays: days);
-                    }),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: _DayChip(
+                    label: _dayName(d),
+                    selected: p.trainingDays.contains(d),
+                    onTap:
+                        () => setState(() {
+                          final days = [...p.trainingDays];
+                          days.contains(d) ? days.remove(d) : days.add(d);
+                          days.sort();
+                          p = p.copyWith(trainingDays: days);
+                        }),
+                  ),
+                ),
               ),
           ],
         ),
@@ -565,22 +640,70 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             onChanged: (v) => setState(() => p = UserProfile.fromMap({...p.toMap(), 'longDay': v})),
           ),
         ],
-        _label(l.sessionLength),
-        _sessionMinutes(l),
-        _label(l.units),
-        _unitsSwitch(l),
+        _timeSection(l, days: p.trainingDays),
+        if (widget.mode == SetupMode.setup) ...[_label(l.units), _unitsSwitch(l)],
       ],
     );
   }
 
-  Widget _sessionMinutes(AppLocalizations l) => Wrap(
-    spacing: 8,
-    runSpacing: 8,
-    children: [
-      for (final m in const [30, 45, 60, 75, 90, 120])
-        ChoiceChip(label: Text('$m min'), selected: a.sessionMinutes == m, onSelected: (_) => _setA({'sessionMinutes': m})),
-    ],
-  );
+  static bool _listEq(List<int> x, List<int> y) => x.length == y.length && List.generate(x.length, (i) => x[i] == y[i]).every((v) => v);
+
+  /// Max. training time per day (global) with optional per-day overrides.
+  Widget _timeSection(AppLocalizations l, {required List<int> days}) {
+    final profile = p.copyWith(athlete: a);
+    final longDay = PlanGenerator.longDayOf(profile);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label(l.timeTitle, hint: l.timeHint),
+        _MinutesStepper(value: a.sessionMinutes, onChanged: (v) => _setA({'sessionMinutes': v}), big: true),
+        if (longDay != null && !a.dayMinutes.containsKey(longDay))
+          Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.timeLongDayHint, style: Theme.of(context).textTheme.bodySmall)),
+        Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            initiallyExpanded: a.dayMinutes.isNotEmpty,
+            leading: const Icon(Icons.tune_rounded, size: 20),
+            title: Text(l.timePerDay, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+            subtitle:
+                a.dayMinutes.isEmpty ? null : Text(l.timeCustomDays(a.dayMinutes.length), style: Theme.of(context).textTheme.bodySmall),
+            children: [
+              for (final d in [...days]..sort())
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      SizedBox(width: 44, child: Text(_dayName(d), style: const TextStyle(fontWeight: FontWeight.w700))),
+                      if (d == longDay) const Icon(Icons.star_rounded, size: 16, color: AppColors.brand),
+                      const Spacer(),
+                      if (a.dayMinutes.containsKey(d))
+                        IconButton(
+                          tooltip: l.timeDefault,
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(Icons.restart_alt_rounded, size: 20),
+                          onPressed:
+                              () => _setA({
+                                'dayMinutes': {...a.dayMinutes}..remove(d),
+                              }),
+                        ),
+                      _MinutesStepper(
+                        value: PlanGenerator.dayMinutesFor(profile, d),
+                        dimmed: !a.dayMinutes.containsKey(d),
+                        onChanged:
+                            (v) => _setA({
+                              'dayMinutes': {...a.dayMinutes, d: v},
+                            }),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _unitsSwitch(AppLocalizations l) => Segments<bool>(
     segments: [Seg(false, label: l.metric), Seg(true, label: l.imperial)],
@@ -613,6 +736,30 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _h(l.weekPlanTitle, l.weekPlanSub, icon: Icons.view_week_rounded),
+        Builder(
+          builder: (_) {
+            final adv = ScheduleAdvisor(p.copyWith(athlete: a), _sports);
+            final freq = adv.recommended();
+            return _RecommendationCard(
+              freq: freq,
+              current: perSport,
+              title: l.recTitle,
+              action: l.recAuto,
+              applied: freq.entries.every((e) => perSport[e.key] == e.value),
+              onApply: () {
+                final plan = adv.autoSchedule(freq);
+                final ld = plan.entries.where((e) => e.value.any((s) => s != Sport.gym)).map((e) => e.key).toList()..sort();
+                setState(() {
+                  if (ld.isNotEmpty && !ld.contains(p.longDay))
+                    p = UserProfile.fromMap({...p.toMap(), 'longDay': ld.contains(6) ? 6 : ld.last});
+                });
+                _setA({'dayPlan': plan});
+                toast(context, l.recApplied);
+              },
+            );
+          },
+        ),
+        const SizedBox(height: 16),
         Segments<int>(
           segments: [Seg(1, label: l.oncePerDay), Seg(2, label: l.twicePerDay)],
           value: a.sessionsPerDay,
@@ -680,16 +827,20 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             padding: const EdgeInsets.only(top: 8),
             child: Text(l.noRestDayWarning, style: const TextStyle(color: AppColors.warning, fontSize: 12)),
           ),
-        _label(l.sessionLength),
-        _sessionMinutes(l),
+        _timeSection(
+          l,
+          days: [
+            for (final e in plan.entries)
+              if (e.value.isNotEmpty) e.key,
+          ],
+        ),
         _label(l.preferredTime),
         Segments<String>(
           segments: [Seg('morning', label: l.morning), Seg('midday', label: l.midday), Seg('evening', label: l.evening)],
           value: a.preferredTime,
           onChanged: (v) => _setA({'preferredTime': v}),
         ),
-        _label(l.units),
-        _unitsSwitch(l),
+        if (widget.mode == SetupMode.setup) ...[_label(l.units), _unitsSwitch(l)],
       ],
     );
   }
@@ -880,28 +1031,81 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           color: AppColors.gym,
           onTap: () => _setA({'equipment': 'bodyweight'}),
         ),
+        _splitSection(l),
         _label(l.gymGoalTitle),
         Segments<String>(
           segments: [Seg('strength', label: l.goalStrength), Seg('hypertrophy', label: l.goalMuscle), Seg('general', label: l.general)],
           value: a.gymGoal,
           onChanged: (v) => _setA({'gymGoal': v}),
         ),
-        _label(l.oneRmTitle, hint: l.oneRmHint),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 2.6,
-          crossAxisSpacing: 12,
-          children: [
-            for (final e in lifts.entries)
-              _numField(e.value, a.oneRm[e.key], (v) {
-                final m = {...a.oneRm};
-                v == null ? m.remove(e.key) : m[e.key] = v;
-                a = a.merge({'oneRm': m});
-              }, suffix: 'kg'),
-          ],
-        ),
+        if (_advanced) _label(l.oneRmTitle, hint: l.oneRmHint),
+        if (_advanced)
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 2.6,
+            crossAxisSpacing: 12,
+            children: [
+              for (final e in lifts.entries)
+                _numField(e.value, a.oneRm[e.key], (v) {
+                  final m = {...a.oneRm};
+                  v == null ? m.remove(e.key) : m[e.key] = v;
+                  a = a.merge({'oneRm': m});
+                }, suffix: 'kg'),
+            ],
+          ),
+      ],
+    );
+  }
+
+  /// Gym days in the current schedule (week plan or quick training days).
+  int get _gymDays {
+    if (_advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) return a.dayPlan.values.where((v) => v.contains(Sport.gym)).length;
+    return PlanGenerator.deriveSchedule(p).values.where((v) => v.contains(Sport.gym)).length;
+  }
+
+  int get _enduranceSessions {
+    final plan = _advanced && a.dayPlan.values.any((v) => v.isNotEmpty) ? a.dayPlan : PlanGenerator.deriveSchedule(p);
+    return plan.values.expand((v) => v).where((s) => s != Sport.gym).length;
+  }
+
+  String _splitName(AppLocalizations l, String s) => switch (s) {
+    'fullbody' => l.splitFullbody,
+    'upperlower' => l.splitUpperLower,
+    'ppl' => l.splitPpl,
+    'ulppl' => l.splitUlppl,
+    'bro' => l.splitBro,
+    _ => l.splitAuto,
+  };
+
+  Widget _splitSection(AppLocalizations l) {
+    final days = _gymDays;
+    final rec = recommendedSplit(days, enduranceSessions: _enduranceSessions);
+    if (a.equipment != 'gym') {
+      return Padding(padding: const EdgeInsets.only(top: 16), child: Text(l.splitHomeNote, style: Theme.of(context).textTheme.bodySmall));
+    }
+    String freq(String s) => l.splitFreq(Units.num(splitFrequency(s, days)));
+    Widget card(String key, IconData icon, String sub) => _choiceCard(
+      selected: a.gymSplit == key,
+      title: key == 'auto' ? l.splitAuto : _splitName(l, key),
+      sub: key == 'auto' ? l.splitAutoSub(_splitName(l, rec)) : '$sub\n${freq(key)}',
+      icon: icon,
+      color: AppColors.gym,
+      badge: key == rec ? l.splitForDays(days) : null,
+      onTap: () => _setA({'gymSplit': key}),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label(l.splitTitle, hint: l.splitHint),
+        card('auto', Icons.auto_awesome_rounded, ''),
+        card('fullbody', Icons.accessibility_new_rounded, l.splitFullbodySub),
+        card('upperlower', Icons.swap_vert_rounded, l.splitUpperLowerSub),
+        card('ppl', Icons.view_column_rounded, l.splitPplSub),
+        card('ulppl', Icons.dashboard_customize_rounded, l.splitUlpplSub),
+        card('bro', Icons.calendar_view_week_rounded, l.splitBroSub),
+        if (a.gymSplit == 'bro') Text(l.splitBroWarning, style: const TextStyle(color: AppColors.warning, fontSize: 12)),
       ],
     );
   }
@@ -1193,4 +1397,174 @@ class _SportToggle extends StatelessWidget {
       child: Icon(sport.icon, size: 20, color: selected ? Colors.black87 : sport.color.withValues(alpha: 0.7)),
     ),
   );
+}
+
+/// Recommended sessions per sport with an "apply" button.
+class _RecommendationCard extends StatelessWidget {
+  const _RecommendationCard({
+    required this.freq,
+    required this.title,
+    required this.action,
+    required this.onApply,
+    this.current,
+    this.applied = false,
+  });
+  final Map<Sport, int> freq;
+  final Map<Sport, int>? current;
+  final String title;
+  final String action;
+  final VoidCallback onApply;
+  final bool applied;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(colors: [AppColors.brand.withValues(alpha: 0.20), AppColors.brand.withValues(alpha: 0.06)]),
+        border: Border.all(color: AppColors.brand.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome_rounded, size: 18, color: AppColors.brand),
+              const SizedBox(width: 8),
+              Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700))),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final e in freq.entries)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(color: e.key.color.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(12)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(e.key.icon, size: 16, color: e.key.color),
+                      const SizedBox(width: 6),
+                      Text(l.recPerWeek(e.value), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      if (current != null && current![e.key] != e.value) ...[
+                        const SizedBox(width: 4),
+                        Text('(${current![e.key] ?? 0})', style: Theme.of(context).textTheme.bodySmall),
+                      ],
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(l.recSub, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerRight,
+            child:
+                applied
+                    ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.check_circle_rounded, size: 18, color: AppColors.brand),
+                          const SizedBox(width: 6),
+                          Text(l.recActive, style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    )
+                    : FilledButton.tonalIcon(
+                      onPressed: onApply,
+                      icon: const Icon(Icons.auto_fix_high_rounded, size: 18),
+                      label: Text(action),
+                    ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Weekday toggle for the quick setup.
+class _DayChip extends StatelessWidget {
+  const _DayChip({required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        height: 48,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? AppColors.brand : scheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: selected ? AppColors.brand : scheme.outlineVariant),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(label, style: TextStyle(fontWeight: FontWeight.w700, color: selected ? Colors.white : scheme.onSurfaceVariant)),
+        ),
+      ),
+    );
+  }
+}
+
+/// − 60 min + stepper (15-min steps, 20–240 min).
+class _MinutesStepper extends StatelessWidget {
+  const _MinutesStepper({required this.value, required this.onChanged, this.big = false, this.dimmed = false});
+  final int value;
+  final ValueChanged<int> onChanged;
+  final bool big;
+  final bool dimmed;
+
+  static String fmt(int m) => m < 60 || m % 60 != 0 && m < 90 ? '$m min' : (m % 60 == 0 ? '${m ~/ 60} h' : '${m ~/ 60} h ${m % 60}');
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Text(
+      fmt(value),
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: big ? 22 : 15,
+        fontWeight: FontWeight.w700,
+        color: dimmed ? scheme.outline : scheme.onSurface,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    );
+    final row = Row(
+      mainAxisSize: big ? MainAxisSize.max : MainAxisSize.min,
+      children: [
+        IconButton.filledTonal(
+          visualDensity: big ? VisualDensity.standard : VisualDensity.compact,
+          onPressed: value > 20 ? () => onChanged(value <= 30 ? 20 : value - 15) : null,
+          icon: const Icon(Icons.remove_rounded),
+        ),
+        big ? Expanded(child: text) : SizedBox(width: 74, child: text),
+        IconButton.filledTonal(
+          visualDensity: big ? VisualDensity.standard : VisualDensity.compact,
+          onPressed: value < 240 ? () => onChanged(value < 30 ? 30 : value + 15) : null,
+          icon: const Icon(Icons.add_rounded),
+        ),
+      ],
+    );
+    if (!big) return row;
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(color: scheme.surfaceContainer, borderRadius: BorderRadius.circular(18)),
+      child: row,
+    );
+  }
 }

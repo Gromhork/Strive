@@ -2466,4 +2466,124 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gcalEventFooter => 'Synced from Strive – edit this workout in the app.';
+
+  @override
+  String get planSettings => 'Plan settings';
+
+  @override
+  String get editPlanSettings => 'Edit plan settings';
+
+  @override
+  String get editPlanSettingsSub => 'Sports, week, times, sport data, goal – then a new plan';
+
+  @override
+  String get editProfileSub => 'Name, body data, level, health';
+
+  @override
+  String get timeTitle => 'Time per training day';
+
+  @override
+  String get timeHint => 'The most time you have on a training day – including warm-up and cool-down. Every session is planned to fit.';
+
+  @override
+  String get timeLongDayHint => 'On your long-session day (★) Strive plans up to 2 h unless you set that day yourself.';
+
+  @override
+  String get timePerDay => 'Set per day (optional)';
+
+  @override
+  String timeCustomDays(int count) {
+    return '$count days set individually';
+  }
+
+  @override
+  String get timeDefault => 'Back to default';
+
+  @override
+  String get recTitle => 'Recommendation for you';
+
+  @override
+  String get recSub => 'Based on your level, goal and focus. Rest days stay free on purpose – that is when you adapt.';
+
+  @override
+  String recPerWeek(int count) {
+    return '$count× / week';
+  }
+
+  @override
+  String get recAuto => 'Plan my week';
+
+  @override
+  String get recApplied => 'Week planned – adjust it as you like.';
+
+  @override
+  String get recActive => 'Recommendation applied';
+
+  @override
+  String recDays(int count) {
+    return 'Recommended: $count training days';
+  }
+
+  @override
+  String get recAutoDays => 'Use recommendation';
+
+  @override
+  String get splitTitle => 'Training split';
+
+  @override
+  String get splitHint => 'How your gym sessions are divided. Ideally every muscle is trained about 2× per week.';
+
+  @override
+  String get splitAuto => 'Automatic';
+
+  @override
+  String splitAutoSub(String name) {
+    return 'Now: $name – adapts to your training days';
+  }
+
+  @override
+  String get splitFullbody => 'Full body';
+
+  @override
+  String get splitFullbodySub => 'Whole body every session · ideal for 2–3 days';
+
+  @override
+  String get splitUpperLower => 'Upper / Lower';
+
+  @override
+  String get splitUpperLowerSub => 'Upper and lower body alternate · ideal for 4 days';
+
+  @override
+  String get splitPpl => 'Push / Pull / Legs';
+
+  @override
+  String get splitPplSub => 'Pressing, pulling, legs · ideal for 3 or 6 days';
+
+  @override
+  String get splitUlppl => 'Upper/Lower + PPL';
+
+  @override
+  String get splitUlpplSub => 'Hybrid of both · ideal for 5 days';
+
+  @override
+  String get splitBro => 'Bro split';
+
+  @override
+  String get splitBroSub => 'One muscle group per day · 5 days';
+
+  @override
+  String splitFreq(String value) {
+    return 'Each muscle ~$value× per week with your days';
+  }
+
+  @override
+  String get splitBroWarning => 'Each muscle only once a week. With the same weekly volume, training a muscle twice a week usually builds a little more muscle (Schoenfeld 2016) – fine if you enjoy it.';
+
+  @override
+  String splitForDays(int count) {
+    return 'Best for $count days';
+  }
+
+  @override
+  String get splitHomeNote => 'Training at home or with bodyweight uses full-body programs (2 alternating workouts).';
 }

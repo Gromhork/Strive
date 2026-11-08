@@ -66,10 +66,7 @@ class ProfilePage extends ConsumerWidget {
                       p.name.isEmpty ? l.athlete : p.name,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    Text(
-                      user?.isAnonymous == true ? l.guestAccount : (user?.email ?? ''),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+                    Text(user?.isAnonymous == true ? l.guestAccount : (user?.email ?? ''), style: Theme.of(context).textTheme.bodySmall),
                     const SizedBox(height: 4),
                     Text('${p.focus.label(l)} · ${_level(l, p.level)}', style: Theme.of(context).textTheme.bodySmall),
                   ],
@@ -78,7 +75,7 @@ class ProfilePage extends ConsumerWidget {
               IconButton(
                 tooltip: l.editProfile,
                 icon: const Icon(Icons.edit_outlined),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(edit: true))),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.profile))),
               ),
             ],
           ),
@@ -94,10 +91,7 @@ class ProfilePage extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(value: g.level.progress, minHeight: 8),
-                ),
+                ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(value: g.level.progress, minHeight: 8)),
                 const SizedBox(height: 16),
                 for (final s in Sport.values)
                   Padding(
@@ -139,6 +133,20 @@ class ProfilePage extends ConsumerWidget {
           Card(
             child: Column(
               children: [
+                ListTile(
+                  leading: const Icon(Icons.person_outline_rounded),
+                  title: Text(l.editProfile),
+                  subtitle: Text(l.editProfileSub),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.profile))),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.tune_rounded),
+                  title: Text(l.planSettings),
+                  subtitle: Text(l.editPlanSettingsSub),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
+                ),
                 ListTile(
                   leading: const Icon(Icons.flag_outlined),
                   title: Text(l.goals),
@@ -246,10 +254,7 @@ class ProfilePage extends ConsumerWidget {
                     title: Text(l.reminderTime),
                     trailing: Text('${settings.reminderHour}:00'),
                     onTap: () async {
-                      final t = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay(hour: settings.reminderHour, minute: 0),
-                      );
+                      final t = await showTimePicker(context: context, initialTime: TimeOfDay(hour: settings.reminderHour, minute: 0));
                       if (t != null) setN.update(settings.copyWith(reminderHour: t.hour));
                     },
                   ),
@@ -280,10 +285,7 @@ class ProfilePage extends ConsumerWidget {
                   ListTile(
                     leading: Icon(icon),
                     title: Text(name),
-                    trailing: Chip(
-                      label: Text(l.comingSoon, style: const TextStyle(fontSize: 11)),
-                      visualDensity: VisualDensity.compact,
-                    ),
+                    trailing: Chip(label: Text(l.comingSoon, style: const TextStyle(fontSize: 11)), visualDensity: VisualDensity.compact),
                   ),
                 ListTile(
                   leading: const Icon(Icons.calendar_month_outlined),
@@ -366,11 +368,7 @@ class ProfilePage extends ConsumerWidget {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  controller: email,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(labelText: l.email),
-                ),
+                TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l.email)),
                 const SizedBox(height: 12),
                 TextField(controller: pw, obscureText: true, decoration: InputDecoration(labelText: l.password)),
               ],

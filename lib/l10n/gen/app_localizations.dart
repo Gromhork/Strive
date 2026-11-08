@@ -4792,6 +4792,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Synced from Strive – edit this workout in the app.'**
   String get gcalEventFooter;
+
+  /// No description provided for @planSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan settings'**
+  String get planSettings;
+
+  /// No description provided for @editPlanSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit plan settings'**
+  String get editPlanSettings;
+
+  /// No description provided for @editPlanSettingsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports, week, times, sport data, goal – then a new plan'**
+  String get editPlanSettingsSub;
+
+  /// No description provided for @editProfileSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, body data, level, health'**
+  String get editProfileSub;
+
+  /// No description provided for @timeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Time per training day'**
+  String get timeTitle;
+
+  /// No description provided for @timeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The most time you have on a training day – including warm-up and cool-down. Every session is planned to fit.'**
+  String get timeHint;
+
+  /// No description provided for @timeLongDayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On your long-session day (★) Strive plans up to 2 h unless you set that day yourself.'**
+  String get timeLongDayHint;
+
+  /// No description provided for @timePerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Set per day (optional)'**
+  String get timePerDay;
+
+  /// No description provided for @timeCustomDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days set individually'**
+  String timeCustomDays(int count);
+
+  /// No description provided for @timeDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to default'**
+  String get timeDefault;
+
+  /// No description provided for @recTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommendation for you'**
+  String get recTitle;
+
+  /// No description provided for @recSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on your level, goal and focus. Rest days stay free on purpose – that is when you adapt.'**
+  String get recSub;
+
+  /// No description provided for @recPerWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}× / week'**
+  String recPerWeek(int count);
+
+  /// No description provided for @recAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan my week'**
+  String get recAuto;
+
+  /// No description provided for @recApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Week planned – adjust it as you like.'**
+  String get recApplied;
+
+  /// No description provided for @recActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommendation applied'**
+  String get recActive;
+
+  /// No description provided for @recDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended: {count} training days'**
+  String recDays(int count);
+
+  /// No description provided for @recAutoDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Use recommendation'**
+  String get recAutoDays;
+
+  /// No description provided for @splitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Training split'**
+  String get splitTitle;
+
+  /// No description provided for @splitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How your gym sessions are divided. Ideally every muscle is trained about 2× per week.'**
+  String get splitHint;
+
+  /// No description provided for @splitAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get splitAuto;
+
+  /// No description provided for @splitAutoSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Now: {name} – adapts to your training days'**
+  String splitAutoSub(String name);
+
+  /// No description provided for @splitFullbody.
+  ///
+  /// In en, this message translates to:
+  /// **'Full body'**
+  String get splitFullbody;
+
+  /// No description provided for @splitFullbodySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole body every session · ideal for 2–3 days'**
+  String get splitFullbodySub;
+
+  /// No description provided for @splitUpperLower.
+  ///
+  /// In en, this message translates to:
+  /// **'Upper / Lower'**
+  String get splitUpperLower;
+
+  /// No description provided for @splitUpperLowerSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Upper and lower body alternate · ideal for 4 days'**
+  String get splitUpperLowerSub;
+
+  /// No description provided for @splitPpl.
+  ///
+  /// In en, this message translates to:
+  /// **'Push / Pull / Legs'**
+  String get splitPpl;
+
+  /// No description provided for @splitPplSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Pressing, pulling, legs · ideal for 3 or 6 days'**
+  String get splitPplSub;
+
+  /// No description provided for @splitUlppl.
+  ///
+  /// In en, this message translates to:
+  /// **'Upper/Lower + PPL'**
+  String get splitUlppl;
+
+  /// No description provided for @splitUlpplSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Hybrid of both · ideal for 5 days'**
+  String get splitUlpplSub;
+
+  /// No description provided for @splitBro.
+  ///
+  /// In en, this message translates to:
+  /// **'Bro split'**
+  String get splitBro;
+
+  /// No description provided for @splitBroSub.
+  ///
+  /// In en, this message translates to:
+  /// **'One muscle group per day · 5 days'**
+  String get splitBroSub;
+
+  /// No description provided for @splitFreq.
+  ///
+  /// In en, this message translates to:
+  /// **'Each muscle ~{value}× per week with your days'**
+  String splitFreq(String value);
+
+  /// No description provided for @splitBroWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Each muscle only once a week. With the same weekly volume, training a muscle twice a week usually builds a little more muscle (Schoenfeld 2016) – fine if you enjoy it.'**
+  String get splitBroWarning;
+
+  /// No description provided for @splitForDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Best for {count} days'**
+  String splitForDays(int count);
+
+  /// No description provided for @splitHomeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Training at home or with bodyweight uses full-body programs (2 alternating workouts).'**
+  String get splitHomeNote;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

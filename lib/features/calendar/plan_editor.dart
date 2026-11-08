@@ -11,6 +11,9 @@ import '../../services/plan_generator.dart';
 import '../../widgets/common.dart';
 import '../session/start_helpers.dart';
 import '../../widgets/segments.dart';
+import '../../core/theme.dart';
+import '../../data/default_programs.dart';
+import '../onboarding/onboarding_page.dart';
 
 /// Add or edit a planned workout.
 Future<void> showPlanEditor(BuildContext context, WidgetRef ref, {PlannedWorkout? existing, DateTime? date}) {
@@ -263,7 +266,11 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
             ),
         ];
       } else {
-        plan = PlanGenerator(l, profile, templates, repo.newId).generate(start: start, weeks: _weeks);
+        // Make sure the programs of the chosen split exist (built-ins added on demand).
+        final de = l.localeName.startsWith('de');
+        final added = missingBuiltins(templates, repo.newId, de: de, only: PlanGenerator.gymKeysFor(profile).toSet());
+        if (added.isNotEmpty) repo.saveTemplates(added);
+        plan = PlanGenerator(l, profile, [...templates, ...added], repo.newId).generate(start: start, weeks: _weeks);
       }
       if (_replace) repo.deletePlansFrom(ref.read(planListProvider), start);
       repo.savePlans(plan);
@@ -294,6 +301,21 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
               Text(l.generatePlan, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
               Text(l.generatePlanSub(p.focus.label(l), p.weeklyTarget), style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 12),
+              Card(
+                margin: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.tune_rounded, color: AppColors.brand),
+                  title: Text(l.editPlanSettings, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(l.editPlanSettingsSub),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    final nav = Navigator.of(context);
+                    nav.pop();
+                    nav.push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+                  },
+                ),
+              ),
               const SizedBox(height: 16),
               LabeledSlider(
                 label: l.weeks,

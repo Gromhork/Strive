@@ -1227,5 +1227,83 @@
   },
   "gcalCalendarDescription": "Training plan from the Strive app. Managed automatically – changes made here will be overwritten.",
   "gcalStructure": "Structure",
-  "gcalEventFooter": "Synced from Strive – edit this workout in the app."
+  "gcalEventFooter": "Synced from Strive – edit this workout in the app.",
+  "planSettings": "Plan settings",
+  "editPlanSettings": "Edit plan settings",
+  "editPlanSettingsSub": "Sports, week, times, sport data, goal – then a new plan",
+  "editProfileSub": "Name, body data, level, health",
+  "timeTitle": "Time per training day",
+  "timeHint": "The most time you have on a training day – including warm-up and cool-down. Every session is planned to fit.",
+  "timeLongDayHint": "On your long-session day (★) Strive plans up to 2 h unless you set that day yourself.",
+  "timePerDay": "Set per day (optional)",
+  "timeCustomDays": "{count} days set individually",
+  "@timeCustomDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDefault": "Back to default",
+  "recTitle": "Recommendation for you",
+  "recSub": "Based on your level, goal and focus. Rest days stay free on purpose – that is when you adapt.",
+  "recPerWeek": "{count}× / week",
+  "@recPerWeek": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recAuto": "Plan my week",
+  "recApplied": "Week planned – adjust it as you like.",
+  "recActive": "Recommendation applied",
+  "recDays": "Recommended: {count} training days",
+  "@recDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recAutoDays": "Use recommendation",
+  "splitTitle": "Training split",
+  "splitHint": "How your gym sessions are divided. Ideally every muscle is trained about 2× per week.",
+  "splitAuto": "Automatic",
+  "splitAutoSub": "Now: {name} – adapts to your training days",
+  "@splitAutoSub": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "splitFullbody": "Full body",
+  "splitFullbodySub": "Whole body every session · ideal for 2–3 days",
+  "splitUpperLower": "Upper / Lower",
+  "splitUpperLowerSub": "Upper and lower body alternate · ideal for 4 days",
+  "splitPpl": "Push / Pull / Legs",
+  "splitPplSub": "Pressing, pulling, legs · ideal for 3 or 6 days",
+  "splitUlppl": "Upper/Lower + PPL",
+  "splitUlpplSub": "Hybrid of both · ideal for 5 days",
+  "splitBro": "Bro split",
+  "splitBroSub": "One muscle group per day · 5 days",
+  "splitFreq": "Each muscle ~{value}× per week with your days",
+  "@splitFreq": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "splitBroWarning": "Each muscle only once a week. With the same weekly volume, training a muscle twice a week usually builds a little more muscle (Schoenfeld 2016) – fine if you enjoy it.",
+  "splitForDays": "Best for {count} days",
+  "@splitForDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "splitHomeNote": "Training at home or with bodyweight uses full-body programs (2 alternating workouts)."
 }

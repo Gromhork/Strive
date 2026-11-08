@@ -435,8 +435,17 @@ class PlanGenerator {
   double _r1(double v) => (v * 2).round() / 2; // 0.5 km steps
 
   /// Long and quality runs (easy runs: [_easyRun]).
-  PlannedWorkout _run(DateTime day, String role, String phase, double weekKm, double longKm, int tempoMin, int intervalReps,
-      int week, int capMin) {
+  PlannedWorkout _run(
+    DateTime day,
+    String role,
+    String phase,
+    double weekKm,
+    double longKm,
+    int tempoMin,
+    int intervalReps,
+    int week,
+    int capMin,
+  ) {
     final dist = a.eventDistance;
     final wu = _runStep('warmup', 'E', km: beginner ? 1.5 : 2, note: l.stepWarmupNote);
     final cd = _runStep('cooldown', 'E', km: beginner ? 1 : 1.5);
@@ -559,7 +568,19 @@ class PlanGenerator {
 
   /// Couch-to-5K style run/walk progression (beginners who cannot run 30 min).
   PlannedWorkout _runWalk(DateTime day, int week, String phase) {
-    const table = [(60, 90, 8), (90, 120, 6), (120, 120, 5), (180, 90, 5), (300, 180, 3), (480, 300, 2), (600, 120, 2), (900, 120, 2), (1200, 0, 1), (1500, 0, 1), (1800, 0, 1)];
+    const table = [
+      (60, 90, 8),
+      (90, 120, 6),
+      (120, 120, 5),
+      (180, 90, 5),
+      (300, 180, 3),
+      (480, 300, 2),
+      (600, 120, 2),
+      (900, 120, 2),
+      (1200, 0, 1),
+      (1500, 0, 1),
+      (1800, 0, 1),
+    ];
     final t = table[min(week, table.length - 1)];
     final steps = <WorkoutStep>[_runStep('warmup', 'walk', sec: 300, note: l.stepBriskWalk)];
     for (var i = 0; i < t.$3; i++) {
@@ -582,7 +603,16 @@ class PlanGenerator {
       _ => 5,
     };
     final hr = hz.zone(hzN);
-    return WorkoutStep(kind: kind, durationSec: sec, zone: zone, powerMin: p?.$1, powerMax: p?.$2, hrMin: hr.$1 - 5, hrMax: hr.$2 - 5, note: note);
+    return WorkoutStep(
+      kind: kind,
+      durationSec: sec,
+      zone: zone,
+      powerMin: p?.$1,
+      powerMax: p?.$2,
+      hrMin: hr.$1 - 5,
+      hrMax: hr.$2 - 5,
+      note: note,
+    );
   }
 
   int _longRideMin(double weekH) => max(60, ((weekH * 0.42) * 60 / 15).round() * 15);
@@ -709,8 +739,17 @@ class PlanGenerator {
 
   // ───────────────────────────── Strength ─────────────────────────────
 
+  /// Built-in program keys the plan for [p] will use.
+  static List<String> gymKeysFor(UserProfile p) {
+    final a = p.athlete;
+    final schedule = a.dayPlan.values.any((v) => v.isNotEmpty) ? a.dayPlan : deriveSchedule(p);
+    return _rotationFor(a, schedule);
+  }
+
+  List<String> _gymRotation(Map<int, List<Sport>> schedule) => _rotationFor(a, schedule);
+
   /// Program rotation for the chosen (or recommended) split and equipment.
-  List<String> _gymRotation(Map<int, List<Sport>> schedule) {
+  static List<String> _rotationFor(AthleteData a, Map<int, List<Sport>> schedule) {
     if (a.equipment == 'home') return splitRotation['home']!;
     if (a.equipment == 'bodyweight') return splitRotation['bodyweight']!;
     final all = schedule.values.expand((e) => e);
@@ -798,10 +837,19 @@ class PlanGenerator {
     final tri = a.eventDistance == 'sprint' || a.eventDistance == 'olympic' || a.eventDistance == '70.3';
     if (!before.isBefore(dayOnly(start))) {
       out.add(
-        _plan(before, Sport.run, l.wShakeout, l.wShakeoutDesc, 'easy', [
-          _runStep('steady', 'E', sec: 15 * 60, note: l.stepEasyNote),
-          for (var i = 0; i < 4; i++) ...[_runStep('work', 'R', sec: 20, note: l.stepStrideNote), _runStep('recovery', 'walk', sec: 60)],
-        ], 'taper', false),
+        _plan(
+          before,
+          Sport.run,
+          l.wShakeout,
+          l.wShakeoutDesc,
+          'easy',
+          [
+            _runStep('steady', 'E', sec: 15 * 60, note: l.stepEasyNote),
+            for (var i = 0; i < 4; i++) ...[_runStep('work', 'R', sec: 20, note: l.stepStrideNote), _runStep('recovery', 'walk', sec: 60)],
+          ],
+          'taper',
+          false,
+        ),
       );
     }
     final km = Vdot.distances[a.eventDistance];
@@ -898,8 +946,16 @@ class PlanGenerator {
     return list;
   }
 
-  PlannedWorkout _plan(DateTime day, Sport sport, String title, String desc, String intensity, List<WorkoutStep> steps, String phase,
-      bool isKey) {
+  PlannedWorkout _plan(
+    DateTime day,
+    Sport sport,
+    String title,
+    String desc,
+    String intensity,
+    List<WorkoutStep> steps,
+    String phase,
+    bool isKey,
+  ) {
     var sec = 0;
     var meters = 0.0;
     for (final s in steps) {
@@ -907,7 +963,8 @@ class PlanGenerator {
       if (s.distanceM != null) {
         meters += s.distanceM!;
       } else if (s.durationSec != null) {
-        if (sport == Sport.run && s.zone != 'walk') meters += s.durationSec! / ((s.paceMin ?? pz.easySlow) + (s.paceMax ?? pz.easySlow)) * 2 * 1000;
+        if (sport == Sport.run && s.zone != 'walk')
+          meters += s.durationSec! / ((s.paceMin ?? pz.easySlow) + (s.paceMax ?? pz.easySlow)) * 2 * 1000;
         if (sport == Sport.ride) meters += s.durationSec! / 3600 * (s.zone == 'Z1' ? 20 : 27) * 1000;
       }
     }

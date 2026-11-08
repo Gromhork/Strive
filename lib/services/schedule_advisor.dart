@@ -75,8 +75,8 @@ class ScheduleAdvisor {
     final days = _spreadDays(nDays);
     final plan = {for (final d in days) d: <Sport>[]};
 
-    final endurance = [Sport.run, Sport.ride, Sport.swim].where((s) => (freq[s] ?? 0) > 0).toList()
-      ..sort((x, y) => freq[y]!.compareTo(freq[x]!));
+    final endurance =
+        [Sport.run, Sport.ride, Sport.swim].where((s) => (freq[s] ?? 0) > 0).toList()..sort((x, y) => freq[y]!.compareTo(freq[x]!));
     final main = endurance.isEmpty ? null : _mainSport(endurance);
     final longDay = profile.longDay != null && days.contains(profile.longDay) ? profile.longDay! : (days.contains(6) ? 6 : days.last);
 
@@ -125,7 +125,9 @@ class ScheduleAdvisor {
   }
 
   Sport _mainSport(List<Sport> endurance) => switch (profile.focus) {
-    TrainingFocus.triathlon || TrainingFocus.duathlon || TrainingFocus.ride => endurance.contains(Sport.ride) ? Sport.ride : endurance.first,
+    TrainingFocus.triathlon ||
+    TrainingFocus.duathlon ||
+    TrainingFocus.ride => endurance.contains(Sport.ride) ? Sport.ride : endurance.first,
     TrainingFocus.swim => endurance.contains(Sport.swim) ? Sport.swim : endurance.first,
     _ => endurance.contains(Sport.run) ? Sport.run : endurance.first,
   };

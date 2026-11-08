@@ -2466,4 +2466,124 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get gcalEventFooter => 'Aus Strive synchronisiert – bearbeite diese Einheit in der App.';
+
+  @override
+  String get planSettings => 'Planeinstellungen';
+
+  @override
+  String get editPlanSettings => 'Planeinstellungen bearbeiten';
+
+  @override
+  String get editPlanSettingsSub => 'Sportarten, Woche, Zeiten, Sportdaten, Ziel – danach neuer Plan';
+
+  @override
+  String get editProfileSub => 'Name, Körperdaten, Level, Gesundheit';
+
+  @override
+  String get timeTitle => 'Zeit pro Trainingstag';
+
+  @override
+  String get timeHint => 'Die maximale Zeit, die du an einem Trainingstag hast – inklusive Ein- und Auslaufen. Jede Einheit wird so geplant, dass sie hineinpasst.';
+
+  @override
+  String get timeLongDayHint => 'An deinem Tag für lange Einheiten (★) plant Strive bis zu 2 h ein, außer du legst den Tag selbst fest.';
+
+  @override
+  String get timePerDay => 'Pro Tag festlegen (optional)';
+
+  @override
+  String timeCustomDays(int count) {
+    return '$count Tage individuell festgelegt';
+  }
+
+  @override
+  String get timeDefault => 'Zurück auf Standard';
+
+  @override
+  String get recTitle => 'Empfehlung für dich';
+
+  @override
+  String get recSub => 'Basierend auf Level, Ziel und Fokus. Ruhetage bleiben bewusst frei – dann passt sich dein Körper an.';
+
+  @override
+  String recPerWeek(int count) {
+    return '$count× / Woche';
+  }
+
+  @override
+  String get recAuto => 'Woche automatisch planen';
+
+  @override
+  String get recApplied => 'Woche geplant – passe sie gern an.';
+
+  @override
+  String get recActive => 'Empfehlung übernommen';
+
+  @override
+  String recDays(int count) {
+    return 'Empfohlen: $count Trainingstage';
+  }
+
+  @override
+  String get recAutoDays => 'Empfehlung übernehmen';
+
+  @override
+  String get splitTitle => 'Trainingssplit';
+
+  @override
+  String get splitHint => 'Wie deine Gym-Einheiten aufgeteilt werden. Ideal: jeder Muskel etwa 2× pro Woche.';
+
+  @override
+  String get splitAuto => 'Automatisch';
+
+  @override
+  String splitAutoSub(String name) {
+    return 'Aktuell: $name – passt sich deinen Trainingstagen an';
+  }
+
+  @override
+  String get splitFullbody => 'Ganzkörper';
+
+  @override
+  String get splitFullbodySub => 'Ganzer Körper in jeder Einheit · ideal für 2–3 Tage';
+
+  @override
+  String get splitUpperLower => 'Oberkörper / Unterkörper';
+
+  @override
+  String get splitUpperLowerSub => 'Abwechselnd Ober- und Unterkörper · ideal für 4 Tage';
+
+  @override
+  String get splitPpl => 'Push / Pull / Beine';
+
+  @override
+  String get splitPplSub => 'Drücken, Ziehen, Beine · ideal für 3 oder 6 Tage';
+
+  @override
+  String get splitUlppl => 'Ober/Unter + PPL';
+
+  @override
+  String get splitUlpplSub => 'Mischung aus beidem · ideal für 5 Tage';
+
+  @override
+  String get splitBro => 'Bro-Split';
+
+  @override
+  String get splitBroSub => 'Eine Muskelgruppe pro Tag · 5 Tage';
+
+  @override
+  String splitFreq(String value) {
+    return 'Jeder Muskel ca. $value× pro Woche bei deinen Tagen';
+  }
+
+  @override
+  String get splitBroWarning => 'Jeder Muskel nur 1× pro Woche. Bei gleichem Wochenvolumen bringt 2× pro Woche meist etwas mehr Muskelaufbau (Schoenfeld 2016) – okay, wenn es dir Spaß macht.';
+
+  @override
+  String splitForDays(int count) {
+    return 'Optimal bei $count Tagen';
+  }
+
+  @override
+  String get splitHomeNote => 'Bei Training zuhause oder mit Eigengewicht nutzt Strive Ganzkörper-Programme (2 im Wechsel).';
 }
