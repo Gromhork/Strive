@@ -506,6 +506,7 @@ class _WeightCard extends ConsumerWidget {
     final u = profile.units;
     final current = body.isNotEmpty ? body.last.weightKg : profile.weightKg;
     final recent = body.where((b) => DateTime.now().difference(b.date).inDays <= 90).toList();
+    final yRange = paddedRange([for (final b in recent) u.weightOut(b.weightKg)], minSpan: u.weightOut(3));
     final delta = recent.length >= 2 ? recent.last.weightKg - recent.first.weightKg : null;
 
     void log(double kg) {
@@ -546,6 +547,9 @@ class _WeightCard extends ConsumerWidget {
                       )
                       : LineChart(
                         LineChartData(
+                          // Keep at least ±1.5 kg of headroom so 0.1 kg noise doesn't look like a swing.
+                          minY: yRange.$1,
+                          maxY: yRange.$2,
                           gridData: const FlGridData(show: false),
                           titlesData: const FlTitlesData(show: false),
                           borderData: FlBorderData(show: false),
@@ -555,7 +559,9 @@ class _WeightCard extends ConsumerWidget {
                               spots: [
                                 for (final b in recent) FlSpot(b.date.millisecondsSinceEpoch.toDouble(), u.weightOut(b.weightKg)),
                               ],
-                              isCurved: true,
+                              isCurved: recent.length > 2,
+                              preventCurveOverShooting: true,
+                              curveSmoothness: 0.2,
                               color: AppColors.brand,
                               barWidth: 3,
                               dotData: const FlDotData(show: false),

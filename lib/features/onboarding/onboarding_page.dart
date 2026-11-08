@@ -14,6 +14,7 @@ import '../../providers.dart';
 import '../../services/plan_generator.dart';
 import '../../services/zones.dart';
 import '../../widgets/common.dart';
+import '../../widgets/segments.dart';
 
 /// First-time setup (and profile editing).
 ///
@@ -91,13 +92,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     if (_advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) {
       days = (a.dayPlan.entries.where((e) => e.value.isNotEmpty).map((e) => e.key).toList()..sort());
     }
-    final profile = p.copyWith(
-      name: _name.text.trim(),
-      imperial: _imperial,
-      onboarded: true,
-      athlete: a,
-      trainingDays: days,
-    );
+    final profile = p.copyWith(name: _name.text.trim(), imperial: _imperial, onboarded: true, athlete: a, trainingDays: days);
     repo.saveProfile(profile);
     final now = DateTime.now();
 
@@ -156,8 +151,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 : (widget.edit ? const CloseButton() : null),
         title: Text(widget.edit ? l.editProfile : l.onboardingTitle),
         actions: [
-          if (!widget.edit)
-            IconButton(tooltip: l.logout, onPressed: () => FirebaseAuth.instance.signOut(), icon: const Icon(Icons.logout)),
+          if (!widget.edit) IconButton(tooltip: l.logout, onPressed: () => FirebaseAuth.instance.signOut(), icon: const Icon(Icons.logout)),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
@@ -348,14 +342,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _h(l.aboutYou, l.aboutYouSub, icon: Icons.person_outline_rounded),
-        SegmentedButton<String>(
-          segments: [
-            ButtonSegment(value: 'm', label: Text(l.male)),
-            ButtonSegment(value: 'f', label: Text(l.female)),
-            ButtonSegment(value: 'd', label: Text(l.diverse)),
-          ],
-          selected: {p.gender},
-          onSelectionChanged: (s) => setState(() => p = p.copyWith(gender: s.first)),
+        Segments<String>(
+          segments: [Seg('m', label: l.male), Seg('f', label: l.female), Seg('d', label: l.diverse)],
+          value: p.gender,
+          onChanged: (v) => setState(() => p = p.copyWith(gender: v)),
         ),
         const SizedBox(height: 12),
         LabeledSlider(
@@ -496,7 +486,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     color: p.focus == f ? AppColors.brand.withValues(alpha: 0.2) : Theme.of(context).colorScheme.surfaceContainer,
-                    border: Border.all(color: p.focus == f ? AppColors.brand : Theme.of(context).colorScheme.outlineVariant, width: p.focus == f ? 2 : 1),
+                    border: Border.all(
+                      color: p.focus == f ? AppColors.brand : Theme.of(context).colorScheme.outlineVariant,
+                      width: p.focus == f ? 2 : 1,
+                    ),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Row(
@@ -589,16 +582,18 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     ],
   );
 
-  Widget _unitsSwitch(AppLocalizations l) => SegmentedButton<bool>(
-    segments: [ButtonSegment(value: false, label: Text(l.metric)), ButtonSegment(value: true, label: Text(l.imperial))],
-    selected: {_imperial},
-    onSelectionChanged: (s) => setState(() => _imperial = s.first),
+  Widget _unitsSwitch(AppLocalizations l) => Segments<bool>(
+    segments: [Seg(false, label: l.metric), Seg(true, label: l.imperial)],
+    value: _imperial,
+    onChanged: (v) => setState(() => _imperial = v),
   );
 
   /// Detailed setup: which sport on which weekday (1–2 sessions per day).
   Widget _weekPlan(AppLocalizations l) {
     final sports = _sports.toList()..sort((x, y) => x.index.compareTo(y.index));
-    final plan = {for (final e in a.dayPlan.entries) e.key: [...e.value]};
+    final plan = {
+      for (final e in a.dayPlan.entries) e.key: [...e.value],
+    };
     final perSport = {for (final s in sports) s: plan.values.where((v) => v.contains(s)).length};
     final total = plan.values.fold<int>(0, (n, v) => n + v.length);
     void toggle(int d, Sport s) {
@@ -618,10 +613,19 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _h(l.weekPlanTitle, l.weekPlanSub, icon: Icons.view_week_rounded),
-        SegmentedButton<int>(
-          segments: [ButtonSegment(value: 1, label: Text(l.oncePerDay)), ButtonSegment(value: 2, label: Text(l.twicePerDay))],
-          selected: {a.sessionsPerDay},
-          onSelectionChanged: (s) => _setA({'sessionsPerDay': s.first}),
+        Segments<int>(
+          segments: [Seg(1, label: l.oncePerDay), Seg(2, label: l.twicePerDay)],
+          value: a.sessionsPerDay,
+          onChanged: (v) {
+            final n = v;
+            // Switching back to one session per day: keep only the first sport of each day.
+            if (n == 1) {
+              for (final d in plan.keys) {
+                if (plan[d]!.length > 1) plan[d] = [plan[d]!.first];
+              }
+            }
+            _setA({'sessionsPerDay': n, 'dayPlan': plan});
+          },
         ),
         const SizedBox(height: 16),
         Row(
@@ -646,11 +650,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               children: [
                 SizedBox(width: 38, child: Text(_dayName(d), style: const TextStyle(fontWeight: FontWeight.w700))),
                 for (final s in sports)
-                  Expanded(
-                    child: Center(
-                      child: _SportToggle(sport: s, selected: (plan[d] ?? []).contains(s), onTap: () => toggle(d, s)),
-                    ),
-                  ),
+                  Expanded(child: Center(child: _SportToggle(sport: s, selected: (plan[d] ?? []).contains(s), onTap: () => toggle(d, s)))),
                 SizedBox(
                   width: 40,
                   child:
@@ -683,14 +683,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _label(l.sessionLength),
         _sessionMinutes(l),
         _label(l.preferredTime),
-        SegmentedButton<String>(
-          segments: [
-            ButtonSegment(value: 'morning', label: Text(l.morning)),
-            ButtonSegment(value: 'midday', label: Text(l.midday)),
-            ButtonSegment(value: 'evening', label: Text(l.evening)),
-          ],
-          selected: {a.preferredTime},
-          onSelectionChanged: (s) => _setA({'preferredTime': s.first}),
+        Segments<String>(
+          segments: [Seg('morning', label: l.morning), Seg('midday', label: l.midday), Seg('evening', label: l.evening)],
+          value: a.preferredTime,
+          onChanged: (v) => _setA({'preferredTime': v}),
         ),
         _label(l.units),
         _unitsSwitch(l),
@@ -778,7 +774,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         onChanged: (v) => _setA({'indoorTrainer': v}),
       ),
       _label(l.ftpTitle, hint: l.ftpHint),
-      _numField('FTP', a.ftp, (v) => a = a.merge({'ftp': v?.round()}), suffix: 'W', hint: a.hasPowerMeter ? '${PowerZones.estimate(p.level, p.weightKg)}' : null, decimal: false),
+      _numField(
+        'FTP',
+        a.ftp,
+        (v) => a = a.merge({'ftp': v?.round()}),
+        suffix: 'W',
+        hint: a.hasPowerMeter ? '${PowerZones.estimate(p.level, p.weightKg)}' : null,
+        decimal: false,
+      ),
       _label(l.currentVolume),
       LabeledSlider(
         label: l.weeklyHoursNow,
@@ -827,14 +830,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             child: Text(l.cssResult(fmtPace(css)), style: const TextStyle(color: AppColors.swim, fontWeight: FontWeight.w600)),
           ),
         _label(l.poolLength),
-        SegmentedButton<int>(
-          segments: [
-            const ButtonSegment(value: 25, label: Text('25 m')),
-            const ButtonSegment(value: 50, label: Text('50 m')),
-            ButtonSegment(value: 0, label: Text(l.openWater)),
-          ],
-          selected: {a.poolLength},
-          onSelectionChanged: (s) => _setA({'poolLength': s.first}),
+        Segments<int>(
+          segments: [Seg(25, label: '25 m'), Seg(50, label: '50 m'), Seg(0, label: l.openWater)],
+          value: a.poolLength,
+          onChanged: (v) => _setA({'poolLength': v}),
         ),
         _label(l.currentVolume),
         LabeledSlider(
@@ -882,14 +881,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           onTap: () => _setA({'equipment': 'bodyweight'}),
         ),
         _label(l.gymGoalTitle),
-        SegmentedButton<String>(
-          segments: [
-            ButtonSegment(value: 'strength', label: Text(l.goalStrength)),
-            ButtonSegment(value: 'hypertrophy', label: Text(l.goalMuscle)),
-            ButtonSegment(value: 'general', label: Text(l.general)),
-          ],
-          selected: {a.gymGoal},
-          onSelectionChanged: (s) => _setA({'gymGoal': s.first}),
+        Segments<String>(
+          segments: [Seg('strength', label: l.goalStrength), Seg('hypertrophy', label: l.goalMuscle), Seg('general', label: l.general)],
+          value: a.gymGoal,
+          onChanged: (v) => _setA({'gymGoal': v}),
         ),
         _label(l.oneRmTitle, hint: l.oneRmHint),
         GridView.count(
@@ -988,10 +983,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _h(l.eventTitle, l.eventSub, icon: Icons.emoji_events_outlined, color: AppColors.warning),
-        TextField(
-          controller: _eventName,
-          decoration: InputDecoration(labelText: l.eventName, prefixIcon: const Icon(Icons.flag_outlined)),
-        ),
+        TextField(controller: _eventName, decoration: InputDecoration(labelText: l.eventName, prefixIcon: const Icon(Icons.flag_outlined))),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           icon: const Icon(Icons.event),
@@ -1059,15 +1051,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   };
 
   Widget _plan(AppLocalizations l) {
-    final weeksToEvent = a.eventDate == null ? null : (startOfWeek(a.eventDate!).difference(startOfWeek(DateTime.now())).inDays / 7).floor() + 1;
+    final weeksToEvent =
+        a.eventDate == null ? null : (startOfWeek(a.eventDate!).difference(startOfWeek(DateTime.now())).inDays / 7).floor() + 1;
     final rec = _recommendedRange;
-    final options = [
-      (4, l.plan4w),
-      (8, l.plan8w),
-      (12, l.plan12w),
-      (16, l.plan16w),
-      (20, l.plan20w),
-    ];
+    final options = [(4, l.plan4w), (8, l.plan8w), (12, l.plan12w), (16, l.plan16w), (20, l.plan20w)];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

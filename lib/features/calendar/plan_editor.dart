@@ -10,6 +10,7 @@ import '../../services/coach_service.dart';
 import '../../services/plan_generator.dart';
 import '../../widgets/common.dart';
 import '../session/start_helpers.dart';
+import '../../widgets/segments.dart';
 
 /// Add or edit a planned workout.
 Future<void> showPlanEditor(BuildContext context, WidgetRef ref, {PlannedWorkout? existing, DateTime? date}) {
@@ -34,9 +35,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
   late DateTime _date = widget.existing?.date ?? dayOnly(widget.date);
   late final _title = TextEditingController(text: widget.existing?.title ?? '');
   late final _desc = TextEditingController(text: widget.existing?.description ?? '');
-  late final _km = TextEditingController(
-    text: widget.existing?.distanceKm == null ? '' : Units.num(widget.existing!.distanceKm!),
-  );
+  late final _km = TextEditingController(text: widget.existing?.distanceKm == null ? '' : Units.num(widget.existing!.distanceKm!));
   late int _min = widget.existing?.durationMin ?? 45;
   late String _intensity = widget.existing?.intensity ?? 'easy';
   late String? _templateId = widget.existing?.templateId;
@@ -98,12 +97,12 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
                 ],
               ),
               const SizedBox(height: 12),
-              SegmentedButton<Sport>(
-                segments: [for (final s in Sport.values) ButtonSegment(value: s, icon: Icon(s.icon))],
-                selected: {_sport},
-                onSelectionChanged:
-                    (s) => setState(() {
-                      _sport = s.first;
+              Segments<Sport>(
+                segments: [for (final s in Sport.values) Seg(s, icon: s.icon)],
+                value: _sport,
+                onChanged:
+                    (v) => setState(() {
+                      _sport = v;
                       _templateId = null;
                     }),
               ),
@@ -304,13 +303,10 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
                 divisions: 23,
                 onChanged: (v) => setState(() => _weeks = v.round()),
               ),
-              SegmentedButton<bool>(
-                segments: [
-                  ButtonSegment(value: false, icon: const Icon(Icons.rule), label: Text(l.planLocal)),
-                  ButtonSegment(value: true, icon: const Icon(Icons.auto_awesome), label: Text(l.planAi)),
-                ],
-                selected: {_ai},
-                onSelectionChanged: (s) => setState(() => _ai = s.first),
+              Segments<bool>(
+                segments: [Seg(false, label: l.planLocal, icon: Icons.rule), Seg(true, label: l.planAi, icon: Icons.auto_awesome)],
+                value: _ai,
+                onChanged: (v) => setState(() => _ai = v),
               ),
               const SizedBox(height: 8),
               Text(_ai ? l.planAiDesc : l.planLocalDesc, style: Theme.of(context).textTheme.bodySmall),

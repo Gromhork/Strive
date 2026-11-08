@@ -99,3 +99,14 @@ int? parseClock(String s) {
   }
   return sec;
 }
+
+/// Y-axis range for a chart: data min/max plus padding, at least [minSpan] wide
+/// (so tiny fluctuations stay visually flat), rounded to whole numbers.
+(double, double) paddedRange(Iterable<double> values, {double minSpan = 2}) {
+  if (values.isEmpty) return (0, 1);
+  var lo = values.reduce((a, b) => a < b ? a : b);
+  var hi = values.reduce((a, b) => a > b ? a : b);
+  final span = hi - lo;
+  final pad = span < minSpan ? (minSpan - span) / 2 : span * 0.1;
+  return ((lo - pad).floorToDouble(), (hi + pad).ceilToDouble());
+}
