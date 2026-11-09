@@ -145,7 +145,7 @@ class _PerformanceState extends ConsumerState<_Performance> {
                 for (final r in records.take(25))
                   DropdownMenuItem(
                     value: r.exId,
-                    child: SizedBox(width: 150, child: Text(r.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
+                    child: SizedBox(width: 150, child: Text(capFirst(r.name), overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
                   ),
               ],
               onChanged: (v) => setState(() => _exId = v),
@@ -368,7 +368,7 @@ class _Records extends ConsumerWidget {
                             contentPadding: EdgeInsets.zero,
                             dense: true,
                             leading: const Icon(Icons.emoji_events_outlined, color: AppColors.gym),
-                            title: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            title: Text(capFirst(r.name), maxLines: 1, overflow: TextOverflow.ellipsis),
                             subtitle: Text(
                               '${l.maxWeight} ${u.weight(r.maxWeight)} · ${DateFormat.yMMMd(context.localeName).format(r.date)}',
                             ),

@@ -314,14 +314,14 @@ class _ComingUp extends ConsumerWidget {
                           const SizedBox(height: 4),
                           Container(
                             height: 28,
-                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 1.5),
                             child: Text(
                               dayPlans.isEmpty ? l.rest : (dayPlans.length == 1 ? dayPlans.first.title : l.nWorkouts(dayPlans.length)),
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 9.5,
+                                fontSize: 9,
                                 height: 1.2,
                                 fontWeight: dayPlans.length > 1 ? FontWeight.w700 : FontWeight.w400,
                               ),
