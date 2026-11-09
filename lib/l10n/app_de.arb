@@ -1019,5 +1019,6 @@
   "adjustNoRoom": "entfällt – diese Woche kein freier Tag ohne harte Einheit daneben",
   "adjustProtected": "entfällt – Erholungs-/Taperwoche bleibt locker",
   "adjustDone": "Woche angepasst",
-  "notNow": "Nicht jetzt"
+  "notNow": "Nicht jetzt",
+  "wTriLegs": "Schwimmen {swim} km · Rad {bike} km · Laufen {run} km"
 }

@@ -983,4 +983,5 @@ const l10nPairs = <(String, String)>[
   ('dropped – recovery/taper week stays easy', 'entfällt – Erholungs-/Taperwoche bleibt locker'),
   ('Week adjusted', 'Woche angepasst'),
   ('Not now', 'Nicht jetzt'),
+  ('Swim {swim} km · Bike {bike} km · Run {run} km', 'Schwimmen {swim} km · Rad {bike} km · Laufen {run} km'),
 ];

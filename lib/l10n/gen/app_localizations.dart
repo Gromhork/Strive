@@ -6214,6 +6214,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not now'**
   String get notNow;
+
+  /// No description provided for @wTriLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'Swim {swim} km · Bike {bike} km · Run {run} km'**
+  String wTriLegs(String swim, String bike, String run);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

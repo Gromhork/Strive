@@ -1199,15 +1199,23 @@ class PlanGenerator {
                 note: l.stepRaceNote,
               ),
             ];
+    final legs = switch (a.eventDistance) {
+      'sprint' => l.wTriLegs('0.75', '20', '5'),
+      'olympic' => l.wTriLegs('1.5', '40', '10'),
+      '70.3' => l.wTriLegs('1.9', '90', '21.1'),
+      _ => null,
+    };
     out.add(
       PlannedWorkout(
         id: _id(),
         date: race,
         sport: tri ? Sport.swim : Sport.run,
         title: l.wRace(_eventName()),
-        description: goal == null ? l.wRaceDesc : l.wRaceGoalDesc(clock(goal)),
+        description: [if (tri && legs != null) legs, goal == null ? l.wRaceDesc : l.wRaceGoalDesc(clock(goal))].join('\n'),
         durationMin: ((goal ?? _expectedRaceSec(meters, tri)) / 60).round(),
-        distanceKm: tri ? _triKm(a.eventDistance) : km,
+        // A triathlon is stored as a swim (it starts with one), so it carries no single
+        // distance – "Swim 51.5 km" would be wrong; the legs are in the description.
+        distanceKm: tri ? null : km,
         intensity: 'race',
         steps: steps,
         phase: 'taper',
@@ -1235,13 +1243,6 @@ class PlanGenerator {
     };
     return (swimM / 100 * (sz.css + 10) + bikeKm / kmh * 3600 + Vdot.raceTime(vdot, runM) * 1.08 + transition).round();
   }
-
-  static double? _triKm(String? d) => switch (d) {
-    'sprint' => 25.75,
-    'olympic' => 51.5,
-    '70.3' => 113,
-    _ => null,
-  };
 
   String _eventName() => switch (a.eventDistance) {
     '5k' => '5 km',

@@ -3283,4 +3283,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notNow => 'Not now';
+
+  @override
+  String wTriLegs(String swim, String bike, String run) {
+    return 'Swim $swim km · Bike $bike km · Run $run km';
+  }
 }

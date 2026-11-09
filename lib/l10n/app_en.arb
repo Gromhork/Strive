@@ -1826,5 +1826,19 @@
   "adjustNoRoom": "dropped – no free day this week without a hard session next to it",
   "adjustProtected": "dropped – recovery/taper week stays easy",
   "adjustDone": "Week adjusted",
-  "notNow": "Not now"
+  "notNow": "Not now",
+  "wTriLegs": "Swim {swim} km · Bike {bike} km · Run {run} km",
+  "@wTriLegs": {
+    "placeholders": {
+      "swim": {
+        "type": "String"
+      },
+      "bike": {
+        "type": "String"
+      },
+      "run": {
+        "type": "String"
+      }
+    }
+  }
 }
