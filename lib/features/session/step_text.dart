@@ -34,7 +34,9 @@ String zoneLabel(AppLocalizations l, String zone, {Sport? sport}) => switch (zon
 
 Color zoneColor(String zone) => switch (zone) {
   'E' || 'L' || 'Z2' || 'EN' => AppColors.run,
-  'REC' || 'walk' || 'Z1' || 'DR' => const Color(0xFF7D8CA3),
+  'REC' || 'walk' || 'Z1' => const Color(0xFF7D8CA3),
+  // Technique has its own colour so drills are not mistaken for rest.
+  'DR' => AppColors.brand,
   'M' || 'Z3' || 'TE' => AppColors.swim,
   'T' || 'SS' || 'Z4' || 'CSS' => AppColors.ride,
   'I' || 'Z5' => AppColors.gym,

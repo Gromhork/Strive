@@ -18,7 +18,8 @@ int _approxSec(WorkoutStep s, Sport sport) {
 }
 
 double _intensity(String zone) => switch (zone) {
-  'walk' || 'REC' || 'Z1' || 'DR' => 0.25,
+  'walk' || 'REC' || 'Z1' => 0.25,
+  'DR' => 0.4,
   'E' || 'L' || 'Z2' || 'EN' => 0.45,
   'M' || 'Z3' || 'TE' => 0.62,
   'T' || 'SS' || 'Z4' || 'CSS' => 0.78,
