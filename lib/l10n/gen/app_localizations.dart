@@ -6229,6 +6229,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your plan uses {n} of your {total} days – the others stay rest days so you recover between sessions.'**
   String quickDaysCapped(int n, int total);
+
+  /// No description provided for @wCrossRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy ride instead of a run'**
+  String get wCrossRide;
+
+  /// No description provided for @wCrossRideDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Same aerobic training without impact – easier on knees, hips and Achilles tendons. Bike or indoor trainer at a conversational effort.'**
+  String get wCrossRideDesc;
+
+  /// No description provided for @healthRunNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Joints: prefer soft surfaces; stop if pain goes above 3/10 or changes your stride.'**
+  String get healthRunNote;
+
+  /// No description provided for @healthHeartNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart / blood pressure: intensity capped at threshold – no all-out efforts.'**
+  String get healthHeartNote;
+
+  /// No description provided for @healthSwimShoulderNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulder: no paddles, breathe to both sides, stop if it hurts.'**
+  String get healthSwimShoulderNote;
+
+  /// No description provided for @healthGymBackNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Back: no heavy axial loading – swap back squats and deadlifts for leg press, split squats or hip thrusts; keep a neutral spine.'**
+  String get healthGymBackNote;
+
+  /// No description provided for @healthGymShoulderNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulder: no heavy overhead pressing – use landmine or neutral-grip variants and stay pain-free.'**
+  String get healthGymShoulderNote;
+
+  /// No description provided for @healthGymJointNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Joints: train in a pain-free range – reduce depth or load if knee or hip hurt.'**
+  String get healthGymJointNote;
+
+  /// No description provided for @healthGymHeartNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.'**
+  String get healthGymHeartNote;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

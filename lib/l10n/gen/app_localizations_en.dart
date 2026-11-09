@@ -3306,4 +3306,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String quickDaysCapped(int n, int total) {
     return 'Your plan uses $n of your $total days – the others stay rest days so you recover between sessions.';
   }
+
+  @override
+  String get wCrossRide => 'Easy ride instead of a run';
+
+  @override
+  String get wCrossRideDesc =>
+      'Same aerobic training without impact – easier on knees, hips and Achilles tendons. Bike or indoor trainer at a conversational effort.';
+
+  @override
+  String get healthRunNote => 'Joints: prefer soft surfaces; stop if pain goes above 3/10 or changes your stride.';
+
+  @override
+  String get healthHeartNote => 'Heart / blood pressure: intensity capped at threshold – no all-out efforts.';
+
+  @override
+  String get healthSwimShoulderNote => 'Shoulder: no paddles, breathe to both sides, stop if it hurts.';
+
+  @override
+  String get healthGymBackNote =>
+      'Back: no heavy axial loading – swap back squats and deadlifts for leg press, split squats or hip thrusts; keep a neutral spine.';
+
+  @override
+  String get healthGymShoulderNote => 'Shoulder: no heavy overhead pressing – use landmine or neutral-grip variants and stay pain-free.';
+
+  @override
+  String get healthGymJointNote => 'Joints: train in a pain-free range – reduce depth or load if knee or hip hurt.';
+
+  @override
+  String get healthGymHeartNote =>
+      'Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.';
 }

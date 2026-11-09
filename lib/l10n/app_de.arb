@@ -1022,5 +1022,14 @@
   "notNow": "Nicht jetzt",
   "wTriLegs": "Schwimmen {swim} km · Rad {bike} km · Laufen {run} km",
   "quickMinOneDay": "Wähle mindestens einen Trainingstag",
-  "quickDaysCapped": "Dein Plan nutzt {n} deiner {total} Tage – die übrigen bleiben Ruhetage, damit du dich zwischen den Einheiten erholst."
+  "quickDaysCapped": "Dein Plan nutzt {n} deiner {total} Tage – die übrigen bleiben Ruhetage, damit du dich zwischen den Einheiten erholst.",
+  "wCrossRide": "Lockere Radeinheit statt Lauf",
+  "wCrossRideDesc": "Gleicher Ausdauerreiz ohne Stoßbelastung – schont Knie, Hüfte und Achillessehne. Rad oder Rollentrainer im Plaudertempo.",
+  "healthRunNote": "Gelenke: möglichst weicher Untergrund; abbrechen, wenn der Schmerz über 3/10 steigt oder den Laufstil verändert.",
+  "healthHeartNote": "Herz / Blutdruck: Intensität bis zur Schwelle begrenzt – keine Maximalbelastungen.",
+  "healthSwimShoulderNote": "Schulter: keine Paddles, beidseitig atmen, bei Schmerzen abbrechen.",
+  "healthGymBackNote": "Rücken: keine schwere axiale Last – Kniebeugen und Kreuzheben durch Beinpresse, Split Squats oder Hip Thrusts ersetzen; neutrale Wirbelsäule.",
+  "healthGymShoulderNote": "Schulter: kein schweres Drücken über Kopf – Landmine- oder Neutralgriff-Varianten, schmerzfrei bleiben.",
+  "healthGymJointNote": "Gelenke: im schmerzfreien Bewegungsumfang trainieren – Tiefe oder Last reduzieren, wenn Knie oder Hüfte schmerzen.",
+  "healthGymHeartNote": "Herz / Blutdruck: 2–3 Wiederholungen Reserve lassen und bei der Anstrengung ausatmen – kein Pressen, keine Pressatmung."
 }

@@ -5,6 +5,7 @@ import '../core/sport.dart';
 import '../data/default_programs.dart';
 import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
+import 'health_limits.dart';
 import 'zones.dart';
 
 /// Evidence-based, rule-based plan generator (offline). Implements
@@ -31,6 +32,10 @@ import 'zones.dart';
 ///   beginners without running experience start with run/walk (also returning runners
 ///   with BMI ≥ 30 or age ≥ 65, from 3 × 5 min); masters (≥ 50) get 3:1 cycles
 ///   (≥ 65: 2:1), slower growth and no consecutive key days.
+/// * Health limitations ([HealthFlags], §9.1): knee / hip / ankle → less running impact
+///   (slower growth, no strides / VO2max reps, one easy run → easy ride); shoulder → swim
+///   technique instead of CSS sets, less swim volume; heart / blood pressure → intensity
+///   capped at threshold; back / shoulder / heart → notes on the strength sessions.
 class PlanGenerator {
   PlanGenerator(this.l, this.profile, this.templates, String Function() newId) : _id = newId;
   final AppLocalizations l;
@@ -52,6 +57,7 @@ class PlanGenerator {
   bool get _masters => _age >= 50;
   bool get _senior => _age >= 65;
   bool get _heavy => profile.bmi >= 30;
+  late final HealthFlags hf = HealthFlags.of(profile);
 
   // ── difficulty parameters (§8) ──
   double get _growth {
@@ -65,7 +71,7 @@ class PlanGenerator {
 
   /// Weekly growth of the run volume: impact load is what injures, so heavy novices
   /// and seniors grow at the EASY rate (H8: add volume via bike/swim first).
-  double get _runGrowth => (beginner && _heavy) || _senior ? min(_growth, 0.05) : _growth;
+  double get _runGrowth => (beginner && _heavy) || _senior || hf.lowImpactRun ? min(_growth, 0.05) : _growth;
 
   int get _loadWeeks {
     final n = switch (a.difficulty) {
@@ -81,7 +87,7 @@ class PlanGenerator {
     'challenging' => 0.75,
     _ => 0.70,
   };
-  double get _longCap => a.difficulty == 'easy' ? 1.05 : 1.10;
+  double get _longCap => a.difficulty == 'easy' || hf.lowImpactRun ? 1.05 : 1.10;
 
   late final PaceZones pz = PaceZones(Vdot.of(a) ?? Vdot.defaultFor(level));
   late final HrZones hz = HrZones(profile.estimatedMaxHr, a.restHr);
@@ -110,6 +116,8 @@ class PlanGenerator {
     final a = p.athlete;
     final beginner = p.level == 'beginner';
     if (!a.canRun30 && (beginner || a.raceTimes.isEmpty)) return 0;
+    // Beginners with knee / hip / ankle problems: run/walk lets tendons and joints adapt.
+    if (beginner && a.raceTimes.isEmpty && HealthFlags.of(p).lowImpactRun) return p.experience.contains(Sport.run) ? 4 : 0;
     if (!beginner || a.advanced || a.raceTimes.isNotEmpty) return null;
     if (!p.experience.contains(Sport.run)) return 0;
     if (p.bmi >= 30 || (p.age ?? 30) >= 65) return 4;
@@ -139,7 +147,11 @@ class PlanGenerator {
     final runPerWeek = all.where((s) => s == Sport.run).length;
     final ridePerWeek = all.where((s) => s == Sport.ride).length;
     final swimPerWeek = all.where((s) => s == Sport.swim).length;
-    final runKm = _curve(total, phases, _runStartKm(runPerWeek), _runCeilingKm(runPerWeek), growth: _runGrowth);
+    // Knee / hip / ankle: ~10 % less running (impact), the cross-training ride makes up for it.
+    final runKm = [
+      for (final v in _curve(total, phases, _runStartKm(runPerWeek), _runCeilingKm(runPerWeek), growth: _runGrowth))
+        hf.lowImpactRun ? v * 0.9 : v,
+    ];
     final rideH = _curve(total, phases, _rideStartH(ridePerWeek), _rideCeilingH(ridePerWeek));
     final swimKm = _curve(total, phases, _swimStartKm(swimPerWeek), _swimCeilingKm(swimPerWeek));
     // Long-run share: 1 run/week → the whole volume, 2 → ~55 %, otherwise 27–32 % (Daniels).
@@ -269,6 +281,13 @@ class PlanGenerator {
           week.add(_easyRun(day, phase, each, w, cap));
         }
       }
+      // Knee / hip / ankle: with ≥ 3 runs one easy run becomes an easy ride of the same
+      // time – the aerobic stimulus stays, the impact goes (cross-training, H8).
+      if (hf.lowImpactRun && !runWalk) {
+        final runs = week.where((p) => p.sport == Sport.run).length;
+        final i = week.indexWhere((p) => p.sport == Sport.run && p.intensity == 'easy');
+        if (runs >= 3 && i >= 0) week[i] = _crossRide(week[i].date, phase, week[i].durationMin);
+      }
       out.addAll(week);
       final longRun = week.where((p) => p.sport == Sport.run && p.intensity == 'long').firstOrNull;
       if (!rest && longRun != null) lastLongKm = longRun.distanceKm ?? lastLongKm;
@@ -283,7 +302,52 @@ class PlanGenerator {
     }
     _addRace(out, start);
     out.sort((x, y) => x.date.compareTo(y.date));
-    return out;
+    return hf.any ? [for (final w in out) _withHealthNotes(w)] : out;
+  }
+
+  /// Easy ride replacing a run (knee / hip / ankle limitation).
+  PlannedWorkout _crossRide(DateTime day, String phase, int minutes) => _plan(
+    day,
+    Sport.ride,
+    l.wCrossRide,
+    l.wCrossRideDesc,
+    'easy',
+    [_rideStep('steady', 'Z2', max(20, minutes) * 60, note: l.stepZ2RideNote)],
+    phase,
+    false,
+  );
+
+  /// Adds the notes of the athlete's health limitations to [w]'s description (one line
+  /// each, so they translate with the rest of the plan).
+  PlannedWorkout _withHealthNotes(PlannedWorkout w) {
+    final hard = w.intensity == 'tempo' || w.intensity == 'intervals';
+    final notes = <String>[
+      if (w.sport == Sport.run && hf.lowImpactRun && w.intensity != 'race') l.healthRunNote,
+      if ((w.sport == Sport.run || w.sport == Sport.ride) && hf.capIntensity && hard) l.healthHeartNote,
+      if (w.sport == Sport.swim && hf.avoidOverhead && w.intensity != 'race') l.healthSwimShoulderNote,
+      if (w.sport == Sport.gym && hf.avoidAxialLoading) l.healthGymBackNote,
+      if (w.sport == Sport.gym && hf.avoidOverhead) l.healthGymShoulderNote,
+      if (w.sport == Sport.gym && hf.kneeOrHip) l.healthGymJointNote,
+      if (w.sport == Sport.gym && hf.noStraining) l.healthGymHeartNote,
+    ];
+    if (notes.isEmpty) return w;
+    return PlannedWorkout(
+      id: w.id,
+      date: w.date,
+      sport: w.sport,
+      title: w.title,
+      description: [if (w.description.isNotEmpty) w.description, ...notes].join('\n'),
+      durationMin: w.durationMin,
+      distanceKm: w.distanceKm,
+      intensity: w.intensity,
+      templateId: w.templateId,
+      status: w.status,
+      sessionId: w.sessionId,
+      steps: w.steps,
+      phase: w.phase,
+      isKey: w.isKey,
+      exercises: w.exercises,
+    );
   }
 
   // ───────────────────────────── Time available ─────────────────────────────
@@ -632,6 +696,8 @@ class PlanGenerator {
     if (nRuns >= 3 && nRuns <= 4 && a.difficulty == 'challenging' && level != 'beginner') q = 2;
     if (nRuns >= 6 && level == 'advanced' && phase == 'build') q = 3;
     if (a.difficulty == 'easy') q = min(q, 1);
+    // Joint problems or a heart / blood-pressure condition: at most one quality run.
+    if (hf.lowImpactRun || hf.capIntensity) q = min(q, 1);
     if (nRuns <= 1) q = 0;
     return q;
   }
@@ -643,7 +709,7 @@ class PlanGenerator {
     if (phase == 'recovery' || phase == 'taper') return nRides >= 3 ? 1 : 0;
     var q = nRides >= 4 ? 2 : (nRides >= 2 ? 1 : 0);
     if (nRides == 3 && a.difficulty == 'challenging' && !beginner) q = 2;
-    if (a.difficulty == 'easy' || beginner) q = min(q, 1);
+    if (a.difficulty == 'easy' || beginner || hf.capIntensity) q = min(q, 1);
     return q;
   }
 
@@ -807,7 +873,8 @@ class PlanGenerator {
 
     isKey = true;
     final second = role == 'q2';
-    final useIntervals = (phase == 'build' || phase == 'peak') && level != 'beginner';
+    // VO2max reps load joints and heart the most: threshold work instead with limitations.
+    final useIntervals = (phase == 'build' || phase == 'peak') && level != 'beginner' && !hf.noHardRunning;
     final shortRace = dist == '5k' || dist == '10k' || dist == null;
     if (phase == 'base' || phase == 'recovery' || phase == 'taper' || beginner) {
       if (phase == 'base' && !second && level != 'beginner' && week.isOdd) {
@@ -822,7 +889,7 @@ class PlanGenerator {
         final reps = phase == 'taper' || phase == 'recovery' ? 4 : (beginner ? 5 + min(3, week ~/ 3) : 6 + week % 3);
         steps = [wu];
         for (var i = 0; i < reps; i++) {
-          steps.add(_runStep('work', 'I', sec: beginner ? 45 : 60, note: l.stepFartlekNote));
+          steps.add(_runStep('work', hf.noHardRunning ? 'T' : 'I', sec: beginner ? 45 : 60, note: l.stepFartlekNote));
           steps.add(_runStep('recovery', 'REC', sec: 90));
         }
         steps.add(cd);
@@ -884,7 +951,7 @@ class PlanGenerator {
     final k = max(3.0, _r1(min(km, capMin * 60 / pz.easySlow)));
     final steps = [_runStep('steady', 'E', km: k, note: l.stepEasyNote)];
     String title, desc;
-    if ((phase == 'base' || phase == 'build') && !beginner && day.weekday.isEven) {
+    if ((phase == 'base' || phase == 'build') && !beginner && !hf.noHardRunning && day.weekday.isEven) {
       for (var i = 0; i < 4 + min(4, week ~/ 2); i++) {
         steps.add(_runStep('work', 'R', sec: 20, note: l.stepStrideNote));
         steps.add(_runStep('recovery', 'walk', sec: 60));
@@ -973,7 +1040,7 @@ class PlanGenerator {
     } else if (role.startsWith('q')) {
       isKey = true;
       final vo2 = role == 'q2' || (phase == 'peak' && perWeek < 3);
-      if (vo2 && phase != 'base') {
+      if (vo2 && phase != 'base' && !hf.capIntensity) {
         final reps = rest ? 3 : 4 + min(2, loadWeek ~/ 3);
         final dur = phase == 'peak' ? 240 : 180;
         steps = [wu];
@@ -1041,7 +1108,9 @@ class PlanGenerator {
   PlannedWorkout _swim(DateTime day, String role, String phase, double weekKm, int perWeek, int week, int capMin) {
     // Session distance, limited by the time available (≈ CSS + 15 s per 100 m incl. rests).
     final maxM = capMin * 60 / ((sz.css + 15) / 100);
-    var total = max(beginner ? 600.0 : 1000.0, (min(weekKm * 1000 / max(1, perWeek), maxM) / 100).round() * 100.0);
+    // Shoulder: ~20 % less swim volume (fewer strokes), technique over hard sets.
+    final share = hf.avoidOverhead ? 0.8 : 1.0;
+    var total = max(beginner ? 600.0 : 1000.0, (min(weekKm * 1000 / max(1, perWeek), maxM) * share / 100).round() * 100.0);
     // Short repeats with long rests (beginners: 50 m + 30 s) take longer than the rough
     // estimate above: shrink until the session really fits the time available.
     var w = _swimSession(day, role, phase, total, week);
@@ -1058,7 +1127,7 @@ class PlanGenerator {
     String title, desc, intensity;
     final steps = <WorkoutStep>[wu];
     var isKey = false;
-    if (role == 'q1' && !beginner) {
+    if (role == 'q1' && !beginner && !hf.avoidOverhead) {
       // CSS set (~50 % of the session). Repeats get longer through the season:
       // base 100 m (15 s rest) → build 200 m (20 s) → peak 300 m (30 s);
       // recovery / taper weeks go back to short 100s.
@@ -1078,7 +1147,7 @@ class PlanGenerator {
       desc = l.wSwimCssDesc;
       intensity = 'intervals';
       isKey = true;
-    } else if (role == 'technique' || (beginner && role.startsWith('q'))) {
+    } else if (role == 'technique' || ((beginner || hf.avoidOverhead) && role.startsWith('q'))) {
       steps.add(_swimStep('work', 'DR', (total * (beginner ? 0.3 : 0.2) / 50).round() * 50.0, note: _drillNote(week)));
       steps.add(const WorkoutStep(kind: 'recovery', durationSec: 30, zone: 'REC'));
       final main = (total * 0.45 / 50).round() * 50.0;
@@ -1216,7 +1285,11 @@ class PlanGenerator {
           'easy',
           [
             _runStep('steady', 'E', sec: 15 * 60, note: l.stepEasyNote),
-            for (var i = 0; i < 4; i++) ...[_runStep('work', 'R', sec: 20, note: l.stepStrideNote), _runStep('recovery', 'walk', sec: 60)],
+            if (!hf.noHardRunning)
+              for (var i = 0; i < 4; i++) ...[
+                _runStep('work', 'R', sec: 20, note: l.stepStrideNote),
+                _runStep('recovery', 'walk', sec: 60),
+              ],
           ],
           'taper',
           false,

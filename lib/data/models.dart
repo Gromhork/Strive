@@ -64,7 +64,16 @@ class UserProfile {
   int get maxPlanDays => level == 'beginner' ? (focus == TrainingFocus.gym ? 4 : 5) : ((age ?? 0) >= 60 ? 6 : 7);
   int get weeklyTarget => trainingDays.isEmpty ? 3 : (trainingDays.length < maxPlanDays ? trainingDays.length : maxPlanDays);
   double get bmi => heightCm <= 0 ? 0 : weightKg / ((heightCm / 100) * (heightCm / 100));
-  int get estimatedMaxHr => maxHr ?? (age == null ? 190 : (208 - 0.7 * age!).round());
+
+  /// Measured HRmax, else predicted: women Gulati 2010 (206 − 0.88·age, n = 5437 women –
+  /// Tanaka overestimates female HRmax by ~5 bpm at 50), everyone else Tanaka 2001
+  /// (208 − 0.7·age). See docs/training-science.md §5.
+  int get estimatedMaxHr {
+    if (maxHr != null) return maxHr!;
+    if (age == null) return gender == 'f' ? 185 : 190;
+    return gender == 'f' ? (206 - 0.88 * age!).round() : (208 - 0.7 * age!).round();
+  }
+
   Units get units => Units(imperial);
 
   factory UserProfile.fromMap(Map<String, dynamic> m) => UserProfile(

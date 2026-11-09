@@ -457,6 +457,116 @@ void main() {
     }
   });
 
+  group('health limitations', () {
+    UserProfile withLimits(UserProfile p, List<String> lim) => p.copyWith(athlete: p.athlete.merge({'limitations': lim}));
+    double km(List<PlannedWorkout> plan) =>
+        plan.where((w) => w.sport == Sport.run && w.intensity != 'race').fold(0, (x, w) => x + runKm(w));
+    bool zone(PlannedWorkout w, Set<String> z) => w.steps.any((s) => z.contains(s.zone));
+
+    test('knee / hip / ankle: less running impact, no strides or VO2max reps, ≤ 1 quality run, one run → ride', () {
+      for (final lim in ['knee', 'hip', 'ankle']) {
+        for (final e in profiles.entries.where((e) => e.value.focus.sports.contains(Sport.run))) {
+          final p = withLimits(e.value, [lim]);
+          final plan = PlanGenerator(l, p, templates, id).generate(start: start, weeks: 12);
+          final base = plans[e.key]!;
+          final tag = '$lim ${e.key}';
+          for (final w in plan.where((w) => w.sport == Sport.run && w.intensity != 'race')) {
+            expect(zone(w, {'I', 'R'}), isFalse, reason: '$tag: ${w.title}');
+            expect(w.description.split('\n'), contains(l.healthRunNote), reason: tag);
+          }
+          for (final wk in byWeek(plan).values) {
+            expect(wk.where((w) => w.sport == Sport.run && hard(w)).length, lessThanOrEqualTo(1), reason: tag);
+          }
+          // Total run km: ~10 % less where the weekly volume decides; long runs limited by R1
+          // and threshold work instead of VO2max reps may keep it about level.
+          expect(km(plan), lessThanOrEqualTo(km(base) * 1.03 + 0.5), reason: '$tag: run km ${km(plan)} > ${km(base)}');
+          // ≥ 3 continuous runs a week → one of them is an easy ride.
+          final runsPerWeek = PlanGenerator.scheduleOf(p).values.expand((v) => v).where((s) => s == Sport.run).length;
+          if (runsPerWeek >= 3 && PlanGenerator.runWalkStartFor(p) == null) {
+            expect(plan.where((w) => w.title == l.wCrossRide), isNotEmpty, reason: tag);
+          }
+        }
+      }
+    });
+
+    test('shoulder: swim technique instead of CSS sets, less swim volume, note on every swim', () {
+      for (final e in profiles.entries.where((e) => e.value.focus.sports.contains(Sport.swim))) {
+        final plan = PlanGenerator(l, withLimits(e.value, ['shoulder']), templates, id).generate(start: start, weeks: 12);
+        final swims = plan.where((w) => w.sport == Sport.swim && w.intensity != 'race').toList();
+        expect(swims, isNotEmpty);
+        for (final w in swims) {
+          expect(zone(w, {'CSS', 'SP'}), isFalse, reason: '${e.key}: ${w.title}');
+          expect(w.description.split('\n'), contains(l.healthSwimShoulderNote));
+        }
+        double m(Iterable<PlannedWorkout> x) => x.fold(0, (a, w) => a + w.steps.fold<double>(0, (b, s) => b + (s.distanceM ?? 0)));
+        final before = m(plans[e.key]!.where((w) => w.sport == Sport.swim && w.intensity != 'race'));
+        expect(m(swims), lessThanOrEqualTo(before + 1), reason: e.key);
+      }
+    });
+
+    test('heart / blood pressure: nothing above threshold (no I/R runs, no VO2 rides)', () {
+      for (final e in profiles.entries.where((e) => e.value.focus != TrainingFocus.gym)) {
+        final plan = PlanGenerator(l, withLimits(e.value, ['heart']), templates, id).generate(start: start, weeks: 12);
+        for (final w in plan.where((w) => w.intensity != 'race')) {
+          expect(zone(w, {'I', 'R', 'Z5', 'Z6', 'Z7', 'SP'}), isFalse, reason: '${e.key}: ${w.title}');
+          if ((w.sport == Sport.run || w.sport == Sport.ride) && hard(w)) expect(w.description.split('\n'), contains(l.healthHeartNote));
+        }
+      }
+    });
+
+    test('back / shoulder / heart: strength sessions keep their programs and get a note', () {
+      for (final e in profiles.entries.where((e) => e.value.focus.sports.contains(Sport.gym))) {
+        final limited = withLimits(e.value, ['back', 'shoulder', 'heart', 'knee']);
+        final plan = PlanGenerator(l, limited, templates, id).generate(start: start, weeks: 4);
+        final base = PlanGenerator(l, e.value, templates, id).generate(start: start, weeks: 4);
+        final gym = plan.where((w) => w.sport == Sport.gym).toList();
+        expect(gym.map((w) => w.title).toList(), base.where((w) => w.sport == Sport.gym).map((w) => w.title).toList(), reason: e.key);
+        for (final w in gym) {
+          final lines = w.description.split('\n');
+          expect(lines, containsAll([l.healthGymBackNote, l.healthGymShoulderNote, l.healthGymHeartNote, l.healthGymJointNote]));
+        }
+      }
+    });
+
+    test('limitations keep the general invariants: time caps, rest days, sane values', () {
+      for (final e in profiles.entries) {
+        final p = withLimits(e.value, const ['knee', 'shoulder', 'heart']);
+        final plan = PlanGenerator(l, p, templates, id).generate(start: start, weeks: 8);
+        final perDay = <DateTime, int>{};
+        for (final w in plan) {
+          perDay[dayOnly(w.date)] = (perDay[dayOnly(w.date)] ?? 0) + 1;
+        }
+        for (final w in plan.where((w) => w.intensity != 'race')) {
+          expect(w.durationMin, inInclusiveRange(15, 240), reason: '${e.key}: ${w.title}');
+          final cap = PlanGenerator.dayMinutesFor(p, w.date.weekday) ~/ perDay[dayOnly(w.date)]!;
+          if (cap >= 40) expect(w.durationMin, lessThanOrEqualTo(cap + 10), reason: '${e.key}: ${w.title}');
+        }
+        final need = p.level == 'beginner' ? 2 : ((p.age ?? 30) >= 60 ? 1 : 0);
+        for (final wk in byWeek(plan).entries) {
+          expect(7 - wk.value.map((w) => dayOnly(w.date)).toSet().length, greaterThanOrEqualTo(need), reason: '${e.key}: ${wk.key}');
+        }
+      }
+    });
+
+    test('beginners with joint problems start with run/walk', () {
+      final p = UserProfile(focus: TrainingFocus.run, experience: const {Sport.run}, athlete: const AthleteData(limitations: ['knee']));
+      expect(PlanGenerator.runWalkStartFor(p), 4);
+      expect(PlanGenerator.runWalkStartFor(p.copyWith(athlete: const AthleteData())), isNull);
+    });
+  });
+
+  test('sex: predicted HRmax uses Gulati for women, Tanaka otherwise; measured HRmax wins', () {
+    final year = DateTime.now().year;
+    expect(UserProfile(gender: 'f', birthYear: year - 50).estimatedMaxHr, 162);
+    expect(UserProfile(gender: 'm', birthYear: year - 50).estimatedMaxHr, 173);
+    expect(UserProfile(gender: 'd', birthYear: year - 50).estimatedMaxHr, 173);
+    expect(UserProfile.fromMap({'gender': 'f', 'birthYear': year - 50, 'maxHr': 181}).estimatedMaxHr, 181);
+    // The plan's heart-rate targets follow.
+    final f = PlanGenerator(l, UserProfile(gender: 'f', birthYear: year - 50, focus: TrainingFocus.run), templates, id);
+    final m = PlanGenerator(l, UserProfile(gender: 'm', birthYear: year - 50, focus: TrainingFocus.run), templates, id);
+    expect(f.hz.zone(2).$2, lessThan(m.hz.zone(2).$2));
+  });
+
   test('goal-specific volume: HM long run ≥ 14 km, olympic long ride ≥ 90 min, realistic race durations', () {
     UserProfile goal(TrainingFocus f, String event, List<int> days, int weeks) => UserProfile(
       level: 'intermediate',

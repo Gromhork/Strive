@@ -542,7 +542,9 @@ aids. For BEGINNER, don't use pace targets for the first 4–6 weeks: give reps 
 HRmax (measured) > predicted. Predicted:
   Tanaka 2001:  HRmax = 208 − 0.7·age     (meta-analysis of 351 studies, n ≈ 18,700; SEE ≈ ±10 bpm) [55]   [S]
   Gellish 2007: HRmax = 207 − 0.7·age     (longitudinal) [57]                                                [M]
+  Gulati 2010:  HRmax = 206 − 0.88·age   (women, n = 5437; Tanaka overestimates female HRmax, ~5 bpm at 50) [58] [M]
   220 − age:    underestimates HRmax in older adults, overestimates in young; do not use as default          [S]
+  generator: measured HRmax > Gulati (gender f) > Tanaka (m / d)
   sport offsets [P]: cycling HRmax ≈ run − 5…10 bpm; swimming ≈ run − 10…15 bpm
 Karvonen (heart-rate reserve) [56]:
   HR_target = HRrest + pct × (HRmax − HRrest)     // HRrest = morning resting HR
@@ -666,6 +668,47 @@ suggest moving one difficulty level down (or repeat the week).
 - Heat/altitude: prescribe by HR/RPE, not pace [P].
 - Ages < 16: no maximal tests, no RIR 0, endurance volume ≤ the NOVICE column [P].
 
+### 9.1 Health limitations in the plan (setup: knee, back, shoulder, hip, ankle/Achilles, heart/blood pressure) [P]
+
+The setup asks for limitations in both the quick and the detailed setup (`AthleteData.limitations`). The generator never
+diagnoses or treats; it removes the loads that are most likely to aggravate the area and keeps the rest of the plan. All
+rules live in `HealthFlags` (lib/services/health_limits.dart), which the strength side also reads.
+
+```text
+knee | hip | ankle (incl. Achilles)  -> lowImpactRun
+  run volume curve × 0.9, growth at the EASY rate (5 %/week), long run ≤ +5 % (R1 EASY)
+  no strides (R) and no VO2max reps (I): build/peak quality = threshold / cruise intervals,
+    fartlek pick-ups at T instead of I (vertical ground-reaction force rises with speed [61])
+  ≤ 1 quality run per week
+  ≥ 3 runs/week -> one easy run becomes an easy ride of the same duration (cross-training keeps
+    the aerobic stimulus without impact; H8)
+  beginners without race times start with run/walk (no running experience: stage 1, else 3 × 5 min)
+  note on every run: soft surfaces, stop if pain > 3/10 or it changes the stride (pain-monitoring model [62])
+knee | hip -> strength note: pain-free range of motion, reduce depth or load
+back       -> avoidAxialLoading: strength note (no heavy back squat / deadlift; leg press, split squat,
+              hip thrust; lumbar compression in squats reaches several times body weight [64]);
+              the strength programs may read the flag – the generator does not rewrite them
+shoulder   -> avoidOverhead: swims ~20 % shorter, CSS sets become technique sessions, note "no paddles,
+              bilateral breathing" (paddles and volume are the main loads in swimmer's shoulder [63]);
+              strength note: no heavy overhead pressing
+heart      -> capIntensity: nothing above threshold – no I/R runs, no Z5 rides (VO2 sets become threshold),
+              no strides in the shake-out, ≤ 1 quality session per sport and week; note on quality sessions;
+              strength note: 2–3 reps in reserve, exhale on effort, no breath holding (Valsalva drives
+              systolic pressure far above 200 mmHg in heavy lifts [65]). Moderate continuous and threshold
+              work stays – it is what exercise guidelines for hypertension recommend [60]; medical clearance first.
+```
+
+### 9.2 Sex [M/P]
+
+Sex is used only where the evidence gives a different number, never to change the training content:
+
+- **HRmax prediction:** women Gulati (206 − 0.88·age) [58], men and "diverse" Tanaka [55]; a measured HRmax always wins.
+  All heart-rate targets follow (Karvonen when resting HR is known).
+- **Not used:** menstrual-cycle based periodisation – the meta-analysis of McNulty 2020 [59] found only trivial, inconsistent
+  performance differences across phases, so the plan does not shift sessions by cycle phase (users can move sessions themselves).
+  Volume, progression, recovery weeks and strength dosing are the same for all athletes; individual responses are handled by the
+  RPE/compliance recalibration (§11) instead of group stereotypes.
+
 ---
 
 ## 10. References
@@ -728,3 +771,11 @@ Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
 55. Tanaka H, Monahan KD, Seals DR. Age-predicted maximal heart rate revisited. *J Am Coll Cardiol.* 2001;37(1):153–156. doi:10.1016/S0735-1097(00)01054-8
 56. Karvonen MJ, Kentala E, Mustala O. The effects of training on heart rate; a longitudinal study. *Ann Med Exp Biol Fenn.* 1957;35(3):307–315.
 57. Gellish RL, Goslin BR, Olson RE, et al. Longitudinal modeling of the relationship between age and maximal heart rate. *Med Sci Sports Exerc.* 2007;39(5):822–829. doi:10.1097/mss.0b013e31803349c6
+58. Gulati M, Shaw LJ, Thisted RA, et al. Heart rate response to exercise stress testing in asymptomatic women: the St. James Women Take Heart Project. *Circulation.* 2010;122(2):130–137. doi:10.1161/CIRCULATIONAHA.109.939249
+59. McNulty KL, Elliott-Sale KJ, Dolan E, et al. The effects of menstrual cycle phase on exercise performance in eumenorrheic women: a systematic review and meta-analysis. *Sports Med.* 2020;50(10):1813–1827. doi:10.1007/s40279-020-01319-3
+60. Pescatello LS, MacDonald HV, Lamberti L, Johnson BT. Exercise for hypertension: a prescription update integrating existing recommendations with emerging research. *Curr Hypertens Rep.* 2015;17(11):87. doi:10.1007/s11906-015-0600-y — see also Pelliccia A, Sharma S, Gati S, et al. 2020 ESC Guidelines on sports cardiology and exercise in patients with cardiovascular disease. *Eur Heart J.* 2021;42(1):17–96. doi:10.1093/eurheartj/ehaa605
+61. Keller TS, Weisberger AM, Ray JL, et al. Relationship between vertical ground reaction force and speed during walking, slow jogging, and running. *Clin Biomech.* 1996;11(5):253–259. doi:10.1016/0268-0033(95)00068-2
+62. Silbernagel KG, Thomeé R, Eriksson BI, Karlsson J. Continued sports activity, using a pain-monitoring model, during rehabilitation in patients with Achilles tendinopathy: a randomized controlled study. *Am J Sports Med.* 2007;35(6):897–906. doi:10.1177/0363546506298279
+63. Wanivenhaus F, Fox AJS, Chaudhury S, Rodeo SA. Epidemiology of injuries and prevention strategies in competitive swimmers. *Sports Health.* 2012;4(3):246–251. doi:10.1177/1941738111434406
+64. Cappozzo A, Felici F, Figura F, Gazzani F. Lumbar spine loading during half-squat exercises. *Med Sci Sports Exerc.* 1985;17(5):613–620.
+65. MacDougall JD, Tuxen D, Sale DG, et al. Arterial blood pressure response to heavy resistance exercise. *J Appl Physiol.* 1985;58(3):785–790. doi:10.1152/jappl.1985.58.3.785

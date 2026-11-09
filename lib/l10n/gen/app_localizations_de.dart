@@ -3324,4 +3324,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String quickDaysCapped(int n, int total) {
     return 'Dein Plan nutzt $n deiner $total Tage – die übrigen bleiben Ruhetage, damit du dich zwischen den Einheiten erholst.';
   }
+
+  @override
+  String get wCrossRide => 'Lockere Radeinheit statt Lauf';
+
+  @override
+  String get wCrossRideDesc =>
+      'Gleicher Ausdauerreiz ohne Stoßbelastung – schont Knie, Hüfte und Achillessehne. Rad oder Rollentrainer im Plaudertempo.';
+
+  @override
+  String get healthRunNote =>
+      'Gelenke: möglichst weicher Untergrund; abbrechen, wenn der Schmerz über 3/10 steigt oder den Laufstil verändert.';
+
+  @override
+  String get healthHeartNote => 'Herz / Blutdruck: Intensität bis zur Schwelle begrenzt – keine Maximalbelastungen.';
+
+  @override
+  String get healthSwimShoulderNote => 'Schulter: keine Paddles, beidseitig atmen, bei Schmerzen abbrechen.';
+
+  @override
+  String get healthGymBackNote =>
+      'Rücken: keine schwere axiale Last – Kniebeugen und Kreuzheben durch Beinpresse, Split Squats oder Hip Thrusts ersetzen; neutrale Wirbelsäule.';
+
+  @override
+  String get healthGymShoulderNote =>
+      'Schulter: kein schweres Drücken über Kopf – Landmine- oder Neutralgriff-Varianten, schmerzfrei bleiben.';
+
+  @override
+  String get healthGymJointNote =>
+      'Gelenke: im schmerzfreien Bewegungsumfang trainieren – Tiefe oder Last reduzieren, wenn Knie oder Hüfte schmerzen.';
+
+  @override
+  String get healthGymHeartNote =>
+      'Herz / Blutdruck: 2–3 Wiederholungen Reserve lassen und bei der Anstrengung ausatmen – kein Pressen, keine Pressatmung.';
 }
