@@ -82,31 +82,96 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     return ref.watch(sessionListProvider).where((s) => f == null || s.sport == f).toList();
   }
 
-  // ── Week list with drag & drop between days
+  // ── Week list with drag & drop between days. The current week is the scroll anchor;
+  // past weeks (with completed workouts) are above it and revealed by scrolling up.
+  static const _pastWeeks = 12;
+  final _nowKey = GlobalKey();
+  final _lastWeekKey = GlobalKey();
+
+  Widget _weekCard(int w, List<PlannedWorkout> plans, List<Session> sessions, {Key? key}) {
+    final l = context.l10n;
+    final df = DateFormat.MMMd(context.localeName);
+    final week = startOfWeek(DateTime.now()).add(Duration(days: 7 * w));
+    final end = week.add(const Duration(days: 7));
+    final label = switch (w) {
+      0 => l.currentWeek,
+      1 => l.nextWeek,
+      -1 => l.lastWeek,
+      _ => null,
+    };
+    Widget? trailing;
+    if (w < 0) {
+      // Past week: completed vs. planned at a glance.
+      final done = sessions.where((s) => !s.start.isBefore(week) && s.start.isBefore(end)).length;
+      final planned = plans.where((p) => !p.date.isBefore(week) && p.date.isBefore(end)).length;
+      trailing = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (label != null) Text('$label · ', style: Theme.of(context).textTheme.labelMedium),
+          const Icon(Icons.check_circle_rounded, size: 15, color: AppColors.success),
+          const SizedBox(width: 3),
+          Text(planned > 0 ? '$done/$planned' : '$done', style: Theme.of(context).textTheme.labelMedium),
+        ],
+      );
+    } else if (label != null) {
+      trailing = Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.brand));
+    }
+    return Padding(
+      key: key,
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Opacity(
+        opacity: w < 0 ? 0.92 : 1,
+        child: SectionCard(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+          title: '${df.format(week)} – ${df.format(week.add(const Duration(days: 6)))}',
+          trailing: trailing,
+          child: Column(children: [for (var d = 0; d < 7; d++) _DayRow(day: week.add(Duration(days: d)), plans: plans, sessions: sessions)]),
+        ),
+      ),
+    );
+  }
+
   Widget _weekList() {
     final l = context.l10n;
     final plans = _plans();
     final sessions = _sessions();
-    final thisWeek = startOfWeek(DateTime.now());
-    final df = DateFormat.MMMd(context.localeName);
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-      itemCount: 8, // current week … 7 weeks ahead
-      itemBuilder: (_, w) {
-        final week = thisWeek.add(Duration(days: 7 * w));
-        final label = w == 0 ? l.currentWeek : (w == 1 ? l.nextWeek : null);
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: SectionCard(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-            title: '${df.format(week)} – ${df.format(week.add(const Duration(days: 6)))}',
-            trailing: label == null ? null : Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.brand)),
-            child: Column(
-              children: [for (var d = 0; d < 7; d++) _DayRow(day: week.add(Duration(days: d)), plans: plans, sessions: sessions)],
+    return CustomScrollView(
+      center: _nowKey,
+      slivers: [
+        // Grows upwards from the anchor: index 0 = last week.
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (_, i) => _weekCard(-(i + 1), plans, sessions, key: i == 0 ? _lastWeekKey : null),
+              childCount: _pastWeeks,
             ),
           ),
-        );
-      },
+        ),
+        SliverPadding(
+          key: _nowKey,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate((_, i) {
+              if (i == 0) {
+                return Align(
+                  alignment: Alignment.center,
+                  child: TextButton.icon(
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                    icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 18),
+                    label: Text(l.showPastWeeks),
+                    onPressed: () {
+                      final c = _lastWeekKey.currentContext;
+                      if (c != null) Scrollable.ensureVisible(c, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
+                    },
+                  ),
+                );
+              }
+              return _weekCard(i - 1, plans, sessions);
+            }, childCount: 9), // hint + current week … 7 weeks ahead
+          ),
+        ),
+      ],
     );
   }
 

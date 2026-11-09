@@ -1,0 +1,81 @@
+{
+ # labels (existing keys re-worded, new keys added)
+ 'zConversational': ['Easy', 'Locker'],
+ 'zEasyLong': ['Easy', 'Locker'],
+ 'zMarathon': ['Steady', 'Zügig'],
+ 'zThreshold': ['Threshold', 'Schwelle'],
+ 'zInterval': ['Interval', 'Intervall'],
+ 'zStride': ['Sprint', 'Sprint'],
+ 'zJog': ['Recovery', 'Erholung'],
+ 'zRecovery': ['Recovery', 'Erholung'],
+ 'zSwimEndurance': ['Endurance', 'Grundlage'],
+ 'zSwimEasy': ['Easy', 'Locker'],
+ 'zEndurance': ['Endurance', 'Grundlage'],
+ 'zCss': ['CSS pace', 'CSS-Tempo'],
+ 'zTempo': ['Tempo', 'Tempo'],
+ 'zDrills': ['Technique', 'Technik'],
+
+ # info sheet
+ 'zoneInfoTitle': ['Intensity zones', 'Intensitätszonen'],
+ 'zoneInfoRun': ['Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.', 'Die Tempi basieren auf deinen Wettkampfzeiten (VDOT nach Jack Daniels). Der Großteil deines Laufens – etwa 80 % – sollte locker sein; die schnellen Zonen setzt du kurz und gezielt ein.'],
+ 'zoneInfoRide': ['Power zones are percentages of your FTP (the power you can hold for about one hour). Without a power meter, ride by heart rate and feel.', 'Die Wattbereiche sind Prozent deiner FTP (die Leistung, die du etwa eine Stunde halten kannst). Ohne Wattmesser fährst du nach Puls und Gefühl.'],
+ 'zoneInfoSwim': ['Paces per 100 m come from your critical swim speed (CSS, from a 400 m and 200 m test).', 'Die Zeiten pro 100 m basieren auf deiner kritischen Schwimmgeschwindigkeit (CSS, aus einem 400-m- und 200-m-Test).'],
+ 'zoneInfoEstimated': ['≈ values are estimated from your level – add a test result in the plan settings for exact targets.', '≈-Werte sind aus deinem Level geschätzt – trage in den Planeinstellungen einen Testwert ein, dann werden sie genau.'],
+
+ # feel
+ 'zfVeryEasy': ['RPE 1–2 · very easy', 'RPE 1–2 · sehr leicht'],
+ 'zfEasy': ['RPE 3–4 · full sentences', 'RPE 3–4 · ganze Sätze'],
+ 'zfDrills': ['focus on form', 'Fokus auf Technik'],
+ 'zfModerate': ['RPE 5–6 · short sentences', 'RPE 5–6 · kurze Sätze'],
+ 'zfHard': ['RPE 7–8 · single words', 'RPE 7–8 · einzelne Worte'],
+ 'zfVeryHard': ['RPE 8–9 · no talking', 'RPE 8–9 · kein Sprechen'],
+ 'zfMax': ['RPE 9–10 · fast & relaxed', 'RPE 9–10 · schnell & locker'],
+
+ # run
+ 'zdRunRec': ['Walking or very slow jogging between hard efforts and for warming up. Lets your heart rate come down.', 'Gehen oder ganz langsames Traben zwischen harten Abschnitten und zum Einlaufen. Der Puls darf sinken.'],
+ 'zdRunEasy': ['Your everyday pace: relaxed, you can talk in full sentences. Builds the aerobic base, used for easy and long runs.', 'Dein Alltagstempo: entspannt, du kannst dich in ganzen Sätzen unterhalten. Baut die Grundlagenausdauer auf – für lockere und lange Läufe.'],
+ 'zdRunSteady': ['Controlled but purposeful, about your marathon pace. Used in long-run finishes and steady runs.', 'Kontrolliert, aber mit Zug – etwa dein Marathontempo. Für zügige Abschnitte am Ende langer Läufe.'],
+ 'zdRunThreshold': ['"Comfortably hard" – a pace you could hold for about an hour. Tempo runs and cruise intervals raise your lactate threshold.', '„Angenehm hart“ – ein Tempo, das du etwa eine Stunde halten könntest. Tempodauerläufe und Schwellenintervalle heben deine Laktatschwelle.'],
+ 'zdRunInterval': ['About your 3–5 km race pace. Efforts of 2–5 minutes with recovery jogs improve your VO2max.', 'Etwa dein 3–5-km-Wettkampftempo. Abschnitte von 2–5 Minuten mit Trabpausen verbessern deine VO2max.'],
+ 'zdRunSprint': ['Short, fast but relaxed efforts (strides, 10–30 s) with full recovery. Improves running economy and form.', 'Kurze, schnelle, aber lockere Abschnitte (Steigerungen, 10–30 s) mit voller Erholung. Verbessert Laufökonomie und Technik.'],
+
+ # ride
+ 'zdRideRec': ['Spinning easily, for warm-up, cool-down and recovery rides.', 'Locker kurbeln – zum Ein- und Ausfahren und für Erholungsfahrten.'],
+ 'zdRideEndurance': ['The base of cycling training: long, steady rides at a pace you can hold for hours.', 'Die Basis im Radtraining: lange, gleichmäßige Fahrten in einem Tempo, das du stundenlang halten kannst.'],
+ 'zdRideSweetSpot': ['Just below threshold: hard but sustainable for 10–40 minutes. Very time-efficient for building FTP.', 'Knapp unter der Schwelle: fordernd, aber 10–40 Minuten durchhaltbar. Sehr zeiteffizient, um die FTP zu steigern.'],
+ 'zdRideThreshold': ['Around your FTP – the effort of a one-hour time trial. Blocks of 8–20 minutes.', 'Rund um deine FTP – die Belastung eines einstündigen Zeitfahrens. Blöcke von 8–20 Minuten.'],
+ 'zdRideVo2': ['Very hard efforts of 2–6 minutes that push your maximal oxygen uptake.', 'Sehr harte Abschnitte von 2–6 Minuten, die deine maximale Sauerstoffaufnahme fordern.'],
+ 'zdRideSprint': ['Short all-out bursts (up to 30 s) for power and speed, with long recoveries.', 'Kurze, maximale Antritte (bis 30 s) für Kraft und Spritzigkeit, mit langen Pausen.'],
+
+ # swim
+ 'zdSwimEasy': ['Loose, relaxed swimming for warm-up, cool-down and rests. Focus on long strokes and calm breathing.', 'Locker und entspannt – zum Ein- und Ausschwimmen und in Pausen. Auf lange Züge und ruhige Atmung achten.'],
+ 'zdSwimDrills': ['Technique drills: exercises that isolate one part of the stroke (arm pull, body position, rotation, breathing). Speed does not matter – swim slowly and precisely. Tap "Technique drills" below for the exercises.', 'Technikübungen: Übungen, die einen Teil der Bewegung isolieren (Armzug, Wasserlage, Rotation, Atmung). Das Tempo ist egal – schwimm langsam und sauber. Die Übungen findest du unten unter „Technikübungen“.'],
+ 'zdSwimEndurance': ['Steady aerobic swimming, a few seconds slower than CSS per 100 m. The main zone for longer sets.', 'Gleichmäßiges Grundlagenschwimmen, einige Sekunden pro 100 m langsamer als CSS. Die Hauptzone für längere Serien.'],
+ 'zdSwimCss': ['Your critical swim speed – about your 1500 m race pace. Hard but even, with short rests (10–20 s).', 'Deine kritische Schwimmgeschwindigkeit – etwa dein 1500-m-Wettkampftempo. Hart, aber gleichmäßig, mit kurzen Pausen (10–20 s).'],
+ 'zdSwimSprint': ['Short, fast lengths (25–50 m) with long rests for speed and power.', 'Kurze, schnelle Bahnen (25–50 m) mit langen Pausen für Schnelligkeit und Kraft.'],
+
+ # drills
+ 'swimDrillsTitle': ['Technique drills', 'Technikübungen'],
+ 'swimDrillsIntro': ['In a technique set you swim these drills instead of normal freestyle, e.g. 50 m drill / 50 m freestyle. Swim slowly and concentrate on one thing per length.', 'In einem Technikblock schwimmst du statt normalem Kraul diese Übungen, z. B. 50 m Übung / 50 m Kraul im Wechsel. Schwimm langsam und konzentriere dich pro Bahn auf eine Sache.'],
+ 'drillCatchupName': ['Catch-up', 'Abschlagschwimmen'],
+ 'drillCatchupHow': ['One arm stays stretched in front until the other arm touches it, then it starts its pull.', 'Ein Arm bleibt vorne gestreckt, bis der andere ihn „abschlägt“ – erst dann beginnt er seinen Zug.'],
+ 'drillCatchupWhy': ['Longer stroke, better glide and timing.', 'Längerer Zug, besseres Gleiten und Timing.'],
+ 'drillFingertipName': ['Fingertip drag', 'Fingerspitzen ziehen'],
+ 'drillFingertipHow': ['During the recovery, drag your fingertips along the water surface from hip to head.', 'In der Rückholphase ziehst du die Fingerspitzen von der Hüfte bis zum Kopf über die Wasseroberfläche.'],
+ 'drillFingertipWhy': ['High elbow and relaxed arm recovery.', 'Hoher Ellbogen und lockere Armrückführung.'],
+ 'drillSideKickName': ['6-1-6 side kick', '6-1-6 Seitlage'],
+ 'drillSideKickHow': ['Kick 6 times on your side (lower arm stretched forward), take one stroke, kick 6 times on the other side.', '6 Beinschläge in Seitlage (unterer Arm nach vorne gestreckt), ein Armzug, 6 Beinschläge auf der anderen Seite.'],
+ 'drillSideKickWhy': ['Body position, rotation and calm breathing.', 'Wasserlage, Rotation und ruhige Atmung.'],
+ 'drillSingleArmName': ['Single arm', 'Einarmig'],
+ 'drillSingleArmHow': ['One arm stays in front, the other one swims alone; switch arms every length.', 'Ein Arm bleibt vorne, der andere schwimmt allein; pro Bahn wechseln.'],
+ 'drillSingleArmWhy': ['Clean underwater pull and rotation to the breathing side.', 'Sauberer Unterwasserzug und Rotation zur Atemseite.'],
+ 'drillFistName': ['Fist swimming', 'Faustschwimmen'],
+ 'drillFistHow': ['Swim freestyle with closed fists; open your hands again for the last 10 m.', 'Kraul mit geschlossenen Fäusten; auf den letzten 10 m die Hände wieder öffnen.'],
+ 'drillFistWhy': ['You learn to pull with the whole forearm (early vertical forearm).', 'Du lernst, mit dem ganzen Unterarm zu ziehen (früher, senkrechter Unterarm).'],
+ 'drillScullName': ['Sculling', 'Wriggen (Sculling)'],
+ 'drillScullHow': ['Lying flat, move your hands in small figure-eights in front of your head to move forward.', 'In Bauchlage bewegst du die Hände in kleinen Achten vor dem Kopf und kommst so voran.'],
+ 'drillScullWhy': ['Feel for the water and a strong catch.', 'Wassergefühl und kräftiges Wasserfassen.'],
+ 'drillsNote': ['{a} / {b} – alternate 50 m drill, 50 m freestyle', '{a} / {b} – im Wechsel 50 m Übung, 50 m Kraul'],
+ 'intensityAuto': ['{name} (from the structure)', '{name} (aus dem Aufbau)'],
+ 'showDrills': ['Show drills', 'Übungen anzeigen'],
+}

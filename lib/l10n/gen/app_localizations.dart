@@ -1760,7 +1760,7 @@ abstract class AppLocalizations {
   /// No description provided for @lastWeek.
   ///
   /// In en, this message translates to:
-  /// **'Last'**
+  /// **'Last week'**
   String get lastWeek;
 
   /// No description provided for @nothingPlanned.
@@ -4304,43 +4304,43 @@ abstract class AppLocalizations {
   /// No description provided for @zConversational.
   ///
   /// In en, this message translates to:
-  /// **'conversational pace'**
+  /// **'Easy'**
   String get zConversational;
 
   /// No description provided for @zEasyLong.
   ///
   /// In en, this message translates to:
-  /// **'easy'**
+  /// **'Easy'**
   String get zEasyLong;
 
   /// No description provided for @zMarathon.
   ///
   /// In en, this message translates to:
-  /// **'marathon pace'**
+  /// **'Steady'**
   String get zMarathon;
 
   /// No description provided for @zThreshold.
   ///
   /// In en, this message translates to:
-  /// **'threshold pace'**
+  /// **'Threshold'**
   String get zThreshold;
 
   /// No description provided for @zInterval.
   ///
   /// In en, this message translates to:
-  /// **'interval pace'**
+  /// **'Interval'**
   String get zInterval;
 
   /// No description provided for @zStride.
   ///
   /// In en, this message translates to:
-  /// **'stride'**
+  /// **'Sprint'**
   String get zStride;
 
   /// No description provided for @zJog.
   ///
   /// In en, this message translates to:
-  /// **'easy jog'**
+  /// **'Recovery'**
   String get zJog;
 
   /// No description provided for @zWalk.
@@ -4352,7 +4352,7 @@ abstract class AppLocalizations {
   /// No description provided for @zRecovery.
   ///
   /// In en, this message translates to:
-  /// **'recovery'**
+  /// **'Recovery'**
   String get zRecovery;
 
   /// No description provided for @zSprint.
@@ -4364,13 +4364,13 @@ abstract class AppLocalizations {
   /// No description provided for @zSwimEndurance.
   ///
   /// In en, this message translates to:
-  /// **'endurance'**
+  /// **'Endurance'**
   String get zSwimEndurance;
 
   /// No description provided for @zDrills.
   ///
   /// In en, this message translates to:
-  /// **'drills'**
+  /// **'Technique'**
   String get zDrills;
 
   /// No description provided for @stepWarmup.
@@ -5476,6 +5476,504 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Day by day'**
   String get byDay;
+
+  /// No description provided for @planExercisesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes apply to this workout only – the program stays as it is.'**
+  String get planExercisesHint;
+
+  /// No description provided for @planExercisesCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusted for this workout (program: {name}).'**
+  String planExercisesCustom(String name);
+
+  /// No description provided for @saveToProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to program'**
+  String get saveToProgram;
+
+  /// No description provided for @savedToProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to \"{name}\"'**
+  String savedToProgram(String name);
+
+  /// No description provided for @resetToProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get resetToProgram;
+
+  /// No description provided for @adjustExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust exercises'**
+  String get adjustExercises;
+
+  /// No description provided for @zSwimEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get zSwimEasy;
+
+  /// No description provided for @zEndurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance'**
+  String get zEndurance;
+
+  /// No description provided for @zCss.
+  ///
+  /// In en, this message translates to:
+  /// **'CSS pace'**
+  String get zCss;
+
+  /// No description provided for @zTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get zTempo;
+
+  /// No description provided for @zoneInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensity zones'**
+  String get zoneInfoTitle;
+
+  /// No description provided for @zoneInfoRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.'**
+  String get zoneInfoRun;
+
+  /// No description provided for @zoneInfoRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Power zones are percentages of your FTP (the power you can hold for about one hour). Without a power meter, ride by heart rate and feel.'**
+  String get zoneInfoRide;
+
+  /// No description provided for @zoneInfoSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'Paces per 100 m come from your critical swim speed (CSS, from a 400 m and 200 m test).'**
+  String get zoneInfoSwim;
+
+  /// No description provided for @zoneInfoEstimated.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ values are estimated from your level – add a test result in the plan settings for exact targets.'**
+  String get zoneInfoEstimated;
+
+  /// No description provided for @zfVeryEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'RPE 1–2 · very easy'**
+  String get zfVeryEasy;
+
+  /// No description provided for @zfEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'RPE 3–4 · full sentences'**
+  String get zfEasy;
+
+  /// No description provided for @zfDrills.
+  ///
+  /// In en, this message translates to:
+  /// **'focus on form'**
+  String get zfDrills;
+
+  /// No description provided for @zfModerate.
+  ///
+  /// In en, this message translates to:
+  /// **'RPE 5–6 · short sentences'**
+  String get zfModerate;
+
+  /// No description provided for @zfHard.
+  ///
+  /// In en, this message translates to:
+  /// **'RPE 7–8 · single words'**
+  String get zfHard;
+
+  /// No description provided for @zfVeryHard.
+  ///
+  /// In en, this message translates to:
+  /// **'RPE 8–9 · no talking'**
+  String get zfVeryHard;
+
+  /// No description provided for @zfMax.
+  ///
+  /// In en, this message translates to:
+  /// **'RPE 9–10 · fast & relaxed'**
+  String get zfMax;
+
+  /// No description provided for @zdRunRec.
+  ///
+  /// In en, this message translates to:
+  /// **'Walking or very slow jogging between hard efforts and for warming up. Lets your heart rate come down.'**
+  String get zdRunRec;
+
+  /// No description provided for @zdRunEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Your everyday pace: relaxed, you can talk in full sentences. Builds the aerobic base, used for easy and long runs.'**
+  String get zdRunEasy;
+
+  /// No description provided for @zdRunSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'Controlled but purposeful, about your marathon pace. Used in long-run finishes and steady runs.'**
+  String get zdRunSteady;
+
+  /// No description provided for @zdRunThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'\"Comfortably hard\" – a pace you could hold for about an hour. Tempo runs and cruise intervals raise your lactate threshold.'**
+  String get zdRunThreshold;
+
+  /// No description provided for @zdRunInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'About your 3–5 km race pace. Efforts of 2–5 minutes with recovery jogs improve your VO2max.'**
+  String get zdRunInterval;
+
+  /// No description provided for @zdRunSprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short, fast but relaxed efforts (strides, 10–30 s) with full recovery. Improves running economy and form.'**
+  String get zdRunSprint;
+
+  /// No description provided for @zdRideRec.
+  ///
+  /// In en, this message translates to:
+  /// **'Spinning easily, for warm-up, cool-down and recovery rides.'**
+  String get zdRideRec;
+
+  /// No description provided for @zdRideEndurance.
+  ///
+  /// In en, this message translates to:
+  /// **'The base of cycling training: long, steady rides at a pace you can hold for hours.'**
+  String get zdRideEndurance;
+
+  /// No description provided for @zdRideSweetSpot.
+  ///
+  /// In en, this message translates to:
+  /// **'Just below threshold: hard but sustainable for 10–40 minutes. Very time-efficient for building FTP.'**
+  String get zdRideSweetSpot;
+
+  /// No description provided for @zdRideThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Around your FTP – the effort of a one-hour time trial. Blocks of 8–20 minutes.'**
+  String get zdRideThreshold;
+
+  /// No description provided for @zdRideVo2.
+  ///
+  /// In en, this message translates to:
+  /// **'Very hard efforts of 2–6 minutes that push your maximal oxygen uptake.'**
+  String get zdRideVo2;
+
+  /// No description provided for @zdRideSprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short all-out bursts (up to 30 s) for power and speed, with long recoveries.'**
+  String get zdRideSprint;
+
+  /// No description provided for @zdSwimEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Loose, relaxed swimming for warm-up, cool-down and rests. Focus on long strokes and calm breathing.'**
+  String get zdSwimEasy;
+
+  /// No description provided for @zdSwimDrills.
+  ///
+  /// In en, this message translates to:
+  /// **'Technique drills: exercises that isolate one part of the stroke (arm pull, body position, rotation, breathing). Speed does not matter – swim slowly and precisely. Tap \"Technique drills\" below for the exercises.'**
+  String get zdSwimDrills;
+
+  /// No description provided for @zdSwimEndurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Steady aerobic swimming, a few seconds slower than CSS per 100 m. The main zone for longer sets.'**
+  String get zdSwimEndurance;
+
+  /// No description provided for @zdSwimCss.
+  ///
+  /// In en, this message translates to:
+  /// **'Your critical swim speed – about your 1500 m race pace. Hard but even, with short rests (10–20 s).'**
+  String get zdSwimCss;
+
+  /// No description provided for @zdSwimSprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short, fast lengths (25–50 m) with long rests for speed and power.'**
+  String get zdSwimSprint;
+
+  /// No description provided for @swimDrillsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Technique drills'**
+  String get swimDrillsTitle;
+
+  /// No description provided for @swimDrillsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'In a technique set you swim these drills instead of normal freestyle, e.g. 50 m drill / 50 m freestyle. Swim slowly and concentrate on one thing per length.'**
+  String get swimDrillsIntro;
+
+  /// No description provided for @drillCatchupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch-up'**
+  String get drillCatchupName;
+
+  /// No description provided for @drillCatchupHow.
+  ///
+  /// In en, this message translates to:
+  /// **'One arm stays stretched in front until the other arm touches it, then it starts its pull.'**
+  String get drillCatchupHow;
+
+  /// No description provided for @drillCatchupWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Longer stroke, better glide and timing.'**
+  String get drillCatchupWhy;
+
+  /// No description provided for @drillFingertipName.
+  ///
+  /// In en, this message translates to:
+  /// **'Fingertip drag'**
+  String get drillFingertipName;
+
+  /// No description provided for @drillFingertipHow.
+  ///
+  /// In en, this message translates to:
+  /// **'During the recovery, drag your fingertips along the water surface from hip to head.'**
+  String get drillFingertipHow;
+
+  /// No description provided for @drillFingertipWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'High elbow and relaxed arm recovery.'**
+  String get drillFingertipWhy;
+
+  /// No description provided for @drillSideKickName.
+  ///
+  /// In en, this message translates to:
+  /// **'6-1-6 side kick'**
+  String get drillSideKickName;
+
+  /// No description provided for @drillSideKickHow.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick 6 times on your side (lower arm stretched forward), take one stroke, kick 6 times on the other side.'**
+  String get drillSideKickHow;
+
+  /// No description provided for @drillSideKickWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Body position, rotation and calm breathing.'**
+  String get drillSideKickWhy;
+
+  /// No description provided for @drillSingleArmName.
+  ///
+  /// In en, this message translates to:
+  /// **'Single arm'**
+  String get drillSingleArmName;
+
+  /// No description provided for @drillSingleArmHow.
+  ///
+  /// In en, this message translates to:
+  /// **'One arm stays in front, the other one swims alone; switch arms every length.'**
+  String get drillSingleArmHow;
+
+  /// No description provided for @drillSingleArmWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean underwater pull and rotation to the breathing side.'**
+  String get drillSingleArmWhy;
+
+  /// No description provided for @drillFistName.
+  ///
+  /// In en, this message translates to:
+  /// **'Fist swimming'**
+  String get drillFistName;
+
+  /// No description provided for @drillFistHow.
+  ///
+  /// In en, this message translates to:
+  /// **'Swim freestyle with closed fists; open your hands again for the last 10 m.'**
+  String get drillFistHow;
+
+  /// No description provided for @drillFistWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'You learn to pull with the whole forearm (early vertical forearm).'**
+  String get drillFistWhy;
+
+  /// No description provided for @drillScullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Sculling'**
+  String get drillScullName;
+
+  /// No description provided for @drillScullHow.
+  ///
+  /// In en, this message translates to:
+  /// **'Lying flat, move your hands in small figure-eights in front of your head to move forward.'**
+  String get drillScullHow;
+
+  /// No description provided for @drillScullWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Feel for the water and a strong catch.'**
+  String get drillScullWhy;
+
+  /// No description provided for @drillsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{a} / {b} – alternate 50 m drill, 50 m freestyle'**
+  String drillsNote(String a, String b);
+
+  /// No description provided for @intensityAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (from the structure)'**
+  String intensityAuto(String name);
+
+  /// No description provided for @showDrills.
+  ///
+  /// In en, this message translates to:
+  /// **'Show drills'**
+  String get showDrills;
+
+  /// No description provided for @streakWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} weeks in a row'**
+  String streakWeeks(int count);
+
+  /// No description provided for @streakThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get streakThisWeek;
+
+  /// No description provided for @streakWeekDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal reached: {done} of {target} training days – this week counts!'**
+  String streakWeekDone(int done, int target);
+
+  /// No description provided for @streakWeekLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {target} training days – {count} more to keep the streak going.'**
+  String streakWeekLeft(int done, int target, int count);
+
+  /// No description provided for @streakLastWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 8 weeks'**
+  String get streakLastWeeks;
+
+  /// No description provided for @streakHow.
+  ///
+  /// In en, this message translates to:
+  /// **'A week counts when you train on as many days as planned. With a training plan, the goal is the number of days with planned workouts that week (two sessions on one day count as one day); without a plan it is your number of training days. The current week never breaks your streak – it is added as soon as you reach the goal.'**
+  String get streakHow;
+
+  /// No description provided for @showPastWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Past weeks'**
+  String get showPastWeeks;
+
+  /// No description provided for @loadSuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion: {load}'**
+  String loadSuggestion(String load);
+
+  /// No description provided for @loadApprox.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {weight} × {reps}'**
+  String loadApprox(String weight, int reps);
+
+  /// No description provided for @loadApproxPerHand.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {weight} × {reps} per hand'**
+  String loadApproxPerHand(String weight, int reps);
+
+  /// No description provided for @loadBodyweight.
+  ///
+  /// In en, this message translates to:
+  /// **'Bodyweight × {reps}'**
+  String loadBodyweight(int reps);
+
+  /// No description provided for @loadBodyweightPlus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bodyweight +{weight} × {reps}'**
+  String loadBodyweightPlus(String weight, int reps);
+
+  /// No description provided for @loadSrcHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'from your last workout'**
+  String get loadSrcHistory;
+
+  /// No description provided for @loadSrcIncrease.
+  ///
+  /// In en, this message translates to:
+  /// **'all reps done last time – more weight'**
+  String get loadSrcIncrease;
+
+  /// No description provided for @loadSrcAddReps.
+  ///
+  /// In en, this message translates to:
+  /// **'from your last workout – aim for one more rep'**
+  String get loadSrcAddReps;
+
+  /// No description provided for @loadSrcDeload.
+  ///
+  /// In en, this message translates to:
+  /// **'last time was tough – a bit lighter'**
+  String get loadSrcDeload;
+
+  /// No description provided for @loadSrcBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'a bit lighter after your break'**
+  String get loadSrcBreak;
+
+  /// No description provided for @loadSrcOneRm.
+  ///
+  /// In en, this message translates to:
+  /// **'from your 1RM in the setup'**
+  String get loadSrcOneRm;
+
+  /// No description provided for @loadSrcEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'estimated from body weight – adjust it'**
+  String get loadSrcEstimate;
+
+  /// No description provided for @loadPhaseLighter.
+  ///
+  /// In en, this message translates to:
+  /// **'deload week'**
+  String get loadPhaseLighter;
+
+  /// No description provided for @loadTaperLighter.
+  ///
+  /// In en, this message translates to:
+  /// **'taper week'**
+  String get loadTaperLighter;
 
   /// No description provided for @scoreLegendTitle.
   ///

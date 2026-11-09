@@ -9,8 +9,10 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
+import '../../widgets/prescription.dart';
 import '../session/start_helpers.dart';
 import '../session/step_list.dart';
+import '../session/zone_info.dart' show ZoneInfoButton;
 import '../stats/session_detail_page.dart';
 import 'plan_editor.dart';
 
@@ -37,6 +39,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
     final template = ref.watch(templateListProvider).where((t) => t.id == p.templateId).firstOrNull;
     final t = Theme.of(context).textTheme;
     final phase = phaseLabel(l, p.phase);
+    final exercises = p.exercises.isNotEmpty ? p.exercises : (template?.exercises ?? const []);
 
     return Scaffold(
       appBar: AppBar(
@@ -115,20 +118,46 @@ class PlannedWorkoutPage extends ConsumerWidget {
           ],
           if (p.steps.isNotEmpty) ...[
             const SizedBox(height: 20),
-            Text(l.workoutStructure, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Row(
+              children: [
+                Expanded(child: Text(l.workoutStructure, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                ZoneInfoButton(sport: p.sport, profile: ref.watch(profileOrDefaultProvider)),
+              ],
+            ),
             const SizedBox(height: 8),
             StepList(steps: p.steps, sport: p.sport, units: u),
           ],
-          if (template != null && template.exercises.isNotEmpty) ...[
+          if (p.sport == Sport.gym) ...[
             const SizedBox(height: 20),
-            Text(l.exercises, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Row(
+              children: [
+                Expanded(child: Text(l.exercises, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                if (!p.isDone)
+                  TextButton.icon(
+                    icon: const Icon(Icons.tune_rounded, size: 18),
+                    label: Text(l.adjustExercises),
+                    onPressed: () => showPlanEditor(context, ref, existing: p),
+                  ),
+              ],
+            ),
             const SizedBox(height: 8),
-            for (final e in template.exercises)
+            for (final e in exercises)
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: ExerciseMedia(exId: e.exId, animated: false, size: 48, radius: 12),
                 title: Text(e.name.isEmpty ? '' : e.name[0].toUpperCase() + e.name.substring(1)),
-                subtitle: Text('${e.workSets.length} × ${e.workSets.isEmpty ? '' : e.workSets.first.reps}'),
+                subtitle: Builder(
+                  builder: (_) {
+                    final rx = p.isDone ? null : ref.watch(loadPrescriberProvider).forExercise(e, phase: p.phase);
+                    final reps = e.repMin != null && e.repMax != null ? '${e.repMin}–${e.repMax}' : '${e.workSets.isEmpty ? '' : e.workSets.first.reps}';
+                    return Text(
+                      [
+                        '${e.workSets.length} × $reps',
+                        if (rx != null && rx.weight > 0) prescriptionLabel(l, rx, u),
+                      ].join(' · '),
+                    );
+                  },
+                ),
               ),
           ],
         ],
