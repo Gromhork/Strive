@@ -17,10 +17,13 @@ import 'zones.dart';
 /// | signal | source | weight |
 /// |---|---|---|
 /// | session RPE vs. the intended RPE band of the intensity (Foster 2001) | [Session.rpe] | 1 (0.3 when estimated from HR on import) |
-/// | average HR vs. the time-weighted HR target of the steps (Seiler zones) | [Session.avgHr] | 1 · intervals 0.5 · swim 0.3 |
+/// | average HR vs. the time-weighted HR target of the steps (Seiler zones) | [Session.avgHr] | 1 · intervals 0.5 · swim 0.3; × ½ within the error of a predicted HRmax ([HrMax]) |
 /// | average pace vs. the pace targets (run: Daniels VDOT, swim: CSS) | distance + duration | 1 · intervals 0.4 · hilly ½ |
 /// | average power vs. the power targets (bike, Coggan % FTP) | [Session.avgPower] | 1 · intervals 0.7 |
 /// | pace fade between halves (run splits, proxy of aerobic decoupling, Friel < 5 %) | [Session.splits] | 0.5 |
+///
+/// With a predicted HRmax, an HR deviation within its error (±10 bpm) on an easy / long day
+/// only counts as "harder" together with a second independent signal (RPE, pace, fade).
 ///
 /// Completion (distance / duration vs. plan) is reported separately: a session under 80 %
 /// of the plan is *incomplete* ([cutShort]).
@@ -168,7 +171,10 @@ double _tolerance(Sport s) => switch (s) {
 };
 
 /// Evaluates [s] against its planned workout [p] for [profile] (see [SessionFeedback]).
-SessionFeedback evaluateSession(PlannedWorkout p, Session s, UserProfile profile) {
+///
+/// [hrMax] is the HRmax the HR signal is judged against ([HrMax.of] with the athlete's
+/// sessions, so an observed peak above the prediction is used); default: the profile's.
+SessionFeedback evaluateSession(PlannedWorkout p, Session s, UserProfile profile, {HrMax? hrMax}) {
   final signals = <Signal>[];
   final quality = p.intensity == 'tempo' || p.intensity == 'intervals';
   final steady = !quality || p.intensity == 'tempo';
@@ -185,9 +191,13 @@ SessionFeedback evaluateSession(PlannedWorkout p, Session s, UserProfile profile
     signals.add(Signal(SignalKind.rpe, sc.clamp(-1.0, 1.0), estimated ? 0.3 : 1));
   }
 
-  // ── Heart rate vs. the time-weighted target of the steps
-  final maxHr = profile.estimatedMaxHr;
+  // ── Heart rate vs. the time-weighted target of the steps (added after the other
+  // signals: with a predicted HRmax it may need one of them as confirmation).
+  final hm = hrMax ?? HrMax.of(profile);
+  final maxHr = hm.bpm;
   final hz = HrZones(maxHr, profile.athlete.restHr);
+  Signal? hrSignal;
+  var hrUncertain = false;
   if (s.avgHr != null && s.avgHr! > 0 && p.steps.isNotEmpty) {
     final expected = _expectedHr(p, hz, profile);
     if (expected != null) {
@@ -196,8 +206,13 @@ SessionFeedback evaluateSession(PlannedWorkout p, Session s, UserProfile profile
       var sc = diff.sign * ((diff.abs() - band) / scale).clamp(0.0, 1.0);
       // A low HR on an easy day is not "too easy" – easy should be easy.
       if (!quality) sc = max(sc, -0.3);
-      final w = s.sport == Sport.swim ? 0.3 : (intervals ? 0.5 : 1.0);
-      signals.add(Signal(SignalKind.hr, sc, w));
+      var w = s.sport == Sport.swim ? 0.3 : (intervals ? 0.5 : 1.0);
+      // Predicted HRmax (±10 bpm): a deviation the prediction error can explain counts half.
+      if (!hm.measured && diff.abs() <= band + HrMax.predictionSd) {
+        w *= 0.5;
+        hrUncertain = true;
+      }
+      hrSignal = Signal(SignalKind.hr, sc, w);
     }
   }
 
@@ -238,6 +253,15 @@ SessionFeedback evaluateSession(PlannedWorkout p, Session s, UserProfile profile
     final second = s.splits.skip(s.splits.length - h).fold(0, (x, v) => x + v) / h;
     final fade = second / first - 1;
     if (fade > 0.05) signals.add(Signal(SignalKind.fade, (0.5 + (fade - 0.05) / 0.05).clamp(0.0, 1.0), 0.5));
+  }
+
+  if (hrSignal != null) {
+    // Easy day, uncertain HR saying "harder": only with a second, independent signal
+    // (RPE asked after the session, pace, pace fade) – an HR-estimated RPE is no second signal.
+    final estimatedRpe = s.source != null && s.avgHr != null;
+    final confirmed = signals.any((x) => x.score > 0 && !(x.kind == SignalKind.rpe && estimatedRpe));
+    if (hrUncertain && !quality && hrSignal.score > 0 && !confirmed) hrSignal = Signal(SignalKind.hr, 0, hrSignal.weight);
+    signals.add(hrSignal);
   }
 
   // ── Aerobic efficiency of easy / long sessions
@@ -368,28 +392,45 @@ class CardioTrend {
   int get strongAndComfortable =>
       feedback.where((f) => f.isQuality && f.aboveTarget && (f.internalScore ?? 0) < SessionFeedback.threshold).length;
 
-  /// Change of the aerobic efficiency factor over the window (least-squares slope × span,
-  /// relative to the mean), e.g. 0.04 = +4 %. Needs ≥ 4 easy / long sessions with HR over
-  /// ≥ 14 days. Rising EF at the same easy effort = better aerobic fitness (Friel / Coggan).
+  /// Change of the aerobic efficiency factor over the window, e.g. 0.04 = +4 %: Theil–Sen
+  /// slope (median of the pairwise slopes – robust to single outliers such as a hot day or a
+  /// GPS glitch) × span, relative to the median EF. Needs ≥ 6 easy / long sessions with HR
+  /// over ≥ 14 days; when the points don't move consistently in one direction (Kendall
+  /// |τ| < 0.45 – day-to-day pace / HR noise of ~3 %) the change is 0. Rising EF at the
+  /// same easy effort = better aerobic fitness (Friel / Coggan).
   double? get efficiencyChange {
     final pts = [
       for (final f in feedback)
         if (f.efficiency != null) (f.session.start, f.efficiency!),
     ];
-    if (pts.length < 4) return null;
+    if (pts.length < 6) return null;
     final t0 = pts.first.$1;
     final xs = [for (final p in pts) p.$1.difference(t0).inHours / 24.0];
     final span = xs.reduce(max) - xs.reduce(min);
     if (span < 14) return null;
     final ys = [for (final p in pts) p.$2];
-    final mx = xs.reduce((a, b) => a + b) / xs.length, my = ys.reduce((a, b) => a + b) / ys.length;
-    var num = 0.0, den = 0.0;
+    final slopes = <double>[];
+    var concordant = 0, discordant = 0;
     for (var i = 0; i < xs.length; i++) {
-      num += (xs[i] - mx) * (ys[i] - my);
-      den += (xs[i] - mx) * (xs[i] - mx);
+      for (var j = i + 1; j < xs.length; j++) {
+        final dx = xs[j] - xs[i], dy = ys[j] - ys[i];
+        if (dx == 0) continue;
+        slopes.add(dy / dx);
+        if (dy * dx > 0) concordant++;
+        if (dy * dx < 0) discordant++;
+      }
     }
-    if (den == 0 || my == 0) return null;
-    return num / den * span / my;
+    final my = _median(ys);
+    if (slopes.isEmpty || my == 0) return null;
+    final tau = (concordant - discordant) / slopes.length;
+    if (tau.abs() < 0.45) return 0;
+    return _median(slopes) * span / my;
+  }
+
+  static double _median(List<double> v) {
+    final s = [...v]..sort();
+    final m = s.length ~/ 2;
+    return s.length.isOdd ? s[m] : (s[m - 1] + s[m]) / 2;
   }
 
   /// Trends of all endurance sports from the linked sessions of the last [days] days.
@@ -399,6 +440,7 @@ class CardioTrend {
     UserProfile profile, {
     required DateTime now,
     int days = 42,
+    HrMax? hrMax,
   }) {
     final from = dayOnly(now).subtract(Duration(days: days));
     final out = <Sport, List<SessionFeedback>>{};
@@ -406,7 +448,7 @@ class CardioTrend {
       if (p.sport == Sport.gym || p.intensity == 'race') continue;
       final s = linked[p.id];
       if (s == null || s.start.isBefore(from) || s.start.isAfter(now)) continue;
-      out.putIfAbsent(p.sport, () => []).add(evaluateSession(p, s, profile));
+      out.putIfAbsent(p.sport, () => []).add(evaluateSession(p, s, profile, hrMax: hrMax));
     }
     return {for (final e in out.entries) e.key: CardioTrend(e.key, e.value..sort((a, b) => a.session.start.compareTo(b.session.start)))};
   }

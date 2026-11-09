@@ -3693,4 +3693,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get amrapShort => 'AMRAP';
+
+  @override
+  String recalWhyBreak(int days) {
+    return '$days Tage ohne Training: Die erste Woche danach startet mit 50–70 % des geplanten Umfangs, ohne Intensität, und baut dann wieder auf.';
+  }
+
+  @override
+  String get recalWhyLongCap => 'Lange Einheiten bleiben bei höchstens +10 % deiner längsten der letzten 30 Tage – darüber steigt das Verletzungsrisiko.';
+
+  @override
+  String get recalWhyRpeLowHold => 'Deine harten Einheiten fielen dir leicht – die neuen Zielwerte sind diese Woche die Steigerung, der Umfang bleibt (nie beides gleichzeitig).';
 }

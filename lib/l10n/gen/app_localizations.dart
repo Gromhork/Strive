@@ -6934,6 +6934,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AMRAP'**
   String get amrapShort;
+
+  /// No description provided for @recalWhyBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'No training for {days} days: the first week back restarts at 50–70 % of the planned volume, without intensity, then builds up again.'**
+  String recalWhyBreak(int days);
+
+  /// No description provided for @recalWhyLongCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Long sessions stay within +10 % of your longest one of the last 30 days – beyond that the injury risk rises.'**
+  String get recalWhyLongCap;
+
+  /// No description provided for @recalWhyRpeLowHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quality sessions felt easy – the new targets are this week\'s step up, the volume stays (never both at once).'**
+  String get recalWhyRpeLowHold;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

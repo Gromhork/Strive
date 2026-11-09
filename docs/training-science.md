@@ -841,12 +841,21 @@ best effort:           fastest 5 km / 10 km / HM / M of the last 90 days (km spl
 | completion < 70 % | days 1–7 −10 % (no progression after missed training) | §8 auto-downgrade (< 70 % over 2 weeks); ACWR spikes after gaps raise injury risk [13] |
 | completion < 50 % | days 1–7 −20 %, days 8–14 −10 %, first quality per sport → easy (re-entry) | detraining after ~2 weeks of reduced training [68]; gradual return |
 | ≥ 2 sessions cut short | long sessions of the next 14 days −10 % | the planned duration was not sustainable |
-| ≥ 2 quality sessions at RPE ≤ 4, no fatigue signal, completion ≥ 90 % | easy + long sessions of loading weeks, days 1–7, +5 % | within the 5–10 %/week growth rule (§1.5); long run ≤ +10 % of the longest run of the last 30 days (R1, Frandsen 2025 [11]) |
+| ≥ 2 quality sessions at RPE ≤ 4, no fatigue signal, completion ≥ 90 % | easy + long sessions of loading weeks, days 1–7, +5 % – not when a threshold (VDOT / FTP / CSS) rises in the same recalibration, and not on a workout the AutoAdjuster reduced in the last 7 days | within the 5–10 %/week growth rule (§1.5); R3: never raise volume and intensity together (the new paces are the step up) |
+| return after a break: a planned sport with no session for ≥ 10 days (or < 15 % of its due training in the 14 days), trained before | days 1–7 at 60 % of the plan (50 % after ≥ 21 days off), days 8–14 at 70 %; all quality of days 1–7 → easy (the easy replacement scaled the same way); missed key sessions dropped | R4: restart at 50–70 % of the pre-break volume [68]; the plan is the pre-break reference |
+| every long session of the 14 days (run, ride, swim) | ≤ 1.1 × the longest session of that sport in the 30 days before it (× 1.1 per earlier long session of the horizon, which counts as done); none in those 30 days → ≤ 0.6 × the longest in the 120 days before | R1, Frandsen 2025 [11] – applied as a cap, not only when increasing. Runs / swims by distance (sessions without one, e.g. a treadmill without a foot pod, by time), rides by time |
 | missed key session in the last 3 days | moved to a free day of the same week (the missed workout's week – never into the next one), never next to another hard day; missed easy sessions dropped; with completion < 50 % (re-entry) key sessions are dropped, not made up | same rules as "adjust my week" (plan_adjuster) |
 | faster best effort | run pace targets follow the new VDOT: with race times only upwards and ≤ +2 points at once; without race times the level default is replaced (downwards only by a real effort: race, RPE ≥ 8 or HR ≥ 88 % HRmax – not by the fastest 5 km of an easy run); the profile's race time is updated | Daniels [7]: update VDOT from races / time trials, small steps |
 
 Reductions never stack beyond the strongest rule (the minimum factor wins); an increase only happens without any reduction
-reason. Volume changes scale continuous parts (steady runs / rides, swim sets); short repeats keep their length, so a reduced
+reason. Reductions are computed from the workout's **original** volume (the generator's, kept in the change record), so they
+replace an earlier automatic or recalibration step instead of compounding on it: running the assistant twice, or a week later
+on an overlapping look-back, changes nothing more (changes below 3 % – the rounding of the steps – are skipped). Each volume
+change stores that original as an `AutoAdjustment` record (reason `recal`; a quality → easy swap stores the easy replacement,
+`recalEasy`, whose 0.8 time share later reductions take into account) – the planned workout shows it with undo. Imported
+sessions whose RPE was estimated from heart rate are judged like sessions without RPE (§12.1), not by the RPE table.
+Simulated: two sick weeks → 60 % / 70 % → the volume is back at the plan three weeks after the return; the long run climbs
+back by ≤ 10 % a week (R1). Volume changes scale continuous parts (steady runs / rides, swim sets); short repeats keep their length, so a reduced
 interval session keeps its intensity (Bosquet 2007 [18]: cut volume, keep intensity). Every changed workout gets the note
 "Adjusted to your recent training" (once, translatable).
 
@@ -874,11 +883,17 @@ model works with RPE only, HR only, pace only or any mix.
 | Signal | Rule | Weight | Basis |
 |---|---|---|---|
 | Session RPE (CR10) | intended band: easy/technique 2–4, long 3–4, tempo 5–7, intervals 7–8; ±0.4 per point outside | 1 (0.3 when imported with an HR-estimated RPE) | session-RPE, Foster 2001 [43, 66]; three-zone model §0 |
-| Average HR | vs. the time-weighted HR target of the steps (step HR targets, else the zone's mid; recoveries at the zone top); dead band ±3 % HRmax, full score at +8 % HRmax; on easy days a low HR is not "too easy" (capped at −0.3) | 1 · intervals 0.5 (HR lag) · swim 0.3 (water, wrist HR) | Seiler zones [1], §5 |
+| Average HR | vs. the time-weighted HR target of the steps (step HR targets, else the zone's mid; recoveries at the zone top); dead band ±3 % HRmax, full score at +8 % HRmax; on easy days a low HR is not "too easy" (capped at −0.3). **Predicted HRmax** (no measured max HR in the profile): a deviation within the dead band + 10 bpm (the SEE of Tanaka / Gulati) counts with half weight, and on easy / long days it only says "harder" together with a second independent signal (RPE asked after the session, pace, pace fade – not an HR-estimated RPE) | 1 · intervals 0.5 (HR lag) · swim 0.3 (water, wrist HR); × ½ as described | Seiler zones [1], §5; Tanaka 2001 [55] |
 | Average pace (run: VDOT paces, swim: CSS paces incl. rests) | tolerance run 3 %, swim 4 %; easy / long: only *faster* than the easy range counts (too hard), slower is fine; quality: slower = could not hold the targets (harder), faster = targets too soft (easier, ×0.7) | 1 · intervals 0.4 (recovery jogs dilute the average) · run with > 15 m/km climbing ½, > 30 m/km 0 | Daniels [7], Wakayoshi / Swim Smooth [53, 54] |
 | Average power (bike) | vs. the time-weighted Coggan targets, tolerance 5 %; same easy / quality logic as pace | 1 · intervals 0.7 | Allen & Coggan [48] |
 | Pace fade (run, continuous sessions, ≥ 4 km splits) | 2nd half vs. 1st half; > 5 % slower = decoupling (0.5 → 1 at 10 %) | 0.5 | aerobic decoupling Pa:HR < 5 % = aerobically fit (Friel [49]); cardiac drift [79]. Without an HR stream, the pace drift at a steady effort is the proxy |
 | Completion | actual / planned (distance for runs / swims, else time); < 80 % = *incomplete* | – (separate) | §11 "cut short" |
+
+HRmax used for the HR signals (`HrMax.of`): measured (profile) > observed – the highest max HR of a hard session (RPE ≥ 7 or
+average HR ≥ 85 % of the prediction) of the last year when it is above the prediction, only ever upwards, spikes > prediction
++ 25 bpm ignored as sensor artefacts – > predicted. An observed peak is a lower bound of the true HRmax, so HR keeps the reduced
+weight. Example: a treadmill easy run at +9 bpm with HR only was "harder" (next easy run −10 %); now it is as intended
+unless the athlete also rates it hard.
 
 Bike *speed* is ignored (terrain, wind, drafting); heat is not modelled (no temperature per session) – it shows up as a
 higher HR / RPE and the athlete sees the reason. Aerobic efficiency (EF) of steady easy / long sessions: run speed (m/min)
@@ -894,8 +909,9 @@ per beat, bike power per beat (Coggan's EF = NP / HR, with average power).
 | quality session harder than intended, or cut short at a high effort | next quality session not increased (held at this volume) | keep intensity, don't add volume on top of a struggle (Bosquet [18]) |
 | quality session easier than intended, complete, targets hit | next quality session +5 % | only in loading weeks (base / build / peak), no race within 10 days, no heart / joint-impact limitation (§9.1), and the sport's planned week ≤ 110 % of its 4-week average (≥ 3 sessions as a base) – acute:chronic caution [13, 14] |
 
-Bounds: −15 … +5 % per step; all automatic steps together −15 … +10 % of the workout's original volume; taper / recovery
-weeks never get more volume. Interval sets (≥ 3 identical repeats) change by whole repeats (a 100 m swim repeat or a 1 km
+Bounds: −15 … +5 % per step; all automatic steps together −15 … +10 % of the workout's original volume (also after a
+recalibration – its record keeps the generator's original; a workout it already cut by more than 15 % is not cut further,
+and a bound never turns a cut into an increase); taper / recovery weeks never get more volume. Interval sets (≥ 3 identical repeats) change by whole repeats (a 100 m swim repeat or a 1 km
 interval keeps its length and pace); continuous parts scale in length. Never touched: races, strength sessions, done /
 skipped / past workouts. Each session triggers adjustments at most once (the record on the changed workout names the
 session); a manual edit or a recalibration with a new volume replaces the record.
@@ -913,7 +929,9 @@ session); a manual edit or a recalibration with a new volume replaces the record
 * **Swim CSS**: ≥ 3 quality swims faster than the targets at a comfortable effort, none too hard → CSS −2 s / 100 m; ≥ 2 key
   swims slower at a high effort → CSS +2 s. The profile's 400 / 200 m test times are set so that (t400 − t200) / 2 is the new
   CSS (t200 = 2·CSS − 4 s, t400 = 4·CSS − 4 s).
-* **Aerobic efficiency**: least-squares change of EF over the window (≥ 4 steady easy / long sessions over ≥ 14 days);
+* **Aerobic efficiency**: robust change of EF over the window – Theil–Sen slope (median of pairwise slopes) × span relative
+  to the median EF, ≥ 6 steady easy / long sessions over ≥ 14 days, and only when the points move consistently in one
+  direction (Kendall |τ| ≥ 0.45; otherwise 0 – day-to-day pace / HR noise of ~3 % and single hot days are no trend);
   ±3 % or more is reported ("your base is growing" / "watch recovery, sleep and heat") – informational, no changes by itself.
 
 ---

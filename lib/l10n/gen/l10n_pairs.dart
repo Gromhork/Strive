@@ -1100,4 +1100,7 @@ const l10nPairs = <(String, String)>[
   ('your AMRAP set showed more strength – weight adjusted to it', 'dein AMRAP-Satz zeigt mehr Kraft – Gewicht daran angepasst'),
   ('no reps missed – the weight stays near your strength level', 'keine Wiederholungen verpasst – das Gewicht bleibt nahe an deinem Kraftniveau'),
   ('Last set: as many reps as possible – stop 1 rep before failure (helps the app learn your strength)', 'Letzter Satz: so viele Wiederholungen wie möglich – 1 Wdh. vor dem Versagen aufhören (so lernt die App deine Kraft)'),
+  ('No training for {days} days: the first week back restarts at 50–70 % of the planned volume, without intensity, then builds up again.', '{days} Tage ohne Training: Die erste Woche danach startet mit 50–70 % des geplanten Umfangs, ohne Intensität, und baut dann wieder auf.'),
+  ('Long sessions stay within +10 % of your longest one of the last 30 days – beyond that the injury risk rises.', 'Lange Einheiten bleiben bei höchstens +10 % deiner längsten der letzten 30 Tage – darüber steigt das Verletzungsrisiko.'),
+  ('Your quality sessions felt easy – the new targets are this week\'s step up, the volume stays (never both at once).', 'Deine harten Einheiten fielen dir leicht – die neuen Zielwerte sind diese Woche die Steigerung, der Umfang bleibt (nie beides gleichzeitig).'),
 ];

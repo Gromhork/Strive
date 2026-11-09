@@ -3693,4 +3693,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get amrapShort => 'AMRAP';
+
+  @override
+  String recalWhyBreak(int days) {
+    return 'No training for $days days: the first week back restarts at 50–70 % of the planned volume, without intensity, then builds up again.';
+  }
+
+  @override
+  String get recalWhyLongCap => 'Long sessions stay within +10 % of your longest one of the last 30 days – beyond that the injury risk rises.';
+
+  @override
+  String get recalWhyRpeLowHold => 'Your quality sessions felt easy – the new targets are this week\'s step up, the volume stays (never both at once).';
 }
