@@ -90,10 +90,7 @@ abstract class AppLocalizations {
   ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[
-    Locale('de'),
-    Locale('en')
-  ];
+  static const List<Locale> supportedLocales = <Locale>[Locale('de'), Locale('en')];
 
   /// No description provided for @tagline.
   ///
@@ -6334,6 +6331,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Adjusted to your recent training (effort and completed sessions).'**
   String get recalNote;
+
+  /// No description provided for @recalButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-plan & recalibrate'**
+  String get recalButton;
+
+  /// No description provided for @recalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-plan & recalibrate'**
+  String get recalTitle;
+
+  /// No description provided for @recalIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Your next two weeks, adapted to the last two: effort (RPE), completed and missed sessions, new best efforts. Completed workouts stay as they are.'**
+  String get recalIntro;
+
+  /// No description provided for @recalFindings.
+  ///
+  /// In en, this message translates to:
+  /// **'What we see'**
+  String get recalFindings;
+
+  /// No description provided for @recalChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed changes'**
+  String get recalChanges;
+
+  /// No description provided for @recalWhyRpeHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Several sessions felt harder than planned – more recovery first.'**
+  String get recalWhyRpeHigh;
+
+  /// No description provided for @recalWhyRpeLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quality sessions felt easy – a little more volume.'**
+  String get recalWhyRpeLow;
+
+  /// No description provided for @recalWhyCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct} % of the planned training done – no increase for now, a bit less volume.'**
+  String recalWhyCompletion(int pct);
+
+  /// No description provided for @recalWhyCutShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} sessions ended early – long sessions get shorter.'**
+  String recalWhyCutShort(int n);
+
+  /// No description provided for @recalWhyMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed key sessions move to a free day this week.'**
+  String get recalWhyMissed;
+
+  /// No description provided for @recalWhyFaster.
+  ///
+  /// In en, this message translates to:
+  /// **'New best effort: running fitness (VDOT) {from} → {to} – paces updated.'**
+  String recalWhyFaster(String from, String to);
+
+  /// No description provided for @recalWhySlower.
+  ///
+  /// In en, this message translates to:
+  /// **'Your real running fitness (VDOT {to}) differs from the estimate ({from}) – paces updated.'**
+  String recalWhySlower(String to, String from);
+
+  /// No description provided for @recalOnTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'You are on track – the plan fits your training. Nothing to change.'**
+  String get recalOnTrack;
+
+  /// No description provided for @recalNoRpe.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: rate your effort (RPE) after workouts – the plan can then adapt to how they felt.'**
+  String get recalNoRpe;
+
+  /// No description provided for @recalEasier.
+  ///
+  /// In en, this message translates to:
+  /// **'Easier'**
+  String get recalEasier;
+
+  /// No description provided for @recalHarder.
+  ///
+  /// In en, this message translates to:
+  /// **'A bit more'**
+  String get recalHarder;
+
+  /// No description provided for @recalToEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy instead of hard'**
+  String get recalToEasy;
+
+  /// No description provided for @recalMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved'**
+  String get recalMoved;
+
+  /// No description provided for @recalDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'Dropped'**
+  String get recalDropped;
+
+  /// No description provided for @recalPaces.
+  ///
+  /// In en, this message translates to:
+  /// **'New paces'**
+  String get recalPaces;
+
+  /// No description provided for @recalApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply {n} changes'**
+  String recalApply(int n);
+
+  /// No description provided for @recalApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan recalibrated'**
+  String get recalApplied;
+
+  /// No description provided for @recalNewPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new plan'**
+  String get recalNewPlan;
+
+  /// No description provided for @recalMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get recalMore;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
@@ -6352,18 +6493,18 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'de': return AppLocalizationsDe();
-    case 'en': return AppLocalizationsEn();
+    case 'de':
+      return AppLocalizationsDe();
+    case 'en':
+      return AppLocalizationsEn();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }

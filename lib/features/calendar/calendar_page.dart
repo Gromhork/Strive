@@ -15,6 +15,7 @@ import '../../widgets/common.dart';
 import '../stats/session_detail_page.dart';
 import 'plan_editor.dart';
 import 'planned_workout_page.dart';
+import 'recalibrate_sheet.dart';
 import '../../widgets/segments.dart';
 
 class CalendarPage extends ConsumerStatefulWidget {
@@ -43,19 +44,33 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
             child: Row(
               children: [
+                // Focus of the page: adapt the coming sessions to the training done so far.
                 Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
-                    onPressed: _exportIcs,
-                    icon: const Icon(Icons.ios_share_rounded, size: 18),
-                    label: Text(l.syncCalendar, overflow: TextOverflow.ellipsis),
+                  child: FilledButton.tonalIcon(
+                    key: const ValueKey('recalibrate'),
+                    style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+                    onPressed: () => showRecalibration(context, ref),
+                    icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
+                    label: Text(l.recalButton, overflow: TextOverflow.ellipsis),
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton.filledTonal(
-                  tooltip: l.generatePlan,
-                  onPressed: () => showPlanGenerator(context, ref),
-                  icon: const Icon(Icons.auto_fix_high_rounded),
+                // Secondary: a whole new plan, calendar export.
+                PopupMenuButton<String>(
+                  key: const ValueKey('calendarMore'),
+                  tooltip: l.recalMore,
+                  icon: const Icon(Icons.more_vert_rounded),
+                  onSelected: (v) => v == 'new' ? showPlanGenerator(context, ref) : _exportIcs(),
+                  itemBuilder:
+                      (_) => [
+                        PopupMenuItem(
+                          value: 'new',
+                          child: ListTile(leading: const Icon(Icons.restart_alt_rounded), title: Text(l.recalNewPlan)),
+                        ),
+                        PopupMenuItem(
+                          value: 'export',
+                          child: ListTile(leading: const Icon(Icons.ios_share_rounded), title: Text(l.syncCalendar)),
+                        ),
+                      ],
                 ),
                 const SizedBox(width: 4),
                 Segments<bool>(
