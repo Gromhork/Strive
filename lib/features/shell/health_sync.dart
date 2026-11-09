@@ -41,9 +41,7 @@ final healthSyncProvider = FutureProvider<int>((ref) async {
   try {
     final list = await hs.importWorkouts(since: since, knownIds: known, newId: repo.newId);
     // Skip workouts that overlap a session recorded in Strive (same sport, ±10 min).
-    final fresh = list.where(
-      (n) => !sessions.any((s) => s.sport == n.sport && (s.start.difference(n.start).inMinutes).abs() <= 10),
-    );
+    final fresh = list.where((n) => !sessions.any((s) => s.sport == n.sport && (s.start.difference(n.start).inMinutes).abs() <= 10));
     for (final s in fresh) {
       repo.saveSession(s);
     }

@@ -164,14 +164,11 @@ Future<void> showZoneInfo(BuildContext context, Sport sport, UserProfile profile
                 children: [
                   Text(l.zoneInfoTitle, style: Theme.of(c).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
-                  Text(
-                    switch (sport) {
-                      Sport.run => l.zoneInfoRun,
-                      Sport.ride => l.zoneInfoRide,
-                      _ => l.zoneInfoSwim,
-                    },
-                    style: Theme.of(c).textTheme.bodySmall,
-                  ),
+                  Text(switch (sport) {
+                    Sport.run => l.zoneInfoRun,
+                    Sport.ride => l.zoneInfoRide,
+                    _ => l.zoneInfoSwim,
+                  }, style: Theme.of(c).textTheme.bodySmall),
                   if (estimated) ...[
                     const SizedBox(height: 6),
                     Text(l.zoneInfoEstimated, style: Theme.of(c).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
@@ -229,7 +226,9 @@ class _ZoneTile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: Text(zoneLabel(l, zone, sport: sport), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
+                      Expanded(
+                        child: Text(zoneLabel(l, zone, sport: sport), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                      ),
                       Text(zoneFeel(l, zone, sport), style: t.labelSmall),
                     ],
                   ),
@@ -313,9 +312,7 @@ Future<void> showSwimDrills(BuildContext context) {
                             children: [
                               Icon(Icons.lightbulb_outline_rounded, size: 14, color: zoneColor('DR')),
                               const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(d.why, style: Theme.of(c).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
-                              ),
+                              Expanded(child: Text(d.why, style: Theme.of(c).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic))),
                             ],
                           ),
                         ],

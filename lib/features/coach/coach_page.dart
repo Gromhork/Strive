@@ -182,10 +182,7 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: _busy ? null : () => _send(_input.text),
-                  icon: const Icon(Icons.arrow_upward_rounded),
-                ),
+                IconButton.filled(onPressed: _busy ? null : () => _send(_input.text), icon: const Icon(Icons.arrow_upward_rounded)),
               ],
             ),
           ),
@@ -255,19 +252,14 @@ class _RichText extends StatelessWidget {
               final spans = <TextSpan>[];
               final parts = line.split('**');
               for (var i = 0; i < parts.length; i++) {
-                spans.add(
-                  TextSpan(text: parts[i], style: i.isOdd || heading ? const TextStyle(fontWeight: FontWeight.w700) : null),
-                );
+                spans.add(TextSpan(text: parts[i], style: i.isOdd || heading ? const TextStyle(fontWeight: FontWeight.w700) : null));
               }
               final rt = RichText(text: TextSpan(style: base, children: spans));
               return Padding(
                 padding: EdgeInsets.only(left: bullet ? 6 : 0, bottom: line.isEmpty ? 4 : 0),
                 child:
                     bullet
-                        ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [Text('•  ', style: base), Expanded(child: rt)],
-                        )
+                        ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('•  ', style: base), Expanded(child: rt)])
                         : rt,
               );
             },

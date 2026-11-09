@@ -18,6 +18,7 @@ import '../../widgets/common.dart';
 import 'session_summary_page.dart';
 import 'step_list.dart';
 import 'step_text.dart';
+import 'zone_info.dart' show showSwimDrills;
 
 /// Live recording screen for runs, rides and swims.
 ///
@@ -596,7 +597,26 @@ class _StepCard extends ConsumerWidget {
             const SizedBox(height: 2),
             Text(target, style: const TextStyle(fontSize: 13)),
           ],
-          if (st.note.isNotEmpty)
+          if (st.note.isNotEmpty && st.zone == 'DR')
+            // Technique drills: tap for the how-to of every drill.
+            InkWell(
+              onTap: () => showSwimDrills(context),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      st.note,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(Icons.info_outline_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                ],
+              ),
+            )
+          else if (st.note.isNotEmpty)
             Text(
               st.note,
               maxLines: run ? null : 1,

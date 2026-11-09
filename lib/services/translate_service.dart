@@ -30,12 +30,7 @@ class TranslateService {
       model: CoachService.model,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',
-        responseSchema: Schema.object(
-          properties: {
-            'name': Schema.string(),
-            'steps': Schema.array(items: Schema.string()),
-          },
-        ),
+        responseSchema: Schema.object(properties: {'name': Schema.string(), 'steps': Schema.array(items: Schema.string())}),
       ),
     );
     final target = lang == 'de' ? 'German (du-form, concise, gym terminology)' : lang;

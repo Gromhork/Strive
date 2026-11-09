@@ -61,10 +61,11 @@ class ScheduleAdvisor {
       if (multi > 0 && (res[Sport.gym] ?? 0) > 1) {
         s = Sport.gym;
       } else {
-        s = res.entries.reduce((x, y) {
-          if (x.value != y.value) return x.value > y.value ? x : y;
-          return x.key == main ? y : x;
-        }).key;
+        s =
+            res.entries.reduce((x, y) {
+              if (x.value != y.value) return x.value > y.value ? x : y;
+              return x.key == main ? y : x;
+            }).key;
       }
       res[s] = res[s]! - 1;
       total--;
@@ -83,15 +84,14 @@ class ScheduleAdvisor {
     const days = [1, 2, 3, 4, 5, 6, 7];
     final plan = {for (final d in days) d: <Sport>[]};
 
-    final endurance = [Sport.run, Sport.ride, Sport.swim].where((s) => (freq[s] ?? 0) > 0).toList()
-      ..sort((x, y) => freq[y]!.compareTo(freq[x]!));
+    final endurance =
+        [Sport.run, Sport.ride, Sport.swim].where((s) => (freq[s] ?? 0) > 0).toList()..sort((x, y) => freq[y]!.compareTo(freq[x]!));
     final main = endurance.isEmpty ? null : _mainSport(endurance);
     final longDay = profile.longDay ?? 6;
 
     int usedDays() => plan.values.where((v) => v.isNotEmpty).length;
     // A session may go to a day with capacity; a new day only while rest days remain.
-    bool canAdd(int d, Sport s) =>
-        plan[d]!.length < perDay && !plan[d]!.contains(s) && (plan[d]!.isNotEmpty || usedDays() < maxDays);
+    bool canAdd(int d, Sport s) => plan[d]!.length < perDay && !plan[d]!.contains(s) && (plan[d]!.isNotEmpty || usedDays() < maxDays);
 
     void place(Sport s, int n, {int? first}) {
       final placed = <int>[];

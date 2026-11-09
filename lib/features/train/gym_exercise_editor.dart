@@ -30,7 +30,6 @@ class GymExerciseEditor extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) =>
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _gymEditor(context, ref));
 
-
   String _nextGroup() {
     final used = exercises.map((e) => e.group).whereType<String>().toSet();
     for (final c in 'ABCDEFGHIJ'.split('')) {
@@ -110,7 +109,10 @@ class GymExerciseEditor extends ConsumerWidget {
                   },
                 ),
                 if (i < exercises.length - 1)
-                  _SupersetLink(linked: exercises[i].group != null && exercises[i].group == exercises[i + 1].group, onTap: () => _toggleSuperset(i)),
+                  _SupersetLink(
+                    linked: exercises[i].group != null && exercises[i].group == exercises[i + 1].group,
+                    onTap: () => _toggleSuperset(i),
+                  ),
               ],
             ),
         ],

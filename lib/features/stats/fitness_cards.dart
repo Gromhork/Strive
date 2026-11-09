@@ -137,7 +137,10 @@ class RunBestEffortsCard extends ConsumerWidget {
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
-                    Text(clock(efforts[k]!.seconds), style: const TextStyle(fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()])),
+                    Text(
+                      clock(efforts[k]!.seconds),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()]),
+                    ),
                   ],
                 ),
               ),

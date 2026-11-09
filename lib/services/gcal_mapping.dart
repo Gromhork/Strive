@@ -161,9 +161,21 @@ class GcalDiff {
   int get length => inserts.length + updates.length + deletes.length;
 }
 
-/// Compares desired event bodies with the events fetched from the same window.
-/// Events without a `striveId` (added by the user) are never touched.
-GcalDiff gcalDiff(List<Map<String, dynamic>> desired, List<RemoteEvent> remote) {
+/// True for events Strive created (marked via extended property or our id prefix).
+bool gcalIsStriveEvent(RemoteEvent r) => r.striveId != null || r.id.startsWith('strive');
+
+/// Event ids of all plans that may stay in the calendar regardless of the sync window
+/// (planned or done). Events of deleted / skipped / replaced plans are removed even when
+/// they lie outside the window.
+Set<String> gcalKeepIds(List<PlannedWorkout> plans) => {
+  for (final p in plans)
+    if (p.status == 'planned' || p.status == 'done') gcalEventId(p.id),
+};
+
+/// Compares desired event bodies (inside the window) with all events in the Strive calendar.
+/// Strive events that are neither desired nor in [keep] are deleted; events added by the
+/// user are never touched.
+GcalDiff gcalDiff(List<Map<String, dynamic>> desired, List<RemoteEvent> remote, {Set<String> keep = const {}}) {
   final byId = {for (final r in remote) r.id: r};
   final wanted = {for (final d in desired) d['id'] as String: d};
   final inserts = <Map<String, dynamic>>[], updates = <Map<String, dynamic>>[];
@@ -177,7 +189,7 @@ GcalDiff gcalDiff(List<Map<String, dynamic>> desired, List<RemoteEvent> remote) 
   }
   final deletes = [
     for (final r in remote)
-      if (r.striveId != null && !wanted.containsKey(r.id)) r.id,
+      if (gcalIsStriveEvent(r) && !wanted.containsKey(r.id) && !keep.contains(r.id)) r.id,
   ];
   return GcalDiff(inserts: inserts, updates: updates, deletes: deletes);
 }

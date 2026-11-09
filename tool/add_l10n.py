@@ -20,3 +20,5 @@ for idx, lang in enumerate(['en', 'de']):
                 arb.pop('@' + k, None)
     json.dump(arb, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
 print('merged', len(src))
+import subprocess
+subprocess.run([sys.executable, os.path.join(ROOT, 'tool', 'gen_l10n_pairs.py')], check=True)

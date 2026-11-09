@@ -529,24 +529,41 @@ List<WorkoutTemplate> defaultTemplates(String Function() id, {bool de = false}) 
   ),
 
   // ── Swimming.
-  _cardio(id(), 'swim_tech', Sport.swim, 'swim', 'Technique Swim', 'Technikschwimmen', de, 'technique', order: 0, [
-    _st('warmup', 'REC', m: 300),
-    ..._repeat(
-      8,
-      [
-        _st(
-          'work',
-          'DR',
-          m: 50,
-          note: de ? 'Abschlagschwimmen / Fingerspitzen ziehen / 6-1-6 Seitlage / Faustschwimmen – je 2×' : 'Catch-up / fingertip drag / 6-1-6 side kick / fist swimming – 2× each',
-        ),
-      ],
-      [_st('recovery', 'REC', sec: 20)],
-    ),
-    _st('recovery', 'REC', sec: 60),
-    ..._repeat(6, [_st('work', 'EN', m: 100)], [_st('recovery', 'REC', sec: 20)]),
-    _st('cooldown', 'REC', m: 200),
-  ]),
+  _cardio(
+    id(),
+    'swim_tech',
+    Sport.swim,
+    'swim',
+    'Technique Swim',
+    'Technikschwimmen',
+    de,
+    'technique',
+    order: 0,
+    [
+      _st('warmup', 'REC', m: 300),
+      ..._repeat(
+        8,
+        [
+          _st(
+            'work',
+            'DR',
+            m: 50,
+            note:
+                de
+                    ? 'Abschlagschwimmen / Fingerspitzen ziehen / 6-1-6 Seitlage / Faustschwimmen – je 2×'
+                    : 'Catch-up / fingertip drag / 6-1-6 side kick / fist swimming – 2× each',
+          ),
+        ],
+        [_st('recovery', 'REC', sec: 20)],
+      ),
+      _st('recovery', 'REC', sec: 60),
+      ..._repeat(6, [_st('work', 'EN', m: 100)], [_st('recovery', 'REC', sec: 20)]),
+      _st('cooldown', 'REC', m: 200),
+    ],
+    descEn: 'Drills first, then easy 100s – focus on a long, relaxed stroke. Tap "Show drills" for how-tos.',
+    descDe:
+        'Erst Technikübungen, dann lockere 100er – Fokus auf einen langen, entspannten Zug. Unter „Übungen anzeigen“ steht, wie die Übungen gehen.',
+  ),
   _cardio(
     id(),
     'swim_css',
@@ -565,11 +582,24 @@ List<WorkoutTemplate> defaultTemplates(String Function() id, {bool de = false}) 
     descEn: 'At your critical swim speed.',
     descDe: 'In deiner kritischen Schwimmgeschwindigkeit (CSS).',
   ),
-  _cardio(id(), 'swim_endurance', Sport.swim, 'swim', 'Endurance 4×400', 'Ausdauer 4×400', de, 'easy', order: 2, [
-    _st('warmup', 'REC', m: 300),
-    ..._repeat(4, [_st('work', 'EN', m: 400)], [_st('recovery', 'REC', sec: 30)]),
-    _st('cooldown', 'REC', m: 200),
-  ]),
+  _cardio(
+    id(),
+    'swim_endurance',
+    Sport.swim,
+    'swim',
+    'Endurance 4×400',
+    'Ausdauer 4×400',
+    de,
+    'easy',
+    order: 2,
+    [
+      _st('warmup', 'REC', m: 300),
+      ..._repeat(4, [_st('work', 'EN', m: 400)], [_st('recovery', 'REC', sec: 30)]),
+      _st('cooldown', 'REC', m: 200),
+    ],
+    descEn: 'Steady aerobic swimming – even pace, controlled breathing.',
+    descDe: 'Gleichmäßiges Grundlagenschwimmen – konstantes Tempo, ruhige Atmung.',
+  ),
 ];
 
 /// Built-in programs whose key is not yet present in [existing] (for adding missing ones).

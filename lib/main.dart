@@ -16,6 +16,7 @@ import 'features/auth/login_page.dart';
 import 'features/onboarding/onboarding_page.dart';
 import 'features/shell/home_shell.dart';
 import 'features/shell/gcal_sync.dart';
+import 'features/shell/relocalize_sync.dart';
 import 'features/shell/health_sync.dart';
 import 'features/shell/reminder_sync.dart';
 import 'firebase_options.dart';
@@ -43,6 +44,7 @@ class StriveApp extends ConsumerWidget {
     ref.watch(reminderSyncProvider);
     ref.watch(healthSyncProvider);
     ref.watch(gcalAutoSyncProvider);
+    ref.watch(relocalizeSyncProvider);
     return MaterialApp(
       title: 'Strive',
       debugShowCheckedModeBanner: false,
@@ -130,6 +132,5 @@ class StriveLogo extends StatelessWidget {
 class _DevTlsInspectionOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) =>
-      super.createHttpClient(context)
-        ..badCertificateCallback = (cert, host, port) => cert.issuer.contains('Norton Web/Mail Shield');
+      super.createHttpClient(context)..badCertificateCallback = (cert, host, port) => cert.issuer.contains('Norton Web/Mail Shield');
 }

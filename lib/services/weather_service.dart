@@ -178,11 +178,7 @@ class WeatherService {
         .then<int?>((r) => (jsonDecode(r.body)['current']?['european_aqi'] as num?)?.round())
         .catchError((_) => null);
     final placeFuture = http
-        .get(
-          Uri.parse(
-            'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=$lat&longitude=$lon&localityLanguage=$lang',
-          ),
-        )
+        .get(Uri.parse('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=$lat&longitude=$lon&localityLanguage=$lang'))
         .timeout(const Duration(seconds: 6))
         .then<String>((g) {
           final gj = jsonDecode(g.body);
@@ -312,6 +308,6 @@ Clothing clothingFor(double feels) {
 }
 
 String windDirLabel(int deg, String lang) =>
-    (lang == 'de' ? const ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'] : const ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'])[((deg % 360) / 45)
-            .round() %
-        8];
+    (lang == 'de'
+        ? const ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW']
+        : const ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'])[((deg % 360) / 45).round() % 8];

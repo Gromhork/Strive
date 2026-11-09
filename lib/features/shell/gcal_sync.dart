@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 
+import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/gcal_api.dart';
@@ -166,15 +167,25 @@ class GcalController extends Notifier<GcalState> {
       final account = acc.email;
       final l = _l10n();
 
-      final plans = await ref.read(plansProvider.future);
+      final List<PlannedWorkout> plans;
+      try {
+        plans = repo == null ? await ref.read(plansProvider.future) : await repo.plansFromServer();
+      } catch (e) {
+        throw GcalException(GcalErrorKind.offline, '$e');
+      }
       final profile = ref.read(profileOrDefaultProvider);
       final now = DateTime.now();
       final desired = gcalDesiredEvents(plans, l, profile.units, preferredTime: profile.athlete.preferredTime, now: now);
-      final (from, to) = gcalWindow(now);
 
       Future<String> calendarId({bool recreate = false}) async {
         var id = recreate ? null : p.getString(_k(uid, 'calendarId'));
-        if (id == null && !recreate) id = await repo?.gcalCalendarId(account);
+        if (id == null && !recreate) {
+          try {
+            id = await repo?.gcalCalendarId(account);
+          } catch (e) {
+            throw GcalException(GcalErrorKind.offline, '$e');
+          }
+        }
         if (id == null) {
           String? tz;
           try {
@@ -190,7 +201,9 @@ class GcalController extends Notifier<GcalState> {
       var calId = await calendarId();
       List<RemoteEvent> remote;
       try {
-        remote = await api.listEvents(calId, from, to);
+        // The whole calendar (not only the window): events of plans that were deleted or
+        // replaced must disappear even if they lie further in the past or future.
+        remote = await api.listEvents(calId);
       } on GcalException catch (e) {
         if (e.kind != GcalErrorKind.notFound) rethrow;
         // Calendar was deleted in Google Calendar → create a new one.
@@ -198,11 +211,13 @@ class GcalController extends Notifier<GcalState> {
         remote = const [];
       }
 
-      final diff = gcalDiff(desired, remote);
+      final diff = gcalDiff(desired, remote, keep: gcalKeepIds(plans));
+      // Deletes first: if the write quota runs out, stale events are gone before new ones
+      // are added (a later sync adds the rest).
       await runPooled([
-        for (final b in diff.inserts) () => api.upsertEvent(calId, b),
-        for (final b in diff.updates) () => api.upsertEvent(calId, b, exists: true),
         for (final id in diff.deletes) () => api.deleteEvent(calId, id),
+        for (final b in diff.updates) () => api.upsertEvent(calId, b, exists: true),
+        for (final b in diff.inserts) () => api.upsertEvent(calId, b),
       ]);
       debugPrint('gcal sync: ${desired.length} events (+${diff.inserts.length} ~${diff.updates.length} -${diff.deletes.length})');
 

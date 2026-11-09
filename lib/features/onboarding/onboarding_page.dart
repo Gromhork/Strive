@@ -112,9 +112,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     // triathlon to hybrid) are removed from the week plan.
     final sports = _sports;
     a = a.merge({
-      'dayPlan': {
-        for (final e in a.dayPlan.entries) e.key: e.value.where(sports.contains).toList(),
-      },
+      'dayPlan': {for (final e in a.dayPlan.entries) e.key: e.value.where(sports.contains).toList()},
     });
     var days = p.trainingDays;
     if (_advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) {
@@ -722,9 +720,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   /// Detailed setup: which sport on which weekday (1–2 sessions per day).
   Widget _weekPlan(AppLocalizations l) {
     final sports = _sports.toList()..sort((x, y) => x.index.compareTo(y.index));
-    final plan = {
-      for (final e in a.dayPlan.entries) e.key: e.value.where(_sports.contains).toList(),
-    };
+    final plan = {for (final e in a.dayPlan.entries) e.key: e.value.where(_sports.contains).toList()};
     final perSport = {for (final s in sports) s: plan.values.where((v) => v.contains(s)).length};
     final total = plan.values.fold<int>(0, (n, v) => n + v.length);
     void toggle(int d, Sport s) {

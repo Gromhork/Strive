@@ -32,8 +32,7 @@ class GoalsPage extends ConsumerWidget {
               : ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                 children: [
-                  for (final g in goals)
-                    Padding(padding: const EdgeInsets.only(bottom: 10), child: SectionCard(child: GoalTile(goal: g))),
+                  for (final g in goals) Padding(padding: const EdgeInsets.only(bottom: 10), child: SectionCard(child: GoalTile(goal: g))),
                 ],
               ),
     );
@@ -286,11 +285,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                 Wrap(
                   spacing: 8,
                   children: [
-                    ChoiceChip(
-                      label: Text(l.allSports),
-                      selected: _sport == null,
-                      onSelected: (_) => setState(() => _sport = null),
-                    ),
+                    ChoiceChip(label: Text(l.allSports), selected: _sport == null, onSelected: (_) => setState(() => _sport = null)),
                     for (final s in Sport.values.where((s) => _type != GoalType.distance || s != Sport.gym))
                       ChoiceChip(
                         avatar: Icon(s.icon, size: 16, color: s.color),
@@ -346,15 +341,11 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                 TextButton.icon(
                   icon: const Icon(Icons.search),
                   label: Text(l.searchMarathonDe),
-                  onPressed:
-                      () => launchUrl(Uri.parse('https://www.marathon.de/laufkalender'), mode: LaunchMode.externalApplication),
+                  onPressed: () => launchUrl(Uri.parse('https://www.marathon.de/laufkalender'), mode: LaunchMode.externalApplication),
                 ),
               const SizedBox(height: 20),
               FilledButton(
-                onPressed:
-                    (_type == GoalType.strength && _exId == null) || (_type == GoalType.event && _deadline == null)
-                        ? null
-                        : _save,
+                onPressed: (_type == GoalType.strength && _exId == null) || (_type == GoalType.event && _deadline == null) ? null : _save,
                 child: Text(l.save),
               ),
             ],

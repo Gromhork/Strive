@@ -89,9 +89,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      for (final s in Sport.values) Padding(padding: const EdgeInsets.all(4), child: SportBadge(s, size: 36)),
-                    ],
+                    children: [for (final s in Sport.values) Padding(padding: const EdgeInsets.all(4), child: SportBadge(s, size: 36))],
                   ),
                   const SizedBox(height: 32),
                   TextField(
@@ -127,10 +125,7 @@ class _LoginPageState extends State<LoginPage> {
                             : Text(_register ? l.register : l.login),
                   ),
                   const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => setState(() => _register = !_register),
-                    child: Text(_register ? l.haveAccount : l.noAccount),
-                  ),
+                  TextButton(onPressed: () => setState(() => _register = !_register), child: Text(_register ? l.haveAccount : l.noAccount)),
                   const SizedBox(height: 16),
                   Row(
                     children: [

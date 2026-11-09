@@ -312,7 +312,6 @@ class AthleteData {
   }
 }
 
-
 // ───────────────────────────── Gym ─────────────────────────────
 
 /// Set type: normal, warm-up, drop set, to failure.
@@ -490,10 +489,7 @@ class Session {
       distanceM: _d(m['distanceM']),
       elevationM: _d(m['elevationM']),
       avgHr: m['avgHr'],
-      route:
-          ((m['route'] as List?) ?? [])
-              .map((p) => [(p as Map)['a'] as num, p['o'] as num].map((e) => e.toDouble()).toList())
-              .toList(),
+      route: ((m['route'] as List?) ?? []).map((p) => [(p as Map)['a'] as num, p['o'] as num].map((e) => e.toDouble()).toList()).toList(),
       splits: List<int>.from(m['splits'] ?? const []),
       laps: _i(m['laps']),
       poolLengthM: _i(m['poolLengthM'], 25),
@@ -782,7 +778,6 @@ class WorkoutStep {
   };
 }
 
-
 // ───────────────────────────── Body & goals ─────────────────────────────
 
 class BodyEntry {
@@ -794,19 +789,9 @@ class BodyEntry {
 
   BodyEntry({required this.id, required this.date, required this.weightKg, this.fatPct, this.musclePct});
 
-  factory BodyEntry.fromMap(String id, Map<String, dynamic> m) => BodyEntry(
-    id: id,
-    date: _date(m['date']),
-    weightKg: _d(m['weightKg']),
-    fatPct: _dn(m['fatPct']),
-    musclePct: _dn(m['musclePct']),
-  );
-  Map<String, dynamic> toMap() => {
-    'date': Timestamp.fromDate(date),
-    'weightKg': weightKg,
-    'fatPct': fatPct,
-    'musclePct': musclePct,
-  };
+  factory BodyEntry.fromMap(String id, Map<String, dynamic> m) =>
+      BodyEntry(id: id, date: _date(m['date']), weightKg: _d(m['weightKg']), fatPct: _dn(m['fatPct']), musclePct: _dn(m['musclePct']));
+  Map<String, dynamic> toMap() => {'date': Timestamp.fromDate(date), 'weightKg': weightKg, 'fatPct': fatPct, 'musclePct': musclePct};
 }
 
 enum GoalType { weight, distance, frequency, strength, event }
