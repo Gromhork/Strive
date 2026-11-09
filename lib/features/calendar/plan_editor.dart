@@ -102,7 +102,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
       description: _desc.text.trim(),
       durationMin: est?.$1 ?? (_sport == Sport.gym && _gymEx.isNotEmpty ? estimateGymMinutes(_gymEx) : _min),
       distanceKm: est != null ? est.$2 : parseNum(_km.text),
-      intensity: _intensity,
+      intensity: _structured && _intensity != 'race' ? deriveIntensity(_steps, _sport) : _intensity,
       templateId: _templateId,
       status: widget.existing?.status ?? 'planned',
       sessionId: widget.existing?.sessionId,
@@ -254,7 +254,14 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
               onChanged: (v) => setState(() => _isKey = v),
             ),
             const SizedBox(height: 4),
-            Text(l.workoutPhases, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(l.workoutPhases, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                ),
+                ZoneInfoButton(sport: _sport, profile: profile),
+              ],
+            ),
             const SizedBox(height: 4),
             Text(l.structuredWorkoutSub, style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 10),
@@ -293,7 +300,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
                 decoration: InputDecoration(labelText: l.targetDistance, suffixText: 'km'),
               ),
           ],
-          if (_sport != Sport.gym) ...[
+          if (_sport != Sport.gym && !_structured) ...[
             const SizedBox(height: 16),
             Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
@@ -301,7 +308,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final i in intensities)
+                for (final i in intensitiesFor(_sport))
                   ChoiceChip(
                     label: Text(intensityLabel(l, i)),
                     selected: _intensity == i,

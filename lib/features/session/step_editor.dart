@@ -11,14 +11,10 @@ import '../../services/zones.dart';
 import '../../widgets/segments.dart';
 import 'step_list.dart';
 import 'step_text.dart';
+import 'zone_info.dart';
 
-/// Zones offered in the editor per sport (slow → fast).
-List<String> zonesFor(Sport sport) => switch (sport) {
-  Sport.run => const ['walk', 'REC', 'E', 'L', 'M', 'T', 'I', 'R'],
-  Sport.ride => const ['Z1', 'Z2', 'Z3', 'SS', 'Z4', 'Z5', 'Z6'],
-  Sport.swim => const ['REC', 'DR', 'EN', 'TE', 'CSS', 'SP'],
-  Sport.gym => const ['E'],
-};
+export 'zone_info.dart' show zonesFor, intensitiesFor, deriveIntensity, ZoneInfoButton, showZoneInfo;
+
 
 /// Fills pace / power / heart-rate targets of [s] from the athlete's zones.
 WorkoutStep withTargets(WorkoutStep s, Sport sport, UserProfile p) {
@@ -177,7 +173,7 @@ class _StepEditorState extends State<StepEditor> {
     final res = await showModalBottomSheet<WorkoutStep?>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _StepSheet(step: b.steps[k], sport: widget.sport, inRepeat: b.isRepeat),
+      builder: (_) => _StepSheet(step: b.steps[k], sport: widget.sport, inRepeat: b.isRepeat, profile: widget.profile),
     );
     if (res == null) return;
     b.steps[k] = withTargets(res, widget.sport, widget.profile);
@@ -342,7 +338,7 @@ class _BlockCard extends StatelessWidget {
                   children: [
                     Text('${kindLabel(l, s.kind)} · ${stepAmount(s, units, sport)}', style: const TextStyle(fontWeight: FontWeight.w600)),
                     Text(
-                      [zoneLabel(l, s.zone), if (target.isNotEmpty) target].join(' · '),
+                      [zoneLabel(l, s.zone, sport: sport), if (target.isNotEmpty) target].join(' · '),
                       style: Theme.of(context).textTheme.bodySmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -414,10 +410,11 @@ class _BlockCard extends StatelessWidget {
 
 /// Bottom sheet to edit one step: phase type, time/distance, zone, note.
 class _StepSheet extends StatefulWidget {
-  const _StepSheet({required this.step, required this.sport, required this.inRepeat});
+  const _StepSheet({required this.step, required this.sport, required this.inRepeat, required this.profile});
   final WorkoutStep step;
   final Sport sport;
   final bool inRepeat;
+  final UserProfile profile;
 
   @override
   State<_StepSheet> createState() => _StepSheetState();
@@ -428,7 +425,14 @@ class _StepSheetState extends State<_StepSheet> {
   late bool _byDistance = widget.step.distanceM != null;
   late int _sec = widget.step.durationSec ?? 600;
   late double _m = widget.step.distanceM ?? (widget.sport == Sport.swim ? 100 : 1000);
-  late String _zone = zonesFor(widget.sport).contains(widget.step.zone) ? widget.step.zone : zonesFor(widget.sport).first;
+  late String _zone = _initialZone();
+
+  String _initialZone() {
+    final z = normalizeZone(widget.step.zone, widget.sport);
+    // Keep 'walk' for run/walk sessions (beginner plans) even though it is not offered.
+    if (widget.step.zone == 'walk') return 'walk';
+    return zonesFor(widget.sport).contains(z) ? z : zonesFor(widget.sport).first;
+  }
   late final _note = TextEditingController(text: widget.step.note);
 
   List<double> get _distances =>
@@ -507,21 +511,13 @@ class _StepSheetState extends State<_StepSheet> {
                   ],
                 ),
               const SizedBox(height: 16),
-              Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              Row(
                 children: [
-                  for (final z in zonesFor(widget.sport))
-                    ChoiceChip(
-                      avatar: CircleAvatar(backgroundColor: zoneColor(z), radius: 6),
-                      label: Text(zoneLabel(l, z)),
-                      selected: _zone == z,
-                      onSelected: (_) => setState(() => _zone = z),
-                    ),
+                  Expanded(child: Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600))),
+                  ZoneInfoButton(sport: widget.sport, profile: widget.profile, highlight: _zone),
                 ],
               ),
+              for (final z in zonesFor(widget.sport)) _zoneOption(z),
               const SizedBox(height: 12),
               TextField(controller: _note, decoration: InputDecoration(labelText: l.note)),
               const SizedBox(height: 16),
@@ -540,6 +536,47 @@ class _StepSheetState extends State<_StepSheet> {
                 child: Text(l.apply),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _zoneOption(String z) {
+    final l = context.l10n;
+    final c = zoneColor(z);
+    final sel = normalizeZone(_zone, widget.sport) == z;
+    final (target, est) = zoneTarget(z, widget.sport, widget.profile);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Material(
+        color: sel ? c.withValues(alpha: 0.16) : Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => setState(() => _zone = z),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: sel ? c : Colors.transparent, width: 1.5)),
+            child: Row(
+              children: [
+                Container(width: 10, height: 10, decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
+                const SizedBox(width: 10),
+                Expanded(child: Text(zoneLabel(l, z, sport: widget.sport), style: const TextStyle(fontWeight: FontWeight.w600))),
+                if (target.isNotEmpty)
+                  Flexible(
+                    child: Text(
+                      '${est ? '≈ ' : ''}${target.split(' · ').first}',
+                      textAlign: TextAlign.end,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  )
+                else
+                  Text(zoneFeel(l, z, widget.sport), style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
           ),
         ),
       ),

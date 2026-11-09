@@ -54,7 +54,7 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
     exercises: _sport == Sport.gym ? _ex : const [],
     targetKm: _sport == Sport.gym || _structured ? null : parseNum(_km.text),
     targetMin: _sport == Sport.gym || _structured ? null : _min,
-    intensity: _intensity,
+    intensity: _sport != Sport.gym && _structured ? deriveIntensity(_steps, _sport) : _intensity,
     description: _desc.text.trim(),
     steps: _sport == Sport.gym || !_structured ? const [] : _steps,
     key: widget.template?.key,
@@ -212,7 +212,12 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
         onChanged: (v) => _touch(() => _structured = v),
       ),
       const SizedBox(height: 8),
-      Text(_structured ? l.structuredWorkoutSub : l.freeWorkoutSub, style: Theme.of(context).textTheme.bodySmall),
+      Row(
+        children: [
+          Expanded(child: Text(_structured ? l.structuredWorkoutSub : l.freeWorkoutSub, style: Theme.of(context).textTheme.bodySmall)),
+          if (_structured) ZoneInfoButton(sport: _sport, profile: ref.watch(profileOrDefaultProvider)),
+        ],
+      ),
       const SizedBox(height: 16),
       if (_structured)
         StepEditor(
@@ -240,16 +245,23 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
         ),
       ],
       const SizedBox(height: 16),
-      Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600)),
-      const SizedBox(height: 8),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final i in intensities)
-            ChoiceChip(label: Text(intensityLabel(l, i)), selected: _intensity == i, onSelected: (_) => _touch(() => _intensity = i)),
-        ],
-      ),
+      if (_structured)
+        Text(
+          '${l.intensity}: ${l.intensityAuto(intensityLabel(l, deriveIntensity(_steps, _sport)))}',
+          style: Theme.of(context).textTheme.bodySmall,
+        )
+      else ...[
+        Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final i in intensitiesFor(_sport))
+              ChoiceChip(label: Text(intensityLabel(l, i)), selected: _intensity == i, onSelected: (_) => _touch(() => _intensity = i)),
+          ],
+        ),
+      ],
     ];
   }
 }

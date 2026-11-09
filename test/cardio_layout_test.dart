@@ -120,6 +120,6 @@ void main() {
     expect(find.text('LENGTH'), findsOneWidget);
     expect(find.text('Next step'), findsOneWidget);
     expect(find.text('INTERVAL 1/3'), findsOneWidget);
-    expect(find.text('3 × 100 m · CSS'), findsOneWidget);
+    expect(find.text('3 × 100 m · CSS pace'), findsOneWidget);
   });
 }

@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../data/models.dart';
 import 'step_text.dart';
+import 'zone_info.dart' show showSwimDrills;
 
 /// Rough duration of a step in seconds (for proportional drawing).
 int _approxSec(WorkoutStep s, Sport sport) {
@@ -164,6 +165,21 @@ class StepList extends StatelessWidget {
                   ),
                   if (target.isNotEmpty) Text(target, style: t.bodySmall),
                   if (!dense && s.note.isNotEmpty) Text(s.note, style: t.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
+                  if (!dense && s.zone == 'DR')
+                    InkWell(
+                      onTap: () => showSwimDrills(context),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.info_outline_rounded, size: 15, color: zoneColor('DR')),
+                            const SizedBox(width: 4),
+                            Text(l.showDrills, style: t.bodySmall?.copyWith(color: zoneColor('DR'), fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
