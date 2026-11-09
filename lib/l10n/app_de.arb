@@ -277,7 +277,7 @@
   "syncCalendar": "Kalender exportieren",
   "currentWeek": "Aktuell",
   "nextWeek": "Nächste",
-  "lastWeek": "Letzte",
+  "lastWeek": "Letzte Woche",
   "nothingPlanned": "Nichts geplant.",
   "nothingToExport": "Keine kommenden Trainings zum Exportieren.",
   "icsShareText": "Mein Strive-Trainingsplan (.ics) – mit einer Kalender-App öffnen, um ihn zu importieren.",
@@ -958,5 +958,12 @@
   "drillScullWhy": "Wassergefühl und kräftiges Wasserfassen.",
   "drillsNote": "{a} / {b} – im Wechsel 50 m Übung, 50 m Kraul",
   "intensityAuto": "{name} (aus dem Aufbau)",
-  "showDrills": "Übungen anzeigen"
+  "showDrills": "Übungen anzeigen",
+  "streakWeeks": "{count} Wochen in Folge",
+  "streakThisWeek": "Diese Woche",
+  "streakWeekDone": "Ziel erreicht: {done} von {target} Trainingstagen – diese Woche zählt!",
+  "streakWeekLeft": "{done} von {target} Trainingstagen – noch {count}, dann zählt die Woche.",
+  "streakLastWeeks": "Letzte 8 Wochen",
+  "streakHow": "Eine Woche zählt, wenn du an so vielen Tagen trainierst wie geplant. Mit Trainingsplan ist das Ziel die Anzahl der Tage mit geplanten Einheiten in dieser Woche (zwei Einheiten an einem Tag zählen als ein Tag), ohne Plan deine Anzahl Trainingstage. Die laufende Woche unterbricht deinen Streak nie – sie wird gezählt, sobald du das Ziel erreichst.",
+  "showPastWeeks": "Vergangene Wochen"
 }
