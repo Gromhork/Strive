@@ -3677,6 +3677,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rpeRate => 'Rate';
 
   @override
+  String get progLinear => 'all target reps done – a bit more weight, same reps (beginner linear progression)';
+
+  @override
+  String get progNudge => 'held twice and every target met – one more rep on the weakest set';
+
+  @override
+  String get progRecalibrated => 'your AMRAP set showed more strength – weight adjusted to it';
+
+  @override
+  String get progE1rmFloor => 'no reps missed – the weight stays near your strength level';
+
+  @override
+  String get amrapHint => 'Last set: as many reps as possible – stop 1 rep before failure (helps the app learn your strength)';
+
+  @override
+  String get amrapShort => 'AMRAP';
+
+  @override
+  String recalWhyBreak(int days) {
+    return 'No training for $days days: the first week back restarts at 50–70 % of the planned volume, without intensity, then builds up again.';
+  }
+
+  @override
+  String get recalWhyLongCap => 'Long sessions stay within +10 % of your longest one of the last 30 days – beyond that the injury risk rises.';
+
+  @override
+  String get recalWhyRpeLowHold => 'Your quality sessions felt easy – the new targets are this week\'s step up, the volume stays (never both at once).';
+
+  @override
   String wBrickRun(int min) {
     return 'Brick run $min min';
   }

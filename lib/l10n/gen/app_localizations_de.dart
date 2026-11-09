@@ -3677,6 +3677,35 @@ class AppLocalizationsDe extends AppLocalizations {
   String get rpeRate => 'Bewerten';
 
   @override
+  String get progLinear => 'alle Ziel-Wiederholungen geschafft – etwas mehr Gewicht, gleiche Wiederholungen (Anfänger: lineare Steigerung)';
+
+  @override
+  String get progNudge => 'zweimal gehalten und jedes Ziel geschafft – eine Wiederholung mehr im schwächsten Satz';
+
+  @override
+  String get progRecalibrated => 'dein AMRAP-Satz zeigt mehr Kraft – Gewicht daran angepasst';
+
+  @override
+  String get progE1rmFloor => 'keine Wiederholungen verpasst – das Gewicht bleibt nahe an deinem Kraftniveau';
+
+  @override
+  String get amrapHint => 'Letzter Satz: so viele Wiederholungen wie möglich – 1 Wdh. vor dem Versagen aufhören (so lernt die App deine Kraft)';
+
+  @override
+  String get amrapShort => 'AMRAP';
+
+  @override
+  String recalWhyBreak(int days) {
+    return '$days Tage ohne Training: Die erste Woche danach startet mit 50–70 % des geplanten Umfangs, ohne Intensität, und baut dann wieder auf.';
+  }
+
+  @override
+  String get recalWhyLongCap => 'Lange Einheiten bleiben bei höchstens +10 % deiner längsten der letzten 30 Tage – darüber steigt das Verletzungsrisiko.';
+
+  @override
+  String get recalWhyRpeLowHold => 'Deine harten Einheiten fielen dir leicht – die neuen Zielwerte sind diese Woche die Steigerung, der Umfang bleibt (nie beides gleichzeitig).';
+
+  @override
   String wBrickRun(int min) {
     return 'Koppellauf $min min';
   }

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:strive/core/sport.dart';
+import 'package:strive/data/exercise_db.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/services/gym_tools.dart';
@@ -332,8 +333,8 @@ void main() {
       final p =
           lp([
             benchDay(2, [(80, 7), (80, 6), (80, 6)]),
-            benchDay(6, [(80, 7), (80, 6), (80, 6)]),
-            benchDay(10, [(80, 7), (80, 7), (80, 6)]),
+            benchDay(9, [(80, 7), (80, 6), (80, 6)]),
+            benchDay(16, [(80, 7), (80, 7), (80, 6)]),
           ]).forExercise(bench)!;
       expect(p.reason, ProgressReason.stall);
       expect(p.weight, 72.5);
@@ -409,7 +410,7 @@ void main() {
       Session day(int d, double add) => gym(d, [
         done('0652', 'pull-up', [(add, 7), (add, 6), (add, 6)], bw: true, bodyKg: 80),
       ]);
-      final p = lp([day(2, 5), day(6, 5), day(10, 5)]).forExercise(pu)!;
+      final p = lp([day(2, 5), day(9, 5), day(16, 5)]).forExercise(pu)!;
       expect(p.reason, ProgressReason.stall);
       expect(p.weight, 0); // 5 − 10 % of 85 → 0, not −3.5
     });
@@ -544,6 +545,99 @@ void main() {
       // A deload week overrides an increase.
       final deload = lp([benchDay(3, x3(60, 10))]).forExercise(bench, phase: 'recovery')!;
       expect(prescriptionReason(de, deload), isNot(contains('mehr Gewicht')));
+    });
+  });
+
+  group('prescribed targets (feedback loops)', () {
+    final d0 = DateTime(2026, 11, 1);
+    List<GymSet> sets(List<(double, int, int)> x) => [for (final (w, r, t) in x) GymSet(weight: w, reps: r, done: true, target: t)];
+    ProgressEntry entry(int daysAgo, List<(double, int, int)> x, {Effort? effort, double? rx}) =>
+        ProgressEntry(d0.subtract(Duration(days: daysAgo)), sets(x), effort: effort, rxKg: rx);
+
+    test('a planned descending pattern that was met is not read as a hard drop-off', () {
+      expect(estimateEffort(sets([(0, 10, 10), (0, 9, 9), (0, 8, 8)]), top: 10).hard, isFalse);
+      expect(estimateEffort(sets([(0, 10, 10), (0, 9, 10), (0, 8, 10)]), top: 10).limit, isTrue);
+      expect(estimateEffort(sets([(0, 10, 10), (0, 9, 9), (0, 7, 8)]), top: 10).hard, isTrue);
+      // Without targets the old drop-off inference stays.
+      expect(
+        estimateEffort([
+          for (final r in [10, 9, 8]) GymSet(reps: r, done: true),
+        ], top: 10).hard,
+        isTrue,
+      );
+    });
+
+    test('AMRAP set: reps beyond the target are the reserve', () {
+      final work = sets([(60, 5, 5), (60, 5, 5)])..add(GymSet(weight: 60, reps: 12, done: true, target: 5, amrap: true));
+      expect(estimateEffort(work, top: 8).rir, 5);
+      expect(estimateEffort(work, top: 8, chip: Effort.hard).rir, 5); // the chip rates the AMRAP set itself
+      final tight = sets([(60, 5, 5), (60, 5, 5)])..add(GymSet(weight: 60, reps: 5, done: true, target: 5, amrap: true));
+      expect(estimateEffort(tight, top: 8).hard, isTrue);
+    });
+
+    test("the app's own lighter prescription with the same reps is not a performance drop", () {
+      final hist = [
+        entry(0, [(55, 5, 5), (55, 5, 5), (55, 5, 5)], effort: Effort.limit, rx: 55),
+        entry(2, [(55, 5, 5), (55, 5, 5), (55, 5, 5)], effort: Effort.limit, rx: 55),
+        entry(4, [(60, 5, 5), (60, 5, 5), (60, 5, 5)], effort: Effort.limit, rx: 60),
+      ];
+      final p = smartProgression(hist, bottom: 5, top: 8, increment: 2.5)!;
+      expect(p.reason, isNot(ProgressReason.performanceDrop));
+      expect(p.weight, 55);
+      // The same lighter load chosen by the user (prescribed 60) is one.
+      final chosen = [
+        ProgressEntry(d0, [for (var i = 0; i < 3; i++) GymSet(weight: 55, reps: 5, done: true)], effort: Effort.limit, rxKg: 60),
+        ProgressEntry(
+          d0.subtract(const Duration(days: 2)),
+          [for (var i = 0; i < 3; i++) GymSet(weight: 55, reps: 5, done: true)],
+          effort: Effort.limit,
+          rxKg: 60,
+        ),
+        ProgressEntry(d0.subtract(const Duration(days: 4)), [
+          for (var i = 0; i < 3; i++) GymSet(weight: 60, reps: 5, done: true),
+        ], rxKg: 60),
+      ];
+      expect(smartProgression(chosen, bottom: 5, top: 8, increment: 2.5)!.reason, ProgressReason.performanceDrop);
+    });
+
+    test('held twice with every target met → one more rep on the weakest set, no stall reset', () {
+      final hist = [
+        for (final d in [0, 7, 14, 21]) entry(d, [(60, 7, 7), (60, 6, 6), (60, 6, 6)], effort: Effort.limit, rx: 60),
+      ];
+      final p = smartProgression(hist, bottom: 5, top: 8, increment: 2.5)!;
+      expect(p.reason, ProgressReason.nudge);
+      expect(p.weight, 60);
+      expect(p.setReps, [7, 6, 7]);
+    });
+
+    test('beginner linear progression: one step per session while targets are hit, repeat once on a miss', () {
+      final hit = [
+        entry(0, [(50, 5, 5), (50, 5, 5), (50, 5, 5)]),
+      ];
+      final p = smartProgression(hit, bottom: 5, top: 8, increment: 2.5, level: 'beginner', linear: true)!;
+      expect(p.reason, ProgressReason.linear);
+      expect(p.weight, 52.5);
+      expect(p.setReps, [5, 5, 5]);
+      final miss = [
+        entry(0, [(50, 5, 5), (50, 5, 5), (50, 4, 5)]),
+      ];
+      final q = smartProgression(miss, bottom: 5, top: 8, increment: 2.5, level: 'beginner', linear: true)!;
+      expect(q.kind, ProgressionKind.hold);
+      expect(q.setReps, [5, 5, 5]);
+    });
+
+    test('lower-body barbell step: 2.5 kg below 50 kg, 5 kg above', () {
+      const squat = Exercise(
+        id: '0043',
+        name: 'barbell full squat',
+        bodyPart: 'upper legs',
+        equipment: 'barbell',
+        target: 'quads',
+        secondary: [],
+        instructions: [],
+      );
+      expect(loadIncrement(squat, weight: 47.5), 2.5);
+      expect(loadIncrement(squat, weight: 60), 5);
     });
   });
 }

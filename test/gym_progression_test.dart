@@ -278,19 +278,27 @@ void main() {
       final p =
           lp([
             gym(2, [done('0025', 'x', s)]),
-            gym(6, [done('0025', 'x', s)]),
-            gym(10, [done('0025', 'x', s)]),
+            gym(9, [done('0025', 'x', s)]),
+            gym(16, [done('0025', 'x', s)]),
           ]).forExercise(planned('0025', 'barbell bench press', lo: 5, hi: 8))!;
       expect(p.progression, ProgressionKind.reset);
       expect(p.weight, 72.5);
+      // Three full-body sessions within one week are not a stall (needs ≥ 14 days).
+      final week =
+          lp([
+            gym(2, [done('0025', 'x', s)]),
+            gym(4, [done('0025', 'x', s)]),
+            gym(6, [done('0025', 'x', s)]),
+          ]).forExercise(planned('0025', 'barbell bench press', lo: 5, hi: 8))!;
+      expect(week.progression, isNot(ProgressionKind.reset));
       // Still improving → no reset.
       final q =
           lp([
             gym(2, [
               done('0025', 'x', [(80, 7), (80, 6), (80, 6)]),
             ]),
-            gym(6, [done('0025', 'x', s)]),
-            gym(10, [done('0025', 'x', s)]),
+            gym(9, [done('0025', 'x', s)]),
+            gym(16, [done('0025', 'x', s)]),
           ]).forExercise(planned('0025', 'barbell bench press', lo: 5, hi: 8))!;
       expect(q.progression, ProgressionKind.addReps);
       expect(q.weight, 80);

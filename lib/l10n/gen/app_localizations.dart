@@ -6899,6 +6899,60 @@ abstract class AppLocalizations {
   /// **'Rate'**
   String get rpeRate;
 
+  /// No description provided for @progLinear.
+  ///
+  /// In en, this message translates to:
+  /// **'all target reps done – a bit more weight, same reps (beginner linear progression)'**
+  String get progLinear;
+
+  /// No description provided for @progNudge.
+  ///
+  /// In en, this message translates to:
+  /// **'held twice and every target met – one more rep on the weakest set'**
+  String get progNudge;
+
+  /// No description provided for @progRecalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'your AMRAP set showed more strength – weight adjusted to it'**
+  String get progRecalibrated;
+
+  /// No description provided for @progE1rmFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'no reps missed – the weight stays near your strength level'**
+  String get progE1rmFloor;
+
+  /// No description provided for @amrapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Last set: as many reps as possible – stop 1 rep before failure (helps the app learn your strength)'**
+  String get amrapHint;
+
+  /// No description provided for @amrapShort.
+  ///
+  /// In en, this message translates to:
+  /// **'AMRAP'**
+  String get amrapShort;
+
+  /// No description provided for @recalWhyBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'No training for {days} days: the first week back restarts at 50–70 % of the planned volume, without intensity, then builds up again.'**
+  String recalWhyBreak(int days);
+
+  /// No description provided for @recalWhyLongCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Long sessions stay within +10 % of your longest one of the last 30 days – beyond that the injury risk rises.'**
+  String get recalWhyLongCap;
+
+  /// No description provided for @recalWhyRpeLowHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quality sessions felt easy – the new targets are this week\'s step up, the volume stays (never both at once).'**
+  String get recalWhyRpeLowHold;
+
   /// No description provided for @wBrickRun.
   ///
   /// In en, this message translates to:

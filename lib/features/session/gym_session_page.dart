@@ -808,13 +808,17 @@ class _SetRowState extends ConsumerState<_SetRow> {
               flex: 3,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: TextField(
-                  controller: _r,
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: deco(p == null ? '0' : '${p.reps}'),
-                  onChanged: (v) => n.updateSet(widget.ex, widget.set, reps: int.tryParse(v) ?? 0),
+                child: Tooltip(
+                  message: d.amrap ? context.l10n.amrapHint : '',
+                  child: TextField(
+                    controller: _r,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    // AMRAP set: "8+" – as many reps as possible, stop 1 before failure.
+                    decoration: deco(p == null ? '0' : '${p.reps}').copyWith(suffixText: d.amrap ? '+' : null),
+                    onChanged: (v) => n.updateSet(widget.ex, widget.set, reps: int.tryParse(v) ?? 0),
+                  ),
                 ),
               ),
             ),

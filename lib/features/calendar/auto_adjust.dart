@@ -93,6 +93,7 @@ String autoAdjustReason(AppLocalizations l, String reason) => switch (reason) {
   'easyHard' => l.autoAdjEasyHard,
   'qualityHard' => l.autoAdjQualityHard,
   'qualityEasy' => l.autoAdjQualityEasy,
+  'recal' || 'recalEasy' => l.recalNote,
   _ => l.autoAdjTitle,
 };
 

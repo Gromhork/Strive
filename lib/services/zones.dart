@@ -89,6 +89,45 @@ class PaceZones {
   };
 }
 
+/// The HRmax that heart-rate signals are judged against, and how much it can be trusted
+/// (docs/training-science.md §5, §12.1).
+///
+/// * **measured** – the athlete entered a max HR in the profile;
+/// * else **observed** – the highest max HR of a hard session (RPE ≥ 7 or average HR
+///   ≥ 85 % of the prediction) in the last year, when it is above the prediction (only
+///   ever raises it; spikes > prediction + 25 bpm are treated as sensor artefacts);
+/// * else **predicted** (Tanaka / Gulati, SEE ≈ ±10 bpm – [predictionSd]).
+///
+/// Only a measured value counts as [measured]: an observed peak is a lower bound of the
+/// true HRmax, so HR keeps its reduced weight.
+class HrMax {
+  const HrMax(this.bpm, {required this.measured, this.observed = false});
+
+  final int bpm;
+  final bool measured;
+
+  /// Raised from the athlete's own hard sessions.
+  final bool observed;
+
+  /// Standard error of the HRmax prediction equations (Tanaka 2001: ≈ ±10 bpm).
+  static const predictionSd = 10;
+
+  static HrMax of(UserProfile p, {Iterable<Session> sessions = const [], DateTime? now}) {
+    if (p.maxHr != null) return HrMax(p.maxHr!, measured: true);
+    final predicted = p.estimatedMaxHr;
+    now ??= DateTime.now();
+    var best = 0;
+    for (final s in sessions) {
+      final m = s.maxHr;
+      if (m == null || !s.sport.isCardio || now.difference(s.start).inDays > 365) continue;
+      if (m > predicted + 25 || (s.avgHr != null && m < s.avgHr!)) continue;
+      final hard = (s.rpe ?? 0) >= 7 || (s.avgHr ?? 0) >= 0.85 * predicted;
+      if (hard && m > best) best = m;
+    }
+    return best > predicted ? HrMax(best, measured: false, observed: true) : HrMax(predicted, measured: false);
+  }
+}
+
 /// Heart-rate zones (5-zone %HRmax model, Seiler/Olympiatoppen). Karvonen when resting HR is known.
 class HrZones {
   final int max;

@@ -379,10 +379,12 @@ judged over the **last 3–6 sessions** instead of the last one only.
 
 | Source | RIR |
 |---|---|
+| AMRAP last set ("as many reps as possible – stop 1 rep before failure", see below) | reps − target + 1 (measured; a chip after it rates the AMRAP set itself, so it comes first) |
 | Optional chip after the last work set: Leicht / Passend / Schwer / Limit | 4+ / 2–3 / 1 / 0 (RIR-based RPE scale [30,31]) |
 | Logged set RPE (hardest set) | 10 − RPE |
 | A work set marked "failure" | 0 |
-| Inferred: rep drop-off across sets at the same load ≥ 30 % (and ≥ 2 reps) | 0 (limit) |
+| Reps vs. the per-set targets the app prescribed (stored on each set) | a set ≥ 2 short → 0; 1 short → 1; all ≥ 2 above → ≥ 3; all met → unknown. A planned descending pattern (10/9/8) is **not** a drop-off |
+| Inferred (no targets – old data, hand-added sets): rep drop-off across sets at the same load ≥ 30 % (and ≥ 2 reps) | 0 (limit) |
 | Inferred: drop-off ≥ 15 % (and ≥ 2 reps) | 1 (hard) – sets far from failure can be repeated with the same reps; losses across sets mean the sets were close to failure (Willardson & Burkett 2005 [73]; Refalo 2023 [28]) |
 | Inferred: every set ≥ 2 reps above the top of the range | ≥ 3 (easy – load clearly too light) |
 | Nothing of the above | unknown → treated as "about right" |
@@ -395,16 +397,28 @@ without load). Theil–Sen slope (median of pairwise slopes, Sen 1968 [75] – r
 sessions within 8 weeks, × time span ÷ median: ≥ +2 % progressing, ≤ −3 % regressing (day-to-day e1RM noise ≈ 2–4 %),
 else plateau. Needs ≥ 3 sessions over ≥ 10 days.
 
+**What a session stores** (so the app can tell its own decisions from the lifter's): per work set the prescribed rep
+`target`, per exercise the prescribed load `rxKg`, an `amrap` flag on the AMRAP set and the plan `phase` when the
+exercise was lightened for a deload/taper week. Old sessions without these fields keep the previous behaviour.
+
 ```text
 order of rules (first match wins); w = last top weight, total = w + body load (bodyweight exercises)
-1. stall:  same weight 3 sessions (≤ 6 wk), never all sets at the top, no more total reps, trend not rising
+1. stall:  same weight ≥ 3 sessions (≤ 6 wk) spanning ≥ 14 days (3 full-body sessions in one week are no stall),
+           never all sets at the top, no more total reps, trend not rising, and – when targets are stored – a target
+           was missed (holds the app prescribed and the lifter completed are not a stall)
            → reset w × 0.9 (bodyweight: shed added load, never into assistance)
 2. drop:   the last two sessions both worse than the one before them
-           (same load ±1 % and ≥ 1 rep/set fewer, or lighter load without more reps)
+           (same load ±1 % and ≥ 1 rep/set fewer; lighter load with fewer reps; lighter load without more reps only
+           when the lifter chose it – not the app's own lighter prescription; a session with every target met is
+           never "worse")
            → ≥ 2 reps/set lost or limit: −7.5 % of total (reactive deload, Bell 2023 [74]); else hold w, repeat reps
+2b. linear (BEGINNER, compound lifts, targets stored, until the first stall = targets missed twice in a row):
+           all targets hit and not hard → +1 increment, same reps (§2.4 linear model); hard → hold;
+           narrowly missed once → same weight and targets again; then double progression
 3. top:    all sets ≥ top of range
            limit → hold w, top reps once more
-           one increment > 10 % of total (light dumbbells, isolation) → MICROLOADING: reps beyond the top first
+           one increment > 10 % of total (light dumbbells, isolation; never barbell compounds – a light squat uses a
+               2.5 kg step below 50 kg instead of 5 kg) → MICROLOADING: reps beyond the top first
                (+1/session, +2 when rated easy) up to top + max(2, 25 %) – hypertrophy is similar across ~6–30 reps
                near failure (Schoenfeld 2017 [26]) – then +1 increment with reps matched to the same e1RM − 1
            else k increments, restart at the bottom: k = 2 when easy (intermediate: rated or inferred; advanced:
@@ -413,8 +427,35 @@ order of rules (first match wins); w = last top weight, total = w + body load (b
            2–3 short → one step back; more → −10 %
 5. inside: limit → repeat the same reps; hard twice in a row at the same load without more reps → repeat;
            else +1 rep per set below the top (+2 when easy, or beginner with even sets and not hard)
+hold guard: a hold (rules 2, 3-limit, 5) after two holds in which every target was met → +1 rep on the weakest set
+           (all at the top: +1 increment) – a lifter who keeps rating "limit" but does every rep still progresses
+AMRAP recalibration: AMRAP set ≥ 2 reps above its target → load = e1RM(AMRAP reps + 1) at RIR 2 for the bottom of the
+           range, at most +30 % at once, when that is more than the normal step
+e1RM floor: no reps missed in the last 4 weeks → never more than 15 % below the load the best e1RM of those 4 weeks
+           supports (RIR 2) – limit ratings and holds alone cannot spiral the load down
 breaks (unchanged): 3–6 wk → last weight × 0.95/0.9; > 6 wk → e1RM × 0.9 (× 0.85 beyond 12 wk) [68]
-deload / taper week (unchanged): load × 0.9, deload drops one set
+deload / taper week: load × 0.9 of the loading-week prescription, deload keeps about half the work sets
+           (max(n/2, 2) of n ≥ 3, 1 of 2; no drop sets) – Bell 2023 [74]: ~50 % volume. Deload/taper sessions are
+           tagged and skipped by progression, trend and e1RM, so the second deload session is again 90 % of the loading
+           level and the next loading week resumes at the last loading level (§1.9) instead of "regressing" from it
+```
+
+**AMRAP calibration set** [P]: the last work set is "as many reps as possible – stop 1 rep before failure" in the first
+3 sessions of an exercise (the start load is a guess from a 1RM or body-weight standards) and whenever the targets are
+at the top of the range. Reps are otherwise capped at the target, so an under-estimated start (e.g. 60 kg for a true
+100 kg 1RM) could never show itself without a rating; one near-failure set per exercise is cheap (Refalo 2023 [28]:
+fatigue rises mainly over the last reps before failure) and is the least intrusive way to learn the real level – no
+extra step, no rating needed. Rejected alternatives: assuming RIR 2–3 instead of 1 for unrated sessions only shifts the
+e1RM a few % and cannot detect a 40 % under-estimate; a more prominent effort chip still depends on the user and the
+"easy" rating (RIR 4+) is open-ended.
+
+```text
+simulation (test/gym_progression_sim_test.dart; lifter: reps to failure = 30·(1RM/load − 1), −1 rep per set)
+deload 3:1, bench 1RM 85→90:    before 62.5 → deload 57.5, 50 → 50 "dip"    after 65 → deload 57.5, 57.5 → 65 → 67.5
+"limit" chip every session:      before 60 → 55 → 50 → 45 → 40 → 35            after 60 → AMRAP → 77.5, held, +reps
+pull-ups 10/9/8 pattern:         before 8× holdHard at 10/9/8 (1RM rising)      after 10/10/10 → +2.5 kg
+beginner squat 1RM 60→92.5:      before 47.5 → 62.5 (microloaded to 10 reps)    after 47.5 → 70 (linear, then double)
+bench start 60 vs 1RM 100:       before 65 after 12 sessions                    after 77.5 from session 2
 ```
 
 **Training level:** beginners progress fastest and misjudge RIR conservatively → bigger steps unless a session was hard;
@@ -854,12 +895,21 @@ best effort:           fastest 5 km / 10 km / HM / M of the last 90 days (km spl
 | completion < 70 % | days 1–7 −10 % (no progression after missed training) | §8 auto-downgrade (< 70 % over 2 weeks); ACWR spikes after gaps raise injury risk [13] |
 | completion < 50 % | days 1–7 −20 %, days 8–14 −10 %, first quality per sport → easy (re-entry) | detraining after ~2 weeks of reduced training [68]; gradual return |
 | ≥ 2 sessions cut short | long sessions of the next 14 days −10 % | the planned duration was not sustainable |
-| ≥ 2 quality sessions at RPE ≤ 4, no fatigue signal, completion ≥ 90 % | easy + long sessions of loading weeks, days 1–7, +5 % | within the 5–10 %/week growth rule (§1.5); long run ≤ +10 % of the longest run of the last 30 days (R1, Frandsen 2025 [11]) |
+| ≥ 2 quality sessions at RPE ≤ 4, no fatigue signal, completion ≥ 90 % | easy + long sessions of loading weeks, days 1–7, +5 % – not when a threshold (VDOT / FTP / CSS) rises in the same recalibration, and not on a workout the AutoAdjuster reduced in the last 7 days | within the 5–10 %/week growth rule (§1.5); R3: never raise volume and intensity together (the new paces are the step up) |
+| return after a break: a planned sport with no session for ≥ 10 days (or < 15 % of its due training in the 14 days), trained before | days 1–7 at 60 % of the plan (50 % after ≥ 21 days off), days 8–14 at 70 %; all quality of days 1–7 → easy (the easy replacement scaled the same way); missed key sessions dropped | R4: restart at 50–70 % of the pre-break volume [68]; the plan is the pre-break reference |
+| every long session of the 14 days (run, ride, swim) | ≤ 1.1 × the longest session of that sport in the 30 days before it (× 1.1 per earlier long session of the horizon, which counts as done); none in those 30 days → ≤ 0.6 × the longest in the 120 days before | R1, Frandsen 2025 [11] – applied as a cap, not only when increasing. Runs / swims by distance (sessions without one, e.g. a treadmill without a foot pod, by time), rides by time |
 | missed key session in the last 3 days | moved to a free day of the same week (the missed workout's week – never into the next one), never next to another hard day; missed easy sessions dropped; with completion < 50 % (re-entry) key sessions are dropped, not made up | same rules as "adjust my week" (plan_adjuster) |
 | faster best effort | run pace targets follow the new VDOT: with race times only upwards and ≤ +2 points at once; without race times the level default is replaced (downwards only by a real effort: race, RPE ≥ 8 or HR ≥ 88 % HRmax – not by the fastest 5 km of an easy run); the profile's race time is updated | Daniels [7]: update VDOT from races / time trials, small steps |
 
 Reductions never stack beyond the strongest rule (the minimum factor wins); an increase only happens without any reduction
-reason. Volume changes scale continuous parts (steady runs / rides, swim sets); short repeats keep their length, so a reduced
+reason. Reductions are computed from the workout's **original** volume (the generator's, kept in the change record), so they
+replace an earlier automatic or recalibration step instead of compounding on it: running the assistant twice, or a week later
+on an overlapping look-back, changes nothing more (changes below 3 % – the rounding of the steps – are skipped). Each volume
+change stores that original as an `AutoAdjustment` record (reason `recal`; a quality → easy swap stores the easy replacement,
+`recalEasy`, whose 0.8 time share later reductions take into account) – the planned workout shows it with undo. Imported
+sessions whose RPE was estimated from heart rate are judged like sessions without RPE (§12.1), not by the RPE table.
+Simulated: two sick weeks → 60 % / 70 % → the volume is back at the plan three weeks after the return; the long run climbs
+back by ≤ 10 % a week (R1). Volume changes scale continuous parts (steady runs / rides, swim sets); short repeats keep their length, so a reduced
 interval session keeps its intensity (Bosquet 2007 [18]: cut volume, keep intensity). Every changed workout gets the note
 "Adjusted to your recent training" (once, translatable).
 
@@ -887,11 +937,17 @@ model works with RPE only, HR only, pace only or any mix.
 | Signal | Rule | Weight | Basis |
 |---|---|---|---|
 | Session RPE (CR10) | intended band: easy/technique 2–4, long 3–4, tempo 5–7, intervals 7–8; ±0.4 per point outside | 1 (0.3 when imported with an HR-estimated RPE) | session-RPE, Foster 2001 [43, 66]; three-zone model §0 |
-| Average HR | vs. the time-weighted HR target of the steps (step HR targets, else the zone's mid; recoveries at the zone top); dead band ±3 % HRmax, full score at +8 % HRmax; on easy days a low HR is not "too easy" (capped at −0.3) | 1 · intervals 0.5 (HR lag) · swim 0.3 (water, wrist HR) | Seiler zones [1], §5 |
+| Average HR | vs. the time-weighted HR target of the steps (step HR targets, else the zone's mid; recoveries at the zone top); dead band ±3 % HRmax, full score at +8 % HRmax; on easy days a low HR is not "too easy" (capped at −0.3). **Predicted HRmax** (no measured max HR in the profile): a deviation within the dead band + 10 bpm (the SEE of Tanaka / Gulati) counts with half weight, and on easy / long days it only says "harder" together with a second independent signal (RPE asked after the session, pace, pace fade – not an HR-estimated RPE) | 1 · intervals 0.5 (HR lag) · swim 0.3 (water, wrist HR); × ½ as described | Seiler zones [1], §5; Tanaka 2001 [55] |
 | Average pace (run: VDOT paces, swim: CSS paces incl. rests) | tolerance run 3 %, swim 4 %; easy / long: only *faster* than the easy range counts (too hard), slower is fine; quality: slower = could not hold the targets (harder), faster = targets too soft (easier, ×0.7) | 1 · intervals 0.4 (recovery jogs dilute the average) · run with > 15 m/km climbing ½, > 30 m/km 0 | Daniels [7], Wakayoshi / Swim Smooth [53, 54] |
 | Average power (bike) | vs. the time-weighted Coggan targets, tolerance 5 %; same easy / quality logic as pace | 1 · intervals 0.7 | Allen & Coggan [48] |
 | Pace fade (run, continuous sessions, ≥ 4 km splits) | 2nd half vs. 1st half; > 5 % slower = decoupling (0.5 → 1 at 10 %) | 0.5 | aerobic decoupling Pa:HR < 5 % = aerobically fit (Friel [49]); cardiac drift [79]. Without an HR stream, the pace drift at a steady effort is the proxy |
 | Completion | actual / planned (distance for runs / swims, else time); < 80 % = *incomplete* | – (separate) | §11 "cut short" |
+
+HRmax used for the HR signals (`HrMax.of`): measured (profile) > observed – the highest max HR of a hard session (RPE ≥ 7 or
+average HR ≥ 85 % of the prediction) of the last year when it is above the prediction, only ever upwards, spikes > prediction
++ 25 bpm ignored as sensor artefacts – > predicted. An observed peak is a lower bound of the true HRmax, so HR keeps the reduced
+weight. Example: a treadmill easy run at +9 bpm with HR only was "harder" (next easy run −10 %); now it is as intended
+unless the athlete also rates it hard.
 
 Bike *speed* is ignored (terrain, wind, drafting); heat is not modelled (no temperature per session) – it shows up as a
 higher HR / RPE and the athlete sees the reason. Aerobic efficiency (EF) of steady easy / long sessions: run speed (m/min)
@@ -907,8 +963,9 @@ per beat, bike power per beat (Coggan's EF = NP / HR, with average power).
 | quality session harder than intended, or cut short at a high effort | next quality session not increased (held at this volume) | keep intensity, don't add volume on top of a struggle (Bosquet [18]) |
 | quality session easier than intended, complete, targets hit | next quality session +5 % | only in loading weeks (base / build / peak), no race within 10 days, no heart / joint-impact limitation (§9.1), and the sport's planned week ≤ 110 % of its 4-week average (≥ 3 sessions as a base) – acute:chronic caution [13, 14] |
 
-Bounds: −15 … +5 % per step; all automatic steps together −15 … +10 % of the workout's original volume; taper / recovery
-weeks never get more volume. Interval sets (≥ 3 identical repeats) change by whole repeats (a 100 m swim repeat or a 1 km
+Bounds: −15 … +5 % per step; all automatic steps together −15 … +10 % of the workout's original volume (also after a
+recalibration – its record keeps the generator's original; a workout it already cut by more than 15 % is not cut further,
+and a bound never turns a cut into an increase); taper / recovery weeks never get more volume. Interval sets (≥ 3 identical repeats) change by whole repeats (a 100 m swim repeat or a 1 km
 interval keeps its length and pace); continuous parts scale in length. Never touched: races, strength sessions, done /
 skipped / past workouts. Each session triggers adjustments at most once (the record on the changed workout names the
 session); a manual edit or a recalibration with a new volume replaces the record.
@@ -926,7 +983,9 @@ session); a manual edit or a recalibration with a new volume replaces the record
 * **Swim CSS**: ≥ 3 quality swims faster than the targets at a comfortable effort, none too hard → CSS −2 s / 100 m; ≥ 2 key
   swims slower at a high effort → CSS +2 s. The profile's 400 / 200 m test times are set so that (t400 − t200) / 2 is the new
   CSS (t200 = 2·CSS − 4 s, t400 = 4·CSS − 4 s).
-* **Aerobic efficiency**: least-squares change of EF over the window (≥ 4 steady easy / long sessions over ≥ 14 days);
+* **Aerobic efficiency**: robust change of EF over the window – Theil–Sen slope (median of pairwise slopes) × span relative
+  to the median EF, ≥ 6 steady easy / long sessions over ≥ 14 days, and only when the points move consistently in one
+  direction (Kendall |τ| ≥ 0.45; otherwise 0 – day-to-day pace / HR noise of ~3 % and single hot days are no trend);
   ±3 % or more is reported ("your base is growing" / "watch recovery, sleep and heat") – informational, no changes by itself.
 
 ---

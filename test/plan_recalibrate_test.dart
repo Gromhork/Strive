@@ -90,9 +90,15 @@ void main() {
           'intensity',
           'steps',
           'isKey',
+          'auto',
         }),
         isEmpty,
       );
+      // Volume changes keep the generator's original (undo, reference of later steps).
+      if (c.kind == RecalKind.easier || c.kind == RecalKind.harder) {
+        expect(c.after.auto?.reason, 'recal');
+        expect(c.after.auto!.durationMin, c.before.auto?.durationMin ?? c.before.durationMin);
+      }
       for (final s in c.after.steps) {
         expect((s.durationSec ?? 1) > 0 && (s.distanceM ?? 1) > 0, isTrue);
         if (s.paceMin != null) expect(s.paceMin! <= s.paceMax!, isTrue);
@@ -183,10 +189,12 @@ void main() {
 
   test('low completion: volume down, no progression; missed key sessions are not made up on re-entry', () {
     final p = profile();
-    // Everything of the last 10 days missed (incl. the key sessions of the last 3 days).
-    final (plans, sessions) = history(p, skip: (w) => dayOnly(now).difference(dayOnly(w.date)).inDays <= 10);
+    // Everything of the last 8 days missed (incl. the key sessions of the last 3 days) – not
+    // yet a training break (≥ 10 days, see the return-after-break scenarios).
+    final (plans, sessions) = history(p, skip: (w) => dayOnly(now).difference(dayOnly(w.date)).inDays <= 8);
     final r = recal(p, plans, sessions);
     expect(r.reasons, contains(RecalReason.lowCompletion));
+    expect(r.reasons, isNot(contains(RecalReason.returnAfterBreak)));
     expect(r.stats.completion, lessThan(0.5));
     expectSafe(r, plans);
     expect(r.changes.where((c) => c.kind == RecalKind.easier), isNotEmpty);
@@ -216,14 +224,35 @@ void main() {
     }
   });
 
-  test('quality sessions that felt easy: +5 % on easy / long of loading weeks, long run within R1', () {
+  test('quality sessions that felt easy + VDOT up → paces only, no extra volume (R3)', () {
     final p = profile();
     final (plans, sessions) = history(p, rpe: (w) => quality(w) ? 3 : null);
     final r = recal(p, plans, sessions);
     // Quality runs on target paces that felt easy for weeks also lift the VDOT by one point
-    // (session evaluation trend, §12).
-    expect(r.reasons, [RecalReason.rpeLow, RecalReason.runTrendFaster]);
+    // (session evaluation trend, §12) – that is this week's step up, volume and intensity
+    // never rise together.
+    expect(r.reasons, [RecalReason.rpeLowHold, RecalReason.runTrendFaster]);
     expect(r.stats.newVdot, closeTo(r.stats.oldVdot + 1, 0.05));
+    expectSafe(r, plans);
+    expect(r.changes.where((c) => c.kind == RecalKind.harder), isEmpty);
+    expect(r.changes.where((c) => c.kind == RecalKind.paces), isNotEmpty);
+  });
+
+  test('quality sessions that felt easy: +5 % on easy / long of loading weeks, long run within R1', () {
+    final p = profile();
+    final h = history(p, rpe: (w) => quality(w) ? 3 : null);
+    // Without pace data on the quality runs (e.g. treadmill without a foot pod) the VDOT
+    // stays, so the volume may grow.
+    final sessions = [
+      for (final s in h.$2)
+        if (h.$1.any((w) => w.id == s.planId && quality(w)))
+          Session(id: s.id, sport: s.sport, title: s.title, start: s.start, durationSec: s.durationSec, rpe: s.rpe, planId: s.planId)
+        else
+          s,
+    ];
+    final plans = h.$1;
+    final r = recal(p, plans, sessions);
+    expect(r.reasons, [RecalReason.rpeLow]);
     expectSafe(r, plans);
     final harder = r.changes.where((c) => c.kind == RecalKind.harder).toList();
     expect(harder, isNotEmpty);
