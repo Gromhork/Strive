@@ -3135,4 +3135,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loadTaperLighter => 'taper week';
+
+  @override
+  String get scoreLegendTitle => 'Outdoor training conditions';
+
+  @override
+  String get scoreGood => 'Good';
+
+  @override
+  String get scoreFair => 'Fair';
+
+  @override
+  String get scorePoor => 'Poor';
+
+  @override
+  String get scoreHowTitle => 'How the score works';
+
+  @override
+  String get scoreHowIntro => 'Every hour gets a score from 0 to 100 for outdoor endurance training. It starts at 100 and loses points for:';
+
+  @override
+  String get scoreHowTemp => 'Feels-like temperature outside 7–16 °C (ideal for running): −3.5 per °C colder, −4.5 per °C warmer';
+
+  @override
+  String get scoreHowRain => 'Rain: chance of rain and expected amount';
+
+  @override
+  String get scoreHowWind => 'Wind above 20 km/h';
+
+  @override
+  String get scoreHowUv => 'UV index above 6';
+
+  @override
+  String get scoreHowDark => 'Darkness (−18)';
+
+  @override
+  String get scoreHowStorm => 'Thunderstorm (−40)';
+
+  @override
+  String get scoreHowLevels => 'Good from 70, fair from 45, below that rather train indoors.';
 }

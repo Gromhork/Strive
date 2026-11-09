@@ -3135,4 +3135,43 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get loadTaperLighter => 'Taper-Woche';
+
+  @override
+  String get scoreLegendTitle => 'Bedingungen fürs Training draußen';
+
+  @override
+  String get scoreGood => 'Gut';
+
+  @override
+  String get scoreFair => 'Mäßig';
+
+  @override
+  String get scorePoor => 'Schlecht';
+
+  @override
+  String get scoreHowTitle => 'So entsteht der Wert';
+
+  @override
+  String get scoreHowIntro => 'Jede Stunde bekommt einen Wert von 0 bis 100 fürs Ausdauertraining draußen. Er startet bei 100 und verliert Punkte für:';
+
+  @override
+  String get scoreHowTemp => 'Gefühlte Temperatur außerhalb von 7–16 °C (ideal zum Laufen): −3,5 je °C kälter, −4,5 je °C wärmer';
+
+  @override
+  String get scoreHowRain => 'Regen: Regenwahrscheinlichkeit und erwartete Menge';
+
+  @override
+  String get scoreHowWind => 'Wind über 20 km/h';
+
+  @override
+  String get scoreHowUv => 'UV-Index über 6';
+
+  @override
+  String get scoreHowDark => 'Dunkelheit (−18)';
+
+  @override
+  String get scoreHowStorm => 'Gewitter (−40)';
+
+  @override
+  String get scoreHowLevels => 'Gut ab 70, mäßig ab 45, darunter lieber drinnen trainieren.';
 }

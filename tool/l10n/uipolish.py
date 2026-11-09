@@ -1,0 +1,15 @@
+{
+ 'scoreLegendTitle': ['Outdoor training conditions', 'Bedingungen fürs Training draußen'],
+ 'scoreGood': ['Good', 'Gut'],
+ 'scoreFair': ['Fair', 'Mäßig'],
+ 'scorePoor': ['Poor', 'Schlecht'],
+ 'scoreHowTitle': ['How the score works', 'So entsteht der Wert'],
+ 'scoreHowIntro': ['Every hour gets a score from 0 to 100 for outdoor endurance training. It starts at 100 and loses points for:', 'Jede Stunde bekommt einen Wert von 0 bis 100 fürs Ausdauertraining draußen. Er startet bei 100 und verliert Punkte für:'],
+ 'scoreHowTemp': ['Feels-like temperature outside 7–16 °C (ideal for running): −3.5 per °C colder, −4.5 per °C warmer', 'Gefühlte Temperatur außerhalb von 7–16 °C (ideal zum Laufen): −3,5 je °C kälter, −4,5 je °C wärmer'],
+ 'scoreHowRain': ['Rain: chance of rain and expected amount', 'Regen: Regenwahrscheinlichkeit und erwartete Menge'],
+ 'scoreHowWind': ['Wind above 20 km/h', 'Wind über 20 km/h'],
+ 'scoreHowUv': ['UV index above 6', 'UV-Index über 6'],
+ 'scoreHowDark': ['Darkness (−18)', 'Dunkelheit (−18)'],
+ 'scoreHowStorm': ['Thunderstorm (−40)', 'Gewitter (−40)'],
+ 'scoreHowLevels': ['Good from 70, fair from 45, below that rather train indoors.', 'Gut ab 70, mäßig ab 45, darunter lieber drinnen trainieren.'],
+}

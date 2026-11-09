@@ -979,5 +979,18 @@
   "loadSrcOneRm": "aus deinem 1RM im Setup",
   "loadSrcEstimate": "geschätzt aus Körpergewicht – passe es an",
   "loadPhaseLighter": "Entlastungswoche",
-  "loadTaperLighter": "Taper-Woche"
+  "loadTaperLighter": "Taper-Woche",
+  "scoreLegendTitle": "Bedingungen fürs Training draußen",
+  "scoreGood": "Gut",
+  "scoreFair": "Mäßig",
+  "scorePoor": "Schlecht",
+  "scoreHowTitle": "So entsteht der Wert",
+  "scoreHowIntro": "Jede Stunde bekommt einen Wert von 0 bis 100 fürs Ausdauertraining draußen. Er startet bei 100 und verliert Punkte für:",
+  "scoreHowTemp": "Gefühlte Temperatur außerhalb von 7–16 °C (ideal zum Laufen): −3,5 je °C kälter, −4,5 je °C wärmer",
+  "scoreHowRain": "Regen: Regenwahrscheinlichkeit und erwartete Menge",
+  "scoreHowWind": "Wind über 20 km/h",
+  "scoreHowUv": "UV-Index über 6",
+  "scoreHowDark": "Dunkelheit (−18)",
+  "scoreHowStorm": "Gewitter (−40)",
+  "scoreHowLevels": "Gut ab 70, mäßig ab 45, darunter lieber drinnen trainieren."
 }

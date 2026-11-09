@@ -1727,5 +1727,18 @@
   "loadSrcOneRm": "from your 1RM in the setup",
   "loadSrcEstimate": "estimated from body weight – adjust it",
   "loadPhaseLighter": "deload week",
-  "loadTaperLighter": "taper week"
+  "loadTaperLighter": "taper week",
+  "scoreLegendTitle": "Outdoor training conditions",
+  "scoreGood": "Good",
+  "scoreFair": "Fair",
+  "scorePoor": "Poor",
+  "scoreHowTitle": "How the score works",
+  "scoreHowIntro": "Every hour gets a score from 0 to 100 for outdoor endurance training. It starts at 100 and loses points for:",
+  "scoreHowTemp": "Feels-like temperature outside 7–16 °C (ideal for running): −3.5 per °C colder, −4.5 per °C warmer",
+  "scoreHowRain": "Rain: chance of rain and expected amount",
+  "scoreHowWind": "Wind above 20 km/h",
+  "scoreHowUv": "UV index above 6",
+  "scoreHowDark": "Darkness (−18)",
+  "scoreHowStorm": "Thunderstorm (−40)",
+  "scoreHowLevels": "Good from 70, fair from 45, below that rather train indoors."
 }

@@ -194,6 +194,9 @@ class _WeatherView extends ConsumerWidget {
     final colors = skyGradient(w.code, w.isDay);
     final best = w.bestWindow;
     final cloth = clothingFor(w.feelsLike);
+    // Fixed-height areas grow with the system font size to avoid overflows.
+    final ts = MediaQuery.textScalerOf(context);
+    final headerExtra = max(0.0, ts.scale(100) - 100);
 
     return Scaffold(
       body: RefreshIndicator(
@@ -202,7 +205,7 @@ class _WeatherView extends ConsumerWidget {
           slivers: [
             SliverAppBar(
               pinned: true,
-              expandedHeight: 270,
+              expandedHeight: 280 + headerExtra,
               foregroundColor: Colors.white,
               backgroundColor: colors.first,
               flexibleSpace: FlexibleSpaceBar(
@@ -218,23 +221,54 @@ class _WeatherView extends ConsumerWidget {
                         children: [
                           Text(
                             w.place.isEmpty ? l.weather : w.place,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
                           ),
-                          const Spacer(),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                '${w.temp.round()}°',
-                                style: const TextStyle(color: Colors.white, fontSize: 84, fontWeight: FontWeight.w300, height: 1),
-                              ),
-                              const Spacer(),
-                              Icon(weatherIcon(w.code, night: !w.isDay), color: Colors.white, size: 72),
-                            ],
+                          // Takes the remaining height; scales down instead of overflowing when tight.
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder:
+                                  (_, c) => Align(
+                                    alignment: Alignment.bottomLeft,
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.bottomLeft,
+                                      child: SizedBox(
+                                        width: c.maxWidth,
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Flexible(
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                alignment: Alignment.bottomLeft,
+                                                child: Text(
+                                                  '${w.temp.round()}°',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 84,
+                                                    fontWeight: FontWeight.w300,
+                                                    height: 1,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Icon(weatherIcon(w.code, night: !w.isDay), color: Colors.white, size: 72),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             '${skyLabel(l, w.code)} · ${l.feelsLike} ${w.feelsLike.round()}° · ${w.max.round()}°/${w.min.round()}°',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(color: Colors.white, fontSize: 15),
                           ),
                         ],
@@ -284,7 +318,8 @@ class _WeatherView extends ConsumerWidget {
                     child: Column(
                       children: [
                         SizedBox(
-                          height: 108,
+                          // 3 text lines (12/14/10 pt) + icon, bar and paddings.
+                          height: 62 + ts.scale(52),
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: min(24, w.hours.length),
@@ -293,31 +328,40 @@ class _WeatherView extends ConsumerWidget {
                               final h = w.hours[i];
                               final sc = h.trainingScore;
                               return Container(
-                                width: 56,
+                                width: max(56.0, 28 + ts.scale(28)),
                                 padding: const EdgeInsets.symmetric(vertical: 8),
                                 decoration: BoxDecoration(
                                   color: i == 0 ? AppColors.brand.withValues(alpha: 0.15) : null,
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(i == 0 ? l.now : '${h.time.hour}h', style: const TextStyle(fontSize: 12)),
-                                    const SizedBox(height: 4),
+                                    Text(
+                                      i == 0 ? l.now : '${h.time.hour}h',
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      overflow: TextOverflow.fade,
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
                                     Icon(weatherIcon(h.code, night: !h.isDay), size: 22, color: weatherColor(h.code)),
-                                    const SizedBox(height: 4),
-                                    Text('${h.temp.round()}°', style: const TextStyle(fontWeight: FontWeight.w700)),
+                                    Text(
+                                      '${h.temp.round()}°',
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                                    ),
                                     Text(
                                       h.rainChance > 0 ? '${h.rainChance}%' : '',
+                                      maxLines: 1,
+                                      softWrap: false,
                                       style: const TextStyle(fontSize: 10, color: Color(0xFF4FC3F7)),
                                     ),
                                     Container(
                                       margin: const EdgeInsets.only(top: 2),
                                       width: 24,
                                       height: 3,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(2),
-                                        color: sc >= 70 ? AppColors.run : (sc >= 45 ? AppColors.ride : AppColors.danger),
-                                      ),
+                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: scoreColor(sc)),
                                     ),
                                   ],
                                 ),
@@ -327,27 +371,17 @@ class _WeatherView extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         SizedBox(height: 90, child: _TempChart(hours: w.hours.take(24).toList())),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Container(width: 10, height: 3, color: AppColors.run),
-                            const SizedBox(width: 6),
-                            Expanded(child: Text(l.trainingScoreLegend, style: Theme.of(context).textTheme.bodySmall)),
-                          ],
-                        ),
+                        const SizedBox(height: 8),
+                        const _ScoreLegend(),
                       ],
                     ),
                   ),
                   const SizedBox(height: 12),
                   // ── Details grid ──
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.9,
-                    children: [
+                  // Rows of two equal-height tiles sized by their content (a fixed
+                  // aspect-ratio grid overflowed on narrow screens / large text).
+                  _TileGrid(
+                    tiles: [
                       _Tile(icon: Icons.air_rounded, label: l.wind, value: '${w.wind.round()} km/h', sub: windDirLabel(w.windDir, lang)),
                       _Tile(icon: Icons.water_drop_outlined, label: l.humidity, value: '${w.humidity} %'),
                       _Tile(
@@ -403,26 +437,48 @@ class _WeatherView extends ConsumerWidget {
                             child: Row(
                               children: [
                                 SizedBox(
-                                  width: 44,
+                                  width: ts.scale(50),
                                   child: Text(
                                     sameDay(d.date, DateTime.now()) ? l.today : DateFormat.E(loc).format(d.date),
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(fontWeight: FontWeight.w600),
                                   ),
                                 ),
                                 Icon(weatherIcon(d.code), color: weatherColor(d.code), size: 22),
                                 SizedBox(
-                                  width: 44,
+                                  width: ts.scale(40),
                                   child: Text(
                                     d.rainChance >= 20 ? '${d.rainChance}%' : '',
+                                    maxLines: 1,
+                                    softWrap: false,
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(fontSize: 11, color: Color(0xFF4FC3F7)),
                                   ),
                                 ),
-                                Text('${d.min.round()}°', style: Theme.of(context).textTheme.bodySmall),
+                                SizedBox(
+                                  width: ts.scale(30),
+                                  child: Text(
+                                    '${d.min.round()}°',
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    textAlign: TextAlign.right,
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(child: _RangeBar(days: w.days, day: d)),
                                 const SizedBox(width: 8),
-                                Text('${d.max.round()}°', style: const TextStyle(fontWeight: FontWeight.w700)),
+                                SizedBox(
+                                  width: ts.scale(32),
+                                  child: Text(
+                                    '${d.max.round()}°',
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: const TextStyle(fontWeight: FontWeight.w700),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -458,7 +514,14 @@ class _Panel extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: iconColor ?? Theme.of(context).colorScheme.outline),
             const SizedBox(width: 6),
-            Text(title.toUpperCase(), style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1)),
+            Expanded(
+              child: Text(
+                title.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 10),
@@ -487,9 +550,14 @@ class _Tile extends StatelessWidget {
             Expanded(child: Text(label, style: Theme.of(context).textTheme.labelSmall, overflow: TextOverflow.ellipsis)),
           ],
         ),
-        const Spacer(),
-        Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
-        if (sub != null) Text(sub!, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 8),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(value, maxLines: 1, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+        ),
+        // Keeps both tiles of a row aligned even if only one has a sub line.
+        Text(sub ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
       ],
     ),
   );
@@ -500,7 +568,7 @@ class _ScoreRing extends StatelessWidget {
   final int score;
   @override
   Widget build(BuildContext context) {
-    final c = score >= 70 ? AppColors.run : (score >= 45 ? AppColors.ride : AppColors.danger);
+    final c = scoreColor(score);
     return SizedBox(
       width: 58,
       height: 58,
@@ -608,4 +676,160 @@ class _TempChart extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Colour of an hourly training score – same thresholds everywhere on the page.
+Color scoreColor(int score) => score >= 70 ? AppColors.run : (score >= 45 ? AppColors.ride : AppColors.danger);
+
+/// Lays out tiles in rows of two with equal height per row.
+class _TileGrid extends StatelessWidget {
+  const _TileGrid({required this.tiles});
+  final List<Widget> tiles;
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      for (var i = 0; i < tiles.length; i += 2) ...[
+        if (i > 0) const SizedBox(height: 12),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: tiles[i]),
+              const SizedBox(width: 12),
+              Expanded(child: i + 1 < tiles.length ? tiles[i + 1] : const SizedBox.shrink()),
+            ],
+          ),
+        ),
+      ],
+    ],
+  );
+}
+
+/// Explains the colours of the hourly condition bars; tap opens the details.
+class _ScoreLegend extends StatelessWidget {
+  const _ScoreLegend();
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final small = Theme.of(context).textTheme.bodySmall;
+    Widget item(Color c, String label, String range) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 14, height: 4, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(width: 5),
+        Text(label, style: small?.copyWith(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+        const SizedBox(width: 3),
+        Text(range, style: small),
+      ],
+    );
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _showScoreInfo(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l.scoreLegendTitle, style: small),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 14,
+                      runSpacing: 6,
+                      children: [
+                        item(AppColors.run, l.scoreGood, '≥ 70'),
+                        item(AppColors.ride, l.scoreFair, '45–69'),
+                        item(AppColors.danger, l.scorePoor, '< 45'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.info_outline_rounded, size: 18, color: Theme.of(context).colorScheme.outline),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+void _showScoreInfo(BuildContext context) {
+  final l = context.l10n;
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (c) {
+      final t = Theme.of(c).textTheme;
+      Widget row(IconData icon, Color color, String text) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [Icon(icon, size: 20, color: color), const SizedBox(width: 12), Expanded(child: Text(text, style: t.bodyMedium))],
+        ),
+      );
+      return SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l.scoreHowTitle, style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Text(l.scoreHowIntro, style: t.bodyMedium),
+              const SizedBox(height: 8),
+              row(Icons.thermostat_rounded, AppColors.ride, l.scoreHowTemp),
+              row(Icons.water_drop_outlined, const Color(0xFF4FC3F7), l.scoreHowRain),
+              row(Icons.air_rounded, Theme.of(c).colorScheme.outline, l.scoreHowWind),
+              row(Icons.wb_sunny_outlined, const Color(0xFFFFC53D), l.scoreHowUv),
+              row(Icons.nights_stay_outlined, AppColors.brand, l.scoreHowDark),
+              row(Icons.thunderstorm_rounded, const Color(0xFF9575CD), l.scoreHowStorm),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Theme.of(c).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(16)),
+                child: Row(
+                  children: [
+                    for (final (col, lab, range) in [
+                      (AppColors.run, l.scoreGood, '70–100'),
+                      (AppColors.ride, l.scoreFair, '45–69'),
+                      (AppColors.danger, l.scorePoor, '0–44'),
+                    ])
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Container(
+                              height: 6,
+                              margin: const EdgeInsets.symmetric(horizontal: 6),
+                              decoration: BoxDecoration(color: col, borderRadius: BorderRadius.circular(3)),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              lab,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: t.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            Text(range, maxLines: 1, style: t.bodySmall),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(l.scoreHowLevels, style: t.bodySmall),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }

@@ -5,7 +5,11 @@ import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../core/format.dart';
+import '../core/theme.dart';
 import '../data/models.dart';
+
+/// Android drawable used as small (status-bar) icon by every notification.
+const notificationIcon = 'ic_notification';
 
 /// Local reminders: hydration and upcoming training.
 class NotificationService {
@@ -29,7 +33,8 @@ class NotificationService {
     }
     await _plugin.initialize(
       const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        // Monochrome status-bar icon (tool/branding/make_icons.py).
+        android: AndroidInitializationSettings(notificationIcon),
         iOS: DarwinInitializationSettings(),
       ),
     );
@@ -43,7 +48,14 @@ class NotificationService {
   }
 
   NotificationDetails _details(String channel, String name) => NotificationDetails(
-    android: AndroidNotificationDetails(channel, name, importance: Importance.high, priority: Priority.high),
+    android: AndroidNotificationDetails(
+      channel,
+      name,
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: notificationIcon,
+      color: AppColors.brand,
+    ),
     iOS: const DarwinNotificationDetails(),
   );
 
