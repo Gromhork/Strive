@@ -1319,9 +1319,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String progAddReps(int n) {
-    return 'Same weight – aim for $n reps per set';
-  }
+  String get progAddReps => 'same weight – one more rep per set';
 
   @override
   String progDeload(String value) {
@@ -3606,4 +3604,75 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get autoAdjQualityEasy => 'Your last quality session hit the targets and felt easy – this one is 5 % longer.';
+
+  @override
+  String get progTopReached => 'all sets at the top of the range – more weight';
+
+  @override
+  String get progTopWithReserve => 'all sets at the top with reps in reserve – bigger jump';
+
+  @override
+  String get progTopAtLimit => 'top reached, but at your limit – same weight once more';
+
+  @override
+  String get progMicroload => 'the next weight step would be too big – more reps first';
+
+  @override
+  String get progAddRepsFast => 'good reserve – two more reps per set';
+
+  @override
+  String get progRepsNoLoad => 'more reps – that is the progression here';
+
+  @override
+  String get progHoldLimit => 'last time was at your limit – same reps again';
+
+  @override
+  String get progHoldHard => 'hold the weight: last 2 sessions were hard';
+
+  @override
+  String get progMissedHold => 'just short of the range – hold the weight';
+
+  @override
+  String get progMissedReduce => 'reps clearly missed – a bit lighter';
+
+  @override
+  String get progPerformanceDip => 'hold the weight: last 2 sessions below your level';
+
+  @override
+  String get progPerformanceDrop => 'last 2 sessions clearly weaker – 5–10 % lighter to recover';
+
+  @override
+  String get effortQuestion => 'How did it feel?';
+
+  @override
+  String effortQuestionFor(String name) {
+    return 'How was $name?';
+  }
+
+  @override
+  String get effortOptional => 'Optional – helps pick your next weights';
+
+  @override
+  String get effortEasy => 'Easy';
+
+  @override
+  String get effortRight => 'Just right';
+
+  @override
+  String get effortHard => 'Hard';
+
+  @override
+  String get effortLimit => 'Limit';
+
+  @override
+  String get howHardOptional => 'How hard was it? (optional)';
+
+  @override
+  String get rpeOptionalHint => 'Helps adapt your plan – you can skip it.';
+
+  @override
+  String get rpeClear => 'No rating';
+
+  @override
+  String get rpeRate => 'Rate';
 }

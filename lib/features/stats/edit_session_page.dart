@@ -8,6 +8,7 @@ import '../../core/sport.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/rpe_picker.dart';
 
 /// Corrects a recorded workout (wrong GPS distance, forgotten stop, mistyped weight …).
 /// Only the editable fields are written back; route, splits, laps and links stay.
@@ -147,27 +148,22 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
                 decoration: InputDecoration(labelText: l.caloriesLabel, suffixText: 'kcal'),
               ),
           ]),
-          Row(
-            children: [
-              Expanded(child: Text('${l.howHard}  ·  ${_rpe == null ? l.rpeNotSet : 'RPE $_rpe'}')),
-              if (_rpe != null) IconButton(tooltip: l.delete, icon: const Icon(Icons.clear), onPressed: () => setState(() => _rpe = null)),
-            ],
-          ),
-          Slider(
-            value: (_rpe ?? 5).toDouble(),
-            min: 1,
-            max: 10,
-            divisions: 9,
-            label: 'RPE ${_rpe ?? 5}',
-            onChanged: (v) => setState(() => _rpe = v.round()),
-          ),
+          Text(l.howHardOptional, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 4),
+          RpePicker(value: _rpe, onChanged: (v) => setState(() => _rpe = v)),
+          const SizedBox(height: 8),
           TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
           if (!cardio) ...[
             const SizedBox(height: 16),
             for (final e in _exercises)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: _ExerciseEditor(exercise: e, units: u, onChanged: () => setState(() {})),
+                child: _ExerciseEditor(
+                  exercise: e,
+                  units: u,
+                  onChanged: () => setState(() {}),
+                  onBodyweight: (on) => setState(() => ref.read(loadPrescriberProvider).switchBodyweight(e, on)),
+                ),
               ),
           ],
           const SizedBox(height: 24),
@@ -178,24 +174,39 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   }
 }
 
-/// Weight × reps of every set of one exercise; sets can be removed or added.
+/// Weight × reps of every set of one exercise; sets can be removed or added. In
+/// bodyweight mode the weight is the added load (negative = assistance).
 class _ExerciseEditor extends StatelessWidget {
-  const _ExerciseEditor({required this.exercise, required this.units, required this.onChanged});
+  const _ExerciseEditor({required this.exercise, required this.units, required this.onChanged, required this.onBodyweight});
   final GymExercise exercise;
   final Units units;
   final VoidCallback onChanged;
+  final ValueChanged<bool> onBodyweight;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final e = exercise;
+    final bw = e.bw == true;
     return SectionCard(
       title: e.name,
+      trailing: FilterChip(
+        key: const ValueKey('edit-bw'),
+        avatar: const Icon(Icons.accessibility_new_rounded, size: 16),
+        showCheckmark: false,
+        visualDensity: VisualDensity.compact,
+        label: Text(l.bodyweightShort),
+        tooltip: l.bodyweightHint,
+        selected: bw,
+        onSelected: onBodyweight,
+      ),
       child: Column(
         children: [
           for (var i = 0; i < e.sets.length; i++)
             Padding(
-              key: ObjectKey(e.sets[i]),
+              // The mode is part of the key: switching it rebuilds the fields with the
+              // converted weights.
+              key: ValueKey('${identityHashCode(e.sets[i])}-$bw'),
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
                 children: [
@@ -203,8 +214,12 @@ class _ExerciseEditor extends StatelessWidget {
                   Expanded(
                     child: TextFormField(
                       initialValue: e.sets[i].weight == 0 ? '' : Units.num(units.weightOut(e.sets[i].weight)),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(isDense: true, labelText: l.weight, suffixText: units.weightUnit),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true, signed: bw),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        labelText: bw ? l.addedWeight : l.weight,
+                        suffixText: bw ? '${l.bodyweightShort} ± ${units.weightUnit}' : units.weightUnit,
+                      ),
                       onChanged: (v) => e.sets[i].weight = units.weightIn(parseNum(v) ?? 0),
                     ),
                   ),

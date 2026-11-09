@@ -24,7 +24,7 @@ import 'zones.dart';
 ///
 /// Completion (distance / duration vs. plan) is reported separately: a session under 80 %
 /// of the plan is *incomplete* ([cutShort]).
-enum Effort { easier, asIntended, harder }
+enum SessionEffort { easier, asIntended, harder }
 
 enum SignalKind { rpe, hr, pace, power, fade }
 
@@ -88,12 +88,12 @@ class SessionFeedback {
 
   static const threshold = 0.35;
 
-  Effort get effort =>
+  SessionEffort get effort =>
       score >= threshold
-          ? Effort.harder
+          ? SessionEffort.harder
           : score <= -threshold
-          ? Effort.easier
-          : Effort.asIntended;
+          ? SessionEffort.easier
+          : SessionEffort.asIntended;
 
   /// 0…1: grows with the total signal weight (1 → 0.5, 2 → 0.67, 3 → 0.75) and shrinks when
   /// the signals disagree with the verdict.
@@ -105,9 +105,9 @@ class SessionFeedback {
         signals
             .where((s) {
               return switch (e) {
-                Effort.harder => s.score > 0.1,
-                Effort.easier => s.score < -0.1,
-                Effort.asIntended => s.score.abs() < threshold,
+                SessionEffort.harder => s.score > 0.1,
+                SessionEffort.easier => s.score < -0.1,
+                SessionEffort.asIntended => s.score.abs() < threshold,
               };
             })
             .fold(0.0, (x, s) => x + s.weight) /
@@ -118,8 +118,8 @@ class SessionFeedback {
   bool get rated => signals.isNotEmpty;
 
   /// Harder than intended with at least moderate confidence.
-  bool get clearlyHarder => effort == Effort.harder && confidence >= 0.4;
-  bool get clearlyEasier => effort == Effort.easier && confidence >= 0.4;
+  bool get clearlyHarder => effort == SessionEffort.harder && confidence >= 0.4;
+  bool get clearlyEasier => effort == SessionEffort.easier && confidence >= 0.4;
 
   /// Missed the pace / power targets on the slow side (beyond the tolerance).
   bool get belowTarget => (paceDelta ?? 0) < -_tolerance(sport);

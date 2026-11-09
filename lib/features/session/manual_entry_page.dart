@@ -10,6 +10,7 @@ import '../../services/plan_match.dart';
 import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
 import '../../widgets/common.dart';
+import '../../widgets/rpe_picker.dart';
 import '../../widgets/segments.dart';
 
 /// Log a past activity (e.g. a treadmill run or a swim without the phone).
@@ -48,7 +49,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
 
   final _volume = TextEditingController();
   final _notes = TextEditingController();
-  double _rpe = 6;
+  int? _rpe; // optional – null = not rated
 
   void _save() {
     final l = context.l10n;
@@ -62,7 +63,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
       title: _title.text.trim().isEmpty ? _sport.label(l) : _title.text.trim(),
       start: _start,
       durationSec: _minutes * 60,
-      rpe: _rpe.round(),
+      rpe: _rpe,
       notes: _notes.text.trim(),
       distanceM: d == null ? 0 : (_sport == Sport.swim ? d : u.distIn(d)),
       // Manual gym entries store the total volume as one summary "exercise".
@@ -145,15 +146,10 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
               decoration: InputDecoration(labelText: l.totalVolume, suffixText: u.weightUnit),
             ),
           const SizedBox(height: 16),
-          LabeledSlider(
-            label: l.howHard,
-            value: _rpe,
-            min: 1,
-            max: 10,
-            divisions: 9,
-            format: (v) => 'RPE ${v.round()}',
-            onChanged: (v) => setState(() => _rpe = v),
-          ),
+          Text(l.howHardOptional, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 4),
+          RpePicker(value: _rpe, onChanged: (v) => setState(() => _rpe = v)),
+          const SizedBox(height: 8),
           TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
           const SizedBox(height: 24),
           FilledButton(onPressed: _save, child: Text(l.save)),

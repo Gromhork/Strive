@@ -12,9 +12,9 @@ import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/active_workout.dart';
 import '../../services/gym_tools.dart';
-import '../../services/insights.dart';
 import '../../services/load_prescription.dart';
 import '../../widgets/common.dart';
+import '../../widgets/effort_chips.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart';
 import '../train/exercise_detail_page.dart';
@@ -156,9 +156,8 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
     final u = ref.watch(profileOrDefaultProvider).units;
     final db = ref.watch(exerciseDbProvider).value;
     final info = db?.byId(e.exId);
-    final history = ref.watch(sessionListProvider);
-    final last = lastSetsFor(history, e.exId);
-    final lastWork = last?.where((s) => !s.warmup).toList();
+    // Last time's sets in the current mode (bodyweight: added load).
+    final lastWork = ref.watch(loadPrescriberProvider).previousSets(e)?.where((s) => !s.warmup).toList();
     final firstOpen = e.sets.indexWhere((s) => !s.done);
     final sel = (_sel != null && _sel! < e.sets.length) ? _sel! : (firstOpen < 0 ? null : firstOpen);
     final rx = ref.watch(loadPrescriberProvider).forExercise(e, phase: planPhaseOf(ref.watch(planListProvider), w.planId));
@@ -267,6 +266,11 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                   onToggle: () => n.toggleDone(widget.index, k),
                   onDelete: () => n.removeSet(widget.index, k),
                 ),
+              if (e.workSets.isNotEmpty && e.workSets.every((s) => s.done)) ...[
+                const SizedBox(height: 4),
+                EffortChips(value: e.effort, onChanged: (v) => n.setEffort(widget.index, v)),
+                const SizedBox(height: 4),
+              ],
               Row(
                 children: [
                   TextButton.icon(onPressed: () => n.addSet(widget.index), icon: const Icon(Icons.add, size: 18), label: Text(l.addSet)),
@@ -510,7 +514,7 @@ class _SetEditor extends ConsumerWidget {
                       selected: bw,
                       onSelected: (on) {
                         HapticFeedback.selectionClick();
-                        n.setBodyweight(index, on, bodyKg: on ? ref.read(loadPrescriberProvider).bodyLoad(e) : 0);
+                        n.setBodyweight(index, on);
                       },
                     ),
                   ),
@@ -534,6 +538,7 @@ class _SetEditor extends ConsumerWidget {
                           bw ? l.addedWeight : l.weight,
                           initial: units.weightOut(s.weight),
                           suffix: units.weightUnit,
+                          signed: bw,
                         );
                         if (v != null) n.updateSet(index, set, weight: max(minW, units.weightIn(v)));
                       },
@@ -674,6 +679,8 @@ class _RestOverlay extends ConsumerWidget {
     final next = w!.exercises[w.focus];
     final nextSetIdx = next.sets.indexWhere((s) => !s.done);
     final nextSet = nextSetIdx < 0 ? null : next.sets[nextSetIdx];
+    // Optional effort rating of the exercise that was just finished.
+    final rated = w.effortFor == null ? -1 : w.exercises.indexWhere((x) => identical(x, w.effortFor));
 
     return Material(
       color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.97),
@@ -728,6 +735,18 @@ class _RestOverlay extends ConsumerWidget {
                   ],
                 ),
                 const Spacer(),
+                if (rated >= 0) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: EffortChips(
+                      center: true,
+                      title: l.effortQuestionFor(capitalize(w.exercises[rated].name)),
+                      value: w.exercises[rated].effort,
+                      onChanged: (v) => n.setEffort(rated, v),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 if (nextSet != null)
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),

@@ -326,8 +326,8 @@ void undoToast(
     );
 }
 
-/// Number input dialog (returns parsed value or null).
-Future<double?> askNumber(BuildContext context, String title, {double? initial, String? suffix}) async {
+/// Number input dialog (returns parsed value or null). [signed] allows negative values.
+Future<double?> askNumber(BuildContext context, String title, {double? initial, String? suffix, bool signed = false}) async {
   final ctrl = TextEditingController(text: initial == null ? '' : Units.num(initial, 2));
   final l = context.l10n;
   return showDialog<double>(
@@ -338,7 +338,7 @@ Future<double?> askNumber(BuildContext context, String title, {double? initial, 
           content: TextField(
             controller: ctrl,
             autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: TextInputType.numberWithOptions(decimal: true, signed: signed),
             decoration: InputDecoration(suffixText: suffix),
             onSubmitted: (v) => Navigator.pop(c, parseNum(v)),
           ),

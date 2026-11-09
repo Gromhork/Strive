@@ -190,7 +190,7 @@ void main() {
     test('long run cut short (5 of 7 km), slow and RPE 7 → harder + incomplete', () {
       final p = longRun(sun, 7);
       final f = evaluateSession(p, done(p, ratio: 5 / 7, pace: 1.08, rpe: 7), p0);
-      expect(f.effort, Effort.harder, reason: '$f');
+      expect(f.effort, SessionEffort.harder, reason: '$f');
       expect(f.cutShort, isTrue);
       expect(f.reasons, containsAll([FeedbackReason.rpeHigh, FeedbackReason.cutShort]));
       expect(f.belowTarget, isTrue);
@@ -202,15 +202,15 @@ void main() {
       final p = easyRun(sun, 8);
       final rpeOnly = evaluateSession(p, done(p, rpe: 3), p0);
       final all = evaluateSession(p, done(p, rpe: 3, hr: (hz.zone(2).$1 + hz.zone(2).$2) ~/ 2), p0);
-      expect(rpeOnly.effort, Effort.asIntended);
-      expect(all.effort, Effort.asIntended);
+      expect(rpeOnly.effort, SessionEffort.asIntended);
+      expect(all.effort, SessionEffort.asIntended);
       expect(all.confidence, greaterThan(rpeOnly.confidence));
     });
 
     test('missing RPE, heart rate in zone 3+ on an easy run → harder from HR alone', () {
       final p = easyRun(sun, 8);
       final f = evaluateSession(p, done(p, hr: hz.zone(4).$1), p0);
-      expect(f.effort, Effort.harder, reason: '$f');
+      expect(f.effort, SessionEffort.harder, reason: '$f');
       expect(f.clearlyHarder, isTrue);
       expect(f.reasons, contains(FeedbackReason.hrHigh));
     });
@@ -218,7 +218,7 @@ void main() {
     test('easy run 12 % faster than the easy pace → harder (too fast)', () {
       final p = easyRun(sun, 8);
       final f = evaluateSession(p, done(p, pace: 0.88, rpe: 5), p0);
-      expect(f.effort, Effort.harder, reason: '$f');
+      expect(f.effort, SessionEffort.harder, reason: '$f');
       expect(f.reasons, contains(FeedbackReason.tooFast));
     });
 
@@ -227,7 +227,7 @@ void main() {
       final f = evaluateSession(p, done(p, ratio: 0.6), p0);
       expect(f.rated, isFalse);
       expect(f.confidence, 0);
-      expect(f.effort, Effort.asIntended);
+      expect(f.effort, SessionEffort.asIntended);
       expect(f.cutShort, isTrue);
       expect(f.completion, closeTo(0.6, 0.01));
     });
@@ -235,7 +235,7 @@ void main() {
     test('intervals at RPE 4 on target paces → easier', () {
       final p = intervalRun(sun, 5);
       final f = evaluateSession(p, done(p, pace: 0.99, rpe: 4), p0);
-      expect(f.effort, Effort.easier, reason: '$f');
+      expect(f.effort, SessionEffort.easier, reason: '$f');
       expect(f.clearlyEasier, isTrue);
       expect(f.belowTarget, isFalse);
     });
@@ -243,7 +243,7 @@ void main() {
     test('swim CSS set 10 % slower than the targets at RPE 8 → harder, below target', () {
       final p = cssSwim(sun, 10);
       final f = evaluateSession(p, done(p, pace: 1.10, rpe: 8), p0);
-      expect(f.effort, Effort.harder, reason: '$f');
+      expect(f.effort, SessionEffort.harder, reason: '$f');
       expect(f.belowTarget, isTrue);
       expect(f.reasons, contains(FeedbackReason.tooSlow));
     });
@@ -253,7 +253,7 @@ void main() {
       final target = _avgPower(p);
       final f = evaluateSession(p, done(p, rpe: 7, power: (target * 1.08).round()), p0);
       expect(f.aboveTarget, isTrue);
-      expect(f.effort, isNot(Effort.harder));
+      expect(f.effort, isNot(SessionEffort.harder));
       expect(f.reasons, contains(FeedbackReason.powerHigh));
     });
 
@@ -270,7 +270,7 @@ void main() {
       final p = easyRun(sun, 8);
       final f = evaluateSession(p, done(p, rpe: 7, hr: hz.zone(2).$1 + 5, source: 'Samsung Health'), p0);
       expect(f.signals.firstWhere((s) => s.kind == SignalKind.rpe).weight, lessThan(0.5));
-      expect(f.effort, Effort.asIntended, reason: '$f');
+      expect(f.effort, SessionEffort.asIntended, reason: '$f');
     });
   });
 

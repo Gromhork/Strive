@@ -1,0 +1,3 @@
+{
+    'rpeRate': ['Rate', 'Bewerten'],
+}

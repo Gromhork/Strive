@@ -2630,8 +2630,8 @@ abstract class AppLocalizations {
   /// No description provided for @progAddReps.
   ///
   /// In en, this message translates to:
-  /// **'Same weight – aim for {n} reps per set'**
-  String progAddReps(int n);
+  /// **'same weight – one more rep per set'**
+  String get progAddReps;
 
   /// No description provided for @progDeload.
   ///
@@ -6760,6 +6760,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your last quality session hit the targets and felt easy – this one is 5 % longer.'**
   String get autoAdjQualityEasy;
+
+  /// No description provided for @progTopReached.
+  ///
+  /// In en, this message translates to:
+  /// **'all sets at the top of the range – more weight'**
+  String get progTopReached;
+
+  /// No description provided for @progTopWithReserve.
+  ///
+  /// In en, this message translates to:
+  /// **'all sets at the top with reps in reserve – bigger jump'**
+  String get progTopWithReserve;
+
+  /// No description provided for @progTopAtLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'top reached, but at your limit – same weight once more'**
+  String get progTopAtLimit;
+
+  /// No description provided for @progMicroload.
+  ///
+  /// In en, this message translates to:
+  /// **'the next weight step would be too big – more reps first'**
+  String get progMicroload;
+
+  /// No description provided for @progAddRepsFast.
+  ///
+  /// In en, this message translates to:
+  /// **'good reserve – two more reps per set'**
+  String get progAddRepsFast;
+
+  /// No description provided for @progRepsNoLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'more reps – that is the progression here'**
+  String get progRepsNoLoad;
+
+  /// No description provided for @progHoldLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'last time was at your limit – same reps again'**
+  String get progHoldLimit;
+
+  /// No description provided for @progHoldHard.
+  ///
+  /// In en, this message translates to:
+  /// **'hold the weight: last 2 sessions were hard'**
+  String get progHoldHard;
+
+  /// No description provided for @progMissedHold.
+  ///
+  /// In en, this message translates to:
+  /// **'just short of the range – hold the weight'**
+  String get progMissedHold;
+
+  /// No description provided for @progMissedReduce.
+  ///
+  /// In en, this message translates to:
+  /// **'reps clearly missed – a bit lighter'**
+  String get progMissedReduce;
+
+  /// No description provided for @progPerformanceDip.
+  ///
+  /// In en, this message translates to:
+  /// **'hold the weight: last 2 sessions below your level'**
+  String get progPerformanceDip;
+
+  /// No description provided for @progPerformanceDrop.
+  ///
+  /// In en, this message translates to:
+  /// **'last 2 sessions clearly weaker – 5–10 % lighter to recover'**
+  String get progPerformanceDrop;
+
+  /// No description provided for @effortQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'How did it feel?'**
+  String get effortQuestion;
+
+  /// No description provided for @effortQuestionFor.
+  ///
+  /// In en, this message translates to:
+  /// **'How was {name}?'**
+  String effortQuestionFor(String name);
+
+  /// No description provided for @effortOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional – helps pick your next weights'**
+  String get effortOptional;
+
+  /// No description provided for @effortEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get effortEasy;
+
+  /// No description provided for @effortRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Just right'**
+  String get effortRight;
+
+  /// No description provided for @effortHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get effortHard;
+
+  /// No description provided for @effortLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit'**
+  String get effortLimit;
+
+  /// No description provided for @howHardOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'How hard was it? (optional)'**
+  String get howHardOptional;
+
+  /// No description provided for @rpeOptionalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Helps adapt your plan – you can skip it.'**
+  String get rpeOptionalHint;
+
+  /// No description provided for @rpeClear.
+  ///
+  /// In en, this message translates to:
+  /// **'No rating'**
+  String get rpeClear;
+
+  /// No description provided for @rpeRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get rpeRate;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

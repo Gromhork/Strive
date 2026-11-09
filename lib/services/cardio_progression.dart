@@ -74,7 +74,7 @@ class AutoAdjuster {
 
     // Cut short at a high (or unknown) effort: the planned volume was not sustainable.
     // Cut short at the intended effort or easier is more likely lack of time – no change.
-    final hardStop = f.cutShort && (f.effort == Effort.harder || !f.rated);
+    final hardStop = f.cutShort && (f.effort == SessionEffort.harder || !f.rated);
     if (done.intensity == 'long') {
       final longs = next.where((p) => p.intensity == 'long').take(2).toList();
       if (hardStop) {
@@ -92,7 +92,7 @@ class AutoAdjuster {
         if (mine != null && _amount(p) > mine) add(p, max(0.9, mine / _amount(p)), 'longHard');
       }
     } else if (isEasy(done)) {
-      if (f.clearlyHarder || (f.cutShort && f.effort == Effort.harder)) {
+      if (f.clearlyHarder || (f.cutShort && f.effort == SessionEffort.harder)) {
         final p = next.where(isEasy).where((p) => dayOnly(p.date).difference(day).inDays < 7).firstOrNull;
         final fast = f.signals.any((x) => x.kind == SignalKind.pace && x.score >= 0.3);
         if (p != null) add(p, 0.9, fast ? 'easyTooFast' : 'easyHard');

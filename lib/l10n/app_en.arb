@@ -591,14 +591,7 @@
       }
     }
   },
-  "progAddReps": "Same weight – aim for {n} reps per set",
-  "@progAddReps": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
+  "progAddReps": "same weight – one more rep per set",
   "progDeload": "Last time was a grind – reset to {value} and build back up",
   "@progDeload": {
     "placeholders": {
@@ -2143,5 +2136,35 @@
   "autoAdjEasyHard": "Your last easy session was harder than intended (heart rate / effort) – this one is a little shorter. Keep it truly easy: you should be able to talk in full sentences.",
   "autoAdjEasyTooFast": "Your last easy session was faster than the easy pace – this one is a little shorter. Slow down: easy days build the aerobic base (80/20).",
   "autoAdjQualityHard": "Your last quality session was harder than intended – this one is not increased.",
-  "autoAdjQualityEasy": "Your last quality session hit the targets and felt easy – this one is 5 % longer."
+  "autoAdjQualityEasy": "Your last quality session hit the targets and felt easy – this one is 5 % longer.",
+  "progTopReached": "all sets at the top of the range – more weight",
+  "progTopWithReserve": "all sets at the top with reps in reserve – bigger jump",
+  "progTopAtLimit": "top reached, but at your limit – same weight once more",
+  "progMicroload": "the next weight step would be too big – more reps first",
+  "progAddRepsFast": "good reserve – two more reps per set",
+  "progRepsNoLoad": "more reps – that is the progression here",
+  "progHoldLimit": "last time was at your limit – same reps again",
+  "progHoldHard": "hold the weight: last 2 sessions were hard",
+  "progMissedHold": "just short of the range – hold the weight",
+  "progMissedReduce": "reps clearly missed – a bit lighter",
+  "progPerformanceDip": "hold the weight: last 2 sessions below your level",
+  "progPerformanceDrop": "last 2 sessions clearly weaker – 5–10 % lighter to recover",
+  "effortQuestion": "How did it feel?",
+  "effortQuestionFor": "How was {name}?",
+  "@effortQuestionFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "effortOptional": "Optional – helps pick your next weights",
+  "effortEasy": "Easy",
+  "effortRight": "Just right",
+  "effortHard": "Hard",
+  "effortLimit": "Limit",
+  "howHardOptional": "How hard was it? (optional)",
+  "rpeOptionalHint": "Helps adapt your plan – you can skip it.",
+  "rpeClear": "No rating",
+  "rpeRate": "Rate"
 }

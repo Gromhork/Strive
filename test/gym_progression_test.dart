@@ -9,6 +9,7 @@ import 'package:strive/services/active_workout.dart';
 import 'package:strive/services/exercise_class.dart';
 import 'package:strive/services/gym_tools.dart';
 import 'package:strive/services/load_prescription.dart';
+import 'package:strive/services/smart_progression.dart';
 import 'package:strive/services/supersets.dart';
 
 final now = DateTime(2026, 11, 9, 18);
@@ -245,8 +246,10 @@ void main() {
               done('0334', 'dumbbell lateral raise', [(8, 20), (8, 20)]),
             ]),
           ]).forExercise(planned('0334', 'dumbbell lateral raise', lo: 12, hi: 20))!;
-      expect(lateral.weight, 9);
-      expect(lateral.reps, 12);
+      // 8 → 9 kg would be a 12.5 % jump: microloading adds reps beyond the top first.
+      expect(lateral.weight, 8);
+      expect(lateral.reps, 21);
+      expect(lateral.reason, ProgressReason.microload);
       final db =
           lp([
             gym(3, [
