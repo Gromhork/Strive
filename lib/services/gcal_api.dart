@@ -97,8 +97,10 @@ class GcalApi {
         _cached = await _headers(refresh: true);
         continue;
       }
-      if ((err.kind == GcalErrorKind.rateLimit || res.statusCode >= 500) && attempt < 3) {
-        await Future<void>.delayed(Duration(milliseconds: 800 * (1 << attempt)));
+      // Bulk changes (a regenerated plan) easily hit Calendar's per-user write limits:
+      // back off exponentially (1 s … 32 s) before giving up.
+      if ((err.kind == GcalErrorKind.rateLimit || res.statusCode >= 500) && attempt < 6) {
+        await Future<void>.delayed(Duration(milliseconds: 1000 * (1 << attempt)));
         continue;
       }
       throw err;
@@ -116,8 +118,8 @@ class GcalApi {
 
   Future<void> deleteCalendar(String calendarId) => _send('DELETE', '/calendars/${Uri.encodeComponent(calendarId)}');
 
-  /// All non-deleted events overlapping [from, to).
-  Future<List<RemoteEvent>> listEvents(String calendarId, DateTime from, DateTime to) async {
+  /// All non-deleted events (optionally only those overlapping [from, to)).
+  Future<List<RemoteEvent>> listEvents(String calendarId, {DateTime? from, DateTime? to}) async {
     final out = <RemoteEvent>[];
     String? page;
     do {
@@ -126,8 +128,8 @@ class GcalApi {
                 'GET',
                 '/calendars/${Uri.encodeComponent(calendarId)}/events',
                 query: {
-                  'timeMin': rfc3339Local(from),
-                  'timeMax': rfc3339Local(to),
+                  if (from != null) 'timeMin': rfc3339Local(from),
+                  if (to != null) 'timeMax': rfc3339Local(to),
                   'singleEvents': 'true',
                   'showDeleted': 'false',
                   'maxResults': '2500',
@@ -175,20 +177,25 @@ class GcalApi {
   }
 }
 
-/// Runs [tasks] with at most [concurrency] in flight; the first error is rethrown after
-/// the in-flight tasks finish.
-Future<void> runPooled(List<Future<void> Function()> tasks, {int concurrency = 4}) async {
+/// Runs [tasks] with at most [concurrency] in flight. All tasks are attempted (one failing
+/// event must not block the others); the first error is rethrown at the end. Auth / offline
+/// errors stop early since every further request would fail the same way.
+Future<void> runPooled(List<Future<void> Function()> tasks, {int concurrency = 3}) async {
   var next = 0;
   Object? error;
   StackTrace? stack;
+  var fatal = false;
   Future<void> worker() async {
-    while (error == null && next < tasks.length) {
+    while (!fatal && next < tasks.length) {
       final t = tasks[next++];
       try {
         await t();
       } catch (e, s) {
         error ??= e;
         stack ??= s;
+        if (e is GcalException && (e.kind == GcalErrorKind.auth || e.kind == GcalErrorKind.offline || e.kind == GcalErrorKind.apiDisabled)) {
+          fatal = true;
+        }
       }
     }
   }

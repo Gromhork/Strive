@@ -34,15 +34,12 @@ class Repository {
 
   // ── Google Calendar: id of the "Strive" calendar per Google account (survives reinstalls,
   // shared by all devices so no duplicate calendars are created).
+  /// Throws when the lookup fails, so the caller never creates a duplicate calendar (whose
+  /// events would then never be cleaned up) just because Firestore was unreachable.
   Future<String?> gcalCalendarId(String account) async {
-    try {
-      final d = await _user.get();
-      final m = d.data()?['gcalCalendars'];
-      return m is Map ? m[account] as String? : null;
-    } catch (e) {
-      debugPrint('gcal id lookup failed: $e');
-      return null;
-    }
+    final d = await _user.get();
+    final m = d.data()?['gcalCalendars'];
+    return m is Map ? m[account] as String? : null;
   }
 
   void saveGcalCalendarId(String account, String? id) => _fire(
@@ -72,6 +69,13 @@ class Repository {
   Stream<List<PlannedWorkout>> plans() => _plans.snapshots().map(
     (q) => q.docs.map((d) => PlannedWorkout.fromMap(d.id, d.data())).toList()..sort((a, b) => a.date.compareTo(b.date)),
   );
+  /// Current plans straight from the server (not a possibly incomplete local cache) – used
+  /// by the calendar sync, which deletes events of plans that no longer exist.
+  Future<List<PlannedWorkout>> plansFromServer() async {
+    final q = await _plans.get(const GetOptions(source: Source.server));
+    return q.docs.map((d) => PlannedWorkout.fromMap(d.id, d.data())).toList();
+  }
+
   void savePlan(PlannedWorkout p) => _fire(_plans.doc(p.id).set(p.toMap()));
   void updatePlan(String id, Map<String, dynamic> data) => _fire(_plans.doc(id).update(data));
   void deletePlan(String id) => _fire(_plans.doc(id).delete());

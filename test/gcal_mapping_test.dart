@@ -90,6 +90,18 @@ void main() {
     expect(gcalDiff([keep], [RemoteEvent(id: keep['id'], striveId: 'keep', hash: gcalBodyHash(keep))]).isEmpty, isTrue);
   });
 
+  test('stale events outside the window are deleted, kept plans outside it are not', () {
+    final old = plan('old', DateTime(2026, 1, 5));
+    final remote = [
+      RemoteEvent(id: gcalEventId('old'), striveId: 'old', hash: 'x'), // existing plan, outside window
+      RemoteEvent(id: gcalEventId('replaced'), striveId: 'replaced', hash: 'x'), // plan no longer exists
+      RemoteEvent(id: gcalEventId('legacy')), // our id prefix but no extended property
+      const RemoteEvent(id: 'userevent1'),
+    ];
+    final diff = gcalDiff(const [], remote, keep: gcalKeepIds([old]));
+    expect(diff.deletes, [gcalEventId('replaced'), gcalEventId('legacy')]);
+  });
+
   test('RemoteEvent parses extended properties', () {
     final r = RemoteEvent.fromJson({
       'id': 'abc',
