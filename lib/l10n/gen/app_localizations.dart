@@ -6058,6 +6058,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'with your weekly training goal reached'**
   String get streakSub;
+
+  /// No description provided for @wSwimCssSet.
+  ///
+  /// In en, this message translates to:
+  /// **'CSS set {n} × {meters} m'**
+  String wSwimCssSet(int n, int meters);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

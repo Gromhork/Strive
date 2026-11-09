@@ -101,6 +101,7 @@ class PlanGenerator {
     var intervalReps = beginner ? 4 : (level == 'advanced' ? 6 : 5);
     final gymQueue = _GymQueue(_gymRotation(schedule));
     var runWalkWeek = 0;
+    var lastLongKm = 0.0; // actual long run of the last loading week
 
     for (var w = 0; w < total; w++) {
       final phase = phases[w];
@@ -110,7 +111,8 @@ class PlanGenerator {
 
       // Long run respects the 30-day max rule (R1) and 25–30 % of weekly km.
       final wk = runKm[w];
-      final longKm = min(wk * longShare(wk), longestRun * (rest ? 0.75 : _longCap));
+      var longKm = min(wk * longShare(wk), longestRun * (rest ? 0.75 : _longCap));
+      if (rest && lastLongKm > 0) longKm = min(longKm, lastLongKm * 0.8);
       if (!rest) longestRun = max(longestRun, longKm);
 
       // Pass 1: everything except easy runs. Pass 2: easy runs share the remaining
@@ -147,7 +149,9 @@ class PlanGenerator {
       // session with warm-up and cool-down can otherwise match a short long run.
       if (longCtx != null) {
         final li = week.indexWhere((p) => p.sport == Sport.run && p.intensity == 'long');
-        final others = week.where((p) => p.sport == Sport.run && p.intensity != 'long').fold<double>(0, (x, p) => max(x, p.distanceKm ?? 0));
+        final others = week
+            .where((p) => p.sport == Sport.run && p.intensity != 'long')
+            .fold<double>(0, (x, p) => max(x, p.distanceKm ?? 0));
         if (li >= 0 && others > 0 && (week[li].distanceKm ?? 0) < others * 1.15) {
           final target = _r1(others * 1.2);
           final longer = _run(longCtx.$1, 'long', phase, wk, max(longKm, target), tempoMin, intervalReps, w, longCtx.$2);
@@ -166,6 +170,8 @@ class PlanGenerator {
         }
       }
       out.addAll(week);
+      final longRun = week.where((p) => p.sport == Sport.run && p.intensity == 'long').firstOrNull;
+      if (!rest && longRun != null) lastLongKm = longRun.distanceKm ?? lastLongKm;
       if (!rest) {
         tempoMin = min(tempoMin + (a.difficulty == 'easy' ? 2 : 4), 30);
         if (w.isOdd) intervalReps = min(intervalReps + 1, level == 'advanced' ? 8 : 6);
@@ -227,21 +233,26 @@ class PlanGenerator {
       }
       return res;
     }
-    // Multi-sport: distribute, main endurance sport on the long day.
-    final seq = <Sport>[];
-    for (var i = 0; i < days.length; i++) {
-      seq.add(base[i % base.length]);
-    }
+    // Multi-sport: alternate the sports; rotate the order so the main endurance sport
+    // lands on the long day. Of all rotations that do, prefer the one that gives the
+    // most sessions to the sports that need the most volume (bike > run > swim > gym).
     final main = profile.focus == TrainingFocus.hybrid || profile.focus == TrainingFocus.duathlon ? Sport.run : Sport.ride;
-    final li = days.indexOf(longDay);
-    final si = seq.indexOf(main);
-    if (li >= 0 && si >= 0 && si != li) {
-      final t = seq[li];
-      seq[li] = main;
-      seq[si] = t;
+    final li = max(0, days.indexOf(longDay));
+    const weight = {Sport.ride: 4, Sport.run: 3, Sport.swim: 2, Sport.gym: 1};
+    List<Sport>? best;
+    var bestScore = -1;
+    for (var off = 0; off < base.length; off++) {
+      final seq = [for (var i = 0; i < days.length; i++) base[(i + off) % base.length]];
+      if (base.contains(main) && seq[li] != main) continue;
+      final score = seq.fold<int>(0, (x, s) => x + weight[s]!);
+      if (score > bestScore) {
+        bestScore = score;
+        best = seq;
+      }
     }
+    best ??= [for (var i = 0; i < days.length; i++) base[i % base.length]];
     for (var i = 0; i < days.length; i++) {
-      res[days[i]] = [seq[i]];
+      res[days[i]] = [best[i]];
     }
     return res;
   }
@@ -365,11 +376,18 @@ class PlanGenerator {
     final keyDays = <int>{};
     final longDay = profile.longDay ?? days.last;
 
+    // The week wraps around: Sunday's long run is followed by Monday.
+    int prev(int d) => d == 1 ? 7 : d - 1;
+    int next(int d) => d == 7 ? 1 : d + 1;
+    int dist(int x, int y) => min((x - y).abs(), 7 - (x - y).abs());
+
     bool spaced(int d) {
       if (keyDays.contains(d)) return false;
       if (beginner || level == 'intermediate') {
-        return !keyDays.contains(d - 1) && !keyDays.contains(d + 1);
+        return !keyDays.contains(prev(d)) && !keyDays.contains(next(d));
       }
+      // Advanced athletes may train hard on consecutive days, but never right after
+      // the long session of the same sport.
       return true;
     }
 
@@ -390,31 +408,38 @@ class PlanGenerator {
         Sport.run => _maxQualityRuns(sDays.length, phase),
         Sport.ride =>
           phase == 'recovery' || phase == 'taper' ? (sDays.length >= 3 ? 1 : 0) : (sDays.length >= 3 ? 2 : (sDays.length == 2 ? 1 : 0)),
-        Sport.swim => sDays.length >= 2 ? 1 : 0,
+        // Beginners: technique + easy endurance only (no CSS sets yet).
+        Sport.swim => sDays.length >= 2 && !beginner ? 1 : 0,
         Sport.gym => 0,
       };
       var q = 0;
-      // Prefer days far from the long day.
-      final cand = [...sDays.where((d) => d != ld)]..sort((x, y) => ((y - (ld ?? 7)).abs()).compareTo((x - (ld ?? 7)).abs()));
+      // Prefer days far from the long day (cyclic: Monday is next to Sunday).
+      final cand = [...sDays.where((d) => d != ld)]..sort((x, y) => dist(y, ld ?? 7).compareTo(dist(x, ld ?? 7)));
       for (final d in cand) {
         if (q >= nQ) break;
-        if (!spaced(d)) continue;
-        // Never the day right before the long run (H5).
-        if (ld != null && d == ld - 1 && sport == Sport.run) continue;
+        // Swimming is non-weight-bearing: a CSS set may follow or precede a hard run /
+        // ride day (only never two key sessions on the same day).
+        if (sport == Sport.swim ? keyDays.contains(d) : !spaced(d)) continue;
+        // Never the day right before the long run (H5), nor right after the long session.
+        if (ld != null && d == prev(ld) && sport == Sport.run) continue;
+        if (ld != null && d == next(ld) && sDays.length > 2) continue;
         roles[d]!.firstWhere((x) => x.sport == sport).role = 'q${q + 1}';
         keyDays.add(d);
         q++;
       }
-      // Swim: if no quality session, first swim is technique.
+      // Swim: one technique session a week – the first swim without a quality role
+      // (with 1–2 swims only if there is no quality session at all).
       if (sport == Sport.swim) {
-        final first = roles[sDays.first]!.firstWhere((x) => x.sport == sport);
-        if (first.role == 'easy') first.role = 'technique';
+        final slots = [for (final d in sDays) roles[d]!.firstWhere((x) => x.sport == sport)];
+        final hasQ = slots.any((x) => x.role.startsWith('q'));
+        final free = slots.where((x) => x.role == 'easy').firstOrNull;
+        if (free != null && (!hasQ || sDays.length >= 3)) free.role = 'technique';
       }
     }
     // Gym: sessions the day before a key endurance session avoid heavy legs (C3).
     for (final d in days) {
       for (final s in roles[d]!) {
-        if (s.sport == Sport.gym && keyDays.contains(d + 1)) s.role = 'nolegs';
+        if (s.sport == Sport.gym && keyDays.contains(next(d))) s.role = 'nolegs';
       }
     }
     return roles;
@@ -521,7 +546,7 @@ class PlanGenerator {
       steps = [wu];
       for (var i = 0; i < reps; i++) {
         steps.add(_runStep('work', 'I', km: repM / 1000, note: l.stepIntervalNote));
-        if (i < reps - 1) steps.add(_runStep('recovery', 'REC', sec: (repSec * 0.8).round()));
+        if (i < reps - 1) steps.add(_runStep('recovery', 'REC', sec: max(60, (repSec * 0.8 / 15).round() * 15)));
       }
       steps.add(cd);
       title = l.wIntervals(reps, (repM).round());
@@ -718,20 +743,27 @@ class PlanGenerator {
     final steps = <WorkoutStep>[wu];
     var isKey = false;
     if (role == 'q1' && !beginner) {
-      // CSS set: n × 100 m @ CSS, 15 s rest.
-      final n = max(6, ((total * 0.55) / 100).round());
+      // CSS set (~50 % of the session). Repeats get longer through the season:
+      // base 100 m (15 s rest) → build 200 m (20 s) → peak 300 m (30 s);
+      // recovery / taper weeks go back to short 100s.
+      final (rep, rest) = switch (phase) {
+        'build' => (200.0, 20),
+        'peak' => (300.0, 30),
+        _ => (100.0, 15),
+      };
+      final n = max(rep >= 300 ? 3 : (rep >= 200 ? 4 : 6), ((total * 0.5) / rep).round());
       steps.add(_swimStep('work', 'DR', 200, note: _drillNote(week)));
       steps.add(const WorkoutStep(kind: 'recovery', durationSec: 30, zone: 'REC'));
       for (var i = 0; i < n; i++) {
-        steps.add(_swimStep('work', 'CSS', 100, note: l.stepCssNote));
-        if (i < n - 1) steps.add(const WorkoutStep(kind: 'recovery', durationSec: 15, zone: 'REC'));
+        steps.add(_swimStep('work', 'CSS', rep, note: l.stepCssNote));
+        if (i < n - 1) steps.add(WorkoutStep(kind: 'recovery', durationSec: rest, zone: 'REC'));
       }
-      title = l.wSwimCss(n);
+      title = l.wSwimCssSet(n, rep.round());
       desc = l.wSwimCssDesc;
       intensity = 'intervals';
       isKey = true;
-    } else if (role == 'technique' || beginner) {
-      steps.add(_swimStep('work', 'DR', (total * (beginner ? 0.35 : 0.2) / 50).round() * 50.0, note: _drillNote(week)));
+    } else if (role == 'technique' || (beginner && role.startsWith('q'))) {
+      steps.add(_swimStep('work', 'DR', (total * (beginner ? 0.3 : 0.2) / 50).round() * 50.0, note: _drillNote(week)));
       steps.add(const WorkoutStep(kind: 'recovery', durationSec: 30, zone: 'REC'));
       final main = (total * 0.45 / 50).round() * 50.0;
       final reps = max(2, (main / (beginner ? 50 : 100)).round());
@@ -744,11 +776,12 @@ class PlanGenerator {
       intensity = 'technique';
     } else {
       final main = (total * 0.65 / 100).round() * 100.0;
-      final rep = main >= 1200 ? 400.0 : 200.0;
+      // Beginners build continuous swimming: 50s → 100s → 200s over the first weeks.
+      final rep = beginner ? (week < 3 ? 50.0 : (week < 6 ? 100.0 : 200.0)) : (main >= 1200 ? 400.0 : 200.0);
       final reps = max(2, (main / rep).round());
       for (var i = 0; i < reps; i++) {
         steps.add(_swimStep('work', 'EN', rep, note: l.stepSwimEnNote));
-        if (i < reps - 1) steps.add(const WorkoutStep(kind: 'recovery', durationSec: 20, zone: 'REC'));
+        if (i < reps - 1) steps.add(WorkoutStep(kind: 'recovery', durationSec: beginner ? 30 : 20, zone: 'REC'));
       }
       title = l.wSwimEndurance(reps, rep.round());
       desc = l.wSwimEnduranceDesc;
@@ -873,9 +906,10 @@ class PlanGenerator {
         ),
       );
     }
-    final km = Vdot.distances[a.eventDistance];
+    final meters = Vdot.distances[a.eventDistance];
+    final km = meters == null ? null : meters / 1000;
     final vdot = Vdot.of(a);
-    final goal = a.targetTimeSec ?? (!tri && km != null && vdot != null ? Vdot.raceTime(vdot, km) : null);
+    final goal = a.targetTimeSec ?? (!tri && meters != null && vdot != null ? Vdot.raceTime(vdot, meters) : null);
     final pace = goal != null && km != null && !tri ? (goal / km).round() : null;
     final steps =
         tri || km == null

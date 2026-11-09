@@ -124,7 +124,8 @@ String stepTarget(AppLocalizations l, WorkoutStep s, Units u, Sport sport) {
 /// One-line sentence like "5.0 km at conversational pace (Zone 2)".
 String stepSentence(AppLocalizations l, List<WorkoutStep> steps, int i, Units u, Sport sport) {
   final s = steps[i];
-  return '${stepTitle(l, steps, i, sport: sport)}: ${stepAmount(s, u, sport)} · ${zoneLabel(l, s.zone, sport: sport)}';
+  final title = stepTitle(l, steps, i, sport: sport), zone = zoneLabel(l, s.zone, sport: sport);
+  return '$title: ${stepAmount(s, u, sport)}${zone == title ? '' : ' · $zone'}';
 }
 
 /// Spoken version for the voice coach.

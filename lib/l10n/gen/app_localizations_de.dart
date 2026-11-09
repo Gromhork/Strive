@@ -3183,4 +3183,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get streakSub => 'mit erreichtem Wochenziel';
+
+  @override
+  String wSwimCssSet(int n, int meters) {
+    return 'CSS-Serie $n × $meters m';
+  }
 }

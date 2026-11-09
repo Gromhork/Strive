@@ -21,7 +21,12 @@ void main() {
     var n = 0;
     final de = lang == 'de';
     final templates = defaultTemplates(() => 't${n++}', de: de);
-    return PlanGenerator(lookupAppLocalizations(Locale(lang)), profile(), templates, () => 'p${n++}').generate(start: DateTime(2026, 11, 9), weeks: 6);
+    return PlanGenerator(
+      lookupAppLocalizations(Locale(lang)),
+      profile(),
+      templates,
+      () => 'p${n++}',
+    ).generate(start: DateTime(2026, 11, 9), weeks: 6);
   }
 
   PlannedWorkout apply(PlannedWorkout p, Map<String, dynamic> m) => PlannedWorkout.fromMap(p.id, {...p.toMap(), ...m});

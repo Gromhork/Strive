@@ -993,5 +993,6 @@
   "scoreHowDark": "Dunkelheit (−18)",
   "scoreHowStorm": "Gewitter (−40)",
   "scoreHowLevels": "Gut ab 70, mäßig ab 45, darunter lieber drinnen trainieren.",
-  "streakSub": "mit erreichtem Wochenziel"
+  "streakSub": "mit erreichtem Wochenziel",
+  "wSwimCssSet": "CSS-Serie {n} × {meters} m"
 }

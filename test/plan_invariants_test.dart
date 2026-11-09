@@ -31,12 +31,13 @@ void main() {
       for (final focus in TrainingFocus.values) {
         for (final event in [null, '5k', '10k', 'hm', 'm']) {
           if (event != null && !focus.sports.contains(Sport.run)) continue;
-          final days = [
-            [2, 4, 6],
-            [1, 3, 5, 6],
-            [1, 2, 4, 6, 7],
-            [1, 2, 3, 4, 6, 7],
-          ][rnd.nextInt(4)];
+          final days =
+              [
+                [2, 4, 6],
+                [1, 3, 5, 6],
+                [1, 2, 4, 6, 7],
+                [1, 2, 3, 4, 6, 7],
+              ][rnd.nextInt(4)];
           final minutes = [45, 60, 90][rnd.nextInt(3)];
           profiles['$level/$diff/${focus.name}/$event/${days.length}d/${minutes}m'] = UserProfile(
             level: level,
@@ -68,7 +69,11 @@ void main() {
         final long = w.where((p) => p.intensity == 'long').map(runKm).fold<double>(0, max);
         if (long == 0) continue;
         for (final p in w.where((p) => p.intensity != 'long')) {
-          expect(runKm(p), lessThanOrEqualTo(long / 1.1 + 0.05), reason: '${e.key}: ${p.title} ${runKm(p)} km > long $long km on ${p.date}');
+          expect(
+            runKm(p),
+            lessThanOrEqualTo(long / 1.1 + 0.05),
+            reason: '${e.key}: ${p.title} ${runKm(p)} km > long $long km on ${p.date}',
+          );
         }
         for (final p in w.where((p) => p.intensity == 'easy' && p.steps.length == 1)) {
           expect(runKm(p), lessThanOrEqualTo(max(3.0, long * 0.75) + 0.5), reason: '${e.key}: easy ${runKm(p)} vs long $long');
@@ -103,6 +108,36 @@ void main() {
       expect(onRace.single.intensity, 'race');
       expect(plan.where((p) => p.sport == Sport.gym && !p.date.isBefore(race.subtract(const Duration(days: 3)))), isEmpty, reason: e.key);
       expect(plan.where((p) => p.date.isAfter(race)), isEmpty, reason: e.key);
+      // Race distance in km (not metres) and a sensible goal pace.
+      final r = onRace.single;
+      if (r.sport == Sport.run) {
+        expect(r.distanceKm, lessThan(43), reason: e.key);
+        final work = r.steps.where((s) => s.isWork).single;
+        expect(work.distanceM, closeTo(r.distanceKm! * 1000, 1), reason: e.key);
+        if (work.paceMin != null) expect(work.paceMin, inInclusiveRange(150, 600), reason: e.key);
+      }
+    }
+  });
+
+  test('no quality run the day after the long run (week wraps Sunday → Monday)', () {
+    for (final e in profiles.entries.where((e) => e.value.level != 'advanced')) {
+      final plan = PlanGenerator(l, e.value, templates, id).generate(start: start, weeks: 10);
+      final longDays = {for (final p in plan.where((p) => p.sport == Sport.run && p.intensity == 'long')) dayOnly(p.date)};
+      for (final p in plan.where((p) => p.sport == Sport.run && (p.intensity == 'tempo' || p.intensity == 'intervals'))) {
+        expect(longDays.contains(dayOnly(p.date).subtract(const Duration(days: 1))), isFalse, reason: '${e.key}: ${p.title} on ${p.date}');
+      }
+    }
+  });
+
+  test('swim weeks mix technique, endurance and (non-beginners) CSS work', () {
+    for (final e in profiles.entries) {
+      final swims = PlanGenerator.deriveSchedule(e.value).values.expand((v) => v).where((s) => s == Sport.swim).length;
+      if (swims < 2) continue;
+      final plan = PlanGenerator(l, e.value, templates, id).generate(start: start, weeks: 6);
+      final week = plan.where((p) => p.sport == Sport.swim && startOfWeek(p.date) == start).toList();
+      final kinds = week.map((p) => p.intensity).toSet();
+      expect(kinds.length, greaterThanOrEqualTo(2), reason: '${e.key}: ${week.map((p) => p.title)}');
+      if (e.value.level != 'beginner') expect(kinds, contains('intervals'), reason: e.key);
     }
   });
 

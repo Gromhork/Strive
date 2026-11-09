@@ -3183,4 +3183,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get streakSub => 'with your weekly training goal reached';
+
+  @override
+  String wSwimCssSet(int n, int meters) {
+    return 'CSS set $n × $meters m';
+  }
 }

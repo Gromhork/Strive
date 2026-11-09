@@ -1741,5 +1741,16 @@
   "scoreHowDark": "Darkness (−18)",
   "scoreHowStorm": "Thunderstorm (−40)",
   "scoreHowLevels": "Good from 70, fair from 45, below that rather train indoors.",
-  "streakSub": "with your weekly training goal reached"
+  "streakSub": "with your weekly training goal reached",
+  "wSwimCssSet": "CSS set {n} × {meters} m",
+  "@wSwimCssSet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "meters": {
+        "type": "int"
+      }
+    }
+  }
 }

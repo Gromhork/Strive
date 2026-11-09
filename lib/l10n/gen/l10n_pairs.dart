@@ -958,4 +958,5 @@ const l10nPairs = <(String, String)>[
   ('Thunderstorm (−40)', 'Gewitter (−40)'),
   ('Good from 70, fair from 45, below that rather train indoors.', 'Gut ab 70, mäßig ab 45, darunter lieber drinnen trainieren.'),
   ('with your weekly training goal reached', 'mit erreichtem Wochenziel'),
+  ('CSS set {n} × {meters} m', 'CSS-Serie {n} × {meters} m'),
 ];
