@@ -3306,4 +3306,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editSessionHint => 'Correct wrong measurements or entries. Recorded route and splits stay as they are.';
+
+  @override
+  String get deleted => 'Deleted';
 }

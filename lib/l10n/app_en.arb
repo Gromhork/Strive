@@ -1846,5 +1846,6 @@
   "invalidDuration": "Enter the duration as h:mm:ss or minutes.",
   "rpeNotSet": "not set",
   "sessionCorrected": "Workout updated",
-  "editSessionHint": "Correct wrong measurements or entries. Recorded route and splits stay as they are."
+  "editSessionHint": "Correct wrong measurements or entries. Recorded route and splits stay as they are.",
+  "deleted": "Deleted"
 }

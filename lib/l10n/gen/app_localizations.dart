@@ -6256,6 +6256,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Correct wrong measurements or entries. Recorded route and splits stay as they are.'**
   String get editSessionHint;
+
+  /// No description provided for @deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get deleted;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

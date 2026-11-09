@@ -3306,4 +3306,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get editSessionHint => 'Korrigiere fehlerhafte Messungen oder Eingaben. Aufgezeichnete Strecke und Splits bleiben erhalten.';
+
+  @override
+  String get deleted => 'Gelöscht';
 }

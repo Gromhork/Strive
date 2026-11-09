@@ -1026,5 +1026,6 @@
   "invalidDuration": "Gib die Dauer als h:mm:ss oder in Minuten ein.",
   "rpeNotSet": "nicht angegeben",
   "sessionCorrected": "Einheit aktualisiert",
-  "editSessionHint": "Korrigiere fehlerhafte Messungen oder Eingaben. Aufgezeichnete Strecke und Splits bleiben erhalten."
+  "editSessionHint": "Korrigiere fehlerhafte Messungen oder Eingaben. Aufgezeichnete Strecke und Splits bleiben erhalten.",
+  "deleted": "Gelöscht"
 }

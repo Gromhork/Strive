@@ -54,14 +54,31 @@ class SessionDetailPage extends ConsumerWidget {
             tooltip: l.delete,
             icon: const Icon(Icons.delete_outline),
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
               if (await confirm(context, l.deleteSession, ok: l.delete, danger: true)) {
                 final repo = ref.read(repoProvider)!;
                 repo.deleteSession(s.id);
                 // The planned workout it completed is open again (no dangling link).
-                for (final p in ref.read(planListProvider).where((p) => p.sessionId == s.id)) {
+                final linked = ref.read(planListProvider).where((p) => p.sessionId == s.id).toList();
+                for (final p in linked) {
                   repo.updatePlan(p.id, {'status': 'planned', 'sessionId': FieldValue.delete()});
                 }
                 if (context.mounted) Navigator.pop(context);
+                // Undo restores the session and its plan link.
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(l.deleted),
+                    action: SnackBarAction(
+                      label: l.undo,
+                      onPressed: () {
+                        repo.saveSession(s);
+                        for (final p in linked) {
+                          repo.updatePlan(p.id, {'status': 'done', 'sessionId': s.id});
+                        }
+                      },
+                    ),
+                  ),
+                );
               }
             },
           ),

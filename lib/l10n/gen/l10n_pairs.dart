@@ -990,4 +990,5 @@ const l10nPairs = <(String, String)>[
   ('not set', 'nicht angegeben'),
   ('Workout updated', 'Einheit aktualisiert'),
   ('Correct wrong measurements or entries. Recorded route and splits stay as they are.', 'Korrigiere fehlerhafte Messungen oder Eingaben. Aufgezeichnete Strecke und Splits bleiben erhalten.'),
+  ('Deleted', 'Gelöscht'),
 ];
