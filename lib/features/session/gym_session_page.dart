@@ -10,6 +10,7 @@ import '../../providers.dart';
 import '../../services/active_workout.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
+import '../../widgets/effort_chips.dart';
 import '../../widgets/exercise_media.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../widgets/prescription.dart';
@@ -88,7 +89,6 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
     }
     final n = ref.read(activeGymProvider.notifier);
     final u = ref.watch(profileOrDefaultProvider).units;
-    final history = ref.watch(sessionListProvider);
     final next = w.nextOpen(w.focus);
 
     return Scaffold(
@@ -149,7 +149,12 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
           if (!_table && next == null && w.exercises.isNotEmpty) ...[_AllDoneCard(onFinish: () => _finish(w)), const SizedBox(height: 18)],
           if (_table)
             for (var i = 0; i < w.exercises.length; i++)
-              _ExerciseCard(index: i, exercise: w.exercises[i], previous: lastSetsFor(history, w.exercises[i].exId), units: u)
+              _ExerciseCard(
+                index: i,
+                exercise: w.exercises[i],
+                previous: ref.watch(loadPrescriberProvider).previousSets(w.exercises[i]),
+                units: u,
+              )
           else
             ..._exerciseList(w, u),
           const SizedBox(height: 8),
@@ -503,7 +508,7 @@ class ExerciseMenu extends ConsumerWidget {
             if (!n.toggleSuperset(index) && context.mounted) toast(context, l.supersetMax);
           case 'bodyweight':
             final on = e.bw != true;
-            n.setBodyweight(index, on, bodyKg: on ? ref.read(loadPrescriberProvider).bodyLoad(e) : 0);
+            n.setBodyweight(index, on);
           case 'replace':
             final picked = await pickExercises(context, single: true);
             if (picked.isNotEmpty) n.replaceExercise(index, picked.first.id, picked.first.name);
@@ -648,13 +653,21 @@ class _ExerciseCard extends ConsumerWidget {
               ),
               for (var s = 0; s < exercise.sets.length; s++)
                 _SetRow(
-                  key: ValueKey('${exercise.exId}-$index-$s-${exercise.sets.length}'),
+                  key: ValueKey('${exercise.exId}-$index-$s-${exercise.sets.length}-${exercise.bw == true}'),
                   ex: index,
                   set: s,
                   data: exercise.sets[s],
                   previous: _prevFor(exercise, s, work),
                   units: units,
                   bodyweight: exercise.bw == true,
+                ),
+              if (exercise.workSets.isNotEmpty && exercise.workSets.every((s) => s.done))
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 4, 8, 4),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: EffortChips(value: exercise.effort, onChanged: (v) => n.setEffort(index, v)),
+                  ),
                 ),
               Align(
                 alignment: Alignment.centerLeft,
@@ -704,6 +717,19 @@ class _SetRowState extends ConsumerState<_SetRow> {
     super.initState();
     _w = TextEditingController(text: widget.data.weight == 0 ? '' : Units.num(widget.units.weightOut(widget.data.weight), 2));
     _r = TextEditingController(text: widget.data.reps == 0 ? '' : '${widget.data.reps}');
+  }
+
+  /// Keeps the fields in sync with changes made elsewhere (bodyweight toggle, a new
+  /// weight carried over from an earlier set, …) without fighting the user's typing.
+  @override
+  void didUpdateWidget(covariant _SetRow old) {
+    super.didUpdateWidget(old);
+    final d = widget.data;
+    final shown = parseNum(_w.text) ?? 0;
+    if ((shown - widget.units.weightOut(d.weight)).abs() > 0.006) {
+      _w.text = d.weight == 0 ? '' : Units.num(widget.units.weightOut(d.weight), 2);
+    }
+    if ((int.tryParse(_r.text) ?? 0) != d.reps) _r.text = d.reps == 0 ? '' : '${d.reps}';
   }
 
   @override
@@ -797,7 +823,8 @@ class _SetRowState extends ConsumerState<_SetRow> {
               child: IconButton(
                 onPressed: () {
                   if (!d.done && p != null) {
-                    if (d.weight == 0 && _w.text.isEmpty) {
+                    // In bodyweight mode an empty field means "no added load" – keep it.
+                    if (!widget.bodyweight && d.weight == 0 && _w.text.isEmpty) {
                       _w.text = Units.num(widget.units.weightOut(p.weight), 2);
                       n.updateSet(widget.ex, widget.set, weight: p.weight);
                     }
@@ -915,23 +942,45 @@ class RestBar extends ConsumerWidget {
                 LinearProgressIndicator(value: progress, minHeight: 4, color: Sport.gym.color),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  // Narrow phones: the label gives way first, the buttons shrink to fit.
                   child: Row(
                     children: [
                       const Icon(Icons.timer_outlined),
                       const SizedBox(width: 8),
-                      Text(l.rest, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          l.rest,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Text(
                         clock(left.ceil().clamp(0, 9999)),
                         style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()]),
                       ),
-                      const Spacer(),
-                      TextButton(onPressed: () => n.adjustRest(-15), child: const Text('-15')),
-                      TextButton(onPressed: () => n.adjustRest(15), child: const Text('+15')),
-                      FilledButton.tonal(
-                        style: FilledButton.styleFrom(minimumSize: const Size(0, 38)),
-                        onPressed: n.skipRest,
-                        child: Text(l.skip),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 3,
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextButton(onPressed: () => n.adjustRest(-15), child: const Text('-15')),
+                                TextButton(onPressed: () => n.adjustRest(15), child: const Text('+15')),
+                                FilledButton.tonal(
+                                  style: FilledButton.styleFrom(minimumSize: const Size(0, 38)),
+                                  onPressed: n.skipRest,
+                                  child: Text(l.skip),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),

@@ -3559,4 +3559,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rpeClear => 'No rating';
+
+  @override
+  String get rpeRate => 'Rate';
 }

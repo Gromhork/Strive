@@ -6718,6 +6718,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No rating'**
   String get rpeClear;
+
+  /// No description provided for @rpeRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get rpeRate;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -1065,4 +1065,5 @@ const l10nPairs = <(String, String)>[
   ('How hard was it? (optional)', 'Wie anstrengend war es? (optional)'),
   ('Helps adapt your plan – you can skip it.', 'Hilft, deinen Plan anzupassen – kannst du auch weglassen.'),
   ('No rating', 'Keine Angabe'),
+  ('Rate', 'Bewerten'),
 ];

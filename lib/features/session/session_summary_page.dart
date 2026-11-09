@@ -11,6 +11,7 @@ import '../shell/health_sync.dart';
 import '../../services/plan_match.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
+import '../../widgets/rpe_picker.dart';
 import 'route_map.dart';
 
 /// Shown after finishing a session: rate effort, see XP / PRs / coach battle, then save.
@@ -23,7 +24,7 @@ class SessionSummaryPage extends ConsumerStatefulWidget {
 }
 
 class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
-  double _rpe = 6;
+  int? _rpe; // optional – null = not rated
   final _notes = TextEditingController();
   bool _saved = false;
 
@@ -33,7 +34,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     title: widget.draft.title,
     start: widget.draft.start,
     durationSec: widget.draft.durationSec,
-    rpe: _rpe.round(),
+    rpe: _rpe,
     notes: _notes.text.trim(),
     exercises: widget.draft.exercises,
     distanceM: widget.draft.distanceM,
@@ -203,12 +204,11 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
             ),
             const SizedBox(height: 12),
             SectionCard(
-              title: l.howHard,
+              title: l.howHardOptional,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Slider(value: _rpe, min: 1, max: 10, divisions: 9, label: '${_rpe.round()}', onChanged: (v) => setState(() => _rpe = v)),
-                  Text('RPE ${_rpe.round()} – ${rpeLabel(l, _rpe.round())}', style: Theme.of(context).textTheme.bodySmall),
+                  RpePicker(value: _rpe, onChanged: (v) => setState(() => _rpe = v)),
                   const SizedBox(height: 12),
                   TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
                 ],
@@ -225,17 +225,6 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
 
   Widget _cell(Widget c) => SizedBox(width: (MediaQuery.sizeOf(context).width - 64) / 2, child: c);
 }
-
-String rpeLabel(AppLocalizations l, int r) =>
-    r <= 2
-        ? l.rpeVeryEasy
-        : r <= 4
-        ? l.rpeEasy
-        : r <= 6
-        ? l.rpeModerate
-        : r <= 8
-        ? l.rpeHard
-        : l.rpeMax;
 
 String badgeTitle(AppLocalizations l, String id) => switch (id) {
   'first' => l.badgeFirst,

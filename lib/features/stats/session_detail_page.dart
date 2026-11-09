@@ -13,7 +13,8 @@ import '../../services/insights.dart';
 import '../../widgets/common.dart';
 import '../session/route_map.dart';
 import 'edit_session_page.dart';
-import '../session/session_summary_page.dart' show rpeLabel;
+import '../session/gym_session_page.dart' show setLabel;
+import '../../widgets/rpe_picker.dart' show rpeLabel;
 
 class SessionDetailPage extends ConsumerWidget {
   const SessionDetailPage({super.key, required this.sessionId});
@@ -248,7 +249,10 @@ class SessionDetailPage extends ConsumerWidget {
                       for (final set in e.sets.where((x) => x.done))
                         Chip(
                           visualDensity: VisualDensity.compact,
-                          label: Text('${set.warmup ? 'W · ' : ''}${Units.num(u.weightOut(set.weight))} × ${set.reps}'),
+                          label: Text(
+                            '${set.warmup ? 'W · ' : ''}'
+                            '${e.bw == true ? setLabel(set, u, bw: l.bodyweightShort) : '${Units.num(u.weightOut(set.weight))} × ${set.reps}'}',
+                          ),
                         ),
                     ],
                   ),

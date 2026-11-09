@@ -3559,4 +3559,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get rpeClear => 'Keine Angabe';
+
+  @override
+  String get rpeRate => 'Bewerten';
 }

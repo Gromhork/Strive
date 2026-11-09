@@ -2018,5 +2018,6 @@
   "effortLimit": "Limit",
   "howHardOptional": "How hard was it? (optional)",
   "rpeOptionalHint": "Helps adapt your plan – you can skip it.",
-  "rpeClear": "No rating"
+  "rpeClear": "No rating",
+  "rpeRate": "Rate"
 }

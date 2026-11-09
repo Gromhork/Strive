@@ -1103,5 +1103,6 @@
   "effortLimit": "Limit",
   "howHardOptional": "Wie anstrengend war es? (optional)",
   "rpeOptionalHint": "Hilft, deinen Plan anzupassen – kannst du auch weglassen.",
-  "rpeClear": "Keine Angabe"
+  "rpeClear": "Keine Angabe",
+  "rpeRate": "Bewerten"
 }

@@ -354,6 +354,7 @@ class _ExerciseEditCard extends ConsumerWidget {
                   ),
                   Expanded(
                     child: _NumField(
+                      signed: _isBw(ref, e),
                       initial: e.sets[s].weight == 0 ? '' : Units.num(u.weightOut(e.sets[s].weight), 2),
                       hint: suggested != null && suggested! > 0 ? '≈${Units.num(u.weightOut(suggested!), 2)}' : '–',
                       onChanged: (v) => e.sets[s].weight = u.weightIn(parseNum(v) ?? 0),
@@ -512,7 +513,8 @@ class _MiniChip extends StatelessWidget {
 }
 
 class _NumField extends StatelessWidget {
-  const _NumField({required this.initial, required this.onChanged, this.hint});
+  const _NumField({required this.initial, required this.onChanged, this.hint, this.signed = false});
+  final bool signed; // bodyweight mode: negative = assistance
   final String initial;
   final String? hint;
   final ValueChanged<String> onChanged;
@@ -521,7 +523,7 @@ class _NumField extends StatelessWidget {
   Widget build(BuildContext context) => TextFormField(
     initialValue: initial,
     textAlign: TextAlign.center,
-    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    keyboardType: TextInputType.numberWithOptions(decimal: true, signed: signed),
     decoration: InputDecoration(isDense: true, hintText: hint, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10)),
     onChanged: onChanged,
   );

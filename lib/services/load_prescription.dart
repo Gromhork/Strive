@@ -253,6 +253,38 @@ class LoadPrescriber {
     return (profile.weightKg.clamp(30, 250) * share * 10).roundToDouble() / 10;
   }
 
+  /// Switches [e] (an exercise of a running workout) into or out of bodyweight mode:
+  /// * done sets keep their total load (body load + added weight), so volume and e1RM
+  ///   do not jump – a loaded set counts as body weight + added load only when it is at
+  ///   least half the body load (somebody who typed their body weight);
+  /// * open work sets get the load prescribed for the new mode (switching off without
+  ///   own history: the same total load as before); reps stay, open warm-ups lose
+  ///   their weight in bodyweight mode.
+  void switchBodyweight(GymExercise e, bool on) {
+    final oldKg = e.bw == true ? e.bodyKg : 0.0;
+    e.bw = on;
+    final kg = on ? bodyLoad(e) : 0.0;
+    e.bodyKg = kg;
+    for (final s in e.sets.where((s) => s.done)) {
+      if (on && kg > 0 && s.weight >= kg * 0.5) s.weight -= kg;
+      if (!on && oldKg > 0) s.weight += oldKg;
+    }
+    final p = forExercise(e);
+    final loadOk = p != null && (on || p.fromHistory);
+    for (final s in e.sets.where((s) => !s.done)) {
+      if (s.warmup) {
+        if (on) s.weight = 0;
+        continue;
+      }
+      final w = loadOk ? p.weight : (on ? 0.0 : max(0.0, s.weight + oldKg));
+      if (s.type == SetType.drop) {
+        s.weight = on ? w : _floorStep(w * 0.75, _info(e));
+        continue;
+      }
+      s.weight = w;
+    }
+  }
+
   /// Copies of [exercises] with weight (and target reps) filled into the work sets;
   /// warm-up sets derive their weights via [warmupSets] ratios. Explicit template weights
   /// (weight > 0) are kept when there is no history for that exercise.
@@ -326,15 +358,7 @@ class LoadPrescriber {
       if (age > maxWindow) break;
       final inst = s.exercises.where((x) => x.exId == exId).toList();
       if (inst.isEmpty) continue;
-      double convert(GymExercise ex, double w) {
-        // Sessions from before bodyweight mode (bw == null, no body load stored) that
-        // carry roughly the body weight were logged as total load.
-        final legacyTotal = ex.bw == null && ex.bodyKg <= 0 && bodyweight && bl > 0 && w >= bl * 0.5;
-        final instBw = ex.bw ?? (auto && !legacyTotal);
-        if (instBw == bodyweight) return w;
-        if (loaded) return ex.bodyKg > 0 ? w + ex.bodyKg : w;
-        return bl > 0 && w > 0 && w >= bl * 0.5 ? w - bl : w;
-      }
+      double convert(GymExercise ex, double w) => _toMode(ex, w, bodyweight: bodyweight, auto: auto, bodyLoad: bl);
 
       var sets = <GymSet>[
         for (final ex in inst)
@@ -359,6 +383,38 @@ class LoadPrescriber {
     final pool = recent.isNotEmpty ? recent : old;
     if (!loaded || pool.length < 2) return pool;
     return _dropOutliers(pool);
+  }
+
+  /// Set weight [w] of the past exercise [ex] in the requested mode ([bodyweight]:
+  /// added load, else total load); [auto] = automatic mode of the exercise, [bodyLoad]
+  /// = current body load per rep.
+  static double _toMode(GymExercise ex, double w, {required bool bodyweight, required bool auto, required double bodyLoad}) {
+    // Sessions from before bodyweight mode (bw == null, no body load stored) that carry
+    // roughly the body weight were logged as total load.
+    final legacyTotal = ex.bw == null && ex.bodyKg <= 0 && bodyweight && bodyLoad > 0 && w >= bodyLoad * 0.5;
+    final instBw = ex.bw ?? (auto && !legacyTotal);
+    if (instBw == bodyweight) return w;
+    if (!bodyweight) return ex.bodyKg > 0 ? w + ex.bodyKg : w;
+    return bodyLoad > 0 && w > 0 && w >= bodyLoad * 0.5 ? w - bodyLoad : w;
+  }
+
+  /// Done sets of [e] from its last session ("last time" hints), with the weights in
+  /// [e]'s current mode (added load in bodyweight mode, else total load) – so a session
+  /// logged in the other mode is not shown or copied as a wrong load.
+  List<GymSet>? previousSets(GymExercise e) {
+    final bw = isBodyweight(e);
+    final auto = _autoBodyweight(e);
+    final bl = bw ? (e.bodyKg > 0 ? e.bodyKg : bodyLoad(e)) : 0.0;
+    for (final s in _sessions) {
+      for (final ex in s.exercises) {
+        if (ex.exId != e.exId || !ex.sets.any((x) => x.done)) continue;
+        return [
+          for (final st in ex.sets.where((x) => x.done))
+            st.copy()..weight = _toMode(ex, st.weight, bodyweight: bw, auto: auto, bodyLoad: bl),
+        ];
+      }
+    }
+    return null;
   }
 
   List<_Entry> _dropOutliers(List<_Entry> pool) {

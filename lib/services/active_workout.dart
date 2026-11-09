@@ -26,6 +26,10 @@ class ActiveGym {
   /// Exercise shown in the focus view (follows supersets automatically).
   final int focus;
 
+  /// Exercise whose last work set was just checked off – the rest screen asks the
+  /// optional effort rating for it.
+  final GymExercise? effortFor;
+
   const ActiveGym({
     required this.title,
     this.templateId,
@@ -36,6 +40,7 @@ class ActiveGym {
     this.restTotal = 0,
     this.restIsTransition = false,
     this.focus = 0,
+    this.effortFor,
   });
 
   double get volume => exercises.fold(0, (a, e) => a + e.volume);
@@ -54,18 +59,26 @@ class ActiveGym {
     return null;
   }
 
-  ActiveGym copyWith({String? title, DateTime? restEnd, bool clearRest = false, int? restTotal, bool? restIsTransition, int? focus}) =>
-      ActiveGym(
-        title: title ?? this.title,
-        templateId: templateId,
-        planId: planId,
-        start: start,
-        exercises: exercises,
-        restEnd: clearRest ? null : (restEnd ?? this.restEnd),
-        restTotal: restTotal ?? this.restTotal,
-        restIsTransition: clearRest ? false : (restIsTransition ?? this.restIsTransition),
-        focus: (focus ?? this.focus).clamp(0, exercises.isEmpty ? 0 : exercises.length - 1),
-      );
+  ActiveGym copyWith({
+    String? title,
+    DateTime? restEnd,
+    bool clearRest = false,
+    int? restTotal,
+    bool? restIsTransition,
+    int? focus,
+    GymExercise? effortFor,
+  }) => ActiveGym(
+    title: title ?? this.title,
+    templateId: templateId,
+    planId: planId,
+    start: start,
+    exercises: exercises,
+    restEnd: clearRest ? null : (restEnd ?? this.restEnd),
+    restTotal: restTotal ?? this.restTotal,
+    restIsTransition: clearRest ? false : (restIsTransition ?? this.restIsTransition),
+    focus: (focus ?? this.focus).clamp(0, exercises.isEmpty ? 0 : exercises.length - 1),
+    effortFor: clearRest ? null : (effortFor ?? this.effortFor),
+  );
 }
 
 class ActiveGymNotifier extends Notifier<ActiveGym?> {
@@ -159,6 +172,9 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     if (!s.done) return _touch();
 
     final finished = w.nextOpen() == null;
+    // Last work set of the exercise done → offer the optional effort rating.
+    final work = e.sets.where((x) => !x.warmup && x.type != SetType.drop);
+    final rate = !s.warmup && work.isNotEmpty && work.every((x) => x.done) ? e : null;
     if (s.warmup && !e.allDone) {
       state = w.copyWith(focus: ex);
       if (!finished) startRest(min(60, e.restSec));
@@ -170,7 +186,7 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     final laterInRound = group.skip(pos + 1).where((i) => !w.exercises[i].allDone);
     if (group.length > 1 && laterInRound.isNotEmpty) {
       state = w.copyWith(focus: laterInRound.first, clearRest: true);
-      if (s.type != SetType.drop) startRest(supersetTransitionSec, transition: true);
+      if (s.type != SetType.drop) startRest(supersetTransitionSec, transition: true, effortFor: rate);
       return;
     }
     final groupOpen = group.where((i) => !w.exercises[i].allDone);
@@ -178,7 +194,7 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     final rest = group.map((i) => w.exercises[i].restSec).reduce((a, b) => a > b ? a : b);
     if (rest > 0 && !finished && s.type != SetType.drop) {
       state = w.copyWith(focus: nextFocus);
-      startRest(rest);
+      startRest(rest, effortFor: rate);
     } else {
       state = w.copyWith(focus: nextFocus);
     }
@@ -199,16 +215,11 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     return ok;
   }
 
-  /// Switches bodyweight mode of exercise [ex]: the weight becomes added load on top of
-  /// the body weight ([bodyKg] = body load per rep), or a normal weight again.
-  void setBodyweight(int ex, bool on, {double bodyKg = 0}) {
+  /// Switches bodyweight mode of exercise [ex] (see [LoadPrescriber.switchBodyweight]).
+  void setBodyweight(int ex, bool on) {
     final e = state?.exercises[ex];
     if (e == null) return;
-    e.bw = on;
-    e.bodyKg = on ? bodyKg : 0;
-    for (final s in e.sets.where((s) => !s.done)) {
-      s.weight = 0;
-    }
+    ref.read(loadPrescriberProvider).switchBodyweight(e, on);
     _touch();
   }
 
@@ -250,7 +261,17 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     final e = state?.exercises[ex];
     if (e == null) return;
     final last = e.sets.isNotEmpty ? e.sets.last : GymSet();
-    e.sets.add(GymSet(weight: (last.weight * 0.8 / 2.5).round() * 2.5, reps: last.reps, type: SetType.drop));
+    // ~20 % less load; in bodyweight mode of the total load (more assistance).
+    final w = e.bw == true ? last.weight - 0.2 * (last.weight + e.bodyKg) : last.weight * 0.8;
+    e.sets.add(GymSet(weight: (w / 2.5).round() * 2.5, reps: last.reps, type: SetType.drop));
+    _touch();
+  }
+
+  /// Optional effort rating of exercise [ex] after its last work set (null clears it).
+  void setEffort(int ex, Effort? effort) {
+    final e = state?.exercises[ex];
+    if (e == null) return;
+    e.effort = effort;
     _touch();
   }
 
@@ -264,10 +285,10 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     _touch();
   }
 
-  void startRest(int seconds, {bool transition = false}) {
+  void startRest(int seconds, {bool transition = false, GymExercise? effortFor}) {
     _restTimer?.cancel();
     final end = DateTime.now().add(Duration(seconds: seconds));
-    state = state?.copyWith(restEnd: end, restTotal: seconds, restIsTransition: transition);
+    state = state?.copyWith(clearRest: true).copyWith(restEnd: end, restTotal: seconds, restIsTransition: transition, effortFor: effortFor);
     _restTimer = Timer(Duration(seconds: seconds), _restDone);
   }
 
