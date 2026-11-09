@@ -3495,6 +3495,40 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String wGymLoadDesc(int rir) {
+    return 'Belastungswoche: Beende jeden Arbeitssatz mit etwa $rir Wdh. im Tank – die Reserve wird von Woche zu Woche kleiner, bis zur nächsten Entlastungswoche. Sätze, Wiederholungsbereich und Gewichtsvorschlag stehen bei jeder Übung.';
+  }
+
+  @override
+  String get wGymProgressNote => 'Steigerung: Erst die Wiederholungen bis zum oberen Ende des Bereichs aufbauen, dann Gewicht erhöhen und wieder unten beginnen.';
+
+  @override
+  String get wGymDeloadNote => 'Entlastungswoche: Die Gewichte sind ca. 10 % leichter eingetragen, bei Übungen mit 3 oder mehr Sätzen fällt ein Satz weg. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.';
+
+  @override
+  String get wGymTaperNote => 'Tapering vor dem Wettkampf: Gewichte ca. 10 % leichter, nichts bis zur Erschöpfung – Kraft erhalten, frisch bleiben.';
+
+  @override
+  String wGymTimeCapNote2(int min) {
+    return 'Heute nur $min min Zeit: Hauptübungen wie geplant, bei den letzten Übungen je einen Satz weniger oder sie weglassen.';
+  }
+
+  @override
+  String get wRecoveryWeekNote => 'Entlastungswoche: Der Umfang ist bewusst reduziert – locker bleiben, auch wenn du dich frisch fühlst. Jetzt verarbeitet der Körper die letzten Wochen.';
+
+  @override
+  String get wTaperWeekNote => 'Tapering: weniger Umfang, kurze Belastungen halten dich spritzig. Nichts nachholen – jetzt zählt die Frische für den Wettkampf.';
+
+  @override
+  String get wLongRunHmpDesc => 'Lockerer langer Lauf, das letzte Viertel im Halbmarathon-Zieltempo – die wettkampfspezifischste Einheit.';
+
+  @override
+  String get stepHmpNote => 'Halbmarathon-Zieltempo – kontrolliert';
+
+  @override
+  String get wLongRunMpDesc2 => 'Lockerer langer Lauf, das letzte Viertel im Marathon-Zieltempo – die wettkampfspezifischste Einheit.';
+
+  @override
   String recalWhyRunTrendSlower(String from, String to) {
     return 'Deine Schlüsselläufe waren bei hoher Anstrengung langsamer als die Zielpaces – Paces entschärft (VDOT $from → $to).';
   }

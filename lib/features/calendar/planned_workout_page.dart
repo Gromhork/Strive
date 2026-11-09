@@ -7,6 +7,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/plan_text.dart';
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart';
@@ -129,7 +130,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
               children: [
                 const Icon(Icons.lightbulb_outline_rounded, size: 20, color: AppColors.warning),
                 const SizedBox(width: 10),
-                Expanded(child: Text(p.description, style: const TextStyle(height: 1.4))),
+                Expanded(child: Text(planDescription(p.description, l), style: const TextStyle(height: 1.4))),
               ],
             ),
           ],

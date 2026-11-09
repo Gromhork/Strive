@@ -859,9 +859,28 @@ class PlanGenerator {
       // Marathon / HM peak: last 25 % at goal pace (M).
       if (phase == 'peak' && (dist == 'm' || dist == 'hm') && !beginner) {
         final mpKm = _r1(km * 0.25);
-        steps = [_runStep('steady', 'E', km: km - mpKm), _runStep('work', 'M', km: mpKm, note: l.stepMpNote)];
+        // Half marathon: the goal-pace segment runs at HM pace (between M and T), not at
+        // marathon pace.
+        final hm = dist == 'hm';
+        final work = _runStep('work', 'M', km: mpKm, note: hm ? l.stepHmpNote : l.stepMpNote);
+        final hmPace = hm ? _goalPace() : null;
+        steps = [
+          _runStep('steady', 'E', km: km - mpKm, note: l.stepEasyNote),
+          hmPace == null
+              ? work
+              : WorkoutStep(
+                kind: 'work',
+                distanceM: work.distanceM,
+                zone: 'M',
+                paceMin: hmPace - 3,
+                paceMax: hmPace + 3,
+                hrMin: hz.zone(3).$1,
+                hrMax: hz.zone(4).$2,
+                note: work.note,
+              ),
+        ];
         title = l.wLongRunMp;
-        desc = l.wLongRunMpDesc;
+        desc = hm ? l.wLongRunHmpDesc : l.wLongRunMpDesc2;
       } else {
         steps = [_runStep('steady', 'E', km: km, note: l.stepEasyNote)];
         title = l.planLongRun;
@@ -1225,16 +1244,16 @@ class PlanGenerator {
     final name = t?.name ?? _builtinName(key);
     final deload = phase == 'recovery' || phase == 'taper';
     final rir = deload ? 4 : const [3, 2, 1][min(block, 2)];
-    final sets = deload ? 2 : (a.difficulty == 'easy' ? 3 : (a.difficulty == 'challenging' && level != 'beginner' ? 4 : 3));
     final est = t?.estimatedMinutes ?? 60;
     final minutes = deload ? (est * 0.7).round() : est;
     final legsInside = key.startsWith('fb_') || key.startsWith('home_') || key.startsWith('bw_') || legHeavyKeys.contains(key);
+    // Sets, rep ranges and loads are per exercise (program + exercise_class.dart +
+    // LoadPrescriber, which also applies the deload: −10 % load, one set less) – the note
+    // only states what is true for every exercise: the effort target and the progression.
     final notes = [
-      // Rep ranges are per exercise (class + goal, see exercise_class.dart) and shown in the
-      // workout, so the note describes the double progression instead of one global range.
-      deload ? l.wGymDeloadDesc(sets) : l.wGymDescRange(sets, rir),
+      if (phase == 'taper') l.wGymTaperNote else if (deload) l.wGymDeloadNote else ...[l.wGymLoadDesc(rir), l.wGymProgressNote],
       if (endurance && role == 'nolegs' && legsInside) l.wGymConcurrentNote,
-      if (minutes > capMin) l.wGymTimeCapNote(capMin),
+      if (minutes > capMin) l.wGymTimeCapNote2(capMin),
     ];
     return PlannedWorkout(
       id: _id(),
@@ -1252,6 +1271,15 @@ class PlanGenerator {
   String _builtinName(String key) {
     final de = l.localeName.startsWith('de');
     return defaultTemplates(() => '', de: de).firstWhere((t) => t.key == key).name;
+  }
+
+  /// Goal race pace (s/km) of the running event: target time, else predicted from VDOT.
+  int? _goalPace() {
+    final meters = Vdot.distances[a.eventDistance];
+    final vdot = Vdot.of(a);
+    if (meters == null) return null;
+    final goal = a.targetTimeSec ?? (vdot == null ? null : Vdot.raceTime(vdot, meters));
+    return goal == null ? null : (goal / (meters / 1000)).round();
   }
 
   // ───────────────────────────── Race ─────────────────────────────
@@ -1432,7 +1460,13 @@ class PlanGenerator {
       date: day,
       sport: sport,
       title: title,
-      description: desc,
+      // Deload / taper weeks say why the session is shorter (not for the race and the
+      // shake-out, which explain themselves).
+      description: [
+        desc,
+        if (phase == 'recovery' && intensity != 'race') l.wRecoveryWeekNote,
+        if (phase == 'taper' && intensity != 'race' && title != l.wShakeout) l.wTaperWeekNote,
+      ].where((x) => x.isNotEmpty).join('\n'),
       durationMin: max(15, (sec / 60 / 5).round() * 5),
       distanceKm: meters <= 0 ? null : double.parse((meters / 1000).toStringAsFixed(1)),
       intensity: intensity,
