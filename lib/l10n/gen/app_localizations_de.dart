@@ -3781,4 +3781,114 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wGymDeloadNote2 => 'Entlastungswoche: Die Gewichte sind ca. 10 % leichter eingetragen, jede Übung behält etwa die Hälfte ihrer Arbeitssätze. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.';
+
+  @override
+  String get glossary => 'Glossar';
+
+  @override
+  String get glossaryHint => 'Kurze Erklärungen der Begriffe und Abkürzungen in der App.';
+
+  @override
+  String termWhatIs(String term) {
+    return 'Was bedeutet $term?';
+  }
+
+  @override
+  String get termRpeTitle => 'RPE – wahrgenommene Anstrengung';
+
+  @override
+  String get termRpeBody => 'Wie anstrengend sich eine Einheit oder ein Satz angefühlt hat, auf einer Skala von 1 (sehr leicht) bis 10 (maximal). 3–4 = locker, du kannst dich unterhalten; 6–7 = fordernd, aber kontrolliert; 9–10 = absolutes Maximum.';
+
+  @override
+  String get termRpeTip => 'Optional. Wenn du sie einträgst, passt sich der Plan genauer an – z. B. führen zu harte lockere Läufe zu einer leichteren nächsten Woche.';
+
+  @override
+  String get termRirTitle => 'RIR – Wiederholungen im Tank';
+
+  @override
+  String get termRirBody => 'Wie viele Wiederholungen du am Ende eines Satzes noch geschafft hättest. „2 im Tank“ heißt: zwei Wiederholungen vor dem Muskelversagen aufhören.';
+
+  @override
+  String get termRirTip => 'Die Effort-Chips entsprechen dem: Leicht ≈ 4+, Passend ≈ 2–3, Schwer ≈ 1, Limit = 0. Die meisten Sätze sollten mit 1–3 im Tank enden.';
+
+  @override
+  String get termE1rmTitle => 'e1RM – geschätztes Maximalgewicht';
+
+  @override
+  String get termE1rmBody => 'Das Gewicht, das du vermutlich genau einmal schaffen würdest – berechnet aus einem Satz mit mehr Wiederholungen (z. B. 80 kg × 8 ≈ 101 kg). Ein echter Maximaltest ist nicht nötig.';
+
+  @override
+  String get termE1rmTip => 'Ideal, um Fortschritt über verschiedene Gewichte und Wiederholungszahlen zu vergleichen.';
+
+  @override
+  String get termVdotTitle => 'VDOT – Lauf-Fitnesswert';
+
+  @override
+  String get termVdotBody => 'Ein Wert nach Trainer Jack Daniels, berechnet aus deinen Wettkampfzeiten. Alle Lauftempos in deinem Plan (locker, Tempo, Intervall) werden daraus abgeleitet.';
+
+  @override
+  String get termVdotTip => '+1 VDOT entspricht etwa 1–2 % schneller über jede Distanz. Er steigt mit regelmäßigem Training und wird aktualisiert, wenn du schneller läufst.';
+
+  @override
+  String get termFtpTitle => 'FTP – funktionelle Schwellenleistung';
+
+  @override
+  String get termFtpBody => 'Die Leistung (Watt), die du auf dem Rad etwa eine Stunde halten kannst. Radzonen wie Grundlage, Sweet Spot und Schwelle sind Prozentwerte davon.';
+
+  @override
+  String get termFtpTip => 'Ohne Wattmesser nutzt der Plan stattdessen Puls und Gefühl.';
+
+  @override
+  String get termCssTitle => 'CSS – kritische Schwimmgeschwindigkeit';
+
+  @override
+  String get termCssBody => 'Dein Schwellentempo im Becken pro 100 m, berechnet aus einem 400-m- und einem 200-m-Test. Schwimm-Intervalle werden relativ dazu vorgegeben.';
+
+  @override
+  String get termCssTip => 'Beispiel: 400 m in 8:00 und 200 m in 3:40 → CSS ≈ 2:10 /100 m.';
+
+  @override
+  String get termSupersetTitle => 'Supersatz';
+
+  @override
+  String get termSupersetBody => 'Zwei (oder drei) Übungen direkt nacheinander mit nur kurzem Wechsel, danach die volle Pause. Die App kombiniert gegensätzliche Muskeln (z. B. Drücken + Rudern), so erholt sich der eine, während der andere arbeitet.';
+
+  @override
+  String get termSupersetTip => 'Spart Zeit, ohne Leistung zu kosten.';
+
+  @override
+  String get termAmrapTitle => 'AMRAP – so viele Wiederholungen wie möglich';
+
+  @override
+  String get termAmrapBody => 'Im letzten Satz so viele saubere Wiederholungen wie möglich – aber eine Wiederholung vor dem Versagen aufhören. Die App korrigiert damit deine Gewichte.';
+
+  @override
+  String get termAmrapTip => 'Erscheint nur, wenn es hilft: bei neuen Übungen und wenn du das obere Ende des Bereichs erreichst.';
+
+  @override
+  String get termVolumeTitle => 'Volumen';
+
+  @override
+  String get termVolumeBody => 'Gewicht × Wiederholungen aller Arbeitssätze zusammengezählt (Aufwärmsätze zählen nicht). Bei Körpergewichtsübungen zählt der bewegte Anteil deines Körpergewichts.';
+
+  @override
+  String get termVolumeTip => 'Mehr Volumen ist nicht automatisch besser – entscheidend ist der Fortschritt über Wochen.';
+
+  @override
+  String get termPhaseTitle => 'Planphasen';
+
+  @override
+  String get termPhaseBody => 'Grundlage: Ausdauer und Technik aufbauen, überwiegend locker. Aufbau: mehr Intensität. Spitze: wettkampfspezifische Einheiten. Tapering: weniger Umfang vor dem Wettkampf, damit du frisch startest. Entlastung: alle 3–4 Wochen eine leichtere Woche, damit sich der Körper anpasst.';
+
+  @override
+  String get termPhaseTip => 'Entlastungs- und Taperwochen fühlen sich bewusst leicht an – nicht nachholen.';
+
+  @override
+  String get termZonesTitle => 'Intensitätszonen';
+
+  @override
+  String get termZonesBody => 'Belastungsbereiche von sehr locker bis maximal, über Tempo, Puls oder Leistung definiert. Etwa 80 % des Ausdauertrainings sollten locker sein – das baut deine Grundlage auf.';
+
+  @override
+  String get termZonesTip => 'Tippe in einer Einheit auf eine Zone, um ihren genauen Bereich zu sehen.';
 }

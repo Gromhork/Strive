@@ -10,6 +10,7 @@ import '../../core/theme.dart';
 import '../../data/exercise_db.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
+import '../../services/exercise_class.dart' show offersBodyweightMode;
 import '../../services/active_workout.dart';
 import '../../services/gym_tools.dart';
 import '../../services/load_prescription.dart';
@@ -18,6 +19,7 @@ import '../../widgets/effort_chips.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart';
 import '../train/exercise_detail_page.dart';
+import '../../widgets/term_info.dart';
 import 'gym_session_page.dart';
 
 /// One exercise per screen (swipe between exercises): demo animation, sets,
@@ -502,27 +504,31 @@ class _SetEditor extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Tooltip(
-                    message: l.bodyweightHint,
-                    child: FilterChip(
-                      avatar: Icon(Icons.accessibility_new_rounded, size: 18, color: bw ? null : Theme.of(context).colorScheme.outline),
-                      showCheckmark: false,
-                      visualDensity: VisualDensity.compact,
-                      label: Text(l.bodyweight),
-                      selected: bw,
-                      onSelected: (on) {
-                        HapticFeedback.selectionClick();
-                        n.setBodyweight(index, on);
-                      },
+              if (offersBodyweightMode(e.exId, e.name, info: ref.watch(exerciseDbProvider).value?.byId(e.exId), current: e.bw))
+                Row(
+                  children: [
+                    Tooltip(
+                      message: l.bodyweightHint,
+                      child: FilterChip(
+                        avatar: Icon(Icons.accessibility_new_rounded, size: 18, color: bw ? null : Theme.of(context).colorScheme.outline),
+                        showCheckmark: false,
+                        visualDensity: VisualDensity.compact,
+                        label: Text(l.bodyweight),
+                        selected: bw,
+                        onSelected: (on) {
+                          HapticFeedback.selectionClick();
+                          n.setBodyweight(index, on);
+                        },
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  if (bw && e.bodyKg > 0)
-                    Text('≈ ${units.weight(e.bodyKg + s.weight, digits: 0)} ${l.loadTotal}', style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
+                    const Spacer(),
+                    if (bw && e.bodyKg > 0)
+                      Text(
+                        '≈ ${units.weight(e.bodyKg + s.weight, digits: 0)} ${l.loadTotal}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                  ],
+                ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -562,8 +568,9 @@ class _SetEditor extends ConsumerWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Tooltip(message: l.rpeHint, child: Text('RPE', style: Theme.of(context).textTheme.labelLarge)),
-                  const SizedBox(width: 8),
+                  Text('RPE', style: Theme.of(context).textTheme.labelLarge),
+                  const TermInfoButton(Term.rpe),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
