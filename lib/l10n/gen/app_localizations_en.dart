@@ -3493,4 +3493,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String wGymDescRange(int sets, int rir) {
     return '$sets sets per exercise in each exercise\'s rep range, leave $rir reps in the tank. Add reps first; once every set reaches the top of the range, add weight and start again at the bottom.';
   }
+
+  @override
+  String wGymLoadDesc(int rir) {
+    return 'Loading week: end every work set with about $rir reps in the tank – the reserve shrinks week by week until the next deload. Sets, rep range and suggested weight are shown for each exercise.';
+  }
+
+  @override
+  String get wGymProgressNote => 'Progression: first build reps up to the top of the range, then add weight and start again at the bottom.';
+
+  @override
+  String get wGymDeloadNote => 'Deload week: weights are entered about 10 % lighter and exercises with 3+ sets lose one. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+
+  @override
+  String get wGymTaperNote => 'Taper before your race: weights about 10 % lighter, nothing to failure – keep your strength, stay fresh.';
+
+  @override
+  String wGymTimeCapNote2(int min) {
+    return 'Only $min min today: do the main lifts as planned, drop a set of the last exercises or skip them.';
+  }
+
+  @override
+  String get wRecoveryWeekNote => 'Deload week: volume is reduced on purpose – keep it easy even if you feel fresh. This is when your body absorbs the last weeks.';
+
+  @override
+  String get wTaperWeekNote => 'Taper: less volume, short efforts stay sharp. Don\'t make up for anything – freshness for race day counts now.';
+
+  @override
+  String get wLongRunHmpDesc => 'Easy long run, the last quarter at your half-marathon goal pace – the most race-specific session.';
+
+  @override
+  String get stepHmpNote => 'Half-marathon goal pace – controlled';
+
+  @override
+  String get wLongRunMpDesc2 => 'Easy long run, the last quarter at your marathon goal pace – the most race-specific session.';
 }

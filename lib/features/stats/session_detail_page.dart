@@ -65,19 +65,16 @@ class SessionDetailPage extends ConsumerWidget {
                 }
                 if (context.mounted) Navigator.pop(context);
                 // Undo restores the session and its plan link.
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(l.deleted),
-                    action: SnackBarAction(
-                      label: l.undo,
-                      onPressed: () {
-                        repo.saveSession(s);
-                        for (final p in linked) {
-                          repo.updatePlan(p.id, {'status': 'done', 'sessionId': s.id});
-                        }
-                      },
-                    ),
-                  ),
+                undoToast(
+                  messenger,
+                  text: l.deleted,
+                  undoLabel: l.undo,
+                  onUndo: () {
+                    repo.saveSession(s);
+                    for (final p in linked) {
+                      repo.updatePlan(p.id, {'status': 'done', 'sessionId': s.id});
+                    }
+                  },
                 );
               }
             },
