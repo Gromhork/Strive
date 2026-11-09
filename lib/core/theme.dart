@@ -109,6 +109,16 @@ class AppTheme {
       ),
       dialogTheme: DialogThemeData(backgroundColor: dark ? AppColors.surfaceDark : Colors.white, surfaceTintColor: Colors.transparent),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant.withValues(alpha: 0.5), space: 1),
+      // Floating, rounded, app-coloured snack bars (the M3 default is a full-width light bar).
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: dark ? const Color(0xFF2A3542) : const Color(0xFF1B232D),
+        contentTextStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.white),
+        actionTextColor: dark ? AppColors.brand : const Color(0xFFB4AAFF),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        elevation: 4,
+      ),
     );
   }
 }

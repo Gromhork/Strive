@@ -6586,6 +6586,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{sets} sets per exercise in each exercise\'s rep range, leave {rir} reps in the tank. Add reps first; once every set reaches the top of the range, add weight and start again at the bottom.'**
   String wGymDescRange(int sets, int rir);
+
+  /// No description provided for @wGymLoadDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading week: end every work set with about {rir} reps in the tank – the reserve shrinks week by week until the next deload. Sets, rep range and suggested weight are shown for each exercise.'**
+  String wGymLoadDesc(int rir);
+
+  /// No description provided for @wGymProgressNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression: first build reps up to the top of the range, then add weight and start again at the bottom.'**
+  String get wGymProgressNote;
+
+  /// No description provided for @wGymDeloadNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Deload week: weights are entered about 10 % lighter and exercises with 3+ sets lose one. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
+  String get wGymDeloadNote;
+
+  /// No description provided for @wGymTaperNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Taper before your race: weights about 10 % lighter, nothing to failure – keep your strength, stay fresh.'**
+  String get wGymTaperNote;
+
+  /// No description provided for @wGymTimeCapNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {min} min today: do the main lifts as planned, drop a set of the last exercises or skip them.'**
+  String wGymTimeCapNote2(int min);
+
+  /// No description provided for @wRecoveryWeekNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Deload week: volume is reduced on purpose – keep it easy even if you feel fresh. This is when your body absorbs the last weeks.'**
+  String get wRecoveryWeekNote;
+
+  /// No description provided for @wTaperWeekNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Taper: less volume, short efforts stay sharp. Don\'t make up for anything – freshness for race day counts now.'**
+  String get wTaperWeekNote;
+
+  /// No description provided for @wLongRunHmpDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy long run, the last quarter at your half-marathon goal pace – the most race-specific session.'**
+  String get wLongRunHmpDesc;
+
+  /// No description provided for @stepHmpNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Half-marathon goal pace – controlled'**
+  String get stepHmpNote;
+
+  /// No description provided for @wLongRunMpDesc2.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy long run, the last quarter at your marathon goal pace – the most race-specific session.'**
+  String get wLongRunMpDesc2;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
