@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
+import '../../services/plan_match.dart';
 import '../shell/health_sync.dart';
 import '../../widgets/common.dart';
 import '../../widgets/segments.dart';
@@ -55,7 +56,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
     );
     repo.saveSession(s);
     ref.read(healthServiceProvider).writeSession(s);
-    final plan = ref.read(planListProvider).where((p) => sameDay(p.date, _start) && p.sport == _sport && p.status == 'planned').firstOrNull;
+    final plan = matchPlan(s, ref.read(planListProvider));
     if (plan != null) repo.updatePlan(plan.id, {'status': 'done', 'sessionId': s.id});
     toast(context, l.saved);
     Navigator.pop(context);

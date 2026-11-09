@@ -443,7 +443,8 @@ class _Cell extends StatelessWidget {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color, fontFeatures: const [FontFeature.tabularFigures()]),
           ),
         ),
-        Text(label, style: Theme.of(context).textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+        // Long labels ("Rest der Einheit") shrink instead of being cut off.
+        FittedBox(fit: BoxFit.scaleDown, child: Text(label, style: Theme.of(context).textTheme.bodySmall, maxLines: 1)),
       ],
     ),
   );

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -22,7 +23,7 @@ class SessionDetailPage extends ConsumerWidget {
     final l = context.l10n;
     final all = ref.watch(sessionListProvider);
     final s = all.where((x) => x.id == sessionId).firstOrNull;
-    if (s == null) return Scaffold(appBar: AppBar());
+    if (s == null) return Scaffold(appBar: AppBar(), body: EmptyState(icon: Icons.history_rounded, text: l.sessionGone));
     final u = ref.watch(profileOrDefaultProvider).units;
     final prev = previousComparable(s, all);
     final xp = xpForSession(s);
@@ -48,7 +49,12 @@ class SessionDetailPage extends ConsumerWidget {
             icon: const Icon(Icons.delete_outline),
             onPressed: () async {
               if (await confirm(context, l.deleteSession, ok: l.delete, danger: true)) {
-                ref.read(repoProvider)!.deleteSession(s.id);
+                final repo = ref.read(repoProvider)!;
+                repo.deleteSession(s.id);
+                // The planned workout it completed is open again (no dangling link).
+                for (final p in ref.read(planListProvider).where((p) => p.sessionId == s.id)) {
+                  repo.updatePlan(p.id, {'status': 'planned', 'sessionId': FieldValue.delete()});
+                }
                 if (context.mounted) Navigator.pop(context);
               }
             },
@@ -98,12 +104,32 @@ class SessionDetailPage extends ConsumerWidget {
                     context,
                     StatTile(label: s.sport.usesPace ? l.avgPace : l.avgSpeed, value: u.paceOrSpeed(s.sport, s.distanceM, s.durationSec)),
                   ),
-                  if (s.elevationM > 0) _half(context, StatTile(label: l.elevation, value: '${s.elevationM.round()} m')),
+                  if (s.elevationM > 0)
+                    _half(
+                      context,
+                      StatTile(
+                        label: l.elevation,
+                        value: u.imperial ? '${(s.elevationM / 0.3048).round()} ft' : '${s.elevationM.round()} m',
+                      ),
+                    ),
                   if (s.laps > 0) _half(context, StatTile(label: l.laps, value: '${s.laps} × ${s.poolLengthM} m')),
                 ],
+                if (s.avgHr != null) _half(context, StatTile(label: l.avgHrShort, value: '${s.avgHr} bpm', color: AppColors.danger)),
+                if (s.maxHr != null) _half(context, StatTile(label: l.maxHr, value: '${s.maxHr} bpm')),
+                if (s.calories != null && s.calories! > 0) _half(context, StatTile(label: l.caloriesLabel, value: '${s.calories} kcal')),
               ],
             ),
           ),
+          if (s.source != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.watch_rounded, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text(l.recordedWith(s.source!), style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ],
           if (s.route.length > 1) ...[
             const SizedBox(height: 12),
             ClipRRect(borderRadius: BorderRadius.circular(20), child: SizedBox(height: 240, child: RouteMap(session: s))),

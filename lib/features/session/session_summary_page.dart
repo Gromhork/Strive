@@ -8,6 +8,7 @@ import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../shell/health_sync.dart';
+import '../../services/plan_match.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
 import 'route_map.dart';
@@ -54,11 +55,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     repo.saveSession(s);
     ref.read(healthServiceProvider).writeSession(s);
     // Mark the matching planned workout as done.
-    final plans = ref.read(planListProvider);
-    final plan =
-        s.planId != null
-            ? plans.where((p) => p.id == s.planId).firstOrNull
-            : plans.where((p) => sameDay(p.date, s.start) && p.sport == s.sport && p.status == 'planned').firstOrNull;
+    final plan = matchPlan(s, ref.read(planListProvider));
     if (plan != null) repo.updatePlan(plan.id, {'status': 'done', 'sessionId': s.id});
     Navigator.pop(context);
   }

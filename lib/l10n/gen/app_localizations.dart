@@ -90,7 +90,10 @@ abstract class AppLocalizations {
   ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('de'), Locale('en')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('de'),
+    Locale('en')
+  ];
 
   /// No description provided for @tagline.
   ///
@@ -6061,6 +6064,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'CSS set {n} × {meters} m'**
   String wSwimCssSet(int n, int meters);
+
+  /// No description provided for @complianceGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed as planned ({pct}% of plan)'**
+  String complianceGreen(int pct);
+
+  /// No description provided for @complianceYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed, partly off plan ({pct}% of plan)'**
+  String complianceYellow(int pct);
+
+  /// No description provided for @complianceOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed, far off plan ({pct}% of plan)'**
+  String complianceOrange(int pct);
+
+  /// No description provided for @complianceDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get complianceDone;
+
+  /// No description provided for @complianceMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed'**
+  String get complianceMissed;
+
+  /// No description provided for @compliancePlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get compliancePlanned;
+
+  /// No description provided for @complianceSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get complianceSkipped;
+
+  /// No description provided for @planCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan completion {pct}%'**
+  String planCompletion(int pct);
+
+  /// No description provided for @weightMinus.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease weight'**
+  String get weightMinus;
+
+  /// No description provided for @weightPlus.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase weight'**
+  String get weightPlus;
+
+  /// No description provided for @previousWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous workout'**
+  String get previousWorkout;
+
+  /// No description provided for @nextWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Next workout'**
+  String get nextWorkout;
+
+  /// No description provided for @avgHrShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. HR'**
+  String get avgHrShort;
+
+  /// No description provided for @caloriesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories'**
+  String get caloriesLabel;
+
+  /// No description provided for @recordedWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded with {source}'**
+  String recordedWith(String source);
+
+  /// No description provided for @sessionGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This workout no longer exists.'**
+  String get sessionGone;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
@@ -6079,18 +6178,18 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'de':
-      return AppLocalizationsDe();
-    case 'en':
-      return AppLocalizationsEn();
+    case 'de': return AppLocalizationsDe();
+    case 'en': return AppLocalizationsEn();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+    'that was used.'
   );
 }

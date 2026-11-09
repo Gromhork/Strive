@@ -1752,5 +1752,56 @@
         "type": "int"
       }
     }
-  }
+  },
+  "complianceGreen": "Completed as planned ({pct}% of plan)",
+  "@complianceGreen": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "complianceYellow": "Completed, partly off plan ({pct}% of plan)",
+  "@complianceYellow": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "complianceOrange": "Completed, far off plan ({pct}% of plan)",
+  "@complianceOrange": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "complianceDone": "Completed",
+  "complianceMissed": "Missed",
+  "compliancePlanned": "Planned",
+  "complianceSkipped": "Skipped",
+  "planCompletion": "Plan completion {pct}%",
+  "@planCompletion": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "weightMinus": "Decrease weight",
+  "weightPlus": "Increase weight",
+  "previousWorkout": "Previous workout",
+  "nextWorkout": "Next workout",
+  "avgHrShort": "Avg. HR",
+  "caloriesLabel": "Calories",
+  "recordedWith": "Recorded with {source}",
+  "@recordedWith": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionGone": "This workout no longer exists."
 }
