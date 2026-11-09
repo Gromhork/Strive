@@ -63,6 +63,12 @@ class Prescription {
   /// Recent e1RM trend of the exercise.
   final E1rmTrend trend;
 
+  /// The last work set is an AMRAP set ("as many reps as possible – stop 1 rep before
+  /// failure"): asked for in the first sessions of an exercise and when the targets are
+  /// at the top of the range, so the app learns the real strength level without a
+  /// rating (see [LoadPrescriber.forExercise]).
+  final bool amrap;
+
   const Prescription({
     required this.weight,
     required this.reps,
@@ -81,6 +87,7 @@ class Prescription {
     this.reason,
     this.effort,
     this.trend = E1rmTrend.unknown,
+    this.amrap = false,
   });
 
   /// Same prescription with the rep range attached.
@@ -95,6 +102,7 @@ class Prescription {
     int? repMin,
     int? repMax,
     bool? bodyweight,
+    bool? amrap,
     bool clearReason = false,
   }) => Prescription(
     weight: weight ?? this.weight,
@@ -114,6 +122,7 @@ class Prescription {
     reason: clearReason ? null : reason,
     effort: effort,
     trend: trend,
+    amrap: amrap ?? this.amrap,
   );
 
   int repsForSet(int workIndex) => workIndex < setReps.length ? setReps[workIndex] : reps;
@@ -137,14 +146,15 @@ class _Info {
 }
 
 class _Entry {
-  _Entry(this.date, this.sets, this.top, {this.effort, this.bodyKg = 0});
+  _Entry(this.date, this.sets, this.top, {this.effort, this.bodyKg = 0, this.rxKg});
   final DateTime date;
   final List<GymSet> sets;
   final double top; // top-set e1RM of the session
   final Effort? effort;
   final double bodyKg;
+  final double? rxKg; // prescribed work weight (null = unknown)
 
-  ProgressEntry get progress => ProgressEntry(date, sets, effort: effort, bodyKg: bodyKg);
+  ProgressEntry get progress => ProgressEntry(date, sets, effort: effort, bodyKg: bodyKg, rxKg: rxKg);
 }
 
 /// Prescribes working weights for gym exercises.
@@ -184,9 +194,13 @@ class LoadPrescriber {
   /// Phases that reduce load (deload / taper weeks).
   static bool lighterPhase(String? phase) => phase == 'recovery' || phase == 'taper';
 
-  /// Deload weeks also drop one work set (volume is the main fatigue driver;
-  /// Bell et al. 2023 deload consensus: reduce volume and/or intensity ~10–50 %).
+  /// Deload weeks also cut the work sets to about half (volume is the main fatigue
+  /// driver; Bell et al. 2023 deload consensus: ~50 % volume, load ~90 %).
   static bool dropsSet(String? phase) => phase == 'recovery';
+
+  /// Work sets kept in a deload week out of [n]: about half, at least 2 of 3+ sets
+  /// (1 of 2).
+  static int deloadSets(int n) => n <= 1 ? n : max(n ~/ 2, n >= 3 ? 2 : 1);
 
   // ───────────────────────────── Public API ─────────────────────────────
 
@@ -205,9 +219,20 @@ class LoadPrescriber {
       p = _fromAnchor(e, info);
     }
     p = p?.withRange(lo, hi);
-    if (p == null || !lighterPhase(phase) || p.weight <= 0) return p;
-    // Deload / taper: ~90 % load (Bosquet 2007 taper meta-analysis: keep intensity high,
-    // cut volume; a ~10 % lighter load keeps the week clearly easier).
+    if (p == null) return null;
+    if (!lighterPhase(phase)) {
+      // AMRAP on the last set while calibrating (first sessions of an exercise) and when
+      // the targets are at the top of the range (how much reserve is left decides the
+      // next jump). Loaded exercises only.
+      final atTop = p.setReps.isNotEmpty ? p.setReps.every((r) => r >= hi) : p.reps >= hi;
+      final amrap = !p.bodyweight && p.weight > 0 && (hist.length < 3 || atTop);
+      return amrap ? p._copy(amrap: true) : p;
+    }
+    if (p.weight <= 0) return p;
+    // Deload / taper: ~90 % of the loading prescription (Bosquet 2007 taper meta-analysis:
+    // keep intensity high, cut volume; a ~10 % lighter load keeps the week clearly
+    // easier). Deload/taper sessions are skipped in the history, so a second deload
+    // session is again 90 % of the loading level, not of the first deload session.
     final increase = p.progression == ProgressionKind.increase;
     return p._copy(
       weight: _floorStep(p.weight * 0.9, info),
@@ -292,6 +317,14 @@ class LoadPrescriber {
 
   GymExercise _applyOne(GymExercise src, String? phase) {
     final e = src.copy(resetDone: true);
+    // Tags from a copied session are stale – set them afresh.
+    e.rxKg = null;
+    e.phase = lighterPhase(phase) ? phase : null;
+    for (final s in e.sets) {
+      s
+        ..target = null
+        ..amrap = false;
+    }
     if (isBodyweight(e)) {
       e.bw = true;
       e.bodyKg = bodyLoad(e);
@@ -312,8 +345,11 @@ class LoadPrescriber {
         } else {
           s.weight = p.weight;
           s.reps = p.repsForSet(k++);
+          s.target = s.reps;
         }
       }
+      e.rxKg = p.weight;
+      if (p.amrap) e.sets.lastWhere((s) => !s.warmup && s.type != SetType.drop, orElse: GymSet.new).amrap = true;
       final warm = e.sets.where((s) => s.warmup).toList();
       if (warm.isNotEmpty && p.weight > 0 && !p.bodyweight) {
         final info = _info(e);
@@ -327,8 +363,12 @@ class LoadPrescriber {
       }
     }
     if (dropsSet(phase)) {
-      final work = e.sets.where((s) => !s.warmup && s.type != SetType.drop).toList();
-      if (work.length > 2) e.sets.remove(work.last);
+      // Deload: about half the work sets, no drop sets.
+      e.sets.removeWhere((s) => s.type == SetType.drop);
+      final work = e.sets.where((s) => !s.warmup).toList();
+      for (final s in work.skip(deloadSets(work.length))) {
+        e.sets.remove(s);
+      }
     }
     return e;
   }
@@ -352,19 +392,32 @@ class LoadPrescriber {
     final loaded = !bodyweight;
     final auto = _autoBodyweight(e);
     final bl = bodyweight ? (e.bodyKg > 0 ? e.bodyKg : bodyLoad(e)) : 0.0;
-    final recent = <_Entry>[], old = <_Entry>[];
+    final recent = <_Entry>[], old = <_Entry>[], lighter = <_Entry>[];
     for (final s in _sessions) {
       final age = now.difference(s.start);
       if (age > maxWindow) break;
-      final inst = s.exercises.where((x) => x.exId == exId).toList();
-      if (inst.isEmpty) continue;
+      final all = s.exercises.where((x) => x.exId == exId).toList();
+      // Deload / taper sessions are temporary and not a performance signal: skipped
+      // (kept only as a last resort when there is nothing else).
+      final inst = all.where((x) => !lighterPhase(x.phase)).toList();
+      final deload = inst.isEmpty;
+      final use = deload ? all : inst;
+      if (use.isEmpty) continue;
       double convert(GymExercise ex, double w) => _toMode(ex, w, bodyweight: bodyweight, auto: auto, bodyLoad: bl);
 
       var sets = <GymSet>[
-        for (final ex in inst)
+        for (final ex in use)
           for (final st in ex.sets)
             if (st.done && !st.warmup && st.type != SetType.drop && st.reps >= 1 && st.reps <= 60)
-              GymSet(weight: convert(ex, st.weight), reps: st.reps, done: true, type: st.type, rpe: st.rpe),
+              GymSet(
+                weight: convert(ex, st.weight),
+                reps: st.reps,
+                done: true,
+                type: st.type,
+                rpe: st.rpe,
+                target: st.target,
+                amrap: st.amrap,
+              ),
       ];
       sets = sets.where((st) => st.weight > (loaded ? -1e-9 : -300) && st.weight < 1000).toList();
       if (loaded) sets = sets.where((st) => st.weight > 0 && st.reps <= 30).toList();
@@ -372,15 +425,26 @@ class LoadPrescriber {
       // they contain done sets with reps (and load) – otherwise they are skipped here.
       if (sets.isEmpty) continue;
       if (loaded && sets.length >= 3) {
-        final med = _median(sets.map(_e1).toList());
-        sets = sets.where((st) => _e1(st) <= med * 1.5 && _e1(st) >= med * 0.5).toList();
+        // AMRAP sets are meant to be far above the others when the load was too light.
+        final normal = sets.where((st) => !st.amrap).map(_e1).toList();
+        final med = _median(normal.isEmpty ? sets.map(_e1).toList() : normal);
+        sets = sets.where((st) => _e1(st) <= med * (st.amrap ? 2.5 : 1.5) && _e1(st) >= med * 0.5).toList();
       }
-      final effort = inst.map((x) => x.effort).whereType<Effort>().firstOrNull;
-      final kg = bodyweight ? inst.map((x) => x.bw == true ? x.bodyKg : 0.0).fold(0.0, max) : 0.0;
-      final entry = _Entry(s.start, sets, loaded ? sets.map(_e1).reduce(max) : 0, effort: effort, bodyKg: kg > 0 ? kg : bl);
-      (age <= recentWindow ? recent : old).add(entry);
+      if (sets.isEmpty) continue;
+      final effort = use.map((x) => x.effort).whereType<Effort>().firstOrNull;
+      final kg = bodyweight ? use.map((x) => x.bw == true ? x.bodyKg : 0.0).fold(0.0, max) : 0.0;
+      final rx = use.map((x) => x.rxKg).whereType<double>().firstOrNull;
+      final entry = _Entry(
+        s.start,
+        sets,
+        loaded ? sets.map(_e1).reduce(max) : 0,
+        effort: effort,
+        bodyKg: kg > 0 ? kg : bl,
+        rxKg: rx == null ? null : convert(use.first, rx),
+      );
+      (deload ? lighter : (age <= recentWindow ? recent : old)).add(entry);
     }
-    final pool = recent.isNotEmpty ? recent : old;
+    final pool = recent.isNotEmpty ? recent : (old.isNotEmpty ? old : lighter);
     if (!loaded || pool.length < 2) return pool;
     return _dropOutliers(pool);
   }
@@ -481,32 +545,87 @@ class LoadPrescriber {
         fromHistory: true,
       );
     }
-    final inc = loadIncrement(_asExercise(e, info), weight: lastW, bodyweight: false);
+    final exInfo = _asExercise(e, info);
+    final inc = loadIncrement(exInfo, weight: lastW, bodyweight: false);
+    final lift = classifyLift(e.exId, e.name, info: exInfo);
+    final barbellCompound = info.kind == _Kind.barbell && lift.isCompound;
     final prog = smartProgression(
-      [for (final h in hist.take(6)) h.progress],
+      [for (final h in hist.take(10)) h.progress],
       bottom: bottom,
       top: top,
       increment: inc,
       level: profile.level,
+      // Novices: linear progression on compound lifts until the first stall (targets
+      // missed in two sessions in a row).
+      linear: profile.level == 'beginner' && lift.isCompound && !_stalledOnce(hist, bottom),
+      // Barbell compounds are not microloaded with reps beyond the range.
+      microload: !barbellCompound,
     );
     if (prog == null) return viaE1rm(1);
-    final w = switch (prog.kind) {
+    var kind = prog.kind;
+    var reason = prog.reason;
+    var reps = prog.reps;
+    var setReps = prog.setReps;
+    var w = switch (prog.kind) {
       ProgressionKind.deload => _floorStep(prog.weight, info),
       ProgressionKind.reset => (prog.weight / _step(info, prog.weight)).round() * _step(info, prog.weight),
       _ => _roundStep(prog.weight, info),
     };
+    final down = kind == ProgressionKind.deload || kind == ProgressionKind.reset;
+    // AMRAP set clearly above its target: the load was too light – re-derive it from the
+    // AMRAP e1RM (stopped 1 rep before failure) at RIR 2 for the bottom of the range,
+    // at most +30 % at once.
+    final amrap = last.sets.where((s) => s.amrap && s.target != null && s.reps >= s.target! + 2).toList();
+    if (amrap.isNotEmpty && !down) {
+      final a = amrap.last;
+      final cal = min(_floorStep(_loadFor(e1rm(a.weight, a.reps + 1), bottom, 2), info), _floorStep(lastW * 1.3, info));
+      if (cal > max(w, lastW + inc) + 1e-6) {
+        w = cal;
+        kind = ProgressionKind.increase;
+        reason = ProgressReason.recalibrated;
+        reps = bottom;
+        setReps = const [];
+      }
+    }
+    // Never more than ~15 % below what the e1RM of the last 4 weeks supports unless reps
+    // were actually missed (limit ratings and holds alone must not spiral the load down).
+    final month = hist.where((h) => now.difference(h.date).inDays <= 28).toList();
+    if (month.isNotEmpty && !month.any((h) => _missed(h, bottom))) {
+      final best = month.map((h) => h.top).reduce(max);
+      final floor = _floorStep(_loadFor(best, reps, 2) * 0.85, info);
+      if (w < floor - 1e-6) {
+        w = floor;
+        reason = ProgressReason.e1rmFloor;
+        if (down) kind = ProgressionKind.hold;
+      }
+    }
     return Prescription(
       weight: _clampMin(w, info),
-      reps: prog.reps,
+      reps: reps,
       source: LoadSource.history,
       e1rm: est,
-      progression: prog.kind,
+      progression: kind,
       fromHistory: true,
-      setReps: prog.setReps,
-      reason: prog.reason,
+      setReps: setReps,
+      reason: reason,
       effort: prog.effort,
       trend: prog.trend,
     );
+  }
+
+  /// Targets missed in two sessions in a row somewhere in [hist] (newest first).
+  static bool _stalledOnce(List<_Entry> hist, int bottom) {
+    for (var i = 0; i + 1 < hist.length; i++) {
+      if (_missed(hist[i], bottom) && _missed(hist[i + 1], bottom)) return true;
+    }
+    return false;
+  }
+
+  /// Reps actually missed in session [h]: a set below its prescribed target, or – old
+  /// data without targets – most sets below the bottom of the range.
+  static bool _missed(_Entry h, int bottom) {
+    if (h.sets.any((s) => s.target != null)) return missedTargets(h.sets);
+    return h.sets.where((s) => s.reps < bottom).length * 2 > h.sets.length;
   }
 
   /// Bodyweight exercises: the same autoregulated double progression on reps; pull-ups,
@@ -520,7 +639,7 @@ class LoadPrescriber {
       // Loaded exercises switched to bodyweight mode by the user also progress the load.
       final inc = lift.loadableBodyweight || !lift.bodyweight ? 2.5 : 0.0;
       final prog = smartProgression(
-        [for (final h in hist.take(6)) h.progress],
+        [for (final h in hist.take(10)) h.progress],
         bottom: bottom,
         top: top,
         increment: inc,

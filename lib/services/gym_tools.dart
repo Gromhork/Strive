@@ -5,8 +5,8 @@ import '../data/models.dart';
 import 'exercise_class.dart';
 
 /// Smallest sensible load step (kg) for progressing an exercise: +5 kg for lower-body
-/// barbell / sled compounds, +2.5 kg for upper-body barbell and machine/cable work,
-/// +2 kg for dumbbells (+1 kg for light dumbbells < 10 kg, where 2 kg would be a 20–30 %
+/// barbell / sled compounds (barbell: 2.5 kg below 50 kg, where 5 kg would be > 10 %),
+/// +2.5 kg for upper-body barbell and machine/cable work, +2 kg for dumbbells (+1 kg for light dumbbells < 10 kg, where 2 kg would be a 20–30 %
 /// jump), +2.5 kg added load for pull-ups / chin-ups / dips, 0 for exercises that are
 /// progressed by reps (push-ups, bodyweight leg and core work). Practice-based, in line
 /// with NSCA guidance of ~2–10 % steps (larger for lower body).
@@ -21,7 +21,9 @@ double loadIncrement(Exercise? e, {double weight = 0, bool? bodyweight}) {
     case 'trap bar':
     case 'smith machine':
     case 'ez barbell':
-      return lowerCompound ? 5 : 2.5;
+      // 5 kg only once it is ≤ 10 % of the load – a light squat/deadlift (< 50 kg) goes
+      // up 2.5 kg at a time instead of being microloaded with reps beyond the range.
+      return lowerCompound && (weight <= 0 || weight >= 50 - 1e-6) ? 5 : 2.5;
     case 'dumbbell':
     case 'kettlebell':
       return weight > 0 && weight < 10 ? 1 : 2;

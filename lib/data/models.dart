@@ -355,7 +355,16 @@ class GymSet {
   SetType type;
   double? rpe; // 6..10 (RIR = 10 - RPE)
 
-  GymSet({this.weight = 0, this.reps = 0, this.done = false, this.type = SetType.normal, this.rpe});
+  /// Rep target the app prescribed for this set (null = none / added by hand). Lets the
+  /// progression tell "did what was asked" apart from "fell short" (planned descending
+  /// targets are not a rep drop-off).
+  int? target;
+
+  /// "As many reps as possible – stop 1 rep before failure" set (calibration set the app
+  /// asks for on the last work set; see LoadPrescriber).
+  bool amrap;
+
+  GymSet({this.weight = 0, this.reps = 0, this.done = false, this.type = SetType.normal, this.rpe, this.target, this.amrap = false});
 
   bool get warmup => type == SetType.warmup;
   set warmup(bool v) => type = v ? SetType.warmup : SetType.normal;
@@ -370,6 +379,8 @@ class GymSet {
             ? SetType.values.firstWhere((e) => e.name == m['t'], orElse: () => SetType.normal)
             : ((m['wu'] ?? false) ? SetType.warmup : SetType.normal),
     rpe: _dn(m['rpe']),
+    target: _in(m['tg']),
+    amrap: m['am'] == true,
   );
   Map<String, dynamic> toMap() => {
     'w': weight,
@@ -377,8 +388,10 @@ class GymSet {
     'd': done,
     if (type != SetType.normal) 't': type.name,
     if (rpe != null) 'rpe': rpe,
+    if (target != null) 'tg': target,
+    if (amrap) 'am': true,
   };
-  GymSet copy() => GymSet(weight: weight, reps: reps, done: done, type: type, rpe: rpe);
+  GymSet copy() => GymSet(weight: weight, reps: reps, done: done, type: type, rpe: rpe, target: target, amrap: amrap);
 }
 
 class GymExercise {
@@ -407,6 +420,16 @@ class GymExercise {
   /// Optional effort rating after the last work set (null = not given).
   Effort? effort;
 
+  /// Work-set weight the app prescribed when the workout was started (null = none). A
+  /// lighter load than last time only counts as a performance drop when the user chose
+  /// it, not when the app prescribed it.
+  double? rxKg;
+
+  /// Plan phase that lightened this exercise ('recovery' = deload week, 'taper'), set by
+  /// LoadPrescriber.apply. Such sessions are skipped by the progression (a deload is
+  /// temporary; the next loading week resumes at the last loading level).
+  String? phase;
+
   GymExercise({
     required this.exId,
     required this.name,
@@ -419,6 +442,8 @@ class GymExercise {
     this.bw,
     this.bodyKg = 0,
     this.effort,
+    this.rxKg,
+    this.phase,
   }) : sets = sets ?? [GymSet(), GymSet(), GymSet()];
 
   List<GymSet> get workSets => sets.where((s) => !s.warmup).toList();
@@ -447,6 +472,8 @@ class GymExercise {
     bw: m['bw'] is bool ? m['bw'] : null,
     bodyKg: _d(m['bodyKg']),
     effort: Effort.fromName(m['effort']),
+    rxKg: _dn(m['rx']),
+    phase: m['ph'] is String ? m['ph'] : null,
   );
   Map<String, dynamic> toMap() => {
     'exId': exId,
@@ -460,6 +487,8 @@ class GymExercise {
     if (bw != null) 'bw': bw,
     if (bodyKg > 0) 'bodyKg': bodyKg,
     if (effort != null) 'effort': effort!.name,
+    if (rxKg != null) 'rx': rxKg,
+    if (phase != null) 'ph': phase,
   };
   GymExercise copy({bool resetDone = false}) => GymExercise(
     exId: exId,
@@ -473,6 +502,8 @@ class GymExercise {
     bw: bw,
     bodyKg: bodyKg,
     effort: resetDone ? null : effort,
+    rxKg: rxKg,
+    phase: phase,
   );
 }
 

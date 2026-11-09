@@ -1095,4 +1095,9 @@ const l10nPairs = <(String, String)>[
   ('Helps adapt your plan – you can skip it.', 'Hilft, deinen Plan anzupassen – kannst du auch weglassen.'),
   ('No rating', 'Keine Angabe'),
   ('Rate', 'Bewerten'),
+  ('all target reps done – a bit more weight, same reps (beginner linear progression)', 'alle Ziel-Wiederholungen geschafft – etwas mehr Gewicht, gleiche Wiederholungen (Anfänger: lineare Steigerung)'),
+  ('held twice and every target met – one more rep on the weakest set', 'zweimal gehalten und jedes Ziel geschafft – eine Wiederholung mehr im schwächsten Satz'),
+  ('your AMRAP set showed more strength – weight adjusted to it', 'dein AMRAP-Satz zeigt mehr Kraft – Gewicht daran angepasst'),
+  ('no reps missed – the weight stays near your strength level', 'keine Wiederholungen verpasst – das Gewicht bleibt nahe an deinem Kraftniveau'),
+  ('Last set: as many reps as possible – stop 1 rep before failure (helps the app learn your strength)', 'Letzter Satz: so viele Wiederholungen wie möglich – 1 Wdh. vor dem Versagen aufhören (so lernt die App deine Kraft)'),
 ];

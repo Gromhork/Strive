@@ -2166,5 +2166,11 @@
   "howHardOptional": "How hard was it? (optional)",
   "rpeOptionalHint": "Helps adapt your plan – you can skip it.",
   "rpeClear": "No rating",
-  "rpeRate": "Rate"
+  "rpeRate": "Rate",
+  "progLinear": "all target reps done – a bit more weight, same reps (beginner linear progression)",
+  "progNudge": "held twice and every target met – one more rep on the weakest set",
+  "progRecalibrated": "your AMRAP set showed more strength – weight adjusted to it",
+  "progE1rmFloor": "no reps missed – the weight stays near your strength level",
+  "amrapHint": "Last set: as many reps as possible – stop 1 rep before failure (helps the app learn your strength)",
+  "amrapShort": "AMRAP"
 }

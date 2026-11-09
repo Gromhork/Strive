@@ -3675,4 +3675,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rpeRate => 'Rate';
+
+  @override
+  String get progLinear => 'all target reps done – a bit more weight, same reps (beginner linear progression)';
+
+  @override
+  String get progNudge => 'held twice and every target met – one more rep on the weakest set';
+
+  @override
+  String get progRecalibrated => 'your AMRAP set showed more strength – weight adjusted to it';
+
+  @override
+  String get progE1rmFloor => 'no reps missed – the weight stays near your strength level';
+
+  @override
+  String get amrapHint => 'Last set: as many reps as possible – stop 1 rep before failure (helps the app learn your strength)';
+
+  @override
+  String get amrapShort => 'AMRAP';
 }

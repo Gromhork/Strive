@@ -6898,6 +6898,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rate'**
   String get rpeRate;
+
+  /// No description provided for @progLinear.
+  ///
+  /// In en, this message translates to:
+  /// **'all target reps done – a bit more weight, same reps (beginner linear progression)'**
+  String get progLinear;
+
+  /// No description provided for @progNudge.
+  ///
+  /// In en, this message translates to:
+  /// **'held twice and every target met – one more rep on the weakest set'**
+  String get progNudge;
+
+  /// No description provided for @progRecalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'your AMRAP set showed more strength – weight adjusted to it'**
+  String get progRecalibrated;
+
+  /// No description provided for @progE1rmFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'no reps missed – the weight stays near your strength level'**
+  String get progE1rmFloor;
+
+  /// No description provided for @amrapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Last set: as many reps as possible – stop 1 rep before failure (helps the app learn your strength)'**
+  String get amrapHint;
+
+  /// No description provided for @amrapShort.
+  ///
+  /// In en, this message translates to:
+  /// **'AMRAP'**
+  String get amrapShort;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

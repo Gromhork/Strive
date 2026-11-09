@@ -355,10 +355,12 @@ judged over the **last 3–6 sessions** instead of the last one only.
 
 | Source | RIR |
 |---|---|
+| AMRAP last set ("as many reps as possible – stop 1 rep before failure", see below) | reps − target + 1 (measured; a chip after it rates the AMRAP set itself, so it comes first) |
 | Optional chip after the last work set: Leicht / Passend / Schwer / Limit | 4+ / 2–3 / 1 / 0 (RIR-based RPE scale [30,31]) |
 | Logged set RPE (hardest set) | 10 − RPE |
 | A work set marked "failure" | 0 |
-| Inferred: rep drop-off across sets at the same load ≥ 30 % (and ≥ 2 reps) | 0 (limit) |
+| Reps vs. the per-set targets the app prescribed (stored on each set) | a set ≥ 2 short → 0; 1 short → 1; all ≥ 2 above → ≥ 3; all met → unknown. A planned descending pattern (10/9/8) is **not** a drop-off |
+| Inferred (no targets – old data, hand-added sets): rep drop-off across sets at the same load ≥ 30 % (and ≥ 2 reps) | 0 (limit) |
 | Inferred: drop-off ≥ 15 % (and ≥ 2 reps) | 1 (hard) – sets far from failure can be repeated with the same reps; losses across sets mean the sets were close to failure (Willardson & Burkett 2005 [73]; Refalo 2023 [28]) |
 | Inferred: every set ≥ 2 reps above the top of the range | ≥ 3 (easy – load clearly too light) |
 | Nothing of the above | unknown → treated as "about right" |
@@ -371,16 +373,28 @@ without load). Theil–Sen slope (median of pairwise slopes, Sen 1968 [75] – r
 sessions within 8 weeks, × time span ÷ median: ≥ +2 % progressing, ≤ −3 % regressing (day-to-day e1RM noise ≈ 2–4 %),
 else plateau. Needs ≥ 3 sessions over ≥ 10 days.
 
+**What a session stores** (so the app can tell its own decisions from the lifter's): per work set the prescribed rep
+`target`, per exercise the prescribed load `rxKg`, an `amrap` flag on the AMRAP set and the plan `phase` when the
+exercise was lightened for a deload/taper week. Old sessions without these fields keep the previous behaviour.
+
 ```text
 order of rules (first match wins); w = last top weight, total = w + body load (bodyweight exercises)
-1. stall:  same weight 3 sessions (≤ 6 wk), never all sets at the top, no more total reps, trend not rising
+1. stall:  same weight ≥ 3 sessions (≤ 6 wk) spanning ≥ 14 days (3 full-body sessions in one week are no stall),
+           never all sets at the top, no more total reps, trend not rising, and – when targets are stored – a target
+           was missed (holds the app prescribed and the lifter completed are not a stall)
            → reset w × 0.9 (bodyweight: shed added load, never into assistance)
 2. drop:   the last two sessions both worse than the one before them
-           (same load ±1 % and ≥ 1 rep/set fewer, or lighter load without more reps)
+           (same load ±1 % and ≥ 1 rep/set fewer; lighter load with fewer reps; lighter load without more reps only
+           when the lifter chose it – not the app's own lighter prescription; a session with every target met is
+           never "worse")
            → ≥ 2 reps/set lost or limit: −7.5 % of total (reactive deload, Bell 2023 [74]); else hold w, repeat reps
+2b. linear (BEGINNER, compound lifts, targets stored, until the first stall = targets missed twice in a row):
+           all targets hit and not hard → +1 increment, same reps (§2.4 linear model); hard → hold;
+           narrowly missed once → same weight and targets again; then double progression
 3. top:    all sets ≥ top of range
            limit → hold w, top reps once more
-           one increment > 10 % of total (light dumbbells, isolation) → MICROLOADING: reps beyond the top first
+           one increment > 10 % of total (light dumbbells, isolation; never barbell compounds – a light squat uses a
+               2.5 kg step below 50 kg instead of 5 kg) → MICROLOADING: reps beyond the top first
                (+1/session, +2 when rated easy) up to top + max(2, 25 %) – hypertrophy is similar across ~6–30 reps
                near failure (Schoenfeld 2017 [26]) – then +1 increment with reps matched to the same e1RM − 1
            else k increments, restart at the bottom: k = 2 when easy (intermediate: rated or inferred; advanced:
@@ -389,8 +403,35 @@ order of rules (first match wins); w = last top weight, total = w + body load (b
            2–3 short → one step back; more → −10 %
 5. inside: limit → repeat the same reps; hard twice in a row at the same load without more reps → repeat;
            else +1 rep per set below the top (+2 when easy, or beginner with even sets and not hard)
+hold guard: a hold (rules 2, 3-limit, 5) after two holds in which every target was met → +1 rep on the weakest set
+           (all at the top: +1 increment) – a lifter who keeps rating "limit" but does every rep still progresses
+AMRAP recalibration: AMRAP set ≥ 2 reps above its target → load = e1RM(AMRAP reps + 1) at RIR 2 for the bottom of the
+           range, at most +30 % at once, when that is more than the normal step
+e1RM floor: no reps missed in the last 4 weeks → never more than 15 % below the load the best e1RM of those 4 weeks
+           supports (RIR 2) – limit ratings and holds alone cannot spiral the load down
 breaks (unchanged): 3–6 wk → last weight × 0.95/0.9; > 6 wk → e1RM × 0.9 (× 0.85 beyond 12 wk) [68]
-deload / taper week (unchanged): load × 0.9, deload drops one set
+deload / taper week: load × 0.9 of the loading-week prescription, deload keeps about half the work sets
+           (max(n/2, 2) of n ≥ 3, 1 of 2; no drop sets) – Bell 2023 [74]: ~50 % volume. Deload/taper sessions are
+           tagged and skipped by progression, trend and e1RM, so the second deload session is again 90 % of the loading
+           level and the next loading week resumes at the last loading level (§1.9) instead of "regressing" from it
+```
+
+**AMRAP calibration set** [P]: the last work set is "as many reps as possible – stop 1 rep before failure" in the first
+3 sessions of an exercise (the start load is a guess from a 1RM or body-weight standards) and whenever the targets are
+at the top of the range. Reps are otherwise capped at the target, so an under-estimated start (e.g. 60 kg for a true
+100 kg 1RM) could never show itself without a rating; one near-failure set per exercise is cheap (Refalo 2023 [28]:
+fatigue rises mainly over the last reps before failure) and is the least intrusive way to learn the real level – no
+extra step, no rating needed. Rejected alternatives: assuming RIR 2–3 instead of 1 for unrated sessions only shifts the
+e1RM a few % and cannot detect a 40 % under-estimate; a more prominent effort chip still depends on the user and the
+"easy" rating (RIR 4+) is open-ended.
+
+```text
+simulation (test/gym_progression_sim_test.dart; lifter: reps to failure = 30·(1RM/load − 1), −1 rep per set)
+deload 3:1, bench 1RM 85→90:    before 62.5 → deload 57.5, 50 → 50 "dip"    after 65 → deload 57.5, 57.5 → 65 → 67.5
+"limit" chip every session:      before 60 → 55 → 50 → 45 → 40 → 35            after 60 → AMRAP → 77.5, held, +reps
+pull-ups 10/9/8 pattern:         before 8× holdHard at 10/9/8 (1RM rising)      after 10/10/10 → +2.5 kg
+beginner squat 1RM 60→92.5:      before 47.5 → 62.5 (microloaded to 10 reps)    after 47.5 → 70 (linear, then double)
+bench start 60 vs 1RM 100:       before 65 after 12 sessions                    after 77.5 from session 2
 ```
 
 **Training level:** beginners progress fastest and misjudge RIR conservatively → bigger steps unless a session was hard;
