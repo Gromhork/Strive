@@ -1968,7 +1968,7 @@
   "recalMoved": "Moved",
   "recalDropped": "Dropped",
   "recalPaces": "New paces",
-  "recalApply": "Apply {n} changes",
+  "recalApply": "{n, plural, =1{Apply 1 change} other{Apply {n} changes}}",
   "@recalApply": {
     "placeholders": {
       "n": {
