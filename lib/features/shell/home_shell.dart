@@ -15,6 +15,7 @@ import '../session/cardio_session_page.dart';
 import '../session/gym_session_page.dart';
 import '../stats/stats_page.dart';
 import '../train/train_page.dart';
+import 'streak_sheet.dart';
 
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key});
@@ -35,16 +36,8 @@ class HomeShell extends ConsumerWidget {
             selectedIndex: index,
             onDestinationSelected: ref.read(navIndexProvider.notifier).set,
             destinations: [
-              NavigationDestination(
-                icon: const Icon(Icons.home_outlined),
-                selectedIcon: const Icon(Icons.home_rounded),
-                label: l.navHome,
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.bolt_outlined),
-                selectedIcon: const Icon(Icons.bolt_rounded),
-                label: l.navTrain,
-              ),
+              NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home_rounded), label: l.navHome),
+              NavigationDestination(icon: const Icon(Icons.bolt_outlined), selectedIcon: const Icon(Icons.bolt_rounded), label: l.navTrain),
               NavigationDestination(
                 icon: const Icon(Icons.calendar_month_outlined),
                 selectedIcon: const Icon(Icons.calendar_month_rounded),
@@ -91,23 +84,27 @@ class StriveTopBar extends ConsumerWidget implements PreferredSizeWidget {
             children: [
               Tooltip(
                 message: l.weekStreakTooltip,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.danger.withValues(alpha: stats.weekStreak > 0 ? 0.16 : 0.06),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.local_fire_department_rounded,
-                        size: 20,
-                        color: stats.weekStreak > 0 ? AppColors.danger : scheme.outline,
-                      ),
-                      const SizedBox(width: 4),
-                      Text('${stats.weekStreak}', style: const TextStyle(fontWeight: FontWeight.w700)),
-                    ],
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => showStreakSheet(context, ref),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: stats.weekStreak > 0 ? 0.16 : 0.06),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.local_fire_department_rounded,
+                          size: 20,
+                          color: stats.weekStreak > 0 ? AppColors.danger : scheme.outline,
+                        ),
+                        const SizedBox(width: 4),
+                        Text('${stats.weekStreak}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -175,13 +172,7 @@ class StriveTopBar extends ConsumerWidget implements PreferredSizeWidget {
 }
 
 class _FilterButton extends StatelessWidget {
-  const _FilterButton({
-    required this.selected,
-    required this.color,
-    required this.icon,
-    required this.onTap,
-    required this.tooltip,
-  });
+  const _FilterButton({required this.selected, required this.color, required this.icon, required this.onTap, required this.tooltip});
   final bool selected;
   final Color color;
   final IconData icon;
@@ -257,10 +248,7 @@ class _Elapsed extends StatelessWidget {
       stream: Stream.periodic(const Duration(seconds: 1)),
       builder: (_, __) {
         final sec = cardio?.elapsed ?? DateTime.now().difference(start!).inSeconds;
-        return Text(
-          clock(sec),
-          style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()], fontWeight: FontWeight.w600),
-        );
+        return Text(clock(sec), style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()], fontWeight: FontWeight.w600));
       },
     );
   }

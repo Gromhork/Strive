@@ -360,7 +360,7 @@
   "syncCalendar": "Export calendar",
   "currentWeek": "Current",
   "nextWeek": "Next",
-  "lastWeek": "Last",
+  "lastWeek": "Last week",
   "nothingPlanned": "Nothing planned.",
   "nothingToExport": "No upcoming workouts to export.",
   "icsShareText": "My Strive training plan (.ics) – open it with a calendar app to import it.",
@@ -1632,5 +1632,42 @@
       }
     }
   },
-  "showDrills": "Show drills"
+  "showDrills": "Show drills",
+  "streakWeeks": "{count} weeks in a row",
+  "@streakWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "streakThisWeek": "This week",
+  "streakWeekDone": "Goal reached: {done} of {target} training days – this week counts!",
+  "@streakWeekDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "streakWeekLeft": "{done} of {target} training days – {count} more to keep the streak going.",
+  "@streakWeekLeft": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "streakLastWeeks": "Last 8 weeks",
+  "streakHow": "A week counts when you train on as many days as planned. With a training plan, the goal is the number of days with planned workouts that week (two sessions on one day count as one day); without a plan it is your number of training days. The current week never breaks your streak – it is added as soon as you reach the goal.",
+  "showPastWeeks": "Past weeks"
 }

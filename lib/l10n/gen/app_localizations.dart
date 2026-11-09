@@ -1760,7 +1760,7 @@ abstract class AppLocalizations {
   /// No description provided for @lastWeek.
   ///
   /// In en, this message translates to:
-  /// **'Last'**
+  /// **'Last week'**
   String get lastWeek;
 
   /// No description provided for @nothingPlanned.
@@ -5848,6 +5848,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show drills'**
   String get showDrills;
+
+  /// No description provided for @streakWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} weeks in a row'**
+  String streakWeeks(int count);
+
+  /// No description provided for @streakThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get streakThisWeek;
+
+  /// No description provided for @streakWeekDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal reached: {done} of {target} training days – this week counts!'**
+  String streakWeekDone(int done, int target);
+
+  /// No description provided for @streakWeekLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {target} training days – {count} more to keep the streak going.'**
+  String streakWeekLeft(int done, int target, int count);
+
+  /// No description provided for @streakLastWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 8 weeks'**
+  String get streakLastWeeks;
+
+  /// No description provided for @streakHow.
+  ///
+  /// In en, this message translates to:
+  /// **'A week counts when you train on as many days as planned. With a training plan, the goal is the number of days with planned workouts that week (two sessions on one day count as one day); without a plan it is your number of training days. The current week never breaks your streak – it is added as soon as you reach the goal.'**
+  String get streakHow;
+
+  /// No description provided for @showPastWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Past weeks'**
+  String get showPastWeeks;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

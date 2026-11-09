@@ -72,11 +72,10 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     final xp = xpForSession(s);
     final prs = s.sport == Sport.gym ? newPrs(s, history) : <String>[];
     final prev = previousComparable(s, history);
-    final before = GameStats.compute(
-      history.where((h) => h.id != s.id).toList(),
-      ref.watch(profileOrDefaultProvider).weeklyTarget,
-    );
-    final after = GameStats.compute([s, ...history.where((h) => h.id != s.id)], ref.watch(profileOrDefaultProvider).weeklyTarget);
+    final target = ref.watch(profileOrDefaultProvider).weeklyTarget;
+    final plans = ref.watch(planListProvider);
+    final before = GameStats.compute(history.where((h) => h.id != s.id).toList(), target, plans: plans);
+    final after = GameStats.compute([s, ...history.where((h) => h.id != s.id)], target, plans: plans);
     final newBadges =
         after.badges.where((b) => b.earned && !before.badges.firstWhere((x) => x.def.id == b.def.id).earned).toList();
     final levelUp = after.level.level > before.level.level;

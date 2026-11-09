@@ -862,7 +862,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get nextWeek => 'Nächste';
 
   @override
-  String get lastWeek => 'Letzte';
+  String get lastWeek => 'Letzte Woche';
 
   @override
   String get nothingPlanned => 'Nichts geplant.';
@@ -3056,4 +3056,31 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get showDrills => 'Übungen anzeigen';
+
+  @override
+  String streakWeeks(int count) {
+    return '$count Wochen in Folge';
+  }
+
+  @override
+  String get streakThisWeek => 'Diese Woche';
+
+  @override
+  String streakWeekDone(int done, int target) {
+    return 'Ziel erreicht: $done von $target Trainingstagen – diese Woche zählt!';
+  }
+
+  @override
+  String streakWeekLeft(int done, int target, int count) {
+    return '$done von $target Trainingstagen – noch $count, dann zählt die Woche.';
+  }
+
+  @override
+  String get streakLastWeeks => 'Letzte 8 Wochen';
+
+  @override
+  String get streakHow => 'Eine Woche zählt, wenn du an so vielen Tagen trainierst wie geplant. Mit Trainingsplan ist das Ziel die Anzahl der Tage mit geplanten Einheiten in dieser Woche (zwei Einheiten an einem Tag zählen als ein Tag), ohne Plan deine Anzahl Trainingstage. Die laufende Woche unterbricht deinen Streak nie – sie wird gezählt, sobald du das Ziel erreichst.';
+
+  @override
+  String get showPastWeeks => 'Vergangene Wochen';
 }
