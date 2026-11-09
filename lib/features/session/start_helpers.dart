@@ -18,13 +18,22 @@ import '../../widgets/segments.dart';
 Future<void> startPlanned(BuildContext context, WidgetRef ref, PlannedWorkout p) async {
   final template = ref.read(templateListProvider).where((t) => t.id == p.templateId).firstOrNull;
   if (p.sport == Sport.gym) {
-    await startGym(context, ref, title: p.title, template: template, planId: p.id, phase: p.phase);
+    await startGym(
+      context,
+      ref,
+      title: p.title,
+      template: template,
+      planId: p.id,
+      phase: p.phase,
+      exercises: p.exercises.isNotEmpty ? p.exercises : null,
+    );
   } else {
     await showCardioStart(context, ref, p.sport, title: p.title, planId: p.id, steps: p.steps);
   }
 }
 
-/// Starts a gym workout; the template's work sets get prescribed weights
+/// Starts a gym workout. [exercises] overrides the program's exercises (e.g. a
+/// planned workout adjusted for one day). Work sets get prescribed weights
 /// ([loadPrescriberProvider]), adjusted for the plan [phase] (deload / taper).
 Future<void> startGym(
   BuildContext context,
@@ -33,10 +42,11 @@ Future<void> startGym(
   WorkoutTemplate? template,
   String? planId,
   String? phase,
+  List<GymExercise>? exercises,
 }) async {
   if (!await _ensureNothingRunning(context, ref)) return;
-  final exercises = ref.read(loadPrescriberProvider).apply(template?.exercises ?? const [], phase: phase);
-  ref.read(activeGymProvider.notifier).start(title: title, templateId: template?.id, planId: planId, exercises: exercises);
+  final list = ref.read(loadPrescriberProvider).apply(exercises ?? template?.exercises ?? const [], phase: phase);
+  ref.read(activeGymProvider.notifier).start(title: title, templateId: template?.id, planId: planId, exercises: list);
   if (context.mounted) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => const GymSessionPage()));
   }

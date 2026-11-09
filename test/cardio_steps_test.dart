@@ -60,7 +60,7 @@ void main() {
       expect(stepTitle(de, cssSet, 4, sport: Sport.swim), 'Intervall 2/4');
       expect(stepTitle(de, cssSet, 4, sport: Sport.swim, spoken: true), 'Intervall 2 von 4');
       expect(stepTitle(de, cssSet, 3, sport: Sport.swim), 'Pause');
-      expect(stepSetLabel(en, cssSet, 4, u, Sport.swim), '4 × 100 m · CSS');
+      expect(stepSetLabel(en, cssSet, 4, u, Sport.swim), '4 × 100 m · CSS pace');
     });
   });
 
@@ -205,9 +205,9 @@ void main() {
     });
 
     test('swim step speech talks about 100 m pace and rests', () {
-      expect(stepSpeech(de, cssSet, 2, u, Sport.swim, 'de'), 'Intervall 1 von 4. 100 Meter CSS, 1:40 bis 1:45 pro 100 Meter.');
+      expect(stepSpeech(de, cssSet, 2, u, Sport.swim, 'de'), 'Intervall 1 von 4. 100 Meter CSS-Tempo, 1:40 bis 1:45 pro 100 Meter.');
       // Later repetitions skip the pace (short reps would be chatty).
-      expect(stepSpeech(de, cssSet, 4, u, Sport.swim, 'de'), 'Intervall 2 von 4. 100 Meter CSS.');
+      expect(stepSpeech(de, cssSet, 4, u, Sport.swim, 'de'), 'Intervall 2 von 4. 100 Meter CSS-Tempo.');
       expect(stepSpeech(de, cssSet, 3, u, Sport.swim, 'de'), 'Pause. 15 Sekunden.');
       for (var i = 0; i < cssSet.length; i++) {
         for (final (l, lang) in [(de, 'de'), (en, 'en')]) {
@@ -222,7 +222,7 @@ void main() {
         WorkoutStep(kind: 'recovery', durationSec: 120, zone: 'REC'),
         WorkoutStep(kind: 'work', distanceM: 800, zone: 'I', paceMin: 230, paceMax: 240),
       ];
-      expect(stepSpeech(de, run, 0, u, Sport.run, 'de'), 'Intervall 1 von 2. 800 Meter Intervalltempo, 3:50 bis 4:00 pro Kilometer.');
+      expect(stepSpeech(de, run, 0, u, Sport.run, 'de'), 'Intervall 1 von 2. 800 Meter Intervall, 3:50 bis 4:00 pro Kilometer.');
       expect(stepTitle(de, run, 2), 'Intervall 2/2');
     });
 

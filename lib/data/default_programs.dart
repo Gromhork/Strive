@@ -416,7 +416,7 @@ List<WorkoutTemplate> defaultTemplates(String Function() id, {bool de = false}) 
     de,
     'long',
     order: 1,
-    [_st('steady', 'L', sec: 80 * 60)],
+    [_st('steady', 'E', sec: 80 * 60)],
     descEn: 'Easy and steady. From 75 min take carbs every 30–40 min.',
     descDe: 'Locker und gleichmäßig. Ab 75 min alle 30–40 min Kohlenhydrate.',
   ),
@@ -531,7 +531,18 @@ List<WorkoutTemplate> defaultTemplates(String Function() id, {bool de = false}) 
   // ── Swimming.
   _cardio(id(), 'swim_tech', Sport.swim, 'swim', 'Technique Swim', 'Technikschwimmen', de, 'technique', order: 0, [
     _st('warmup', 'REC', m: 300),
-    ..._repeat(8, [_st('work', 'DR', m: 50)], [_st('recovery', 'REC', sec: 20)]),
+    ..._repeat(
+      8,
+      [
+        _st(
+          'work',
+          'DR',
+          m: 50,
+          note: de ? 'Abschlagschwimmen / Fingerspitzen ziehen / 6-1-6 Seitlage / Faustschwimmen – je 2×' : 'Catch-up / fingertip drag / 6-1-6 side kick / fist swimming – 2× each',
+        ),
+      ],
+      [_st('recovery', 'REC', sec: 20)],
+    ),
     _st('recovery', 'REC', sec: 60),
     ..._repeat(6, [_st('work', 'EN', m: 100)], [_st('recovery', 'REC', sec: 20)]),
     _st('cooldown', 'REC', m: 200),
@@ -554,7 +565,7 @@ List<WorkoutTemplate> defaultTemplates(String Function() id, {bool de = false}) 
     descEn: 'At your critical swim speed.',
     descDe: 'In deiner kritischen Schwimmgeschwindigkeit (CSS).',
   ),
-  _cardio(id(), 'swim_endurance', Sport.swim, 'swim', 'Endurance 4×400', 'Ausdauer 4×400', de, 'moderate', order: 2, [
+  _cardio(id(), 'swim_endurance', Sport.swim, 'swim', 'Endurance 4×400', 'Ausdauer 4×400', de, 'easy', order: 2, [
     _st('warmup', 'REC', m: 300),
     ..._repeat(4, [_st('work', 'EN', m: 400)], [_st('recovery', 'REC', sec: 30)]),
     _st('cooldown', 'REC', m: 200),

@@ -18,6 +18,7 @@ import '../../widgets/segments.dart';
 import '../../core/theme.dart';
 import '../../data/default_programs.dart';
 import '../onboarding/onboarding_page.dart';
+import '../train/gym_exercise_editor.dart';
 
 /// Add or edit a planned workout (full-screen editor with phases for endurance).
 Future<void> showPlanEditor(BuildContext context, WidgetRef ref, {PlannedWorkout? existing, DateTime? date}) {
@@ -47,6 +48,17 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
   late String? _templateId = widget.existing?.templateId;
   late List<WorkoutStep> _steps = [...?widget.existing?.steps];
   late bool _isKey = widget.existing?.isKey ?? false;
+  // Gym: exercises of this workout. `_customEx` = adjusted for this day only.
+  late List<GymExercise> _gymEx = _initialGymExercises();
+  late bool _customEx = widget.existing?.exercises.isNotEmpty ?? false;
+
+  List<GymExercise> _initialGymExercises() {
+    final ex = widget.existing;
+    if (ex == null || ex.sport != Sport.gym) return [];
+    if (ex.exercises.isNotEmpty) return [for (final e in ex.exercises) e.copy(resetDone: true)];
+    final t = ref.read(templateListProvider).where((t) => t.id == ex.templateId).firstOrNull;
+    return [for (final e in t?.exercises ?? const <GymExercise>[]) e.copy(resetDone: true)];
+  }
   int _editorGen = 0; // forces a fresh StepEditor when steps are replaced from outside
 
   bool get _structured => _sport != Sport.gym && _steps.isNotEmpty;
@@ -88,15 +100,16 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
       sport: _sport,
       title: _title.text.trim().isEmpty ? _sport.label(l) : _title.text.trim(),
       description: _desc.text.trim(),
-      durationMin: est?.$1 ?? _min,
+      durationMin: est?.$1 ?? (_sport == Sport.gym && _gymEx.isNotEmpty ? estimateGymMinutes(_gymEx) : _min),
       distanceKm: est != null ? est.$2 : parseNum(_km.text),
-      intensity: _intensity,
+      intensity: _structured && _intensity != 'race' ? deriveIntensity(_steps, _sport) : _intensity,
       templateId: _templateId,
       status: widget.existing?.status ?? 'planned',
       sessionId: widget.existing?.sessionId,
       steps: _sport == Sport.gym ? const [] : _steps,
       phase: widget.existing?.phase,
       isKey: _isKey,
+      exercises: _sport == Sport.gym && _customEx ? _gymEx : const [],
     );
     repo.savePlan(plan);
     return plan;
@@ -115,7 +128,52 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
         _steps = [for (final s in t.steps) withTargets(s, t.sport, p)];
         _editorGen++;
       }
+      if (t.sport == Sport.gym) {
+        _gymEx = [for (final e in t.exercises) e.copy(resetDone: true)];
+        _customEx = false;
+      }
     });
+  }
+
+  List<Widget> _gymSection() {
+    final l = context.l10n;
+    final template = ref.watch(templateListProvider).where((t) => t.id == _templateId).firstOrNull;
+    return [
+      const SizedBox(height: 20),
+      Text(l.exercises, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+      const SizedBox(height: 4),
+      Text(
+        _customEx && template != null ? l.planExercisesCustom(template.name) : l.planExercisesHint,
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+      const SizedBox(height: 10),
+      GymExerciseEditor(exercises: _gymEx, onChanged: () => setState(() => _customEx = true)),
+      if (_customEx && template != null)
+        Wrap(
+          spacing: 4,
+          children: [
+            TextButton.icon(
+              icon: const Icon(Icons.save_as_outlined, size: 18),
+              label: Text(l.saveToProgram),
+              onPressed: () {
+                ref.read(repoProvider)!.saveTemplate(template.copyWith(exercises: [for (final e in _gymEx) e.copy(resetDone: true)]));
+                setState(() => _customEx = false);
+                toast(context, l.savedToProgram(template.name));
+              },
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.restart_alt_rounded, size: 18),
+              label: Text(l.resetToProgram),
+              onPressed: () => _applyTemplate(template),
+            ),
+          ],
+        ),
+      if (_gymEx.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text('${l.duration}: ~${humanDuration(estimateGymMinutes(_gymEx) * 60)}', style: Theme.of(context).textTheme.bodySmall),
+        ),
+    ];
   }
 
   @override
@@ -139,6 +197,8 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
                   _sport = v;
                   _templateId = null;
                   _steps = [];
+                  _gymEx = [];
+                  _customEx = false;
                   _editorGen++;
                 }),
           ),
@@ -170,7 +230,10 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
               onChanged: (v) {
                 final t = templates.where((t) => t.id == v).firstOrNull;
                 if (t == null) {
-                  setState(() => _templateId = null);
+                  setState(() {
+                    _templateId = null;
+                    if (!_customEx) _gymEx = [];
+                  });
                 } else {
                   _applyTemplate(t);
                 }
@@ -191,7 +254,14 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
               onChanged: (v) => setState(() => _isKey = v),
             ),
             const SizedBox(height: 4),
-            Text(l.workoutPhases, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(l.workoutPhases, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                ),
+                ZoneInfoButton(sport: _sport, profile: profile),
+              ],
+            ),
             const SizedBox(height: 4),
             Text(l.structuredWorkoutSub, style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 10),
@@ -211,7 +281,8 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
                 ),
               ),
           ],
-          if (!_structured) ...[
+          if (_sport == Sport.gym) ..._gymSection(),
+          if (!_structured && !(_sport == Sport.gym && _gymEx.isNotEmpty)) ...[
             const SizedBox(height: 8),
             LabeledSlider(
               label: l.duration,
@@ -229,7 +300,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
                 decoration: InputDecoration(labelText: l.targetDistance, suffixText: 'km'),
               ),
           ],
-          if (_sport != Sport.gym) ...[
+          if (_sport != Sport.gym && !_structured) ...[
             const SizedBox(height: 16),
             Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
@@ -237,7 +308,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final i in intensities)
+                for (final i in intensitiesFor(_sport))
                   ChoiceChip(
                     label: Text(intensityLabel(l, i)),
                     selected: _intensity == i,

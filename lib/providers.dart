@@ -70,7 +70,7 @@ final templateListProvider = Provider<List<WorkoutTemplate>>((ref) => ref.watch(
 final gameStatsProvider = Provider<GameStats>((ref) {
   final s = ref.watch(sessionListProvider);
   final target = ref.watch(profileOrDefaultProvider).weeklyTarget;
-  return GameStats.compute(s, target);
+  return GameStats.compute(s, target, plans: ref.watch(planListProvider));
 });
 
 final recoveryProvider = Provider<RecoveryInfo>((ref) => RecoveryInfo.compute(ref.watch(sessionListProvider)));

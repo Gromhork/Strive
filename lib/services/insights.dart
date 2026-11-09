@@ -84,6 +84,15 @@ const badgeDefs = [
 
 // ───────────────────────────── Aggregated stats ─────────────────────────────
 
+/// Training days done vs. the goal of one week.
+class WeekGoal {
+  const WeekGoal(this.week, this.done, this.goal);
+  final DateTime week;
+  final int done;
+  final int goal;
+  bool get met => done >= goal;
+}
+
 class GameStats {
   final int totalXp;
   final LevelInfo level;
@@ -101,7 +110,7 @@ class GameStats {
     required this.xpBySession,
   });
 
-  static GameStats compute(List<Session> sessions, int weeklyTarget) {
+  static GameStats compute(List<Session> sessions, int weeklyTarget, {List<PlannedWorkout> plans = const []}) {
     final xpBy = <String, int>{};
     final sportXp = {for (final s in Sport.values) s: 0};
     var total = 0;
@@ -111,7 +120,7 @@ class GameStats {
       sportXp[s.sport] = sportXp[s.sport]! + x;
       total += x;
     }
-    final streak = computeWeekStreak(sessions, weeklyTarget);
+    final streak = computeWeekStreak(sessions, weeklyTarget, plans: plans);
     return GameStats(
       totalXp: total,
       level: LevelInfo.fromXp(total),
@@ -122,23 +131,41 @@ class GameStats {
     );
   }
 
-  /// Consecutive weeks (ending this week) in which the weekly target was met.
-  /// The current week only counts once the target is reached, but never breaks the streak.
-  static int computeWeekStreak(List<Session> sessions, int target) {
-    final t = max(1, target);
-    final counts = <DateTime, Set<DateTime>>{};
+  /// Training-day goal of the week starting [week]: the number of days with planned
+  /// workouts when a plan exists for that week (so a plan with two sessions on one day
+  /// or a lighter recovery week is judged fairly), else the profile's training days.
+  static int weekGoal(DateTime week, int target, List<PlannedWorkout> plans) {
+    final end = week.add(const Duration(days: 7));
+    final planned = {
+      for (final p in plans)
+        if (!p.date.isBefore(week) && p.date.isBefore(end)) dayOnly(p.date),
+    };
+    return max(1, planned.isNotEmpty ? min(planned.length, max(1, target)) : target);
+  }
+
+  /// Done training days vs. goal for the last [weeks] weeks (oldest first, current last).
+  static List<WeekGoal> weekHistory(List<Session> sessions, int target, {List<PlannedWorkout> plans = const [], int weeks = 8}) {
+    final days = <DateTime, Set<DateTime>>{};
     for (final s in sessions) {
-      counts.putIfAbsent(startOfWeek(s.start), () => {}).add(dayOnly(s.start));
+      days.putIfAbsent(startOfWeek(s.start), () => {}).add(dayOnly(s.start));
     }
-    var week = startOfWeek(DateTime.now());
-    var streak = (counts[week]?.length ?? 0) >= t ? 1 : 0;
-    while (true) {
-      week = week.subtract(const Duration(days: 7));
-      if ((counts[week]?.length ?? 0) >= t) {
-        streak++;
-      } else {
-        break;
-      }
+    final now = startOfWeek(DateTime.now());
+    return [
+      for (var i = weeks - 1; i >= 0; i--)
+        () {
+          final w = now.subtract(Duration(days: 7 * i));
+          return WeekGoal(w, days[w]?.length ?? 0, weekGoal(w, target, plans));
+        }(),
+    ];
+  }
+
+  /// Consecutive weeks (ending this week) in which the weekly goal was met.
+  /// The current week only counts once the goal is reached, but never breaks the streak.
+  static int computeWeekStreak(List<Session> sessions, int target, {List<PlannedWorkout> plans = const []}) {
+    final h = weekHistory(sessions, target, plans: plans, weeks: 160);
+    var streak = h.last.met ? 1 : 0;
+    for (var i = h.length - 2; i >= 0 && h[i].met; i--) {
+      streak++;
     }
     return streak;
   }

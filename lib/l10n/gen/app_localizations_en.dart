@@ -862,7 +862,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nextWeek => 'Next';
 
   @override
-  String get lastWeek => 'Last';
+  String get lastWeek => 'Last week';
 
   @override
   String get nothingPlanned => 'Nothing planned.';
@@ -2206,40 +2206,40 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get zConversational => 'conversational pace';
+  String get zConversational => 'Easy';
 
   @override
-  String get zEasyLong => 'easy';
+  String get zEasyLong => 'Easy';
 
   @override
-  String get zMarathon => 'marathon pace';
+  String get zMarathon => 'Steady';
 
   @override
-  String get zThreshold => 'threshold pace';
+  String get zThreshold => 'Threshold';
 
   @override
-  String get zInterval => 'interval pace';
+  String get zInterval => 'Interval';
 
   @override
-  String get zStride => 'stride';
+  String get zStride => 'Sprint';
 
   @override
-  String get zJog => 'easy jog';
+  String get zJog => 'Recovery';
 
   @override
   String get zWalk => 'walk';
 
   @override
-  String get zRecovery => 'recovery';
+  String get zRecovery => 'Recovery';
 
   @override
   String get zSprint => 'sprint';
 
   @override
-  String get zSwimEndurance => 'endurance';
+  String get zSwimEndurance => 'Endurance';
 
   @override
-  String get zDrills => 'drills';
+  String get zDrills => 'Technique';
 
   @override
   String get stepWarmup => 'Warm-up';
@@ -2862,6 +2862,227 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get byDay => 'Day by day';
+
+  @override
+  String get planExercisesHint => 'Changes apply to this workout only – the program stays as it is.';
+
+  @override
+  String planExercisesCustom(String name) {
+    return 'Adjusted for this workout (program: $name).';
+  }
+
+  @override
+  String get saveToProgram => 'Save to program';
+
+  @override
+  String savedToProgram(String name) {
+    return 'Saved to \"$name\"';
+  }
+
+  @override
+  String get resetToProgram => 'Reset';
+
+  @override
+  String get adjustExercises => 'Adjust exercises';
+
+  @override
+  String get zSwimEasy => 'Easy';
+
+  @override
+  String get zEndurance => 'Endurance';
+
+  @override
+  String get zCss => 'CSS pace';
+
+  @override
+  String get zTempo => 'Tempo';
+
+  @override
+  String get zoneInfoTitle => 'Intensity zones';
+
+  @override
+  String get zoneInfoRun => 'Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.';
+
+  @override
+  String get zoneInfoRide => 'Power zones are percentages of your FTP (the power you can hold for about one hour). Without a power meter, ride by heart rate and feel.';
+
+  @override
+  String get zoneInfoSwim => 'Paces per 100 m come from your critical swim speed (CSS, from a 400 m and 200 m test).';
+
+  @override
+  String get zoneInfoEstimated => '≈ values are estimated from your level – add a test result in the plan settings for exact targets.';
+
+  @override
+  String get zfVeryEasy => 'RPE 1–2 · very easy';
+
+  @override
+  String get zfEasy => 'RPE 3–4 · full sentences';
+
+  @override
+  String get zfDrills => 'focus on form';
+
+  @override
+  String get zfModerate => 'RPE 5–6 · short sentences';
+
+  @override
+  String get zfHard => 'RPE 7–8 · single words';
+
+  @override
+  String get zfVeryHard => 'RPE 8–9 · no talking';
+
+  @override
+  String get zfMax => 'RPE 9–10 · fast & relaxed';
+
+  @override
+  String get zdRunRec => 'Walking or very slow jogging between hard efforts and for warming up. Lets your heart rate come down.';
+
+  @override
+  String get zdRunEasy => 'Your everyday pace: relaxed, you can talk in full sentences. Builds the aerobic base, used for easy and long runs.';
+
+  @override
+  String get zdRunSteady => 'Controlled but purposeful, about your marathon pace. Used in long-run finishes and steady runs.';
+
+  @override
+  String get zdRunThreshold => '\"Comfortably hard\" – a pace you could hold for about an hour. Tempo runs and cruise intervals raise your lactate threshold.';
+
+  @override
+  String get zdRunInterval => 'About your 3–5 km race pace. Efforts of 2–5 minutes with recovery jogs improve your VO2max.';
+
+  @override
+  String get zdRunSprint => 'Short, fast but relaxed efforts (strides, 10–30 s) with full recovery. Improves running economy and form.';
+
+  @override
+  String get zdRideRec => 'Spinning easily, for warm-up, cool-down and recovery rides.';
+
+  @override
+  String get zdRideEndurance => 'The base of cycling training: long, steady rides at a pace you can hold for hours.';
+
+  @override
+  String get zdRideSweetSpot => 'Just below threshold: hard but sustainable for 10–40 minutes. Very time-efficient for building FTP.';
+
+  @override
+  String get zdRideThreshold => 'Around your FTP – the effort of a one-hour time trial. Blocks of 8–20 minutes.';
+
+  @override
+  String get zdRideVo2 => 'Very hard efforts of 2–6 minutes that push your maximal oxygen uptake.';
+
+  @override
+  String get zdRideSprint => 'Short all-out bursts (up to 30 s) for power and speed, with long recoveries.';
+
+  @override
+  String get zdSwimEasy => 'Loose, relaxed swimming for warm-up, cool-down and rests. Focus on long strokes and calm breathing.';
+
+  @override
+  String get zdSwimDrills => 'Technique drills: exercises that isolate one part of the stroke (arm pull, body position, rotation, breathing). Speed does not matter – swim slowly and precisely. Tap \"Technique drills\" below for the exercises.';
+
+  @override
+  String get zdSwimEndurance => 'Steady aerobic swimming, a few seconds slower than CSS per 100 m. The main zone for longer sets.';
+
+  @override
+  String get zdSwimCss => 'Your critical swim speed – about your 1500 m race pace. Hard but even, with short rests (10–20 s).';
+
+  @override
+  String get zdSwimSprint => 'Short, fast lengths (25–50 m) with long rests for speed and power.';
+
+  @override
+  String get swimDrillsTitle => 'Technique drills';
+
+  @override
+  String get swimDrillsIntro => 'In a technique set you swim these drills instead of normal freestyle, e.g. 50 m drill / 50 m freestyle. Swim slowly and concentrate on one thing per length.';
+
+  @override
+  String get drillCatchupName => 'Catch-up';
+
+  @override
+  String get drillCatchupHow => 'One arm stays stretched in front until the other arm touches it, then it starts its pull.';
+
+  @override
+  String get drillCatchupWhy => 'Longer stroke, better glide and timing.';
+
+  @override
+  String get drillFingertipName => 'Fingertip drag';
+
+  @override
+  String get drillFingertipHow => 'During the recovery, drag your fingertips along the water surface from hip to head.';
+
+  @override
+  String get drillFingertipWhy => 'High elbow and relaxed arm recovery.';
+
+  @override
+  String get drillSideKickName => '6-1-6 side kick';
+
+  @override
+  String get drillSideKickHow => 'Kick 6 times on your side (lower arm stretched forward), take one stroke, kick 6 times on the other side.';
+
+  @override
+  String get drillSideKickWhy => 'Body position, rotation and calm breathing.';
+
+  @override
+  String get drillSingleArmName => 'Single arm';
+
+  @override
+  String get drillSingleArmHow => 'One arm stays in front, the other one swims alone; switch arms every length.';
+
+  @override
+  String get drillSingleArmWhy => 'Clean underwater pull and rotation to the breathing side.';
+
+  @override
+  String get drillFistName => 'Fist swimming';
+
+  @override
+  String get drillFistHow => 'Swim freestyle with closed fists; open your hands again for the last 10 m.';
+
+  @override
+  String get drillFistWhy => 'You learn to pull with the whole forearm (early vertical forearm).';
+
+  @override
+  String get drillScullName => 'Sculling';
+
+  @override
+  String get drillScullHow => 'Lying flat, move your hands in small figure-eights in front of your head to move forward.';
+
+  @override
+  String get drillScullWhy => 'Feel for the water and a strong catch.';
+
+  @override
+  String drillsNote(String a, String b) {
+    return '$a / $b – alternate 50 m drill, 50 m freestyle';
+  }
+
+  @override
+  String intensityAuto(String name) {
+    return '$name (from the structure)';
+  }
+
+  @override
+  String get showDrills => 'Show drills';
+
+  @override
+  String streakWeeks(int count) {
+    return '$count weeks in a row';
+  }
+
+  @override
+  String get streakThisWeek => 'This week';
+
+  @override
+  String streakWeekDone(int done, int target) {
+    return 'Goal reached: $done of $target training days – this week counts!';
+  }
+
+  @override
+  String streakWeekLeft(int done, int target, int count) {
+    return '$done of $target training days – $count more to keep the streak going.';
+  }
+
+  @override
+  String get streakLastWeeks => 'Last 8 weeks';
+
+  @override
+  String get streakHow => 'A week counts when you train on as many days as planned. With a training plan, the goal is the number of days with planned workouts that week (two sessions on one day count as one day); without a plan it is your number of training days. The current week never breaks your streak – it is added as soon as you reach the goal.';
+
+  @override
+  String get showPastWeeks => 'Past weeks';
 
   @override
   String loadSuggestion(String load) {
