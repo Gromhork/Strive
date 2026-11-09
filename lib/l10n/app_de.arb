@@ -1020,5 +1020,22 @@
   "adjustProtected": "entfällt – Erholungs-/Taperwoche bleibt locker",
   "adjustDone": "Woche angepasst",
   "notNow": "Nicht jetzt",
-  "wTriLegs": "Schwimmen {swim} km · Rad {bike} km · Laufen {run} km"
+  "wTriLegs": "Schwimmen {swim} km · Rad {bike} km · Laufen {run} km",
+  "supersetHint": "Übungen abwechseln – kurzer Wechsel, volle Pause nach jeder Runde",
+  "supersetMax": "Ein Supersatz hat höchstens 3 Übungen.",
+  "supersetSwitch": "Übung wechseln",
+  "supersetSwitchHint": "Kurze Pause – dann direkt weiter mit der nächsten Übung des Supersatzes.",
+  "bodyweight": "Körpergewicht",
+  "bodyweightShort": "KG",
+  "bodyweightHint": "Gewicht = Zusatzlast zu deinem Körpergewicht (negativ = Unterstützung).",
+  "addedWeight": "Zusatzgewicht",
+  "targetLoad": "Ziel: {load} · {lo}–{hi} Wdh.",
+  "targetToday": "Heute: {list} Wdh.",
+  "loadWeightApprox": "≈ {weight}",
+  "loadWeightPerHand": "≈ {weight} pro Hand",
+  "loadSrcHold": "Gewicht halten und alle Ziel-Wiederholungen schaffen",
+  "loadSrcStall": "3 Trainings ohne Fortschritt – etwas leichter, dann wieder steigern",
+  "loadSrcIncreaseBw": "alle Wiederholungen geschafft – etwas Zusatzgewicht (Gürtel oder Weste)",
+  "loadSrcMoreReps": "alle Wiederholungen geschafft – jetzt mehr Wiederholungen",
+  "loadTotal": "gesamt"
 }

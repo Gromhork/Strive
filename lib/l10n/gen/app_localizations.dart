@@ -6220,6 +6220,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Swim {swim} km · Bike {bike} km · Run {run} km'**
   String wTriLegs(String swim, String bike, String run);
+
+  /// No description provided for @supersetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Alternate the exercises – short switch, full rest after each round'**
+  String get supersetHint;
+
+  /// No description provided for @supersetMax.
+  ///
+  /// In en, this message translates to:
+  /// **'A superset has at most 3 exercises.'**
+  String get supersetMax;
+
+  /// No description provided for @supersetSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch exercise'**
+  String get supersetSwitch;
+
+  /// No description provided for @supersetSwitchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short break – then straight on to the next exercise of the superset.'**
+  String get supersetSwitchHint;
+
+  /// No description provided for @bodyweight.
+  ///
+  /// In en, this message translates to:
+  /// **'Bodyweight'**
+  String get bodyweight;
+
+  /// No description provided for @bodyweightShort.
+  ///
+  /// In en, this message translates to:
+  /// **'BW'**
+  String get bodyweightShort;
+
+  /// No description provided for @bodyweightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight = added load on top of your body weight (negative = assistance).'**
+  String get bodyweightHint;
+
+  /// No description provided for @addedWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Added weight'**
+  String get addedWeight;
+
+  /// No description provided for @targetLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Target: {load} · {lo}–{hi} reps'**
+  String targetLoad(String load, int lo, int hi);
+
+  /// No description provided for @targetToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: {list} reps'**
+  String targetToday(String list);
+
+  /// No description provided for @loadWeightApprox.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {weight}'**
+  String loadWeightApprox(String weight);
+
+  /// No description provided for @loadWeightPerHand.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {weight} per hand'**
+  String loadWeightPerHand(String weight);
+
+  /// No description provided for @loadSrcHold.
+  ///
+  /// In en, this message translates to:
+  /// **'keep the weight and hit all target reps'**
+  String get loadSrcHold;
+
+  /// No description provided for @loadSrcStall.
+  ///
+  /// In en, this message translates to:
+  /// **'no progress for 3 workouts – a bit lighter, then build up again'**
+  String get loadSrcStall;
+
+  /// No description provided for @loadSrcIncreaseBw.
+  ///
+  /// In en, this message translates to:
+  /// **'all reps done – add a little weight (belt or vest)'**
+  String get loadSrcIncreaseBw;
+
+  /// No description provided for @loadSrcMoreReps.
+  ///
+  /// In en, this message translates to:
+  /// **'all reps done – go for more reps'**
+  String get loadSrcMoreReps;
+
+  /// No description provided for @loadTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'total'**
+  String get loadTotal;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

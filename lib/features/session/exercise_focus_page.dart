@@ -226,13 +226,13 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                   style: t.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
-              if (rx != null && e.doneSets == 0 && (rx.source != LoadSource.bodyweight || rx.fromHistory)) ...[
+              if (rx != null) ...[
                 const SizedBox(height: 12),
                 PrescriptionHint(
                   prescription: rx,
                   units: u,
                   onApply:
-                      _matches(e, rx)
+                      e.doneSets > 0 || _matches(e, rx)
                           ? null
                           : () {
                             var wi = 0;
@@ -261,6 +261,7 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                             return pos < lastWork.length ? lastWork[pos] : null;
                           })(),
                   units: u,
+                  bw: e.bw == true ? l.bodyweightShort : null,
                   onTap: () => setState(() => _sel = k),
                   onType: (tp) => n.updateSet(widget.index, k, type: tp),
                   onToggle: () => n.toggleDone(widget.index, k),
@@ -320,7 +321,8 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
             ],
           ),
         ),
-        if (sel != null) _SetEditor(index: widget.index, set: sel, units: u, increment: loadIncrement(info)),
+        if (sel != null)
+          _SetEditor(index: widget.index, set: sel, units: u, increment: loadIncrement(info, weight: e.sets[sel].weight, bodyweight: e.bw)),
         if (sel == null)
           SafeArea(
             top: false,
@@ -388,12 +390,14 @@ class _SetLine extends StatelessWidget {
     required this.onType,
     required this.onToggle,
     required this.onDelete,
+    this.bw,
   });
   final GymSet set;
   final int index, workIndex;
   final bool selected;
   final GymSet? previous;
   final Units units;
+  final String? bw; // short bodyweight label in bodyweight mode
   final VoidCallback onTap, onToggle, onDelete;
   final ValueChanged<SetType> onType;
 
@@ -433,7 +437,7 @@ class _SetLine extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        setLabel(set, units) + (set.rpe != null ? '  ·  RPE ${Units.num(set.rpe!)}' : ''),
+                        setLabel(set, units, bw: bw) + (set.rpe != null ? '  ·  RPE ${Units.num(set.rpe!)}' : ''),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -441,7 +445,7 @@ class _SetLine extends StatelessWidget {
                         ),
                       ),
                       if (previous != null)
-                        Text('${l.lastTime}: ${setLabel(previous!, units)}', style: Theme.of(context).textTheme.bodySmall),
+                        Text('${l.lastTime}: ${setLabel(previous!, units, bw: bw)}', style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),
                 ),
@@ -479,6 +483,10 @@ class _SetEditor extends ConsumerWidget {
     final s = e.sets[set];
     final step = units.imperial ? units.weightIn(5) : (increment <= 0 ? 2.5 : (increment > 2.5 ? 2.5 : increment));
     final workPos = e.sets.take(set).where((x) => !x.warmup).length;
+    final bw = e.bw == true;
+    // Bodyweight mode: the weight is added load, negative = assistance (machine / band).
+    final minW = bw ? -max(40.0, e.bodyKg * 0.8) : 0.0;
+    String fmt(double kg) => '${bw && kg > 0 ? '+' : ''}${Units.num(units.weightOut(kg), 2)}';
 
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainerHigh,
@@ -492,15 +500,42 @@ class _SetEditor extends ConsumerWidget {
             children: [
               Row(
                 children: [
+                  Tooltip(
+                    message: l.bodyweightHint,
+                    child: FilterChip(
+                      avatar: Icon(Icons.accessibility_new_rounded, size: 18, color: bw ? null : Theme.of(context).colorScheme.outline),
+                      showCheckmark: false,
+                      visualDensity: VisualDensity.compact,
+                      label: Text(l.bodyweight),
+                      selected: bw,
+                      onSelected: (on) {
+                        HapticFeedback.selectionClick();
+                        n.setBodyweight(index, on, bodyKg: on ? ref.read(loadPrescriberProvider).bodyLoad(e) : 0);
+                      },
+                    ),
+                  ),
+                  const Spacer(),
+                  if (bw && e.bodyKg > 0)
+                    Text('≈ ${units.weight(e.bodyKg + s.weight, digits: 0)} ${l.loadTotal}', style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
                   Expanded(
                     child: _Stepper(
-                      label: '${l.weight} (${units.weightUnit})',
-                      value: Units.num(units.weightOut(s.weight), 2),
-                      onMinus: () => n.updateSet(index, set, weight: max(0, s.weight - step)),
+                      label: '${bw ? l.addedWeight : l.weight} (${units.weightUnit})',
+                      value: fmt(s.weight),
+                      onMinus: () => n.updateSet(index, set, weight: max(minW, s.weight - step)),
                       onPlus: () => n.updateSet(index, set, weight: s.weight + step),
                       onEdit: () async {
-                        final v = await askNumber(context, l.weight, initial: units.weightOut(s.weight), suffix: units.weightUnit);
-                        if (v != null) n.updateSet(index, set, weight: units.weightIn(v));
+                        final v = await askNumber(
+                          context,
+                          bw ? l.addedWeight : l.weight,
+                          initial: units.weightOut(s.weight),
+                          suffix: units.weightUnit,
+                        );
+                        if (v != null) n.updateSet(index, set, weight: max(minW, units.weightIn(v)));
                       },
                     ),
                   ),
@@ -651,8 +686,15 @@ class _RestOverlay extends ConsumerWidget {
             return Column(
               children: [
                 const SizedBox(height: 24),
-                Text(l.rest, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
-                Text(l.restHint, style: Theme.of(context).textTheme.bodySmall),
+                Text(w.restIsTransition ? l.supersetSwitch : l.rest, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    w.restIsTransition ? l.supersetSwitchHint : l.restHint,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
                 const Spacer(),
                 SizedBox(
                   width: 240,
@@ -710,7 +752,7 @@ class _RestOverlay extends ConsumerWidget {
                                 style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
                               Text(
-                                '${l.setXofY(nextSetIdx + 1, next.sets.length)} · ${setLabel(nextSet, u)}',
+                                '${l.setXofY(nextSetIdx + 1, next.sets.length)} · ${setLabelOf(l, next, nextSet, u)}',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],
