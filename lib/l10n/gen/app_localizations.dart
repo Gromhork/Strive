@@ -6230,7 +6230,7 @@ abstract class AppLocalizations {
   /// No description provided for @durationHms.
   ///
   /// In en, this message translates to:
-  /// **'Duration (h:mm:ss)'**
+  /// **'Duration (h:mm:ss or mm:ss)'**
   String get durationHms;
 
   /// No description provided for @invalidDuration.

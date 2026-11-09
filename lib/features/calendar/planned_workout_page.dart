@@ -7,6 +7,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/gym_tools.dart' show ProgressionKind;
 import '../../services/plan_text.dart';
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
@@ -171,7 +172,33 @@ class PlannedWorkoutPage extends ConsumerWidget {
                         e.repMin != null && e.repMax != null
                             ? '${e.repMin}–${e.repMax}'
                             : '${e.workSets.isEmpty ? '' : e.workSets.first.reps}';
-                    return Text(['${e.workSets.length} × $reps', if (rx != null && rx.weight > 0) prescriptionLabel(l, rx, u)].join(' · '));
+                    final line = Text(
+                      ['${e.workSets.length} × $reps', if (rx != null && rx.weight > 0) prescriptionLabel(l, rx, u)].join(' · '),
+                    );
+                    // What changes since last time (from the user's own history only).
+                    final why = rx != null && rx.fromHistory ? prescriptionReason(l, rx) : null;
+                    if (why == null) return line;
+                    final (icon, color) = switch (rx!.progression) {
+                      ProgressionKind.increase => (Icons.trending_up_rounded, AppColors.success),
+                      ProgressionKind.addReps => (Icons.add_circle_outline_rounded, AppColors.success),
+                      ProgressionKind.deload || ProgressionKind.reset => (Icons.trending_down_rounded, AppColors.warning),
+                      _ => (Icons.pause_circle_outline_rounded, AppColors.brand),
+                    };
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        line,
+                        const SizedBox(height: 2),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(padding: const EdgeInsets.only(top: 1), child: Icon(icon, size: 14, color: color)),
+                            const SizedBox(width: 4),
+                            Expanded(child: Text(why, style: TextStyle(fontSize: 12, color: color))),
+                          ],
+                        ),
+                      ],
+                    );
                   },
                 ),
               ),

@@ -1022,7 +1022,7 @@
   "notNow": "Nicht jetzt",
   "wTriLegs": "Schwimmen {swim} km · Rad {bike} km · Laufen {run} km",
   "editSession": "Einheit bearbeiten",
-  "durationHms": "Dauer (h:mm:ss)",
+  "durationHms": "Dauer (h:mm:ss oder mm:ss)",
   "invalidDuration": "Gib die Dauer als h:mm:ss oder in Minuten ein.",
   "rpeNotSet": "nicht angegeben",
   "sessionCorrected": "Einheit aktualisiert",
