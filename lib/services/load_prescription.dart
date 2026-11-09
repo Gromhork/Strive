@@ -5,6 +5,7 @@ import '../data/exercise_db.dart';
 import '../data/models.dart';
 import 'exercise_class.dart';
 import 'gym_tools.dart';
+import 'smart_progression.dart';
 
 /// Where a prescribed load comes from.
 enum LoadSource { history, oneRm, estimate, bodyweight }
@@ -53,6 +54,15 @@ class Prescription {
   /// Bodyweight exercise: [weight] is added load (negative = assistance).
   final bool bodyweight;
 
+  /// Why the progression step was chosen (history only), for the UI.
+  final ProgressReason? reason;
+
+  /// Effort of the last session the step was based on (rated or inferred).
+  final EffortEstimate? effort;
+
+  /// Recent e1RM trend of the exercise.
+  final E1rmTrend trend;
+
   const Prescription({
     required this.weight,
     required this.reps,
@@ -68,30 +78,48 @@ class Prescription {
     this.repMin,
     this.repMax,
     this.bodyweight = false,
+    this.reason,
+    this.effort,
+    this.trend = E1rmTrend.unknown,
   });
 
   /// Same prescription with the rep range attached.
-  Prescription withRange(int lo, int hi) => Prescription(
-    weight: weight,
+  Prescription withRange(int lo, int hi) => _copy(repMin: lo, repMax: hi, bodyweight: bodyweight || source == LoadSource.bodyweight);
+
+  Prescription _copy({
+    double? weight,
+    ProgressionKind? progression,
+    bool? phaseAdjusted,
+    String? phase,
+    List<int>? setReps,
+    int? repMin,
+    int? repMax,
+    bool? bodyweight,
+    bool clearReason = false,
+  }) => Prescription(
+    weight: weight ?? this.weight,
     reps: reps,
     source: source,
     e1rm: e1rm,
-    progression: progression,
+    progression: progression ?? this.progression,
     breakDays: breakDays,
-    phaseAdjusted: phaseAdjusted,
-    phase: phase,
+    phaseAdjusted: phaseAdjusted ?? this.phaseAdjusted,
+    phase: phase ?? this.phase,
     perHand: perHand,
     fromHistory: fromHistory,
-    setReps: setReps,
-    repMin: lo,
-    repMax: hi,
-    bodyweight: bodyweight || source == LoadSource.bodyweight,
+    setReps: setReps ?? this.setReps,
+    repMin: repMin ?? this.repMin,
+    repMax: repMax ?? this.repMax,
+    bodyweight: bodyweight ?? this.bodyweight,
+    reason: clearReason ? null : reason,
+    effort: effort,
+    trend: trend,
   );
 
   int repsForSet(int workIndex) => workIndex < setReps.length ? setReps[workIndex] : reps;
 
   @override
-  String toString() => 'Prescription($weight kg × $reps, $source, e1rm: ${e1rm?.toStringAsFixed(1)})';
+  String toString() => 'Prescription($weight kg × $reps $setReps, $source, $progression, $reason, e1rm: ${e1rm?.toStringAsFixed(1)})';
 }
 
 /// Equipment family used for ratios, rounding and minimum loads.
@@ -109,10 +137,14 @@ class _Info {
 }
 
 class _Entry {
-  _Entry(this.date, this.sets, this.top);
+  _Entry(this.date, this.sets, this.top, {this.effort, this.bodyKg = 0});
   final DateTime date;
   final List<GymSet> sets;
   final double top; // top-set e1RM of the session
+  final Effort? effort;
+  final double bodyKg;
+
+  ProgressEntry get progress => ProgressEntry(date, sets, effort: effort, bodyKg: bodyKg);
 }
 
 /// Prescribes working weights for gym exercises.
@@ -162,7 +194,7 @@ class LoadPrescriber {
     if (e.exId.isEmpty || e.exId == 'manual') return null;
     final info = _info(e);
     final bw = isBodyweight(e);
-    final hist = _history(e.exId, info, bodyweight: bw);
+    final hist = _history(e, info, bodyweight: bw);
     final (lo, hi) = range(e);
     Prescription? p;
     if (bw) {
@@ -176,20 +208,14 @@ class LoadPrescriber {
     if (p == null || !lighterPhase(phase) || p.weight <= 0) return p;
     // Deload / taper: ~90 % load (Bosquet 2007 taper meta-analysis: keep intensity high,
     // cut volume; a ~10 % lighter load keeps the week clearly easier).
-    return Prescription(
+    final increase = p.progression == ProgressionKind.increase;
+    return p._copy(
       weight: _floorStep(p.weight * 0.9, info),
-      reps: p.reps,
-      source: p.source,
-      e1rm: p.e1rm,
-      progression: p.progression == ProgressionKind.increase ? ProgressionKind.hold : p.progression,
-      breakDays: p.breakDays,
+      progression: increase ? ProgressionKind.hold : p.progression,
       phaseAdjusted: true,
       phase: phase,
-      perHand: p.perHand,
-      fromHistory: p.fromHistory,
-      repMin: p.repMin,
-      repMax: p.repMax,
-      bodyweight: p.bodyweight,
+      setReps: const [],
+      clearReason: increase || p.progression == ProgressionKind.addReps,
     );
   }
 
@@ -199,16 +225,32 @@ class LoadPrescriber {
 
   /// Bodyweight mode of [e]: the user's choice, otherwise automatic (bodyweight
   /// equipment, or an unknown exercise the user always logs without weight).
-  bool isBodyweight(GymExercise e) {
-    if (e.bw != null) return e.bw!;
+  bool isBodyweight(GymExercise e) => e.bw ?? _autoBodyweight(e);
+
+  bool _autoBodyweight(GymExercise e) {
     final info = _info(e);
     return info.kind == _Kind.bodyweight || (info.kind == _Kind.unknown && _looksBodyweight(e.exId));
   }
 
   /// Body load per rep (kg) for a bodyweight exercise: body weight × lifted share.
+  /// Loaded exercises the user switched to bodyweight mode (e.g. squats or rows without
+  /// equipment) get the share of their movement pattern instead of 0, so volume and
+  /// e1RM still count the body: squat / lunge ≈ 85 % (body minus shanks and feet,
+  /// Winter 2009 segment data), vertical pull / push 100 %, push-up pattern 65 %,
+  /// horizontal pull 60 %.
   double bodyLoad(GymExercise e) {
     final lift = classifyLift(e.exId, e.name, info: db?.byId(e.exId));
-    return (profile.weightKg.clamp(30, 250) * lift.bodyFraction * 10).roundToDouble() / 10;
+    var share = lift.bodyFraction;
+    if (share <= 0 && !lift.bodyweight && e.bw == true) {
+      share = switch (lift.move) {
+        Movement.squat || Movement.lunge => 0.85,
+        Movement.verticalPull || Movement.verticalPush => 1.0,
+        Movement.horizontalPush => 0.65,
+        Movement.horizontalPull => 0.6,
+        _ => 0.0,
+      };
+    }
+    return (profile.weightKg.clamp(30, 250) * share * 10).roundToDouble() / 10;
   }
 
   /// Copies of [exercises] with weight (and target reps) filled into the work sets;
@@ -229,7 +271,11 @@ class LoadPrescriber {
       for (final s in e.sets) {
         if (s.warmup) continue;
         if (s.type == SetType.drop) {
-          s.weight = _floorStep(p.weight * 0.75, _info(e));
+          // Bodyweight: ~20 % less total load (more assistance), else ~75 % of the weight.
+          s.weight =
+              e.bw == true
+                  ? (e.bodyKg > 0 ? ((p.weight - 0.2 * (p.weight + e.bodyKg)) / 2.5).floorToDouble() * 2.5 : p.weight)
+                  : _floorStep(p.weight * 0.75, _info(e));
           s.reps = p.reps;
         } else {
           s.weight = p.weight;
@@ -237,7 +283,7 @@ class LoadPrescriber {
         }
       }
       final warm = e.sets.where((s) => s.warmup).toList();
-      if (warm.isNotEmpty && p.weight > 0) {
+      if (warm.isNotEmpty && p.weight > 0 && !p.bodyweight) {
         final info = _info(e);
         final gen = warmupSets(p.weight, bar: info.kind == _Kind.barbell ? 20 : p.weight * 0.3);
         // Align from the end: the last warm-up is the one closest to the work weight.
@@ -264,24 +310,39 @@ class LoadPrescriber {
   /// * single-set sessions > 20 % off the multi-set sessions (quick tests, typos);
   /// * outlier sessions by top-set e1RM outside median ± max(3·1.4826·MAD, 15 %)
   ///   (robust z-score, Leys et al. 2013), or ± 30 % with few points / MAD = 0.
-  List<_Entry> _history(String exId, _Info info, {bool bodyweight = false}) {
+  /// Sessions logged in the other mode are converted: a bodyweight set counts as
+  /// added load + body load for a loaded exercise; a loaded set that is at least half
+  /// the body load counts as (weight − body load) added load in bodyweight mode – this
+  /// includes pull-ups logged with the body weight as weight before bodyweight mode
+  /// existed (no mode stored).
+  List<_Entry> _history(GymExercise e, _Info info, {bool bodyweight = false}) {
+    final exId = e.exId;
     final loaded = !bodyweight;
+    final auto = _autoBodyweight(e);
+    final bl = bodyweight ? (e.bodyKg > 0 ? e.bodyKg : bodyLoad(e)) : 0.0;
     final recent = <_Entry>[], old = <_Entry>[];
     for (final s in _sessions) {
       final age = now.difference(s.start);
       if (age > maxWindow) break;
+      final inst = s.exercises.where((x) => x.exId == exId).toList();
+      if (inst.isEmpty) continue;
+      double convert(GymExercise ex, double w) {
+        // Sessions from before bodyweight mode (bw == null, no body load stored) that
+        // carry roughly the body weight were logged as total load.
+        final legacyTotal = ex.bw == null && ex.bodyKg <= 0 && bodyweight && bl > 0 && w >= bl * 0.5;
+        final instBw = ex.bw ?? (auto && !legacyTotal);
+        if (instBw == bodyweight) return w;
+        if (loaded) return ex.bodyKg > 0 ? w + ex.bodyKg : w;
+        return bl > 0 && w > 0 && w >= bl * 0.5 ? w - bl : w;
+      }
+
       var sets = <GymSet>[
-        for (final ex in s.exercises.where((x) => x.exId == exId))
+        for (final ex in inst)
           for (final st in ex.sets)
-            if (st.done &&
-                !st.warmup &&
-                st.type != SetType.drop &&
-                st.reps >= 1 &&
-                st.reps <= 60 &&
-                st.weight > (loaded ? -1e-9 : -300) &&
-                st.weight < 1000)
-              st,
+            if (st.done && !st.warmup && st.type != SetType.drop && st.reps >= 1 && st.reps <= 60)
+              GymSet(weight: convert(ex, st.weight), reps: st.reps, done: true, type: st.type, rpe: st.rpe),
       ];
+      sets = sets.where((st) => st.weight > (loaded ? -1e-9 : -300) && st.weight < 1000).toList();
       if (loaded) sets = sets.where((st) => st.weight > 0 && st.reps <= 30).toList();
       // Imported sessions (Health Connect, …) rarely carry real sets; they only count when
       // they contain done sets with reps (and load) – otherwise they are skipped here.
@@ -290,7 +351,9 @@ class LoadPrescriber {
         final med = _median(sets.map(_e1).toList());
         sets = sets.where((st) => _e1(st) <= med * 1.5 && _e1(st) >= med * 0.5).toList();
       }
-      final entry = _Entry(s.start, sets, loaded ? sets.map(_e1).reduce(max) : 0);
+      final effort = inst.map((x) => x.effort).whereType<Effort>().firstOrNull;
+      final kg = bodyweight ? inst.map((x) => x.bw == true ? x.bodyKg : 0.0).fold(0.0, max) : 0.0;
+      final entry = _Entry(s.start, sets, loaded ? sets.map(_e1).reduce(max) : 0, effort: effort, bodyKg: kg > 0 ? kg : bl);
       (age <= recentWindow ? recent : old).add(entry);
     }
     final pool = recent.isNotEmpty ? recent : old;
@@ -333,7 +396,8 @@ class LoadPrescriber {
     final est = _robustE1rm(hist);
     final lastW = last.sets.map((s) => s.weight).reduce(max);
     final medReps = _median(last.sets.map((s) => s.reps.toDouble()).toList());
-    final repsFit = medReps >= bottom - 2 && medReps <= top + 3;
+    // Reps beyond the top are expected while microloading (up to +25 %).
+    final repsFit = medReps >= bottom - 2 && medReps <= top + max(3, (top * 0.25).round());
 
     Prescription viaE1rm(double factor, {int? breakDays}) => Prescription(
       weight: _clampMin(_floorStep(_loadFor(est * factor, bottom, 2), info), info),
@@ -362,13 +426,14 @@ class LoadPrescriber {
       );
     }
     final inc = loadIncrement(_asExercise(e, info), weight: lastW, bodyweight: false);
-    var prog = suggestProgression(last.sets, bottom: bottom, top: top, increment: inc);
+    final prog = smartProgression(
+      [for (final h in hist.take(6)) h.progress],
+      bottom: bottom,
+      top: top,
+      increment: inc,
+      level: profile.level,
+    );
     if (prog == null) return viaE1rm(1);
-    if (prog.kind != ProgressionKind.increase && _stalled(hist, top)) {
-      // Same weight for 3 sessions without more reps: step back ~10 % and build up again
-      // (a small reset typically breaks a stall; Helms et al. 2018).
-      prog = Progression(ProgressionKind.reset, lastW * 0.9, bottom);
-    }
     final w = switch (prog.kind) {
       ProgressionKind.deload => _floorStep(prog.weight, info),
       ProgressionKind.reset => (prog.weight / _step(info, prog.weight)).round() * _step(info, prog.weight),
@@ -382,36 +447,33 @@ class LoadPrescriber {
       progression: prog.kind,
       fromHistory: true,
       setReps: prog.setReps,
+      reason: prog.reason,
+      effort: prog.effort,
+      trend: prog.trend,
     );
   }
 
-  /// Stall: the last three sessions (within ~6 weeks) used the same top weight, never
-  /// reached the top of the range on all sets, and the latest did not beat the oldest of
-  /// them in total reps.
-  bool _stalled(List<_Entry> hist, int top) {
-    if (hist.length < 3) return false;
-    final h = hist.take(3).toList();
-    if (h.first.date.difference(h.last.date).inDays > 42) return false;
-    final ws = h.map((e) => e.sets.map((s) => s.weight).reduce(max)).toList();
-    if (ws.any((w) => (w - ws.first).abs() > 0.01)) return false;
-    if (h.any((e) => e.sets.every((s) => s.reps >= top))) return false;
-    int total(_Entry e) => e.sets.fold(0, (a, s) => a + s.reps);
-    return total(h.first) <= total(h.last);
-  }
-
-  /// Bodyweight exercises: double progression on reps; pull-ups, chin-ups and dips add
-  /// 2.5 kg (belt / vest) – or remove assistance – once the top of the range is reached
-  /// on all sets; push-ups, rows and bodyweight leg/core work keep adding reps.
+  /// Bodyweight exercises: the same autoregulated double progression on reps; pull-ups,
+  /// chin-ups and dips add 2.5 kg (belt / vest) – or remove assistance – once the top
+  /// of the range is reached; push-ups, rows and bodyweight leg/core work keep adding
+  /// reps. Steps are judged against the total load (body load + added weight).
   Prescription _bodyweight(GymExercise e, List<_Entry> hist) {
     final (bottom, top) = range(e);
     if (hist.isNotEmpty && now.difference(hist.first.date).inDays <= 42) {
-      final last = hist.first;
       final lift = classifyLift(e.exId, e.name, info: db?.byId(e.exId));
       // Loaded exercises switched to bodyweight mode by the user also progress the load.
       final inc = lift.loadableBodyweight || !lift.bodyweight ? 2.5 : 0.0;
-      final prog = suggestProgression(last.sets, bottom: bottom, top: top, increment: inc);
+      final prog = smartProgression(
+        [for (final h in hist.take(6)) h.progress],
+        bottom: bottom,
+        top: top,
+        increment: inc,
+        level: profile.level,
+        bodyKg: e.bodyKg > 0 ? e.bodyKg : bodyLoad(e),
+      );
       if (prog != null) {
-        final w = prog.kind == ProgressionKind.deload ? (prog.weight / 2.5 + 1e-6).floorToDouble() * 2.5 : prog.weight;
+        final down = prog.kind == ProgressionKind.deload || prog.kind == ProgressionKind.reset;
+        final w = down ? (prog.weight / 2.5 + 1e-6).floorToDouble() * 2.5 : prog.weight;
         return Prescription(
           weight: w,
           reps: prog.reps,
@@ -420,6 +482,9 @@ class LoadPrescriber {
           fromHistory: true,
           setReps: prog.setReps,
           bodyweight: true,
+          reason: prog.reason,
+          effort: prog.effort,
+          trend: prog.trend,
         );
       }
     }

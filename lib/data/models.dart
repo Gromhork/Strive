@@ -331,6 +331,23 @@ class AthleteData {
 /// Set type: normal, warm-up, drop set, to failure.
 enum SetType { normal, warmup, drop, failure }
 
+/// How hard an exercise felt after its last work set (optional quick rating), mapped to
+/// reps in reserve (RIR) on the RIR-based RPE scale (Zourdos et al. 2016; Helms et al.
+/// 2016): easy ≈ RIR 4+, right ≈ RIR 2–3, hard ≈ RIR 1, limit ≈ RIR 0.
+enum Effort {
+  easy(4),
+  right(2.5),
+  hard(1),
+  limit(0);
+
+  const Effort(this.rir);
+
+  /// Reps in reserve this rating stands for.
+  final double rir;
+
+  static Effort? fromName(Object? v) => v is String ? Effort.values.where((e) => e.name == v).firstOrNull : null;
+}
+
 class GymSet {
   double weight;
   int reps;
@@ -387,6 +404,9 @@ class GymExercise {
   /// bodyweight exercises; 0 = progressed by reps only.
   double bodyKg;
 
+  /// Optional effort rating after the last work set (null = not given).
+  Effort? effort;
+
   GymExercise({
     required this.exId,
     required this.name,
@@ -398,6 +418,7 @@ class GymExercise {
     this.repMax,
     this.bw,
     this.bodyKg = 0,
+    this.effort,
   }) : sets = sets ?? [GymSet(), GymSet(), GymSet()];
 
   List<GymSet> get workSets => sets.where((s) => !s.warmup).toList();
@@ -425,6 +446,7 @@ class GymExercise {
     repMax: _in(m['repMax']),
     bw: m['bw'] is bool ? m['bw'] : null,
     bodyKg: _d(m['bodyKg']),
+    effort: Effort.fromName(m['effort']),
   );
   Map<String, dynamic> toMap() => {
     'exId': exId,
@@ -437,6 +459,7 @@ class GymExercise {
     if (repMax != null) 'repMax': repMax,
     if (bw != null) 'bw': bw,
     if (bodyKg > 0) 'bodyKg': bodyKg,
+    if (effort != null) 'effort': effort!.name,
   };
   GymExercise copy({bool resetDone = false}) => GymExercise(
     exId: exId,
@@ -449,6 +472,7 @@ class GymExercise {
     repMax: repMax,
     bw: bw,
     bodyKg: bodyKg,
+    effort: resetDone ? null : effort,
   );
 }
 

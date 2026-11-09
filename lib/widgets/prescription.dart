@@ -5,6 +5,7 @@ import '../core/theme.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../services/gym_tools.dart';
 import '../services/load_prescription.dart';
+import '../services/smart_progression.dart';
 
 /// Compact load text, e.g. "≈ 60 kg × 8", "≈ 12 kg × 10 per hand" or "Bodyweight × 8".
 /// Usable anywhere a prescription should be shown (planned workout detail, plan editor, …).
@@ -44,6 +45,7 @@ String? prescriptionReason(AppLocalizations l, Prescription p) {
     LoadSource.oneRm => l.loadSrcOneRm,
     LoadSource.estimate => l.loadSrcEstimate,
     LoadSource.history || LoadSource.bodyweight when p.breakDays != null && p.breakDays! > 21 => l.loadSrcBreak,
+    LoadSource.history || LoadSource.bodyweight when p.fromHistory && p.reason != null => progressReasonText(l, p.reason!),
     LoadSource.history || LoadSource.bodyweight when p.fromHistory => switch (p.progression) {
       ProgressionKind.increase when p.bodyweight => l.loadSrcIncreaseBw,
       ProgressionKind.increase => l.loadSrcIncrease,
@@ -64,6 +66,24 @@ String? prescriptionReason(AppLocalizations l, Prescription p) {
   if (base == null) return phase;
   return phase == null ? base : '$base · $phase';
 }
+
+/// Localized explanation of a progression step.
+String progressReasonText(AppLocalizations l, ProgressReason r) => switch (r) {
+  ProgressReason.topReached => l.progTopReached,
+  ProgressReason.topWithReserve => l.progTopWithReserve,
+  ProgressReason.topAtLimit => l.progTopAtLimit,
+  ProgressReason.microload => l.progMicroload,
+  ProgressReason.addReps => l.progAddReps,
+  ProgressReason.addRepsFast => l.progAddRepsFast,
+  ProgressReason.repsNoLoad => l.progRepsNoLoad,
+  ProgressReason.holdLimit => l.progHoldLimit,
+  ProgressReason.holdHard => l.progHoldHard,
+  ProgressReason.missedHold => l.progMissedHold,
+  ProgressReason.missedReduce => l.progMissedReduce,
+  ProgressReason.performanceDip => l.progPerformanceDip,
+  ProgressReason.performanceDrop => l.progPerformanceDrop,
+  ProgressReason.stall => l.loadSrcStall,
+};
 
 /// Small hint "Suggestion: ≈ 62.5 kg × 8 · from your last workout" with an optional
 /// apply button (shown when the current sets differ from the suggestion).
