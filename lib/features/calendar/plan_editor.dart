@@ -18,6 +18,7 @@ import '../../widgets/segments.dart';
 import '../../core/theme.dart';
 import '../../data/default_programs.dart';
 import '../onboarding/onboarding_page.dart';
+import 'feasibility_card.dart';
 import '../train/gym_exercise_editor.dart';
 
 /// Add or edit a planned workout (full-screen editor with phases for endurance).
@@ -359,6 +360,7 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
   bool _replace = true;
   bool _busy = false;
   final _wish = TextEditingController();
+  final _feasibility = FeasibilityCache();
 
   Future<void> _run() async {
     final l = context.l10n;
@@ -442,6 +444,10 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
                   },
                 ),
               ),
+              if (!_ai && p.athlete.eventDate != null && p.athlete.eventDistance != null) ...[
+                const SizedBox(height: 12),
+                FeasibilityCard(_feasibility.of(p, DateTime.now(), l), planAnyway: true),
+              ],
               const SizedBox(height: 16),
               LabeledSlider(
                 label: l.weeks,

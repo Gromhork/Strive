@@ -11,8 +11,10 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/compliance.dart';
+import '../../services/plan_generator.dart';
 import '../../widgets/common.dart';
 import '../stats/session_detail_page.dart';
+import 'feasibility_card.dart';
 import 'plan_editor.dart';
 import 'planned_workout_page.dart';
 import 'recalibrate_sheet.dart';
@@ -28,6 +30,25 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   bool _month = false;
   DateTime _focused = dayOnly(DateTime.now());
   DateTime _selected = dayOnly(DateTime.now());
+  final _feasibility = FeasibilityCache();
+  bool _hideFeasibility = false;
+
+  /// Feasibility of the event goal for the generated plan leading to it: checked from the
+  /// plan's first week (the plan's own start), not from today.
+  PlanFeasibility _goalCheck() {
+    final profile = ref.watch(profileOrDefaultProvider);
+    final event = profile.athlete.eventDate;
+    if (_hideFeasibility || event == null || profile.athlete.eventDistance == null) return const PlanFeasibility();
+    final race = dayOnly(event);
+    if (race.isBefore(dayOnly(DateTime.now()))) return const PlanFeasibility();
+    final earliest = race.subtract(const Duration(days: 7 * 30));
+    DateTime? start;
+    for (final p in ref.watch(planListProvider)) {
+      if (p.phase == null || p.date.isAfter(race) || p.date.isBefore(earliest)) continue;
+      if (start == null || p.date.isBefore(start)) start = p.date;
+    }
+    return start == null ? const PlanFeasibility() : _feasibility.of(profile, start, context.l10n);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +103,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               ],
             ),
           ),
+          if (!_goalCheck().ok)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: FeasibilityCard(_goalCheck(), onClose: () => setState(() => _hideFeasibility = true)),
+            ),
           Expanded(child: _month ? _monthView() : _weekList()),
         ],
       ),

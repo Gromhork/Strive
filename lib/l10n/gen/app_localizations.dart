@@ -6952,6 +6952,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your quality sessions felt easy – the new targets are this week\'s step up, the volume stays (never both at once).'**
   String get recalWhyRpeLowHold;
+
+  /// No description provided for @wBrickRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Brick run {min} min'**
+  String wBrickRun(int min);
+
+  /// No description provided for @wBrickRunDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight off the bike: the first minutes feel heavy – that is normal. Change quickly (≤ 2 min) – transition practice included.'**
+  String get wBrickRunDesc;
+
+  /// No description provided for @stepBrickStartNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Find your running rhythm – short, quick steps'**
+  String get stepBrickStartNote;
+
+  /// No description provided for @stepBrickNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Steady race feel – controlled, not all out'**
+  String get stepBrickNote;
+
+  /// No description provided for @wRaceRunWalk.
+  ///
+  /// In en, this message translates to:
+  /// **'Run/walk strategy: run {min} min, walk 1 min – from the start, even if you feel fresh.'**
+  String wRaceRunWalk(int min);
+
+  /// No description provided for @wGymLegsHalvedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Leg exercises with half the sets today – tomorrow\'s key session needs fresh legs.'**
+  String get wGymLegsHalvedNote;
+
+  /// No description provided for @feasTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Very ambitious goal'**
+  String get feasTitle;
+
+  /// No description provided for @feasBeginnerMarathon.
+  ///
+  /// In en, this message translates to:
+  /// **'A marathon is not a beginner goal: build up over 5 km, 10 km and a half marathon first.'**
+  String get feasBeginnerMarathon;
+
+  /// No description provided for @feasRunWalkLong.
+  ///
+  /// In en, this message translates to:
+  /// **'As long as you can\'t run 30 min continuously, a half or full marathon is too far – start with 5 km.'**
+  String get feasRunWalkLong;
+
+  /// No description provided for @feasRunWalk.
+  ///
+  /// In en, this message translates to:
+  /// **'On race day you will still be on run/walk – continuous running takes longer to build.'**
+  String get feasRunWalk;
+
+  /// No description provided for @feasTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks} weeks are not enough to build the long sessions this distance needs.'**
+  String feasTooShort(int weeks);
+
+  /// No description provided for @feasLongRunTime.
+  ///
+  /// In en, this message translates to:
+  /// **'The time on your long-run day allows only about {km} km – this race needs long runs of {x} km. Plan more time on that day.'**
+  String feasLongRunTime(int km, int x);
+
+  /// No description provided for @feasLongRideTime.
+  ///
+  /// In en, this message translates to:
+  /// **'The time on your long-ride day allows only {min} min – this race needs long rides of at least {target} min.'**
+  String feasLongRideTime(int min, int target);
+
+  /// No description provided for @feasOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get feasOptions;
+
+  /// No description provided for @feasLaterDate.
+  ///
+  /// In en, this message translates to:
+  /// **'A race on {date} or later'**
+  String feasLaterDate(String date);
+
+  /// No description provided for @feasShorter.
+  ///
+  /// In en, this message translates to:
+  /// **'A shorter distance: {dist}'**
+  String feasShorter(String dist);
+
+  /// No description provided for @feasRunWalkFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish with run/walk – race day in your plan shows the rhythm'**
+  String get feasRunWalkFinish;
+
+  /// No description provided for @feasPlanAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'The plan is created anyway and builds up as far as is safely possible.'**
+  String get feasPlanAnyway;
+
+  /// No description provided for @wGymDeloadNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
+  String get wGymDeloadNote2;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

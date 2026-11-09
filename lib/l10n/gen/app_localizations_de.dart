@@ -3704,4 +3704,75 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get recalWhyRpeLowHold => 'Deine harten Einheiten fielen dir leicht – die neuen Zielwerte sind diese Woche die Steigerung, der Umfang bleibt (nie beides gleichzeitig).';
+
+  @override
+  String wBrickRun(int min) {
+    return 'Koppellauf $min min';
+  }
+
+  @override
+  String get wBrickRunDesc => 'Direkt vom Rad: Die ersten Minuten fühlen sich schwer an – das ist normal. Schnell wechseln (≤ 2 min) – Wechseltraining inklusive.';
+
+  @override
+  String get stepBrickStartNote => 'Laufrhythmus finden – kurze, schnelle Schritte';
+
+  @override
+  String get stepBrickNote => 'Gleichmäßiges Renngefühl – kontrolliert, nicht voll';
+
+  @override
+  String wRaceRunWalk(int min) {
+    return 'Lauf-Geh-Strategie: $min min laufen, 1 min gehen – von Anfang an, auch wenn du dich frisch fühlst.';
+  }
+
+  @override
+  String get wGymLegsHalvedNote => 'Beinübungen heute mit halben Sätzen – die Schlüsseleinheit morgen braucht frische Beine.';
+
+  @override
+  String get feasTitle => 'Sehr ambitioniertes Ziel';
+
+  @override
+  String get feasBeginnerMarathon => 'Ein Marathon ist kein Einsteigerziel: Baue erst über 5 km, 10 km und Halbmarathon auf.';
+
+  @override
+  String get feasRunWalkLong => 'Solange du keine 30 min am Stück läufst, ist ein (Halb-)Marathon zu weit – starte mit 5 km.';
+
+  @override
+  String get feasRunWalk => 'Am Wettkampftag bist du noch im Lauf-Geh-Programm – durchgehendes Laufen braucht länger.';
+
+  @override
+  String feasTooShort(int weeks) {
+    return '$weeks Wochen reichen nicht, um die langen Einheiten für diese Distanz aufzubauen.';
+  }
+
+  @override
+  String feasLongRunTime(int km, int x) {
+    return 'Die Zeit an deinem Tag für den langen Lauf reicht nur für etwa $km km – dieses Rennen braucht lange Läufe über $x km. Plane an dem Tag mehr Zeit ein.';
+  }
+
+  @override
+  String feasLongRideTime(int min, int target) {
+    return 'Die Zeit an deinem Tag für die lange Ausfahrt reicht nur für $min min – dieses Rennen braucht lange Ausfahrten von mindestens $target min.';
+  }
+
+  @override
+  String get feasOptions => 'Möglichkeiten';
+
+  @override
+  String feasLaterDate(String date) {
+    return 'Ein Wettkampf am $date oder später';
+  }
+
+  @override
+  String feasShorter(String dist) {
+    return 'Eine kürzere Distanz: $dist';
+  }
+
+  @override
+  String get feasRunWalkFinish => 'Mit Lauf-Geh-Strategie ins Ziel – der Wettkampftag im Plan zeigt den Rhythmus';
+
+  @override
+  String get feasPlanAnyway => 'Der Plan wird trotzdem erstellt und baut so weit auf, wie es sicher möglich ist.';
+
+  @override
+  String get wGymDeloadNote2 => 'Entlastungswoche: Die Gewichte sind ca. 10 % leichter eingetragen, jede Übung behält etwa die Hälfte ihrer Arbeitssätze. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.';
 }

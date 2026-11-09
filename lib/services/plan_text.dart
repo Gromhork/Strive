@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import '../l10n/gen/app_localizations.dart';
 
 /// Description of a planned workout for display. Plans generated before the per-exercise
@@ -14,8 +16,8 @@ String planDescription(String description, AppLocalizations l) {
       out
         ..add(l.wGymLoadDesc(rir))
         ..add(l.wGymProgressNote);
-    } else if (_oldDeload.hasMatch(line)) {
-      out.add(l.wGymDeloadNote);
+    } else if (_oldDeload.hasMatch(line) || line == l.wGymDeloadNote || line == _otherLang(l).wGymDeloadNote) {
+      out.add(l.wGymDeloadNote2);
     } else if (_oldCap.firstMatch(line) case final m?) {
       out.add(l.wGymTimeCapNote2(int.parse(m.group(1) ?? m.group(2)!)));
     } else {
@@ -31,3 +33,6 @@ final _oldLoad = RegExp(
 );
 final _oldDeload = RegExp(r'^Deload: \d+ (?:Sätze pro Übung|sets per exercise)');
 final _oldCap = RegExp(r'^(?:Nur (\d+) min Zeit: pro Übung|Only (\d+) min available: do one set less)');
+
+/// The other app language (stored plan texts may predate a language switch).
+AppLocalizations _otherLang(AppLocalizations l) => lookupAppLocalizations(Locale(l.localeName.startsWith('de') ? 'en' : 'de'));

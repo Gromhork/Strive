@@ -9,6 +9,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../data/default_programs.dart';
+import '../calendar/feasibility_card.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/plan_generator.dart';
@@ -57,6 +58,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   // Event
   final _eventName = TextEditingController();
   bool _generatePlan = true;
+  final _feasibility = FeasibilityCache();
 
   @override
   void initState() {
@@ -1428,6 +1430,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           ),
           const SizedBox(height: 8),
           Text(l.planLengthHint(rec.$1, rec.$2), style: Theme.of(context).textTheme.bodySmall),
+        ],
+        // Goal not realistic in the time left (§1.8): say why and what would work – the
+        // plan is generated anyway.
+        if (a.eventDate != null && a.eventDistance != null) ...[
+          const SizedBox(height: 12),
+          FeasibilityCard(_feasibility.of(_advanced ? _profile : _quickProfile, DateTime.now(), l), planAnyway: _generatePlan),
         ],
         const Divider(height: 32),
         SwitchListTile(
