@@ -3675,4 +3675,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rpeRate => 'Rate';
+
+  @override
+  String wBrickRun(int min) {
+    return 'Brick run $min min';
+  }
+
+  @override
+  String get wBrickRunDesc => 'Straight off the bike: the first minutes feel heavy – that is normal. Change quickly (≤ 2 min) – transition practice included.';
+
+  @override
+  String get stepBrickStartNote => 'Find your running rhythm – short, quick steps';
+
+  @override
+  String get stepBrickNote => 'Steady race feel – controlled, not all out';
+
+  @override
+  String wRaceRunWalk(int min) {
+    return 'Run/walk strategy: run $min min, walk 1 min – from the start, even if you feel fresh.';
+  }
+
+  @override
+  String get wGymLegsHalvedNote => 'Leg exercises with half the sets today – tomorrow\'s key session needs fresh legs.';
+
+  @override
+  String get feasTitle => 'Very ambitious goal';
+
+  @override
+  String get feasBeginnerMarathon => 'A marathon is not a beginner goal: build up over 5 km, 10 km and a half marathon first.';
+
+  @override
+  String get feasRunWalkLong => 'As long as you can\'t run 30 min continuously, a half or full marathon is too far – start with 5 km.';
+
+  @override
+  String get feasRunWalk => 'On race day you will still be on run/walk – continuous running takes longer to build.';
+
+  @override
+  String feasTooShort(int weeks) {
+    return '$weeks weeks are not enough to build the long sessions this distance needs.';
+  }
+
+  @override
+  String feasLongRunTime(int km, int x) {
+    return 'The time on your long-run day allows only about $km km – this race needs long runs of $x km. Plan more time on that day.';
+  }
+
+  @override
+  String feasLongRideTime(int min, int target) {
+    return 'The time on your long-ride day allows only $min min – this race needs long rides of at least $target min.';
+  }
+
+  @override
+  String get feasOptions => 'Options';
+
+  @override
+  String feasLaterDate(String date) {
+    return 'A race on $date or later';
+  }
+
+  @override
+  String feasShorter(String dist) {
+    return 'A shorter distance: $dist';
+  }
+
+  @override
+  String get feasRunWalkFinish => 'Finish with run/walk – race day in your plan shows the rhythm';
+
+  @override
+  String get feasPlanAnyway => 'The plan is created anyway and builds up as far as is safely possible.';
 }

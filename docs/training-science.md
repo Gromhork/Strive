@@ -124,6 +124,12 @@ done, set default pace targets from RPE only.
 | R | ≤ min(5% of weekly km, 8 km). Reps 200–400 m (up to 600 m); full recovery jog (2–3 × rep time) |
 | Long run (L) | ≤ 25–30% of weekly km (30% allowed when weekly km < 40) **and** ≤ 150 min (marathon plans: ≤ 180 min for ADVANCED) |
 
+Generator (review 2026-11): marathon plans allow 180 min for every non-beginner (the 28–32 km long runs of amateur
+marathon plans take ~3 h); long-run km are planned at the **middle** of the E range (the pace the session duration is
+estimated with), not at its slow end. Default time on the long day when the athlete set none: marathon 180 min, HM and
+olympic 150, 70.3 240 (long ride + brick run), otherwise 120; the triathlon long-run day gets 120 min (70.3) / 90 min
+(olympic).
+
 ### 1.5 Weekly volume progression and injury risk
 
 | Evidence | Finding | Tag |
@@ -193,6 +199,20 @@ taperWeekFactor (2-wk taper): [0.70, 0.50]
 
 If the time to race day is shorter than the minimum: show a warning and offer a smaller goal (finishing rather than a time target).
 
+**Feasibility check (generator, `PlanGenerator.feasibility`)** [P]. The plan is generated anyway; the onboarding summary,
+the "new plan" sheet and the calendar header show a short warning with options when the goal is not realistic:
+
+```text
+not allowed  : BEGINNER + marathon; still on run/walk (cannot run 30 min) + HM / marathon
+runWalk      : run/walk stages still planned in race week (one stage per week, §1.10)
+tooShort     : the plan's longest long run stays below 10k 8 km · HM 15 km · marathon 28 km (~70–80 % of the distance),
+               or the long ride below 90 % of olympic 90 min · 70.3 180 min, because there are too few weeks
+longRunTime / longRideTime : the time on the long day (not the weeks) caps the long session below those minimums
+options      : the first later race date (same weekday, ≤ 30 weeks) that passes · the largest shorter distance that passes
+               by the date · finish with run/walk (5k / 10k / sprint / olympic) – race day then shows a run/walk rhythm
+               (run 1–10 min as in the last stage, walk 1 min, from the start)
+```
+
 ### 1.9 Deload / recovery weeks [P] (no RCT on cycle length)
 
 ```text
@@ -217,7 +237,8 @@ next loading week resumes at the volume of the last loading week (not at the del
 | 7–9 | 25 → 30 min continuous | 25–30 min |
 
 Rules: progress only if the last session felt RPE ≤ 5 with no pain. Otherwise repeat the week [P]. All running is at
-"talking pace". Show no pace targets.
+"talking pace". Show no pace targets. Couch-to-5K has no recovery weeks: while a pure runner (also hybrid run + strength)
+is on run/walk, no recovery week is planned; the 2:1 / 3:1 cycle starts with continuous running.
 
 ### 1.10a Who starts with run/walk; masters and body weight [M/P] (generator audit 2026-11)
 
@@ -238,7 +259,10 @@ beginners: >= 2 rest days/week (strength only: <= 4 days), <= 4 runs/week (<= 3 
 Long-run share for half/full marathon goals: Daniels' 25–30 % (1.4) keeps an amateur HM long run at ~11 km on 35 km/week.
 Race-specific plans (Higdon, Pfitzinger, Hanson) use 35–45 % at amateur volumes, so with ≥ 3 runs/week the generator allows
 HM 40 % (< 50 km/week, else 32 %) and marathon 42 % (< 70 km/week, else 33 %), capped at 21 / 35 km, still bounded by R1 and
-the 150 min (advanced marathon 180 min) limit.
+the 150 min (marathon 180 min) limit. At low volumes the share may rise to what the race-specific long run needs:
+HM up to min(50 %, 15 km / weekly km), marathon up to min(55 %, 30 km / weekly km) (Higdon / Hanson novice plans 45–60 %).
+Peak run volume with a stated current volume: ≤ 1.5 × that volume (at least +10 km), whatever the table ceiling says
+(review: 55 → 103 km/week in 9 weeks was +87 %).
 
 Triathlon volume ceilings (R5) per discipline, novice / intermediate / advanced:
 run km sprint 12/20/30 · olympic 18/28/40 · 70.3 25/35/50; bike hours 2.5/3.5/4.5 · 3.5/4.5/6 · 5/6.5/8;
@@ -435,6 +459,11 @@ reactiveDeload trigger: e1RM down ≥ 5% for 2 sessions, or RPE ≥ 2 above targ
 hybrid athletes: put the strength deload in the same week as the endurance recovery week
 ```
 
+Generator: beginners' strength sessions in endurance recovery weeks of the first 10 weeks keep the loading phase (no set
+cut); from week 11 they deload with the endurance recovery week. The day before a key endurance session (C3/C4), a
+full-body / home / bodyweight program keeps half of its leg work sets (at least 1); the planned workout carries that
+adjusted exercise list, which the session start uses.
+
 ### 2.8 Split by days per week [P] (all keep ≥ 2×/week per muscle)
 
 | Days | Split | Notes |
@@ -506,7 +535,7 @@ Friel running (% LTHR): Z1 < 85 · Z2 85–89 · Z3 90–94 · Z4 95–99 · Z5a
 - Sweet spot (88–94% FTP) is time-efficient but adds fatigue. Evidence is practice-based **[P]**.
 
 ```text
-weeklyBikeHours < 5  -> pyramidal: 1 sweet-spot/threshold + 1 VO2 session, rest Z2      [P]
+weeklyBikeHours < 5  -> pyramidal: 1 sweet-spot/threshold + 1 VO2 session, rest Z2 (also in base) [P]
 weeklyBikeHours 5–10 -> 80/20: 2 quality sessions (1 threshold/SS, 1 VO2) + long Z2 ride   [M/P]
 weeklyBikeHours > 10 -> polarized in peak phase (Z3 by VO2/anaerobic work, Z2 long rides)  [M]
 ```
@@ -578,6 +607,11 @@ fallback without a test: CSS_pace ≈ T400/4 + 4 s/100 m (practice) or use RPE
 | Main set | 50–60% | CSS/tempo/endurance reps |
 | Cool-down | ~10% | Easy |
 
+Generator: technique sessions ≤ ~60 min. Endurance swims grow continuous repeats: BEGINNER 50 → 100 → 200 → 400 → 800 m
+(every 3 weeks; 100 m start if 400 m continuous is possible), others 200 → 400 → 800 m (every 4 weeks); 800 m only for
+olympic / 70.3, always ≥ 2 repeats. A single weekly swim alternates technique and endurance. 70.3 with ≤ 5 days gets a
+second swim as a double day (easy-session day far from the first swim, not the long day or the day before it).
+
 ### 4.4 Weekly volume by level [P]
 
 | Level | Sessions/wk | Per session | Weekly |
@@ -646,6 +680,20 @@ H8 [P]   cycling and swimming count only ~50–70% as much as running toward mus
          when the user wants more volume, add it via bike/swim before adding run km
 ```
 
+Generator implementation of H1–H3 (review 2026-11):
+
+```text
+key days     : never 3 in a row; BEGINNER / INTERMEDIATE / age >= 50 never 2 (long run + long ride of different sports may
+               follow each other, except masters)
+CSS swim set : a key session for spacing, weighted as half: may sit next to one key day (masters: only next to a long Z2
+               session), never between two
+H3           : ADVANCED may go hard on consecutive days only across sports – never two key runs (or rides) within 48 h
+H2 budget    : with >= 2 endurance sports one budget across sports: sessions <= 4: 2 · 5–7: 3 · more: 4 points;
+               quality run / ride 1, long session 0.5, CSS set 0.5; base phase <= 2 quality sessions (BEGINNER 1).
+               Priority: bike quality first; base CSS before run quality, build / peak run quality before CSS – another
+               order only if it fits more quality sessions. Quality days avoid double days.
+```
+
 ### 6.2 Session allocation by days available (examples, all sports in hybrid order of priority) [P]
 
 Triathlon time split by default: swim ~20%, bike ~45–50%, run ~30–35% of weekly endurance time [P].
@@ -676,6 +724,12 @@ Sun  Long run (E)                 | optional: strength (upper / core)
 - Run off the bike: 10–15 min to start → 20–30 min (olympic) → 45–60 min (70.3/ironman, ADVANCED). The first 5 min at
   E/race feel, then goal pace.
 - A brick counts as a key session (H1/H2). Transition practice: ≤ 2 min.
+
+Generator: a run off the bike follows the long ride from the build phase every second loading week, weekly in the peak
+phase (not while on run/walk): sprint 15 → 20 min, olympic 15 → 30, 70.3 15 → 45 (ADVANCED 60), +5 min per brick,
+≤ ~60 % of that week's long run. It shares the long-ride day's time (the ride gets the rest), is part of that day's key
+session (intensity "moderate", not an extra key session), first 5 min easy, then steady race feel. Long ride share of
+the bike hours: 2 rides 60 %, 3 rides 50 %, more 42 %.
 
 ---
 

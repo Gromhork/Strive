@@ -89,19 +89,22 @@ void main() {
     }
   });
 
+  // The sessions of a day share its time: scheduled double days split it evenly, a brick
+  // run takes its minutes from the long ride – so the check is on the whole day.
   test('sessions fit the time available', () {
     for (final e in profiles.entries) {
       final p = e.value;
       final plan = PlanGenerator(l, p, templates, id).generate(start: start, weeks: 12);
-      final perDay = <DateTime, int>{};
-      for (final w in plan) {
-        perDay[dayOnly(w.date)] = (perDay[dayOnly(w.date)] ?? 0) + 1;
-      }
+      final perDay = <DateTime, List<PlannedWorkout>>{};
       for (final w in plan.where((w) => w.intensity != 'race')) {
-        final cap = PlanGenerator.dayMinutesFor(p, w.date.weekday) ~/ perDay[dayOnly(w.date)]!;
+        perDay.putIfAbsent(dayOnly(w.date), () => []).add(w);
+      }
+      for (final d in perDay.entries) {
+        final cap = PlanGenerator.dayMinutesFor(p, d.key.weekday);
+        final sum = d.value.fold<int>(0, (x, w) => x + w.durationMin);
         // Minimum session floors (3 km easy, 4 km long, 600 m swim) may exceed tiny caps.
-        if (cap < 40) continue;
-        expect(w.durationMin, lessThanOrEqualTo(cap + 10), reason: '${e.key}: ${w.title} ${w.durationMin} min > cap $cap');
+        if (cap ~/ d.value.length < 40) continue;
+        expect(sum, lessThanOrEqualTo(cap + 10), reason: '${e.key}: ${d.value.map((w) => w.title)} $sum min > cap $cap');
       }
     }
   });
@@ -144,7 +147,9 @@ void main() {
       final week = plan.where((p) => p.sport == Sport.swim && startOfWeek(p.date) == start).toList();
       final kinds = week.map((p) => p.intensity).toSet();
       expect(kinds.length, greaterThanOrEqualTo(2), reason: '${e.key}: ${week.map((p) => p.title)}');
-      if (e.value.level != 'beginner') expect(kinds, contains('intervals'), reason: e.key);
+      // CSS sets now count as (half) key sessions: masters (≥ 48 h between hard days) only
+      // get one where it fits next to a long Z2 session.
+      if (e.value.level != 'beginner' && (e.value.age ?? 30) < 50) expect(kinds, contains('intervals'), reason: e.key);
     }
   });
 
@@ -271,6 +276,31 @@ void main() {
     }
   });
 
+  test('H2 across sports (long 0.5, quality 1, CSS 0.5) and H3: no key runs / rides on consecutive days', () {
+    for (final e in plans.entries) {
+      final p = profiles[e.key]!;
+      final multi = p.focus.sports.where((s) => s != Sport.gym).length >= 2;
+      for (final wk in byWeek(e.value).entries) {
+        final w = wk.value;
+        if (multi) {
+          final n = w.where((x) => x.sport != Sport.gym && x.intensity != 'moderate').length;
+          final budget = n <= 4 ? 2.0 : (n <= 7 ? 3.0 : 4.0);
+          final points = w.fold<double>(
+            0,
+            (x, s) => x + (s.intensity == 'long' || (s.sport == Sport.swim && hard(s)) ? 0.5 : (hard(s) ? 1 : 0)),
+          );
+          expect(points, lessThanOrEqualTo(budget), reason: '${e.key}: ${wk.key} $points > $budget');
+        }
+        for (final sport in [Sport.run, Sport.ride]) {
+          final keys = {for (final s in w.where((s) => s.sport == sport && s.isKey)) dayOnly(s.date)};
+          for (final d in keys) {
+            expect(keys.contains(d.add(const Duration(days: 1))), isFalse, reason: '${e.key}: ${sport.name} key days $d and the next');
+          }
+        }
+      }
+    }
+  });
+
   test('taper is 1–3 weeks and at most a third of short plans', () {
     for (final weeks in [3, 5, 6, 9, 14]) {
       for (final ev in ['5k', 'hm', 'm', 'olympic', '70.3']) {
@@ -311,6 +341,12 @@ void main() {
         final ws = weeks[k]!;
         final phases = ws.map((w) => w.phase).toSet();
         final minutes = ws.where((w) => w.sport != Sport.gym).fold<double>(0, (x, w) => x + w.durationMin);
+        // Run/walk weeks (Couch-to-5K) have no recovery weeks – the 2:1 / 3:1 cycle starts
+        // with continuous running.
+        if (ws.any(runWalk)) {
+          loading = 0;
+          continue;
+        }
         if (!phases.contains('recovery') && !phases.contains('taper')) {
           loading++;
           lastLoad = minutes;
@@ -532,14 +568,15 @@ void main() {
       for (final e in profiles.entries) {
         final p = withLimits(e.value, const ['knee', 'shoulder', 'heart']);
         final plan = PlanGenerator(l, p, templates, id).generate(start: start, weeks: 8);
-        final perDay = <DateTime, int>{};
-        for (final w in plan) {
-          perDay[dayOnly(w.date)] = (perDay[dayOnly(w.date)] ?? 0) + 1;
-        }
+        final perDay = <DateTime, List<PlannedWorkout>>{};
         for (final w in plan.where((w) => w.intensity != 'race')) {
           expect(w.durationMin, inInclusiveRange(15, 240), reason: '${e.key}: ${w.title}');
-          final cap = PlanGenerator.dayMinutesFor(p, w.date.weekday) ~/ perDay[dayOnly(w.date)]!;
-          if (cap >= 40) expect(w.durationMin, lessThanOrEqualTo(cap + 10), reason: '${e.key}: ${w.title}');
+          perDay.putIfAbsent(dayOnly(w.date), () => []).add(w);
+        }
+        for (final d in perDay.entries) {
+          final cap = PlanGenerator.dayMinutesFor(p, d.key.weekday);
+          final sum = d.value.fold<int>(0, (x, w) => x + w.durationMin);
+          if (cap ~/ d.value.length >= 40) expect(sum, lessThanOrEqualTo(cap + 10), reason: '${e.key}: ${d.value.map((w) => w.title)}');
         }
         final need = p.level == 'beginner' ? 2 : ((p.age ?? 30) >= 60 ? 1 : 0);
         for (final wk in byWeek(plan).entries) {
