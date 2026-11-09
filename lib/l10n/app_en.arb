@@ -1087,18 +1087,18 @@
       }
     }
   },
-  "zConversational": "conversational pace",
-  "zEasyLong": "easy",
-  "zMarathon": "marathon pace",
-  "zThreshold": "threshold pace",
-  "zInterval": "interval pace",
-  "zStride": "stride",
-  "zJog": "easy jog",
+  "zConversational": "Easy",
+  "zEasyLong": "Easy",
+  "zMarathon": "Steady",
+  "zThreshold": "Threshold",
+  "zInterval": "Interval",
+  "zStride": "Sprint",
+  "zJog": "Recovery",
   "zWalk": "walk",
-  "zRecovery": "recovery",
+  "zRecovery": "Recovery",
   "zSprint": "sprint",
-  "zSwimEndurance": "endurance",
-  "zDrills": "drills",
+  "zSwimEndurance": "Endurance",
+  "zDrills": "Technique",
   "stepWarmup": "Warm-up",
   "stepCooldown": "Cool-down",
   "stepRecovery": "Recovery",
@@ -1559,5 +1559,78 @@
     }
   },
   "resetToProgram": "Reset",
-  "adjustExercises": "Adjust exercises"
+  "adjustExercises": "Adjust exercises",
+  "zSwimEasy": "Easy",
+  "zEndurance": "Endurance",
+  "zCss": "CSS pace",
+  "zTempo": "Tempo",
+  "zoneInfoTitle": "Intensity zones",
+  "zoneInfoRun": "Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.",
+  "zoneInfoRide": "Power zones are percentages of your FTP (the power you can hold for about one hour). Without a power meter, ride by heart rate and feel.",
+  "zoneInfoSwim": "Paces per 100 m come from your critical swim speed (CSS, from a 400 m and 200 m test).",
+  "zoneInfoEstimated": "≈ values are estimated from your level – add a test result in the plan settings for exact targets.",
+  "zfVeryEasy": "RPE 1–2 · very easy",
+  "zfEasy": "RPE 3–4 · full sentences",
+  "zfDrills": "focus on form",
+  "zfModerate": "RPE 5–6 · short sentences",
+  "zfHard": "RPE 7–8 · single words",
+  "zfVeryHard": "RPE 8–9 · no talking",
+  "zfMax": "RPE 9–10 · fast & relaxed",
+  "zdRunRec": "Walking or very slow jogging between hard efforts and for warming up. Lets your heart rate come down.",
+  "zdRunEasy": "Your everyday pace: relaxed, you can talk in full sentences. Builds the aerobic base, used for easy and long runs.",
+  "zdRunSteady": "Controlled but purposeful, about your marathon pace. Used in long-run finishes and steady runs.",
+  "zdRunThreshold": "\"Comfortably hard\" – a pace you could hold for about an hour. Tempo runs and cruise intervals raise your lactate threshold.",
+  "zdRunInterval": "About your 3–5 km race pace. Efforts of 2–5 minutes with recovery jogs improve your VO2max.",
+  "zdRunSprint": "Short, fast but relaxed efforts (strides, 10–30 s) with full recovery. Improves running economy and form.",
+  "zdRideRec": "Spinning easily, for warm-up, cool-down and recovery rides.",
+  "zdRideEndurance": "The base of cycling training: long, steady rides at a pace you can hold for hours.",
+  "zdRideSweetSpot": "Just below threshold: hard but sustainable for 10–40 minutes. Very time-efficient for building FTP.",
+  "zdRideThreshold": "Around your FTP – the effort of a one-hour time trial. Blocks of 8–20 minutes.",
+  "zdRideVo2": "Very hard efforts of 2–6 minutes that push your maximal oxygen uptake.",
+  "zdRideSprint": "Short all-out bursts (up to 30 s) for power and speed, with long recoveries.",
+  "zdSwimEasy": "Loose, relaxed swimming for warm-up, cool-down and rests. Focus on long strokes and calm breathing.",
+  "zdSwimDrills": "Technique drills: exercises that isolate one part of the stroke (arm pull, body position, rotation, breathing). Speed does not matter – swim slowly and precisely. Tap \"Technique drills\" below for the exercises.",
+  "zdSwimEndurance": "Steady aerobic swimming, a few seconds slower than CSS per 100 m. The main zone for longer sets.",
+  "zdSwimCss": "Your critical swim speed – about your 1500 m race pace. Hard but even, with short rests (10–20 s).",
+  "zdSwimSprint": "Short, fast lengths (25–50 m) with long rests for speed and power.",
+  "swimDrillsTitle": "Technique drills",
+  "swimDrillsIntro": "In a technique set you swim these drills instead of normal freestyle, e.g. 50 m drill / 50 m freestyle. Swim slowly and concentrate on one thing per length.",
+  "drillCatchupName": "Catch-up",
+  "drillCatchupHow": "One arm stays stretched in front until the other arm touches it, then it starts its pull.",
+  "drillCatchupWhy": "Longer stroke, better glide and timing.",
+  "drillFingertipName": "Fingertip drag",
+  "drillFingertipHow": "During the recovery, drag your fingertips along the water surface from hip to head.",
+  "drillFingertipWhy": "High elbow and relaxed arm recovery.",
+  "drillSideKickName": "6-1-6 side kick",
+  "drillSideKickHow": "Kick 6 times on your side (lower arm stretched forward), take one stroke, kick 6 times on the other side.",
+  "drillSideKickWhy": "Body position, rotation and calm breathing.",
+  "drillSingleArmName": "Single arm",
+  "drillSingleArmHow": "One arm stays in front, the other one swims alone; switch arms every length.",
+  "drillSingleArmWhy": "Clean underwater pull and rotation to the breathing side.",
+  "drillFistName": "Fist swimming",
+  "drillFistHow": "Swim freestyle with closed fists; open your hands again for the last 10 m.",
+  "drillFistWhy": "You learn to pull with the whole forearm (early vertical forearm).",
+  "drillScullName": "Sculling",
+  "drillScullHow": "Lying flat, move your hands in small figure-eights in front of your head to move forward.",
+  "drillScullWhy": "Feel for the water and a strong catch.",
+  "drillsNote": "{a} / {b} – alternate 50 m drill, 50 m freestyle",
+  "@drillsNote": {
+    "placeholders": {
+      "a": {
+        "type": "String"
+      },
+      "b": {
+        "type": "String"
+      }
+    }
+  },
+  "intensityAuto": "{name} (from the structure)",
+  "@intensityAuto": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "showDrills": "Show drills"
 }

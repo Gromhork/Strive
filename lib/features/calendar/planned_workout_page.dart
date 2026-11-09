@@ -11,6 +11,7 @@ import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
 import '../session/start_helpers.dart';
 import '../session/step_list.dart';
+import '../session/zone_info.dart' show ZoneInfoButton;
 import '../stats/session_detail_page.dart';
 import 'plan_editor.dart';
 
@@ -116,7 +117,12 @@ class PlannedWorkoutPage extends ConsumerWidget {
           ],
           if (p.steps.isNotEmpty) ...[
             const SizedBox(height: 20),
-            Text(l.workoutStructure, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Row(
+              children: [
+                Expanded(child: Text(l.workoutStructure, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                ZoneInfoButton(sport: p.sport, profile: ref.watch(profileOrDefaultProvider)),
+              ],
+            ),
             const SizedBox(height: 8),
             StepList(steps: p.steps, sport: p.sport, units: u),
           ],

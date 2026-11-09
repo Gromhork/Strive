@@ -2206,31 +2206,31 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get zConversational => 'Gesprächstempo';
+  String get zConversational => 'Locker';
 
   @override
-  String get zEasyLong => 'locker';
+  String get zEasyLong => 'Locker';
 
   @override
-  String get zMarathon => 'Marathontempo';
+  String get zMarathon => 'Zügig';
 
   @override
-  String get zThreshold => 'Schwellentempo';
+  String get zThreshold => 'Schwelle';
 
   @override
-  String get zInterval => 'Intervalltempo';
+  String get zInterval => 'Intervall';
 
   @override
-  String get zStride => 'Steigerung';
+  String get zStride => 'Sprint';
 
   @override
-  String get zJog => 'Trabpause';
+  String get zJog => 'Erholung';
 
   @override
   String get zWalk => 'Gehen';
 
   @override
-  String get zRecovery => 'Regeneration';
+  String get zRecovery => 'Erholung';
 
   @override
   String get zSprint => 'Sprint';
@@ -2884,4 +2884,176 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get adjustExercises => 'Übungen anpassen';
+
+  @override
+  String get zSwimEasy => 'Locker';
+
+  @override
+  String get zEndurance => 'Grundlage';
+
+  @override
+  String get zCss => 'CSS-Tempo';
+
+  @override
+  String get zTempo => 'Tempo';
+
+  @override
+  String get zoneInfoTitle => 'Intensitätszonen';
+
+  @override
+  String get zoneInfoRun => 'Die Tempi basieren auf deinen Wettkampfzeiten (VDOT nach Jack Daniels). Der Großteil deines Laufens – etwa 80 % – sollte locker sein; die schnellen Zonen setzt du kurz und gezielt ein.';
+
+  @override
+  String get zoneInfoRide => 'Die Wattbereiche sind Prozent deiner FTP (die Leistung, die du etwa eine Stunde halten kannst). Ohne Wattmesser fährst du nach Puls und Gefühl.';
+
+  @override
+  String get zoneInfoSwim => 'Die Zeiten pro 100 m basieren auf deiner kritischen Schwimmgeschwindigkeit (CSS, aus einem 400-m- und 200-m-Test).';
+
+  @override
+  String get zoneInfoEstimated => '≈-Werte sind aus deinem Level geschätzt – trage in den Planeinstellungen einen Testwert ein, dann werden sie genau.';
+
+  @override
+  String get zfVeryEasy => 'RPE 1–2 · sehr leicht';
+
+  @override
+  String get zfEasy => 'RPE 3–4 · ganze Sätze';
+
+  @override
+  String get zfDrills => 'Fokus auf Technik';
+
+  @override
+  String get zfModerate => 'RPE 5–6 · kurze Sätze';
+
+  @override
+  String get zfHard => 'RPE 7–8 · einzelne Worte';
+
+  @override
+  String get zfVeryHard => 'RPE 8–9 · kein Sprechen';
+
+  @override
+  String get zfMax => 'RPE 9–10 · schnell & locker';
+
+  @override
+  String get zdRunRec => 'Gehen oder ganz langsames Traben zwischen harten Abschnitten und zum Einlaufen. Der Puls darf sinken.';
+
+  @override
+  String get zdRunEasy => 'Dein Alltagstempo: entspannt, du kannst dich in ganzen Sätzen unterhalten. Baut die Grundlagenausdauer auf – für lockere und lange Läufe.';
+
+  @override
+  String get zdRunSteady => 'Kontrolliert, aber mit Zug – etwa dein Marathontempo. Für zügige Abschnitte am Ende langer Läufe.';
+
+  @override
+  String get zdRunThreshold => '„Angenehm hart“ – ein Tempo, das du etwa eine Stunde halten könntest. Tempodauerläufe und Schwellenintervalle heben deine Laktatschwelle.';
+
+  @override
+  String get zdRunInterval => 'Etwa dein 3–5-km-Wettkampftempo. Abschnitte von 2–5 Minuten mit Trabpausen verbessern deine VO2max.';
+
+  @override
+  String get zdRunSprint => 'Kurze, schnelle, aber lockere Abschnitte (Steigerungen, 10–30 s) mit voller Erholung. Verbessert Laufökonomie und Technik.';
+
+  @override
+  String get zdRideRec => 'Locker kurbeln – zum Ein- und Ausfahren und für Erholungsfahrten.';
+
+  @override
+  String get zdRideEndurance => 'Die Basis im Radtraining: lange, gleichmäßige Fahrten in einem Tempo, das du stundenlang halten kannst.';
+
+  @override
+  String get zdRideSweetSpot => 'Knapp unter der Schwelle: fordernd, aber 10–40 Minuten durchhaltbar. Sehr zeiteffizient, um die FTP zu steigern.';
+
+  @override
+  String get zdRideThreshold => 'Rund um deine FTP – die Belastung eines einstündigen Zeitfahrens. Blöcke von 8–20 Minuten.';
+
+  @override
+  String get zdRideVo2 => 'Sehr harte Abschnitte von 2–6 Minuten, die deine maximale Sauerstoffaufnahme fordern.';
+
+  @override
+  String get zdRideSprint => 'Kurze, maximale Antritte (bis 30 s) für Kraft und Spritzigkeit, mit langen Pausen.';
+
+  @override
+  String get zdSwimEasy => 'Locker und entspannt – zum Ein- und Ausschwimmen und in Pausen. Auf lange Züge und ruhige Atmung achten.';
+
+  @override
+  String get zdSwimDrills => 'Technikübungen: Übungen, die einen Teil der Bewegung isolieren (Armzug, Wasserlage, Rotation, Atmung). Das Tempo ist egal – schwimm langsam und sauber. Die Übungen findest du unten unter „Technikübungen“.';
+
+  @override
+  String get zdSwimEndurance => 'Gleichmäßiges Grundlagenschwimmen, einige Sekunden pro 100 m langsamer als CSS. Die Hauptzone für längere Serien.';
+
+  @override
+  String get zdSwimCss => 'Deine kritische Schwimmgeschwindigkeit – etwa dein 1500-m-Wettkampftempo. Hart, aber gleichmäßig, mit kurzen Pausen (10–20 s).';
+
+  @override
+  String get zdSwimSprint => 'Kurze, schnelle Bahnen (25–50 m) mit langen Pausen für Schnelligkeit und Kraft.';
+
+  @override
+  String get swimDrillsTitle => 'Technikübungen';
+
+  @override
+  String get swimDrillsIntro => 'In einem Technikblock schwimmst du statt normalem Kraul diese Übungen, z. B. 50 m Übung / 50 m Kraul im Wechsel. Schwimm langsam und konzentriere dich pro Bahn auf eine Sache.';
+
+  @override
+  String get drillCatchupName => 'Abschlagschwimmen';
+
+  @override
+  String get drillCatchupHow => 'Ein Arm bleibt vorne gestreckt, bis der andere ihn „abschlägt“ – erst dann beginnt er seinen Zug.';
+
+  @override
+  String get drillCatchupWhy => 'Längerer Zug, besseres Gleiten und Timing.';
+
+  @override
+  String get drillFingertipName => 'Fingerspitzen ziehen';
+
+  @override
+  String get drillFingertipHow => 'In der Rückholphase ziehst du die Fingerspitzen von der Hüfte bis zum Kopf über die Wasseroberfläche.';
+
+  @override
+  String get drillFingertipWhy => 'Hoher Ellbogen und lockere Armrückführung.';
+
+  @override
+  String get drillSideKickName => '6-1-6 Seitlage';
+
+  @override
+  String get drillSideKickHow => '6 Beinschläge in Seitlage (unterer Arm nach vorne gestreckt), ein Armzug, 6 Beinschläge auf der anderen Seite.';
+
+  @override
+  String get drillSideKickWhy => 'Wasserlage, Rotation und ruhige Atmung.';
+
+  @override
+  String get drillSingleArmName => 'Einarmig';
+
+  @override
+  String get drillSingleArmHow => 'Ein Arm bleibt vorne, der andere schwimmt allein; pro Bahn wechseln.';
+
+  @override
+  String get drillSingleArmWhy => 'Sauberer Unterwasserzug und Rotation zur Atemseite.';
+
+  @override
+  String get drillFistName => 'Faustschwimmen';
+
+  @override
+  String get drillFistHow => 'Kraul mit geschlossenen Fäusten; auf den letzten 10 m die Hände wieder öffnen.';
+
+  @override
+  String get drillFistWhy => 'Du lernst, mit dem ganzen Unterarm zu ziehen (früher, senkrechter Unterarm).';
+
+  @override
+  String get drillScullName => 'Wriggen (Sculling)';
+
+  @override
+  String get drillScullHow => 'In Bauchlage bewegst du die Hände in kleinen Achten vor dem Kopf und kommst so voran.';
+
+  @override
+  String get drillScullWhy => 'Wassergefühl und kräftiges Wasserfassen.';
+
+  @override
+  String drillsNote(String a, String b) {
+    return '$a / $b – im Wechsel 50 m Übung, 50 m Kraul';
+  }
+
+  @override
+  String intensityAuto(String name) {
+    return '$name (aus dem Aufbau)';
+  }
+
+  @override
+  String get showDrills => 'Übungen anzeigen';
 }

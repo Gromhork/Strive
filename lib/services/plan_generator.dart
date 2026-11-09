@@ -461,11 +461,11 @@ class PlanGenerator {
       // Marathon / HM peak: last 25 % at goal pace (M).
       if (phase == 'peak' && (dist == 'm' || dist == 'hm') && !beginner) {
         final mpKm = _r1(km * 0.25);
-        steps = [_runStep('steady', 'L', km: km - mpKm), _runStep('work', 'M', km: mpKm, note: l.stepMpNote)];
+        steps = [_runStep('steady', 'E', km: km - mpKm), _runStep('work', 'M', km: mpKm, note: l.stepMpNote)];
         title = l.wLongRunMp;
         desc = l.wLongRunMpDesc;
       } else {
-        steps = [_runStep('steady', 'L', km: km, note: l.stepEasyNote)];
+        steps = [_runStep('steady', 'E', km: km, note: l.stepEasyNote)];
         title = l.planLongRun;
         desc = l.wLongRunDesc;
       }
@@ -687,6 +687,13 @@ class PlanGenerator {
     return WorkoutStep(kind: kind, distanceM: m, zone: zone, paceMin: noPace ? null : fast, paceMax: noPace ? null : slow, note: note);
   }
 
+  /// Two concrete technique drills, rotating weekly (see zone_info.dart › swimDrills).
+  String _drillNote(int week) {
+    final names = [l.drillCatchupName, l.drillFingertipName, l.drillSideKickName, l.drillSingleArmName, l.drillFistName, l.drillScullName];
+    final i = (week * 2) % names.length;
+    return l.drillsNote(names[i], names[(i + 1) % names.length]);
+  }
+
   PlannedWorkout _swim(DateTime day, String role, String phase, double weekKm, int perWeek, int week, int capMin) {
     // Session distance, limited by the time available (≈ CSS + 15 s per 100 m incl. rests).
     final maxM = capMin * 60 / ((sz.css + 15) / 100);
@@ -699,7 +706,7 @@ class PlanGenerator {
     if (role == 'q1' && !beginner) {
       // CSS set: n × 100 m @ CSS, 15 s rest.
       final n = max(6, ((total * 0.55) / 100).round());
-      steps.add(_swimStep('work', 'DR', 200, note: l.stepDrills));
+      steps.add(_swimStep('work', 'DR', 200, note: _drillNote(week)));
       steps.add(const WorkoutStep(kind: 'recovery', durationSec: 30, zone: 'REC'));
       for (var i = 0; i < n; i++) {
         steps.add(_swimStep('work', 'CSS', 100, note: l.stepCssNote));
@@ -710,7 +717,7 @@ class PlanGenerator {
       intensity = 'intervals';
       isKey = true;
     } else if (role == 'technique' || beginner) {
-      steps.add(_swimStep('work', 'DR', (total * (beginner ? 0.35 : 0.2) / 50).round() * 50.0, note: l.stepDrills));
+      steps.add(_swimStep('work', 'DR', (total * (beginner ? 0.35 : 0.2) / 50).round() * 50.0, note: _drillNote(week)));
       steps.add(const WorkoutStep(kind: 'recovery', durationSec: 30, zone: 'REC'));
       final main = (total * 0.45 / 50).round() * 50.0;
       final reps = max(2, (main / (beginner ? 50 : 100)).round());
@@ -726,12 +733,12 @@ class PlanGenerator {
       final rep = main >= 1200 ? 400.0 : 200.0;
       final reps = max(2, (main / rep).round());
       for (var i = 0; i < reps; i++) {
-        steps.add(_swimStep('work', 'TE', rep, note: l.stepSwimEnNote));
+        steps.add(_swimStep('work', 'EN', rep, note: l.stepSwimEnNote));
         if (i < reps - 1) steps.add(const WorkoutStep(kind: 'recovery', durationSec: 20, zone: 'REC'));
       }
       title = l.wSwimEndurance(reps, rep.round());
       desc = l.wSwimEnduranceDesc;
-      intensity = 'moderate';
+      intensity = 'easy';
     }
     steps.add(cd);
     return _plan(day, Sport.swim, title, desc, intensity, steps, phase, isKey);
