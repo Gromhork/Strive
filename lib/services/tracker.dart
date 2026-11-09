@@ -10,10 +10,12 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../core/format.dart';
 import '../core/sport.dart';
+import '../core/theme.dart';
 import '../data/models.dart';
 import '../features/session/step_text.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../providers.dart';
+import 'notification_service.dart' show notificationIcon;
 import 'step_progress.dart';
 import 'voice_coach.dart';
 
@@ -376,6 +378,8 @@ class TrackerNotifier extends Notifier<CardioState?> {
               foregroundNotificationConfig: ForegroundNotificationConfig(
                 notificationTitle: 'Strive',
                 notificationText: title,
+                notificationIcon: const AndroidResource(name: notificationIcon),
+                color: AppColors.brand,
                 enableWakeLock: true,
               ),
             )
