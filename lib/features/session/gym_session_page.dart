@@ -180,7 +180,10 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
         i++;
         continue;
       }
-      out.add(_ExerciseTile(w: w, index: i, units: u, onTap: () => _openFocus(i)));
+      // Copy the index: the closure must not capture the loop variable (it would open
+      // the last exercise for every tile).
+      final idx = i;
+      out.add(_ExerciseTile(w: w, index: idx, units: u, onTap: () => _openFocus(idx)));
       i++;
     }
     return out;

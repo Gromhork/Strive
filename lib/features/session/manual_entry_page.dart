@@ -13,19 +13,38 @@ import '../../widgets/segments.dart';
 
 /// Log a past activity (e.g. a treadmill run or a swim without the phone).
 class ManualEntryPage extends ConsumerStatefulWidget {
-  const ManualEntryPage({super.key, this.sport});
+  const ManualEntryPage({super.key, this.sport, this.plan});
   final Sport? sport;
+
+  /// Planned workout done without recording: pre-fills sport, date, duration and
+  /// distance, and the entry completes exactly this plan.
+  final PlannedWorkout? plan;
 
   @override
   ConsumerState<ManualEntryPage> createState() => _ManualEntryPageState();
 }
 
 class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
-  late Sport _sport = widget.sport ?? ref.read(sportFilterProvider) ?? Sport.run;
-  DateTime _start = DateTime.now().subtract(const Duration(hours: 1));
-  int _minutes = 45;
-  final _title = TextEditingController();
-  final _distance = TextEditingController();
+  late Sport _sport = widget.plan?.sport ?? widget.sport ?? ref.read(sportFilterProvider) ?? Sport.run;
+  late DateTime _start = _initialStart();
+  late int _minutes = (widget.plan?.durationMin ?? 45).clamp(5, 360);
+  late final _title = TextEditingController(text: widget.plan?.title ?? '');
+  late final _distance = TextEditingController(text: _initialDistance());
+
+  DateTime _initialStart() {
+    final now = DateTime.now();
+    final p = widget.plan;
+    if (p == null || sameDay(p.date, now) || p.date.isAfter(now)) return now.subtract(const Duration(hours: 1));
+    return DateTime(p.date.year, p.date.month, p.date.day, 18);
+  }
+
+  String _initialDistance() {
+    final km = widget.plan?.distanceKm;
+    if (km == null || km <= 0) return '';
+    if (widget.plan!.sport == Sport.swim) return '${(km * 1000).round()}';
+    return Units.num(ref.read(profileOrDefaultProvider).units.distOut(km * 1000), 1);
+  }
+
   final _volume = TextEditingController();
   final _notes = TextEditingController();
   double _rpe = 6;
@@ -53,6 +72,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
               ]
               : const [],
       indoor: true,
+      planId: widget.plan?.id,
     );
     repo.saveSession(s);
     ref.read(healthServiceProvider).writeSession(s);

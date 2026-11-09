@@ -3288,4 +3288,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String wTriLegs(String swim, String bike, String run) {
     return 'Schwimmen $swim km · Rad $bike km · Laufen $run km';
   }
+
+  @override
+  String get editSession => 'Einheit bearbeiten';
+
+  @override
+  String get durationHms => 'Dauer (h:mm:ss)';
+
+  @override
+  String get invalidDuration => 'Gib die Dauer als h:mm:ss oder in Minuten ein.';
+
+  @override
+  String get rpeNotSet => 'nicht angegeben';
+
+  @override
+  String get sessionCorrected => 'Einheit aktualisiert';
+
+  @override
+  String get editSessionHint => 'Korrigiere fehlerhafte Messungen oder Eingaben. Aufgezeichnete Strecke und Splits bleiben erhalten.';
+
+  @override
+  String get deleted => 'Gelöscht';
 }
