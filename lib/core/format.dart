@@ -90,6 +90,22 @@ String compactNumber(num v) {
 /// Epley estimated one-rep max.
 double e1rm(double weight, int reps) => reps <= 0 ? 0 : (reps == 1 ? weight : weight * (1 + reps / 30));
 
+/// Duration typed as "1:02:03", "45:10" (min:sec) or plain minutes "45" → seconds.
+int? parseHms(String text) {
+  final t = text.trim();
+  if (t.isEmpty) return null;
+  final parts = t.split(':').map((p) => int.tryParse(p.trim())).toList();
+  if (parts.any((p) => p == null || p < 0)) return null;
+  final p = parts.cast<int>();
+  if (p.length > 1 && p.skip(1).any((x) => x >= 60)) return null;
+  return switch (p.length) {
+    1 => p[0] * 60,
+    2 => p[0] * 60 + p[1],
+    3 => p[0] * 3600 + p[1] * 60 + p[2],
+    _ => null,
+  };
+}
+
 double? parseNum(String s) => double.tryParse(s.trim().replaceAll(',', '.'));
 
 /// Parses "ss", "mm:ss" or "h:mm:ss" into seconds.

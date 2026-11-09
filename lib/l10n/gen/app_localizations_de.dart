@@ -3290,6 +3290,27 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get editSession => 'Einheit bearbeiten';
+
+  @override
+  String get durationHms => 'Dauer (h:mm:ss)';
+
+  @override
+  String get invalidDuration => 'Gib die Dauer als h:mm:ss oder in Minuten ein.';
+
+  @override
+  String get rpeNotSet => 'nicht angegeben';
+
+  @override
+  String get sessionCorrected => 'Einheit aktualisiert';
+
+  @override
+  String get editSessionHint => 'Korrigiere fehlerhafte Messungen oder Eingaben. Aufgezeichnete Strecke und Splits bleiben erhalten.';
+
+  @override
+  String get deleted => 'Gelöscht';
+
+  @override
   String get supersetHint => 'Übungen abwechseln – kurzer Wechsel, volle Pause nach jeder Runde';
 
   @override

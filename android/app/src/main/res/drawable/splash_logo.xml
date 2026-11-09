@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash logo = the app's loading-screen logo (main.dart _Splash / StriveLogo): a 72 dp
+     rounded square (radius 30 %) with the gym→brand→swim gradient and the bolt icon,
+     centred in the 240 dp Android 12 splash icon area, so system splash and Flutter
+     loading screen look identical and the hand-over is invisible. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+    <path android:pathData="M105.6,84h28.8a21.6,21.6 0,0 1,21.6 21.6v28.8a21.6,21.6 0,0 1,-21.6 21.6h-28.8a21.6,21.6 0,0 1,-21.6 -21.6v-28.8a21.6,21.6 0,0 1,21.6 -21.6z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="84"
+                android:startY="84"
+                android:endX="156"
+                android:endY="156"
+                android:tileMode="clamp">
+                <item android:offset="0" android:color="#FFFF6B3D" />
+                <item android:offset="0.5" android:color="#FF8B7CFF" />
+                <item android:offset="1" android:color="#FF3DB2FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Bolt: launcher foreground path (icon box 48 at 54,54) scaled to 47.5 dp at 120,120. -->
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.99" android:scaleY="0.99" android:translateX="66" android:translateY="66">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M51.09 73.99C50.25 73.99 49.63 73.26 49.73 72.53L51.81 58.48H44.01C42.03 58.48 43.28 56.81 43.28 56.71C46.09 51.71 50.36 44.42 55.87 34.64C56.08 34.22 56.5 34.01 57.02 34.01C57.75 34.01 58.37 34.74 58.27 35.47L56.29 49.52H63.99C64.93 49.52 65.45 49.94 64.93 50.98C57.64 63.79 53.38 71.18 52.13 73.36C51.92 73.78 51.5 73.99 51.09 73.99Z" />
+    </group>
+</vector>

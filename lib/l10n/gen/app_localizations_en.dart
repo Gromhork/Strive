@@ -3290,6 +3290,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get editSession => 'Edit workout';
+
+  @override
+  String get durationHms => 'Duration (h:mm:ss)';
+
+  @override
+  String get invalidDuration => 'Enter the duration as h:mm:ss or minutes.';
+
+  @override
+  String get rpeNotSet => 'not set';
+
+  @override
+  String get sessionCorrected => 'Workout updated';
+
+  @override
+  String get editSessionHint => 'Correct wrong measurements or entries. Recorded route and splits stay as they are.';
+
+  @override
+  String get deleted => 'Deleted';
+
+  @override
   String get supersetHint => 'Alternate the exercises – short switch, full rest after each round';
 
   @override

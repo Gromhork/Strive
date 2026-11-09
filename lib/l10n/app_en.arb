@@ -1841,6 +1841,13 @@
       }
     }
   },
+  "editSession": "Edit workout",
+  "durationHms": "Duration (h:mm:ss)",
+  "invalidDuration": "Enter the duration as h:mm:ss or minutes.",
+  "rpeNotSet": "not set",
+  "sessionCorrected": "Workout updated",
+  "editSessionHint": "Correct wrong measurements or entries. Recorded route and splits stay as they are.",
+  "deleted": "Deleted",
   "supersetHint": "Alternate the exercises – short switch, full rest after each round",
   "supersetMax": "A superset has at most 3 exercises.",
   "supersetSwitch": "Switch exercise",
