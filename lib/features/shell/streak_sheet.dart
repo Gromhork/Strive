@@ -50,7 +50,7 @@ class _StreakSheet extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(l.streakWeeks(stats.weekStreak), style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-                      Text(l.weekStreakTooltip, style: t.bodySmall),
+                      Text(l.streakSub, style: t.bodySmall),
                     ],
                   ),
                 ),

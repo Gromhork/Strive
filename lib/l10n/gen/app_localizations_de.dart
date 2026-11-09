@@ -2901,7 +2901,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get zoneInfoTitle => 'Intensitätszonen';
 
   @override
-  String get zoneInfoRun => 'Die Tempi basieren auf deinen Wettkampfzeiten (VDOT nach Jack Daniels). Der Großteil deines Laufens – etwa 80 % – sollte locker sein; die schnellen Zonen setzt du kurz und gezielt ein.';
+  String get zoneInfoRun => 'Die Tempi basieren auf deinen Wettkampfzeiten (VDOT nach Jack Daniels). Der Großteil deines Laufens – etwa 80 % – sollte locker sein; die schnellen Zonen setzt du kurz und gezielt ein.';
 
   @override
   String get zoneInfoRide => 'Die Wattbereiche sind Prozent deiner FTP (die Leistung, die du etwa eine Stunde halten kannst). Ohne Wattmesser fährst du nach Puls und Gefühl.';
@@ -3059,7 +3059,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String streakWeeks(int count) {
-    return '$count Wochen in Folge';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Wochen in Folge',
+      one: '1 Woche in Folge',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3174,4 +3180,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get scoreHowLevels => 'Gut ab 70, mäßig ab 45, darunter lieber drinnen trainieren.';
+
+  @override
+  String get streakSub => 'mit erreichtem Wochenziel';
 }

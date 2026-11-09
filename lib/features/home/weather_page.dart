@@ -338,7 +338,7 @@ class _WeatherView extends ConsumerWidget {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      i == 0 ? l.now : '${h.time.hour}h',
+                                      i == 0 ? l.now : DateFormat.Hm(context.localeName).format(h.time),
                                       maxLines: 1,
                                       softWrap: false,
                                       overflow: TextOverflow.fade,

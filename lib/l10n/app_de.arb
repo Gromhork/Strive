@@ -908,7 +908,7 @@
   "zCss": "CSS-Tempo",
   "zTempo": "Tempo",
   "zoneInfoTitle": "Intensitätszonen",
-  "zoneInfoRun": "Die Tempi basieren auf deinen Wettkampfzeiten (VDOT nach Jack Daniels). Der Großteil deines Laufens – etwa 80 % – sollte locker sein; die schnellen Zonen setzt du kurz und gezielt ein.",
+  "zoneInfoRun": "Die Tempi basieren auf deinen Wettkampfzeiten (VDOT nach Jack Daniels). Der Großteil deines Laufens – etwa 80 % – sollte locker sein; die schnellen Zonen setzt du kurz und gezielt ein.",
   "zoneInfoRide": "Die Wattbereiche sind Prozent deiner FTP (die Leistung, die du etwa eine Stunde halten kannst). Ohne Wattmesser fährst du nach Puls und Gefühl.",
   "zoneInfoSwim": "Die Zeiten pro 100 m basieren auf deiner kritischen Schwimmgeschwindigkeit (CSS, aus einem 400-m- und 200-m-Test).",
   "zoneInfoEstimated": "≈-Werte sind aus deinem Level geschätzt – trage in den Planeinstellungen einen Testwert ein, dann werden sie genau.",
@@ -959,7 +959,7 @@
   "drillsNote": "{a} / {b} – im Wechsel 50 m Übung, 50 m Kraul",
   "intensityAuto": "{name} (aus dem Aufbau)",
   "showDrills": "Übungen anzeigen",
-  "streakWeeks": "{count} Wochen in Folge",
+  "streakWeeks": "{count, plural, =1{1 Woche in Folge} other{{count} Wochen in Folge}}",
   "streakThisWeek": "Diese Woche",
   "streakWeekDone": "Ziel erreicht: {done} von {target} Trainingstagen – diese Woche zählt!",
   "streakWeekLeft": "{done} von {target} Trainingstagen – noch {count}, dann zählt die Woche.",
@@ -992,5 +992,6 @@
   "scoreHowUv": "UV-Index über 6",
   "scoreHowDark": "Dunkelheit (−18)",
   "scoreHowStorm": "Gewitter (−40)",
-  "scoreHowLevels": "Gut ab 70, mäßig ab 45, darunter lieber drinnen trainieren."
+  "scoreHowLevels": "Gut ab 70, mäßig ab 45, darunter lieber drinnen trainieren.",
+  "streakSub": "mit erreichtem Wochenziel"
 }

@@ -5546,7 +5546,7 @@ abstract class AppLocalizations {
   /// No description provided for @zoneInfoRun.
   ///
   /// In en, this message translates to:
-  /// **'Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.'**
+  /// **'Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.'**
   String get zoneInfoRun;
 
   /// No description provided for @zoneInfoRide.
@@ -5852,7 +5852,7 @@ abstract class AppLocalizations {
   /// No description provided for @streakWeeks.
   ///
   /// In en, this message translates to:
-  /// **'{count} weeks in a row'**
+  /// **'{count, plural, =1{1 week in a row} other{{count} weeks in a row}}'**
   String streakWeeks(int count);
 
   /// No description provided for @streakThisWeek.
@@ -6052,6 +6052,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Good from 70, fair from 45, below that rather train indoors.'**
   String get scoreHowLevels;
+
+  /// No description provided for @streakSub.
+  ///
+  /// In en, this message translates to:
+  /// **'with your weekly training goal reached'**
+  String get streakSub;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

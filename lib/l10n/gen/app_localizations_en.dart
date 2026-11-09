@@ -2901,7 +2901,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get zoneInfoTitle => 'Intensity zones';
 
   @override
-  String get zoneInfoRun => 'Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.';
+  String get zoneInfoRun => 'Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.';
 
   @override
   String get zoneInfoRide => 'Power zones are percentages of your FTP (the power you can hold for about one hour). Without a power meter, ride by heart rate and feel.';
@@ -3059,7 +3059,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String streakWeeks(int count) {
-    return '$count weeks in a row';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count weeks in a row',
+      one: '1 week in a row',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3174,4 +3180,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scoreHowLevels => 'Good from 70, fair from 45, below that rather train indoors.';
+
+  @override
+  String get streakSub => 'with your weekly training goal reached';
 }

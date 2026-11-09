@@ -312,8 +312,9 @@ class _ComingUp extends ConsumerWidget {
                           const SizedBox(height: 6),
                           SizedBox(height: 40, child: Center(child: _DayBadges(plans: dayPlans))),
                           const SizedBox(height: 4),
-                          SizedBox(
+                          Container(
                             height: 28,
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
                             child: Text(
                               dayPlans.isEmpty ? l.rest : (dayPlans.length == 1 ? dayPlans.first.title : l.nWorkouts(dayPlans.length)),
                               textAlign: TextAlign.center,

@@ -17,7 +17,7 @@
 
  # info sheet
  'zoneInfoTitle': ['Intensity zones', 'Intensitätszonen'],
- 'zoneInfoRun': ['Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.', 'Die Tempi basieren auf deinen Wettkampfzeiten (VDOT nach Jack Daniels). Der Großteil deines Laufens – etwa 80 % – sollte locker sein; die schnellen Zonen setzt du kurz und gezielt ein.'],
+ 'zoneInfoRun': ['Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.', 'Die Tempi basieren auf deinen Wettkampfzeiten (VDOT nach Jack Daniels). Der Großteil deines Laufens – etwa 80 % – sollte locker sein; die schnellen Zonen setzt du kurz und gezielt ein.'],
  'zoneInfoRide': ['Power zones are percentages of your FTP (the power you can hold for about one hour). Without a power meter, ride by heart rate and feel.', 'Die Wattbereiche sind Prozent deiner FTP (die Leistung, die du etwa eine Stunde halten kannst). Ohne Wattmesser fährst du nach Puls und Gefühl.'],
  'zoneInfoSwim': ['Paces per 100 m come from your critical swim speed (CSS, from a 400 m and 200 m test).', 'Die Zeiten pro 100 m basieren auf deiner kritischen Schwimmgeschwindigkeit (CSS, aus einem 400-m- und 200-m-Test).'],
  'zoneInfoEstimated': ['≈ values are estimated from your level – add a test result in the plan settings for exact targets.', '≈-Werte sind aus deinem Level geschätzt – trage in den Planeinstellungen einen Testwert ein, dann werden sie genau.'],
