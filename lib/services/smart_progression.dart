@@ -48,6 +48,21 @@ enum ProgressReason {
 
   /// Three sessions at the same weight without progress → ~10 % reset.
   stall,
+
+  /// Beginner on a compound lift, all target reps done and not hard → one load step,
+  /// same reps (linear progression).
+  linear,
+
+  /// Held twice without progress although every target was met → one more rep on the
+  /// weakest set (or one load step when all sets are at the top).
+  nudge,
+
+  /// The AMRAP set showed clearly more strength than the load → load re-derived from it.
+  recalibrated,
+
+  /// Kept near the recent e1RM-derived load: reps were not missed, so a further cut
+  /// (limit ratings, holds) is not justified.
+  e1rmFloor,
 }
 
 /// Direction of the recent e1RM trend of an exercise.
@@ -55,9 +70,12 @@ enum E1rmTrend { progressing, plateau, regressing, unknown }
 
 /// One past session of an exercise: its done work sets (no warm-ups / drop sets).
 class ProgressEntry {
-  ProgressEntry(this.date, this.sets, {this.effort, this.bodyKg = 0});
+  ProgressEntry(this.date, this.sets, {this.effort, this.bodyKg = 0, this.rxKg});
   final DateTime date;
   final List<GymSet> sets;
+
+  /// Work-set weight the app prescribed for this session (null = unknown / old data).
+  final double? rxKg;
 
   /// Effort rating given after the last work set (null = not given).
   final Effort? effort;
@@ -69,7 +87,18 @@ class ProgressEntry {
 
   /// Work sets at the top weight (back-off sets would distort rep comparisons).
   List<GymSet> get topSets => sets.where((s) => (s.weight - topWeight).abs() < 1e-6).toList();
+
+  /// Some set fell short of the rep target the app prescribed for it.
+  bool get missedTarget => missedTargets(sets);
+
+  /// Every set has a prescribed target and reached it (the user did what was asked).
+  bool get metTargets => sets.isNotEmpty && sets.every((s) => s.target != null && s.reps >= s.target!);
+
+  int get totalReps => sets.fold(0, (a, s) => a + s.reps);
 }
+
+/// True when a set with a prescribed rep target fell short of it.
+bool missedTargets(List<GymSet> sets) => sets.any((s) => s.target != null && s.target! > 0 && s.reps < s.target!);
 
 /// Effort of a session as reps in reserve after the last work set.
 class EffortEstimate {
@@ -91,9 +120,11 @@ class EffortEstimate {
 
 /// Effort of the session with work sets [work] (rep range top [top]).
 ///
-/// Order of evidence: the quick rating [chip] (Leicht / Passend / Schwer / Limit) →
-/// logged set RPEs (RIR = 10 − RPE, hardest set; Zourdos et al. 2016) → a set marked as
-/// failure → inference from the data:
+/// Order of evidence: an AMRAP set (reps beyond its target + 1 = reserve of the normal
+/// sets) → the quick rating [chip] (Leicht / Passend / Schwer / Limit) → logged set RPEs
+/// (RIR = 10 − RPE, hardest set; Zourdos et al. 2016) → a set marked as failure →
+/// reps vs. the prescribed per-set targets (≥ 2 short → limit, 1 short → hard, all
+/// ≥ 2 above → easy; met → unknown) → otherwise inference from the data:
 /// * **Rep drop-off across sets at the same load.** A set that stops 3+ reps short of
 ///   failure can be repeated with the same reps after normal rests; sets taken close to
 ///   failure lose reps from set to set (Willardson & Burkett 2005: large rep losses over
@@ -106,11 +137,27 @@ class EffortEstimate {
 /// accurate to ~1 rep close to failure, less so far from it (Halperin et al. 2022),
 /// which is why the rating only modulates the step size by one notch.
 EffortEstimate estimateEffort(List<GymSet> work, {Effort? chip, required int top}) {
+  // AMRAP set (stop 1 rep before failure): the reps beyond its target are the reserve the
+  // normal sets had – a measurement, not a guess. It comes first: a rating after an
+  // AMRAP set describes that (deliberately hard) set, not the normal ones.
+  final amrap = work.lastWhere((s) => s.amrap && s.target != null && s.target! > 0, orElse: () => GymSet());
+  if (amrap.amrap) return EffortEstimate((amrap.reps - amrap.target! + 1).clamp(0, 5).toDouble());
   if (chip != null) return EffortEstimate(chip.rir);
   final rpes = work.map((s) => s.rpe).whereType<double>().toList();
   if (rpes.isNotEmpty) return EffortEstimate((10 - rpes.reduce(max)).clamp(0, 5).toDouble());
   if (work.any((s) => s.type == SetType.failure)) return const EffortEstimate(0);
   if (work.isEmpty) return const EffortEstimate(null, inferred: true);
+  // Prescribed per-set targets: judge the reps against them, not against each other – a
+  // planned descending pattern (10/9/8) is not a fatigue drop-off.
+  final targeted = work.where((s) => s.target != null && s.target! > 0).toList();
+  if (targeted.length >= 2 && targeted.length == work.length) {
+    final short = targeted.map((s) => s.target! - s.reps).reduce(max);
+    final over = targeted.map((s) => s.reps - s.target!).reduce(min);
+    if (short >= 2) return const EffortEstimate(0, inferred: true);
+    if (short >= 1) return const EffortEstimate(1, inferred: true);
+    if (over >= 2) return const EffortEstimate(4, inferred: true);
+    return const EffortEstimate(null, inferred: true);
+  }
   final w = work.map((s) => s.weight).reduce(max);
   final reps = [
     for (final s in work)
@@ -204,22 +251,30 @@ class SmartProgression extends Progression {
 ///   load steps, at the limit → hold once more; inside the range easy → +2 reps, at
 ///   the limit → repeat; below the range at the limit → lighter even when only 1 rep
 ///   short. RIR-based autoregulation is at least as effective as fixed loading (Helms
-///   et al. 2018; Graham & Cleather 2021).
-/// * **Several sessions:** three sessions at the same weight without more reps (and no
-///   rising e1RM trend) → ~10 % reset; the last two sessions both worse than the one
-///   before (same load and ≥ 1 rep fewer per set, or lighter without more reps) → hold,
-///   or ~7.5 % lighter when ≥ 2 reps per set were lost – a reactive deload
-///   (Bell et al. 2023 deload consensus). Two hard sessions in a row without progress →
-///   hold instead of adding reps.
+///   et al. 2018; Graham & Cleather 2021). When the app prescribed per-set targets, the
+///   effort is read from reps vs. targets (and from an AMRAP set), not from the planned
+///   rep pattern.
+/// * **Several sessions:** ≥ 3 sessions over ≥ 14 days at the same weight without more
+///   reps, with targets missed (and no rising e1RM trend) → ~10 % reset; the last two
+///   sessions both worse than the one before (same load and ≥ 1 rep fewer per set, or
+///   fewer reps at a lighter load / a lighter load the user chose) → hold, or ~7.5 %
+///   lighter when ≥ 2 reps per set were lost – a reactive deload (Bell et al. 2023
+///   deload consensus). Two hard sessions in a row without progress → hold instead of
+///   adding reps. Held twice although every target was met → one more rep on the
+///   weakest set (holds the app prescribed are not a stall).
 /// * **Training level** [level]: beginners progress faster (+2 reps with even sets,
 ///   two load steps when not hard – novices adapt fastest and underestimate their
 ///   reserve, Steele et al. 2017); advanced lifters only take bigger steps on an
 ///   explicit "easy" rating (trained lifters gain less per unit of stimulus,
-///   Androulakis-Korakakis et al. 2020). See docs/training-science.md §2.4a.
-/// * **Microloading:** when one [increment] is > 10 % of the total load (light
-///   dumbbells, isolation work), reps go beyond the top first (up to +25 %; hypertrophy
-///   is similar across ~6–30 reps near failure, Schoenfeld et al. 2017), then the load
-///   goes up with the reps matched to the same e1RM.
+///   Androulakis-Korakakis et al. 2020). [linear] (beginner compound lifts until the
+///   first missed target): one load step per session with the same reps while every
+///   target is hit and the session was not hard (linear progression for novices).
+///   See docs/training-science.md §2.4/§2.4a.
+/// * **Microloading** ([microload], not for barbell compounds): when one [increment] is
+///   > 10 % of the total load (light dumbbells, isolation work), reps go beyond the top
+///   first (up to +25 %; hypertrophy is similar across ~6–30 reps near failure,
+///   Schoenfeld et al. 2017), then the load goes up with the reps matched to the same
+///   e1RM.
 /// [bodyKg] is the body load per rep of bodyweight exercises (set weights are added
 /// load then); exercises without a load step ([increment] = 0) progress by reps.
 SmartProgression? smartProgression(
@@ -229,6 +284,8 @@ SmartProgression? smartProgression(
   required double increment,
   String level = 'intermediate',
   double bodyKg = 0,
+  bool linear = false,
+  bool microload = true,
 }) {
   if (hist.isEmpty || top <= 0) return null;
   final last = hist.first;
@@ -247,11 +304,25 @@ SmartProgression? smartProgression(
   SmartProgression out(ProgressionKind k, double weight, int r, List<int> setReps, ProgressReason why) =>
       SmartProgression(k, weight, r, setReps, reason: why, effort: eff, trend: trend);
   SmartProgression hold(ProgressReason why, {int? floor}) {
+    // Already held twice although every target was met: the holds were ours, not a
+    // stall – nudge (one more rep on the weakest set, or one load step at the top).
+    if (_heldTwice(hist)) {
+      if (reps.every((r) => r >= top)) {
+        if (loaded) return out(ProgressionKind.increase, w + increment, bottom, const [], ProgressReason.nudge);
+      } else {
+        var weakest = 0;
+        for (var i = 0; i < reps.length; i++) {
+          if (reps[i] <= reps[weakest]) weakest = i;
+        }
+        final t = [for (var i = 0; i < reps.length; i++) min(top, max(reps[i] + (i == weakest ? 1 : 0), bottom))];
+        return out(ProgressionKind.addReps, w, t.reduce(min), t, ProgressReason.nudge);
+      }
+    }
     final t = [for (final r in reps) min(top, max(r, floor ?? bottom))];
     return out(ProgressionKind.hold, w, t.reduce(min), t, why);
   }
 
-  // 1. Stall: same weight 3× without more reps and no rising trend → ~10 % reset.
+  // 1. Stall: same weight ≥ 3× over ≥ 2 weeks without more reps, no rising trend → ~10 % reset.
   if (loaded && (bodyKg <= 0 || w > 0) && trend != E1rmTrend.progressing && _stalled(hist, top)) {
     // Bodyweight exercises shed added load only (never into assistance on a stall).
     return out(ProgressionKind.reset, bodyKg > 0 ? max(0.0, w - 0.1 * total) : w * 0.9, bottom, const [], ProgressReason.stall);
@@ -269,6 +340,20 @@ SmartProgression? smartProgression(
     }
   }
 
+  // 3. Linear progression (beginner compounds): every target hit → one step, same reps;
+  //    a target missed narrowly → same weight and targets once more (two misses in a row
+  //    end linear progression, see LoadPrescriber).
+  //    Needs the prescribed targets (old data without them uses double progression).
+  if (linear && loaded && work.every((s) => s.target != null && s.target! > 0)) {
+    final t = [for (final s in work) min(top, max(bottom, s.target!))];
+    if (work.every((s) => s.reps >= s.target!)) {
+      if (eff.hard) return hold(ProgressReason.holdHard);
+      return out(ProgressionKind.increase, w + increment, t.reduce(min), t, ProgressReason.linear);
+    }
+    final close = work.where((s) => s.reps >= s.target! - 1).length * 2 > work.length;
+    if (close) return out(ProgressionKind.hold, w, t.reduce(min), t, ProgressReason.missedHold);
+  }
+
   final atTop = reps.every((r) => r >= top);
   if (atTop) {
     if (increment <= 0) {
@@ -278,7 +363,7 @@ SmartProgression? smartProgression(
       return out(ProgressionKind.addReps, w, r, [for (final x in reps) max(x, r - step) + step], ProgressReason.repsNoLoad);
     }
     if (eff.limit) return hold(ProgressReason.topAtLimit, floor: top);
-    if (total > 0 && increment / total > 0.10) {
+    if (microload && total > 0 && increment / total > 0.10) {
       // Microloading: one step is a big jump – reps beyond the top first.
       final int cap = top + max(2, (top * 0.25).round());
       final minR = reps.reduce(min);
@@ -339,33 +424,55 @@ SmartProgression? smartProgression(
   return out(ProgressionKind.addReps, w, t.reduce(min), t, step > 1 ? ProgressReason.addRepsFast : ProgressReason.addReps);
 }
 
-/// Stall: the last three sessions (within ~6 weeks) used the same top weight, never
+/// Stall: the newest sessions (≥ 3 within ~6 weeks, spanning ≥ 14 days – three
+/// full-body sessions in one week are not a stall) used the same top weight, never
 /// reached the top of the range on all sets, and the latest did not beat the oldest of
-/// them in total reps.
+/// them in total reps. Sessions with prescribed targets only count when a target was
+/// missed: holds the app prescribed and the user completed are not a stall.
 bool _stalled(List<ProgressEntry> hist, int top) {
   if (hist.length < 3) return false;
+  final newest = hist.first;
+  final run = <ProgressEntry>[];
+  for (final e in hist) {
+    if ((e.topWeight - newest.topWeight).abs() > 0.01 || newest.date.difference(e.date).inDays > 42) break;
+    run.add(e);
+  }
+  if (run.length < 3 || newest.date.difference(run.last.date).inDays < 14) return false;
+  if (run.any((e) => e.sets.every((s) => s.reps >= top))) return false;
+  final targeted = run.every((e) => e.sets.any((s) => s.target != null));
+  if (targeted && !run.any((e) => e.missedTarget)) return false;
+  return newest.totalReps <= run.last.totalReps;
+}
+
+/// The last three sessions used the same weight without more reps, and every target was
+/// met in all of them – the app held the load twice and the user did what was asked.
+bool _heldTwice(List<ProgressEntry> hist) {
+  if (hist.length < 3) return false;
   final h = hist.take(3).toList();
-  if (h.first.date.difference(h.last.date).inDays > 42) return false;
-  final ws = h.map((e) => e.topWeight).toList();
-  if (ws.any((w) => (w - ws.first).abs() > 0.01)) return false;
-  if (h.any((e) => e.sets.every((s) => s.reps >= top))) return false;
-  int total(ProgressEntry e) => e.sets.fold(0, (a, s) => a + s.reps);
-  return total(h.first) <= total(h.last);
+  if (h.any((e) => (e.topWeight - h.first.topWeight).abs() > 0.01)) return false;
+  if (!h.every((e) => e.metTargets)) return false;
+  return h.first.totalReps <= h.last.totalReps;
 }
 
 /// Reps per set lost by session [a] compared with the earlier session [b], or null when
 /// [a] was not worse: same load (±1 %) and ≥ 1 rep fewer per set on average, or a
-/// lighter load without more reps (then 0). A heavier load with fewer reps is expected
-/// and not counted.
+/// lighter load with fewer reps, or a lighter load the user chose (not the app's own
+/// prescription, e.g. after a reset) without more reps (then 0). A heavier load with
+/// fewer reps is expected and not counted, and neither is a session in which every
+/// prescribed target was met.
 double? _shortfall(ProgressEntry a, ProgressEntry b) {
   final la = a.topWeight + a.bodyKg, lb = b.topWeight + b.bodyKg;
   final sa = a.topSets, sb = b.topSets;
   final n = min(sa.length, sb.length);
-  if (n == 0) return null;
+  if (n == 0 || a.metTargets) return null;
   double mean(List<GymSet> s) => s.take(n).fold<double>(0, (x, y) => x + y.reps) / n;
   final ra = mean(sa), rb = mean(sb);
   if ((la - lb).abs() <= max(0.01 * lb.abs(), 0.25)) return ra <= rb - 1 ? rb - ra : null;
-  if (la < lb && ra <= rb) return rb - ra;
+  if (la < lb) {
+    if (ra < rb) return rb - ra;
+    final prescribed = a.rxKg != null && a.topWeight >= a.rxKg! - 0.01;
+    if (ra <= rb && !prescribed) return 0;
+  }
   return null;
 }
 

@@ -83,6 +83,10 @@ String progressReasonText(AppLocalizations l, ProgressReason r) => switch (r) {
   ProgressReason.performanceDip => l.progPerformanceDip,
   ProgressReason.performanceDrop => l.progPerformanceDrop,
   ProgressReason.stall => l.loadSrcStall,
+  ProgressReason.linear => l.progLinear,
+  ProgressReason.nudge => l.progNudge,
+  ProgressReason.recalibrated => l.progRecalibrated,
+  ProgressReason.e1rmFloor => l.progE1rmFloor,
 };
 
 /// Small hint "Suggestion: ≈ 62.5 kg × 8 · from your last workout" with an optional
@@ -119,6 +123,7 @@ class PrescriptionHint extends StatelessWidget {
           TextSpan(text: head, style: const TextStyle(fontWeight: FontWeight.w600)),
           if (today != null) TextSpan(text: dense ? ' · ${l.targetToday(today)}' : '\n${l.targetToday(today)}'),
           if (reason != null) TextSpan(text: today != null && !dense ? ' – $reason' : (dense || !ranged ? ' · $reason' : '\n$reason')),
+          if (p.amrap) TextSpan(text: '\n${l.amrapHint}', style: const TextStyle(fontStyle: FontStyle.italic)),
         ],
       ),
       style: TextStyle(fontSize: dense ? 12 : 13, height: 1.3),

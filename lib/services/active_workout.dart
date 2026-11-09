@@ -240,11 +240,14 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
       e.bodyKg = rx.bodyLoad(e);
     }
     final p = rx.forExercise(e);
+    e.rxKg = p?.weight;
     var k = 0;
     for (final s in e.sets) {
       if (s.done || s.warmup || s.type == SetType.drop) continue;
       s.weight = p?.weight ?? 0;
       s.reps = p?.repsForSet(k++) ?? s.reps;
+      s.target = p == null ? null : s.reps;
+      s.amrap = false;
     }
     _touch();
   }

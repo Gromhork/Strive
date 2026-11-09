@@ -6,6 +6,7 @@ import 'package:strive/data/models.dart';
 import 'package:strive/services/gym_tools.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/services/load_prescription.dart';
+import 'package:strive/services/smart_progression.dart';
 import 'package:strive/widgets/prescription.dart';
 
 final now = DateTime(2026, 11, 9, 18);
@@ -251,12 +252,62 @@ void main() {
       ]),
     ];
 
-    test('deload week: ~90 % load and one set fewer', () {
+    test('deload week: ~90 % load and about half the sets', () {
       final p = lp(h).forExercise(bench, phase: 'recovery')!;
       expect(p.weight, 52.5); // 60 × 0.9 = 54 → 52.5 on the 2.5 kg grid
       expect(p.phaseAdjusted, isTrue);
       final applied = lp(h).apply([bench], phase: 'recovery').single;
       expect(applied.workSets.length, 2);
+      expect(applied.phase, 'recovery');
+      expect(applied.sets.any((s) => s.amrap), isFalse);
+      expect(lp(h).apply([planned('0025', 'barbell bench press', sets: 6)], phase: 'recovery').single.workSets.length, 3);
+      expect(
+        [
+          for (final n in [1, 2, 3, 4, 5, 6, 8]) LoadPrescriber.deloadSets(n),
+        ],
+        [1, 1, 2, 2, 2, 3, 4],
+      );
+    });
+
+    test('deload sessions are skipped: the second deload session and the next loading week use the loading level', () {
+      GymExercise deload(double w) => done('0025', 'x', [(w, 8), (w, 8)])..phase = 'recovery';
+      final hist = [
+        gym(2, [deload(52.5)]),
+        gym(5, [deload(52.5)]),
+        gym(9, [
+          done('0025', 'x', [(60, 9), (60, 8), (60, 8)]),
+        ]),
+      ];
+      // Again 90 % of the loading prescription – not 90 % of the first deload session.
+      expect(lp(hist.sublist(1)).forExercise(bench, phase: 'recovery')!.weight, 52.5);
+      // The next loading week resumes at the loading level (60 kg, reps from the loading session).
+      final next = lp(hist).forExercise(bench)!;
+      expect(next.weight, 60);
+      expect(next.setReps, [10, 9, 9]);
+      expect(next.trend, isNot(E1rmTrend.regressing));
+      // Old data without the tag still counts as a normal session.
+      final legacy =
+          lp([
+            gym(2, [
+              done('0025', 'x', [(52.5, 8), (52.5, 8)]),
+            ]),
+          ]).forExercise(bench)!;
+      expect(legacy.weight, 52.5);
+    });
+
+    test('apply stores targets, the prescribed load and an AMRAP last set while calibrating', () {
+      final e = lp(h).apply([bench]).single;
+      expect(e.rxKg, 60);
+      expect([for (final s in e.workSets) s.target], [10, 9, 9]);
+      expect(e.workSets.last.amrap, isTrue); // < 3 sessions of history
+      expect(e.workSets.first.amrap, isFalse);
+      final m = GymExercise.fromMap(e.toMap());
+      expect(m.rxKg, 60);
+      expect([for (final s in m.workSets) s.target], [10, 9, 9]);
+      expect(m.workSets.last.amrap, isTrue);
+      // Stale tags of a copied session are cleared.
+      final copied = lp(const []).apply([e..phase = 'recovery']).single;
+      expect(copied.phase, isNull);
     });
 
     test('taper: lighter, same sets; build: unchanged', () {

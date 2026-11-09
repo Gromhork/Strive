@@ -1133,5 +1133,11 @@
   "howHardOptional": "Wie anstrengend war es? (optional)",
   "rpeOptionalHint": "Hilft, deinen Plan anzupassen – kannst du auch weglassen.",
   "rpeClear": "Keine Angabe",
-  "rpeRate": "Bewerten"
+  "rpeRate": "Bewerten",
+  "progLinear": "alle Ziel-Wiederholungen geschafft – etwas mehr Gewicht, gleiche Wiederholungen (Anfänger: lineare Steigerung)",
+  "progNudge": "zweimal gehalten und jedes Ziel geschafft – eine Wiederholung mehr im schwächsten Satz",
+  "progRecalibrated": "dein AMRAP-Satz zeigt mehr Kraft – Gewicht daran angepasst",
+  "progE1rmFloor": "keine Wiederholungen verpasst – das Gewicht bleibt nahe an deinem Kraftniveau",
+  "amrapHint": "Letzter Satz: so viele Wiederholungen wie möglich – 1 Wdh. vor dem Versagen aufhören (so lernt die App deine Kraft)",
+  "amrapShort": "AMRAP"
 }

@@ -3675,4 +3675,22 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get rpeRate => 'Bewerten';
+
+  @override
+  String get progLinear => 'alle Ziel-Wiederholungen geschafft – etwas mehr Gewicht, gleiche Wiederholungen (Anfänger: lineare Steigerung)';
+
+  @override
+  String get progNudge => 'zweimal gehalten und jedes Ziel geschafft – eine Wiederholung mehr im schwächsten Satz';
+
+  @override
+  String get progRecalibrated => 'dein AMRAP-Satz zeigt mehr Kraft – Gewicht daran angepasst';
+
+  @override
+  String get progE1rmFloor => 'keine Wiederholungen verpasst – das Gewicht bleibt nahe an deinem Kraftniveau';
+
+  @override
+  String get amrapHint => 'Letzter Satz: so viele Wiederholungen wie möglich – 1 Wdh. vor dem Versagen aufhören (so lernt die App deine Kraft)';
+
+  @override
+  String get amrapShort => 'AMRAP';
 }
