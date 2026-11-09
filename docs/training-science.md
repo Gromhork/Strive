@@ -219,6 +219,32 @@ next loading week resumes at the volume of the last loading week (not at the del
 Rules: progress only if the last session felt RPE ≤ 5 with no pain. Otherwise repeat the week [P]. All running is at
 "talking pace". Show no pace targets.
 
+### 1.10a Who starts with run/walk; masters and body weight [M/P] (generator audit 2026-11)
+
+```text
+runWalkStart:
+  advanced setup, "cannot run 30 min"                          -> stage 1 (8 × 1 min)
+  quick setup (question not asked), BEGINNER, no run experience -> stage 1
+  quick setup, BEGINNER returning runner with BMI >= 30 or age >= 65 -> stage 5 (3 × 5 min)
+  one stage per loading week, recovery/taper weeks repeat the last stage; ends with 30 min continuous,
+  the first long run after it obeys R1 (<= +10 % of the 30 min run)
+BMI >= 30 novices (Nielsen 2013, n = 930: higher injury risk; Nielsen 2014: > 3 km in week 1 -> more injuries)
+  and age >= 65: run volume grows at the EASY rate (5 %/week), add volume via bike/swim first (H8)
+masters: age >= 50 -> cycle <= 3:1, growth <= 8 %, no key sessions on consecutive days (>= 48 h between hard days);
+  age >= 65 -> 2:1, growth <= 5 %; age >= 60 -> at least 1 rest day/week
+beginners: >= 2 rest days/week (strength only: <= 4 days), <= 4 runs/week (<= 3 while on run/walk)
+```
+
+Long-run share for half/full marathon goals: Daniels' 25–30 % (1.4) keeps an amateur HM long run at ~11 km on 35 km/week.
+Race-specific plans (Higdon, Pfitzinger, Hanson) use 35–45 % at amateur volumes, so with ≥ 3 runs/week the generator allows
+HM 40 % (< 50 km/week, else 32 %) and marathon 42 % (< 70 km/week, else 33 %), capped at 21 / 35 km, still bounded by R1 and
+the 150 min (advanced marathon 180 min) limit.
+
+Triathlon volume ceilings (R5) per discipline, novice / intermediate / advanced:
+run km sprint 12/20/30 · olympic 18/28/40 · 70.3 25/35/50; bike hours 2.5/3.5/4.5 · 3.5/4.5/6 · 5/6.5/8;
+swim km 3/5/7 · 4/6/8 · 5/7/9. Sessions per discipline with one session a day: 3 days 1/1/1, 4 days swim 1 · bike 2 · run 1,
+5 days 1/2/2, 6 days 2/2/2, 7 days 2/3/2 (2 days: bike + run, or swim + bike if the athlete cannot swim 400 m).
+
 ### 1.11 Workout library and scaling [P]
 
 All quality sessions: 10–15 min E warm-up with 4 × 20 s strides, and a 10 min E cool-down.
