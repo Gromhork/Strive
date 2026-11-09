@@ -6160,6 +6160,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This workout no longer exists.'**
   String get sessionGone;
+
+  /// No description provided for @adjustWeekBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 planned workout missed – adjust your week?} other{{n} planned workouts missed – adjust your week?}}'**
+  String adjustWeekBanner(int n);
+
+  /// No description provided for @adjustWeekTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust my week'**
+  String get adjustWeekTitle;
+
+  /// No description provided for @adjustWeekIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Key workouts move to a free day this week – never right next to another hard session. Easy workouts don\'t need to be made up: piling up volume does more harm than good.'**
+  String get adjustWeekIntro;
+
+  /// No description provided for @adjustReplaces.
+  ///
+  /// In en, this message translates to:
+  /// **'replaces {title}'**
+  String adjustReplaces(String title);
+
+  /// No description provided for @adjustDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'dropped – no need to make it up'**
+  String get adjustDropped;
+
+  /// No description provided for @adjustNoRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'dropped – no free day this week without a hard session next to it'**
+  String get adjustNoRoom;
+
+  /// No description provided for @adjustProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'dropped – recovery/taper week stays easy'**
+  String get adjustProtected;
+
+  /// No description provided for @adjustDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Week adjusted'**
+  String get adjustDone;
+
+  /// No description provided for @notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get notNow;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

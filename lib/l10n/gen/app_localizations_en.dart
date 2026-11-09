@@ -3246,4 +3246,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionGone => 'This workout no longer exists.';
+
+  @override
+  String adjustWeekBanner(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n planned workouts missed – adjust your week?',
+      one: '1 planned workout missed – adjust your week?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get adjustWeekTitle => 'Adjust my week';
+
+  @override
+  String get adjustWeekIntro => 'Key workouts move to a free day this week – never right next to another hard session. Easy workouts don\'t need to be made up: piling up volume does more harm than good.';
+
+  @override
+  String adjustReplaces(String title) {
+    return 'replaces $title';
+  }
+
+  @override
+  String get adjustDropped => 'dropped – no need to make it up';
+
+  @override
+  String get adjustNoRoom => 'dropped – no free day this week without a hard session next to it';
+
+  @override
+  String get adjustProtected => 'dropped – recovery/taper week stays easy';
+
+  @override
+  String get adjustDone => 'Week adjusted';
+
+  @override
+  String get notNow => 'Not now';
 }

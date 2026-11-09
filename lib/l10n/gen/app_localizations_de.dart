@@ -3246,4 +3246,41 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sessionGone => 'Diese Einheit gibt es nicht mehr.';
+
+  @override
+  String adjustWeekBanner(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n geplante Einheiten verpasst – Woche anpassen?',
+      one: '1 geplante Einheit verpasst – Woche anpassen?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get adjustWeekTitle => 'Woche anpassen';
+
+  @override
+  String get adjustWeekIntro => 'Schlüsseleinheiten wandern auf einen freien Tag dieser Woche – nie direkt neben eine andere harte Einheit. Lockere Einheiten musst du nicht nachholen: aufgestaute Umfänge schaden mehr, als sie bringen.';
+
+  @override
+  String adjustReplaces(String title) {
+    return 'ersetzt $title';
+  }
+
+  @override
+  String get adjustDropped => 'entfällt – muss nicht nachgeholt werden';
+
+  @override
+  String get adjustNoRoom => 'entfällt – diese Woche kein freier Tag ohne harte Einheit daneben';
+
+  @override
+  String get adjustProtected => 'entfällt – Erholungs-/Taperwoche bleibt locker';
+
+  @override
+  String get adjustDone => 'Woche angepasst';
+
+  @override
+  String get notNow => 'Nicht jetzt';
 }

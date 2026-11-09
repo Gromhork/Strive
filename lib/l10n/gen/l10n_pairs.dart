@@ -975,4 +975,12 @@ const l10nPairs = <(String, String)>[
   ('Calories', 'Kalorien'),
   ('Recorded with {source}', 'Aufgezeichnet mit {source}'),
   ('This workout no longer exists.', 'Diese Einheit gibt es nicht mehr.'),
+  ('Adjust my week', 'Woche anpassen'),
+  ('Key workouts move to a free day this week – never right next to another hard session. Easy workouts don\'t need to be made up: piling up volume does more harm than good.', 'Schlüsseleinheiten wandern auf einen freien Tag dieser Woche – nie direkt neben eine andere harte Einheit. Lockere Einheiten musst du nicht nachholen: aufgestaute Umfänge schaden mehr, als sie bringen.'),
+  ('replaces {title}', 'ersetzt {title}'),
+  ('dropped – no need to make it up', 'entfällt – muss nicht nachgeholt werden'),
+  ('dropped – no free day this week without a hard session next to it', 'entfällt – diese Woche kein freier Tag ohne harte Einheit daneben'),
+  ('dropped – recovery/taper week stays easy', 'entfällt – Erholungs-/Taperwoche bleibt locker'),
+  ('Week adjusted', 'Woche angepasst'),
+  ('Not now', 'Nicht jetzt'),
 ];

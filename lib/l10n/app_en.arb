@@ -1803,5 +1803,28 @@
       }
     }
   },
-  "sessionGone": "This workout no longer exists."
+  "sessionGone": "This workout no longer exists.",
+  "adjustWeekBanner": "{n, plural, =1{1 planned workout missed – adjust your week?} other{{n} planned workouts missed – adjust your week?}}",
+  "@adjustWeekBanner": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "adjustWeekTitle": "Adjust my week",
+  "adjustWeekIntro": "Key workouts move to a free day this week – never right next to another hard session. Easy workouts don't need to be made up: piling up volume does more harm than good.",
+  "adjustReplaces": "replaces {title}",
+  "@adjustReplaces": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "adjustDropped": "dropped – no need to make it up",
+  "adjustNoRoom": "dropped – no free day this week without a hard session next to it",
+  "adjustProtected": "dropped – recovery/taper week stays easy",
+  "adjustDone": "Week adjusted",
+  "notNow": "Not now"
 }

@@ -1010,5 +1010,14 @@
   "avgHrShort": "Ø Puls",
   "caloriesLabel": "Kalorien",
   "recordedWith": "Aufgezeichnet mit {source}",
-  "sessionGone": "Diese Einheit gibt es nicht mehr."
+  "sessionGone": "Diese Einheit gibt es nicht mehr.",
+  "adjustWeekBanner": "{n, plural, =1{1 geplante Einheit verpasst – Woche anpassen?} other{{n} geplante Einheiten verpasst – Woche anpassen?}}",
+  "adjustWeekTitle": "Woche anpassen",
+  "adjustWeekIntro": "Schlüsseleinheiten wandern auf einen freien Tag dieser Woche – nie direkt neben eine andere harte Einheit. Lockere Einheiten musst du nicht nachholen: aufgestaute Umfänge schaden mehr, als sie bringen.",
+  "adjustReplaces": "ersetzt {title}",
+  "adjustDropped": "entfällt – muss nicht nachgeholt werden",
+  "adjustNoRoom": "entfällt – diese Woche kein freier Tag ohne harte Einheit daneben",
+  "adjustProtected": "entfällt – Erholungs-/Taperwoche bleibt locker",
+  "adjustDone": "Woche angepasst",
+  "notNow": "Nicht jetzt"
 }

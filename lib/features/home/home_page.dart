@@ -16,6 +16,7 @@ import '../../services/insights.dart';
 import '../../widgets/common.dart';
 import '../profile/health_connect_page.dart';
 import '../shell/health_sync.dart';
+import 'adjust_week.dart';
 import 'weather_page.dart';
 import 'week_page.dart';
 import '../profile/profile_page.dart';
@@ -33,12 +34,17 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(weatherProvider),
+      onRefresh: () async {
+        ref.invalidate(weatherProvider);
+        // Pull-to-refresh also fetches new watch workouts and vitals.
+        ref.read(healthTickProvider.notifier).bump();
+      },
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: const [
           _Greeting(),
           SizedBox(height: 12),
+          AdjustWeekBanner(),
           _TodayCard(),
           SizedBox(height: 12),
           _ComingUp(),
