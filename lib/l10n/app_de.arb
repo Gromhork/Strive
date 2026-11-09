@@ -1020,5 +1020,7 @@
   "adjustProtected": "entfällt – Erholungs-/Taperwoche bleibt locker",
   "adjustDone": "Woche angepasst",
   "notNow": "Nicht jetzt",
-  "wTriLegs": "Schwimmen {swim} km · Rad {bike} km · Laufen {run} km"
+  "wTriLegs": "Schwimmen {swim} km · Rad {bike} km · Laufen {run} km",
+  "quickMinOneDay": "Wähle mindestens einen Trainingstag",
+  "quickDaysCapped": "Dein Plan nutzt {n} deiner {total} Tage – die übrigen bleiben Ruhetage, damit du dich zwischen den Einheiten erholst."
 }

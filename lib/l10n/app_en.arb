@@ -1840,5 +1840,17 @@
         "type": "String"
       }
     }
+  },
+  "quickMinOneDay": "Choose at least one training day",
+  "quickDaysCapped": "Your plan uses {n} of your {total} days – the others stay rest days so you recover between sessions.",
+  "@quickDaysCapped": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   }
 }

@@ -197,11 +197,15 @@ class PlanGenerator {
       // weekly volume but stay clearly shorter than the long run.
       final week = <PlannedWorkout>[];
       final easyRuns = <(DateTime, int)>[];
+      var skippedRuns = 0; // run slots before the start day (plan starts mid-week)
       (DateTime, int)? longCtx;
       final qualityCtx = <(int, DateTime, String, int)>[]; // index in week, day, role, cap
       for (final entry in roles.entries) {
         final day = weekStart.add(Duration(days: entry.key - 1));
-        if (day.isBefore(dayOnly(start))) continue;
+        if (day.isBefore(dayOnly(start))) {
+          skippedRuns += entry.value.where((r) => r.sport == Sport.run).length;
+          continue;
+        }
         final n = entry.value.length;
         for (final r in entry.value) {
           final full = _capMinutes(entry.key, n);
@@ -257,7 +261,10 @@ class PlanGenerator {
         final longest = runs.where((p) => p.intensity == 'long').fold<double>(0, (x, p) => max(x, p.distanceKm ?? 0));
         final ref = longest > 0 ? longest : longKm;
         final capKm = max(3.0, ref * (rest ? 0.6 : 0.75));
-        final each = ((wk - used) / easyRuns.length).clamp(3.0, capKm);
+        // A plan that starts mid-week only has part of the week left: the runs before the
+        // start day keep their share, so the remaining easy runs are not stuffed with
+        // the whole weekly volume (which made the first week the hardest).
+        final each = ((wk - used) / (easyRuns.length + skippedRuns)).clamp(3.0, capKm);
         for (final (day, cap) in easyRuns) {
           week.add(_easyRun(day, phase, each, w, cap));
         }
@@ -298,7 +305,7 @@ class PlanGenerator {
 
   /// The day of the long endurance session (null for gym-only plans).
   static int? longDayOf(UserProfile p) {
-    final plan = p.athlete.dayPlan.values.any((v) => v.isNotEmpty) ? p.athlete.dayPlan : deriveSchedule(p);
+    final plan = scheduleOf(p);
     final endurance = plan.entries.where((e) => e.value.any((s) => s != Sport.gym)).map((e) => e.key).toList()..sort();
     if (endurance.isEmpty) return null;
     if (p.longDay != null && endurance.contains(p.longDay)) return p.longDay;
@@ -308,14 +315,34 @@ class PlanGenerator {
   // ───────────────────────────── Structure ─────────────────────────────
 
   /// weekday → sports. Advanced setup provides it directly; otherwise derive it.
-  Map<int, List<Sport>> _weekSchedule() {
-    if (a.dayPlan.values.any((v) => v.isNotEmpty)) {
+  Map<int, List<Sport>> _weekSchedule() => scheduleOf(profile);
+
+  /// The week the plan for [p] uses (weekday → sports): the detailed setup's day plan,
+  /// else derived from the training days and focus ([deriveSchedule]).
+  ///
+  /// A day plan left over from an earlier detailed setup is ignored in the quick setup –
+  /// otherwise the plan would silently use other days than the ones just chosen.
+  static Map<int, List<Sport>> scheduleOf(UserProfile p) {
+    final a = p.athlete;
+    if (a.advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) {
       return {
         for (final e in a.dayPlan.entries)
           if (e.value.isNotEmpty) e.key: e.value,
       };
     }
-    return deriveSchedule(profile);
+    return deriveSchedule(p);
+  }
+
+  /// Strength sessions the quick setup adds for an endurance focus when the athlete also
+  /// chose a strength / muscle goal (concurrent training: 1–2 sessions a week improve
+  /// economy and lower injury risk, Blagrove 2018; §2.9). Endurance keeps priority:
+  /// single sport 3–4 days → 1, ≥ 5 days → 2; duathlon / triathlon ≥ 5 days → 1.
+  static int extraGymDays(UserProfile p, int days) {
+    final strength = p.goals.contains('strength') || p.goals.contains('muscle');
+    final sports = p.focus.sports;
+    if (!strength || sports.contains(Sport.gym)) return 0;
+    if (sports.length == 1) return days >= 5 ? 2 : (days >= 3 ? 1 : 0);
+    return days >= 5 ? 1 : 0;
   }
 
   /// Most training days a week for [p] (quick setup; an explicit day plan is kept as is).
@@ -357,7 +384,16 @@ class PlanGenerator {
   /// 7 days + a third ride. With only 2 days the swim is dropped for bike + run unless
   /// the athlete cannot swim 400 m yet. Duathlon / hybrid: the main sport (run) gets the
   /// extra session; hybrid keeps strength at ≤ 3×/week.
-  static Map<Sport, int> _multiCounts(UserProfile p, int n) => switch (p.focus) {
+  static Map<Sport, int> _multiCounts(UserProfile p, int days) {
+    final gym = extraGymDays(p, days);
+    final n = days - gym;
+    final counts = p.focus.sports.length == 1 ? {p.focus.sports.first: n} : _enduranceCounts(p, n);
+    // Beginners: at most 4 runs (3 on run/walk) also when strength takes the other days.
+    if (counts.containsKey(Sport.run) && p.focus == TrainingFocus.run) counts[Sport.run] = min(counts[Sport.run]!, maxRuns(p));
+    return {...counts, if (gym > 0) Sport.gym: gym};
+  }
+
+  static Map<Sport, int> _enduranceCounts(UserProfile p, int n) => switch (p.focus) {
     TrainingFocus.triathlon => switch (n) {
       <= 1 => {Sport.ride: 1},
       2 => p.athlete.canSwim400 ? {Sport.ride: 1, Sport.run: 1} : {Sport.swim: 1, Sport.ride: 1},
@@ -375,9 +411,10 @@ class PlanGenerator {
   static Map<int, List<Sport>> deriveSchedule(UserProfile profile) {
     var days = (profile.trainingDays.isEmpty ? [1, 3, 5] : [...profile.trainingDays])..sort();
     final longDay = profile.longDay != null && days.contains(profile.longDay) ? profile.longDay! : days.last;
-    final base = profile.focus.sports;
     final res = <int, List<Sport>>{};
     days = _spreadDays(days, maxTrainingDays(profile), longDay);
+    final gym = extraGymDays(profile, days.length);
+    final base = [...profile.focus.sports, if (gym > 0) Sport.gym];
     if (base.length == 1) {
       if (base.first == Sport.run) days = _spreadDays(days, maxRuns(profile), longDay);
       for (final d in days) {
@@ -389,8 +426,13 @@ class PlanGenerator {
     // fewest conflicts: the main endurance sport on the long day, the same sport not on
     // consecutive days (the week wraps Sunday → Monday) and no strength session the day
     // before the long session (C3). All distinct orders are tried (≤ 210 for 7 days).
-    final main = profile.focus == TrainingFocus.hybrid || profile.focus == TrainingFocus.duathlon ? Sport.run : Sport.ride;
+    final main =
+        profile.focus.sports.length == 1
+            ? profile.focus.sports.first
+            : (profile.focus == TrainingFocus.hybrid || profile.focus == TrainingFocus.duathlon ? Sport.run : Sport.ride);
     final counts = _multiCounts(profile, days.length);
+    // Fewer sessions than days (e.g. a beginner's run cap): keep the best-spread days.
+    days = _spreadDays(days, counts.values.fold<int>(0, (x, y) => x + y), longDay);
     final pool = [for (final s in base) ...List.filled(counts[s] ?? 0, s)];
     bool adjacent(int x, int y) => (x - y).abs() == 1 || (x - y).abs() == 6;
     int score(List<Sport> seq) {
@@ -610,7 +652,9 @@ class PlanGenerator {
     final days = schedule.keys.toList()..sort();
     final roles = {for (final d in days) d: schedule[d]!.map((s) => _Slot(s, 'easy')).toList()};
     final keyDays = <int>{};
-    final longDay = profile.longDay ?? days.last;
+    // Same long day as [deriveSchedule] / [dayMinutesFor] – a stale profile value (a day
+    // that is no longer a training day) must not decide the roles.
+    final longDay = longDayOf(profile) ?? days.last;
 
     // The week wraps around: Sunday's long run is followed by Monday.
     int prev(int d) => d == 1 ? 7 : d - 1;
@@ -1068,8 +1112,7 @@ class PlanGenerator {
   /// Built-in program keys the plan for [p] will use.
   static List<String> gymKeysFor(UserProfile p) {
     final a = p.athlete;
-    final schedule = a.dayPlan.values.any((v) => v.isNotEmpty) ? a.dayPlan : deriveSchedule(p);
-    return _rotationFor(a, schedule);
+    return _rotationFor(a, scheduleOf(p));
   }
 
   List<String> _gymRotation(Map<int, List<Sport>> schedule) => _rotationFor(a, schedule);

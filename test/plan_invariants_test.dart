@@ -364,6 +364,99 @@ void main() {
     expect(PlanGenerator(l, heavy, templates, id).generate(start: start, weeks: 2).first.title, l.wRunWalk(3, 5));
   });
 
+  test('quick setup: only the chosen training days, long session on the chosen long day', () {
+    for (final e in profiles.entries) {
+      for (final longDay in [null, ...e.value.trainingDays]) {
+        final p = UserProfile.fromMap({...e.value.toMap(), 'longDay': longDay});
+        final plan = PlanGenerator(l, p, templates, id).generate(start: start, weeks: 3);
+        expect(plan, isNotEmpty, reason: e.key);
+        // Race day and the shake-out the day before are fixed by the event date.
+        final regular = plan.where((w) => w.intensity != 'race' && w.title != l.wShakeout);
+        expect(regular.map((w) => w.date.weekday).toSet().difference(p.trainingDays.toSet()), isEmpty, reason: '${e.key} long $longDay');
+        final want = PlanGenerator.longDayOf(p);
+        if (longDay != null && p.focus != TrainingFocus.gym) expect(want, longDay, reason: e.key);
+        for (final w in plan.where((w) => w.intensity == 'long')) {
+          // One long session per sport: with run + ride the second one may sit on another day.
+          if (p.focus.sports.where((s) => s != Sport.gym).length == 1) expect(w.date.weekday, want, reason: '${e.key} long $longDay');
+        }
+      }
+    }
+  });
+
+  test('a day plan left over from the detailed setup is ignored in the quick setup', () {
+    final p = UserProfile(
+      level: 'intermediate',
+      focus: TrainingFocus.run,
+      trainingDays: const [1, 3, 5],
+      athlete: const AthleteData(
+        dayPlan: {
+          2: [Sport.run],
+          4: [Sport.run],
+        },
+      ),
+    );
+    final quick = PlanGenerator(l, p, templates, id).generate(start: start, weeks: 2);
+    expect(quick.map((w) => w.date.weekday).toSet(), {1, 3, 5});
+    final detailed = p.copyWith(athlete: p.athlete.merge({'setupMode': 'advanced'}));
+    expect(PlanGenerator(l, detailed, templates, id).generate(start: start, weeks: 2).map((w) => w.date.weekday).toSet(), {2, 4});
+  });
+
+  test('a stale long day (no longer a training day) behaves like "automatic"', () {
+    for (final f in [TrainingFocus.run, TrainingFocus.hybrid, TrainingFocus.triathlon, TrainingFocus.duathlon]) {
+      final auto = UserProfile(level: 'intermediate', focus: f, trainingDays: const [1, 3, 5, 6]);
+      final stale = UserProfile.fromMap({...auto.toMap(), 'longDay': 7});
+      String sig(List<PlannedWorkout> plan) => plan.map((w) => '${w.date.weekday}${w.sport.name}${w.intensity}').join(',');
+      expect(
+        sig(PlanGenerator(l, stale, templates, id).generate(start: start, weeks: 3)),
+        sig(PlanGenerator(l, auto, templates, id).generate(start: start, weeks: 3)),
+        reason: f.name,
+      );
+    }
+  });
+
+  test('strength goal with an endurance focus adds strength days (quick setup)', () {
+    for (final (focus, days, gym) in [
+      (TrainingFocus.run, [1, 3, 5], 1),
+      (TrainingFocus.run, [1, 2, 3, 5, 6], 2),
+      (TrainingFocus.ride, [2, 4], 0),
+      (TrainingFocus.swim, [1, 2, 4, 6], 1),
+      (TrainingFocus.triathlon, [1, 2, 3, 4, 6, 7], 1),
+      (TrainingFocus.triathlon, [1, 3, 5, 6], 0),
+    ]) {
+      final p = UserProfile(level: 'intermediate', focus: focus, goals: const ['strength'], trainingDays: days);
+      final week = PlanGenerator.deriveSchedule(p);
+      expect(week.values.where((v) => v.contains(Sport.gym)).length, gym, reason: '$focus $days');
+      expect(week.keys.toSet().difference(days.toSet()), isEmpty);
+      // The main sport keeps the long day.
+      expect(week[days.last]!.contains(Sport.gym), isFalse, reason: '$focus $days');
+      if (gym > 0) expect(PlanGenerator.gymKeysFor(p), isNotEmpty);
+    }
+    // Beginner runner on run/walk: still ≤ 3 runs, strength on top.
+    final novice = UserProfile(focus: TrainingFocus.run, goals: const ['muscle'], trainingDays: const [1, 2, 3, 4, 5]);
+    final week = PlanGenerator.deriveSchedule(novice).values.expand((v) => v);
+    expect(week.where((s) => s == Sport.run).length, lessThanOrEqualTo(3));
+    expect(week.where((s) => s == Sport.gym).length, 2);
+  });
+
+  test('a plan that starts mid-week does not stuff the whole weekly volume into the rest of the week', () {
+    for (final level in ['intermediate', 'advanced']) {
+      final p = UserProfile(
+        level: level,
+        focus: TrainingFocus.run,
+        trainingDays: const [1, 2, 3, 4, 5, 6, 7],
+        athlete: const AthleteData(runWeeklyKm: 40, sessionMinutes: 120),
+      );
+      final plan = PlanGenerator(l, p, templates, id).generate(start: start.add(const Duration(days: 3)), weeks: 3);
+      double km(Iterable<PlannedWorkout> w) => w.fold(0, (x, p) => x + runKm(p));
+      final first = plan.where((w) => startOfWeek(w.date) == start);
+      final second = plan.where((w) => startOfWeek(w.date) == start.add(const Duration(days: 7)));
+      expect(km(first), lessThan(km(second)), reason: level);
+      final easyFirst = first.where((w) => w.intensity == 'easy').map(runKm).fold<double>(0, max);
+      final easySecond = second.where((w) => w.intensity == 'easy').map(runKm).fold<double>(0, max);
+      expect(easyFirst, lessThanOrEqualTo(easySecond * 1.15 + 0.5), reason: '$level: easy run $easyFirst vs $easySecond km');
+    }
+  });
+
   test('goal-specific volume: HM long run ≥ 14 km, olympic long ride ≥ 90 min, realistic race durations', () {
     UserProfile goal(TrainingFocus f, String event, List<int> days, int weeks) => UserProfile(
       level: 'intermediate',
