@@ -1,8 +1,6 @@
-import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../core/theme.dart';
 
@@ -39,21 +37,25 @@ class ExerciseMedia extends StatelessWidget {
       child: Icon(Icons.fitness_center_rounded, color: AppColors.gym, size: (size ?? 80) * 0.4),
     );
     final dark = Theme.of(context).brightness == Brightness.dark;
+    // The demos are animated WebPs whose frame timing is already slowed to ~0.55× in the
+    // files themselves (tool/slow_anim.py), so the standard Image widget plays them – it
+    // also pauses them while tickers are disabled (off-screen routes).
     final img =
-        hasMedia(exId) && animated
-            ? SlowAnimatedAsset(path: path, colorFilter: dark ? darkMediaFilter : null, fallback: fallback)
-            : hasMedia(exId)
-            ? Image.asset(
+        !hasMedia(exId)
+            ? fallback()
+            : dark
+            // Dark mode: the colour filter is applied while painting the image, not with a
+            // ColorFiltered layer – a filter layer over an animated image renders blank /
+            // stale frames on some GPUs (Impeller on OpenGL ES).
+            ? FilteredAssetImage(path: path, colorFilter: darkMediaFilter, cacheWidth: animated ? null : 160, fallback: fallback)
+            : Image.asset(
               path,
               fit: BoxFit.contain,
               gaplessPlayback: true,
               filterQuality: FilterQuality.medium,
               cacheWidth: animated ? null : 160,
-              // Only the decoded image is filtered, not the error fallback.
-              frameBuilder: dark ? (_, child, __, ___) => ColorFiltered(colorFilter: darkMediaFilter, child: child) : null,
               errorBuilder: (_, __, ___) => fallback(),
-            )
-            : fallback();
+            );
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: SizedBox(
@@ -77,153 +79,113 @@ class ExerciseMedia extends StatelessWidget {
   }
 }
 
-/// Plays an animated image asset (the exercise demos are 12-frame animated WebPs) at
-/// [speed] × its encoded frame rate. The source animations run at a hurried pace; at
-/// ~0.55× each repetition is easy to follow.
-///
-/// Frames are decoded one at a time from a single codec (like [Image] does), so memory
-/// stays at one frame; playback pauses while the widget is in a disabled [TickerMode]
-/// (e.g. an off-screen route or page).
-class SlowAnimatedAsset extends StatefulWidget {
-  const SlowAnimatedAsset({super.key, required this.path, this.speed = defaultSpeed, this.colorFilter, required this.fallback});
-
-  /// Playback speed of the exercise demos.
-  static const defaultSpeed = 0.55;
+/// Shows an (animated) image asset painted through [colorFilter]. Like [Image] it keeps
+/// listening to the image stream only while tickers are enabled, so animations pause on
+/// off-screen routes, and it disposes every replaced frame.
+class FilteredAssetImage extends StatefulWidget {
+  const FilteredAssetImage({super.key, required this.path, required this.colorFilter, required this.fallback, this.cacheWidth});
 
   final String path;
-  final double speed;
-  final ColorFilter? colorFilter;
+  final ColorFilter colorFilter;
   final Widget Function() fallback;
+  final int? cacheWidth;
 
   @override
-  State<SlowAnimatedAsset> createState() => _SlowAnimatedAssetState();
+  State<FilteredAssetImage> createState() => _FilteredAssetImageState();
 }
 
-class _SlowAnimatedAssetState extends State<SlowAnimatedAsset> {
-  /// Recently used animation files (~70 kB each), so the same exercise shown again
-  /// (hero flight, overview → focus view) starts without re-reading the asset.
-  static final _cache = <String, Uint8List>{};
-
-  static Future<Uint8List> _bytes(String path) async {
-    final hit = _cache.remove(path);
-    if (hit != null) return _cache[path] = hit;
-    final data = await rootBundle.load(path);
-    final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-    _cache[path] = bytes;
-    if (_cache.length > 12) _cache.remove(_cache.keys.first);
-    return bytes;
-  }
-
-  ui.Codec? _codec;
-  ui.Image? _frame;
-  Timer? _timer;
+class _FilteredAssetImageState extends State<FilteredAssetImage> {
+  ImageStream? _stream;
+  ImageInfo? _info;
   bool _failed = false;
-  bool _active = true;
-  bool _decoding = false;
-  int _generation = 0;
+  bool _listening = false;
+  late final _listener = ImageStreamListener(_onFrame, onError: (_, __) => mounted ? setState(() => _failed = true) : null);
 
-  @override
-  void initState() {
-    super.initState();
-    _load();
+  ImageProvider get _provider => ResizeImage.resizeIfNeeded(widget.cacheWidth, null, AssetImage(widget.path));
+
+  void _onFrame(ImageInfo info, bool _) {
+    if (!mounted) {
+      info.dispose();
+      return;
+    }
+    setState(() {
+      _info?.dispose();
+      _info = info;
+    });
   }
 
-  @override
-  void didUpdateWidget(SlowAnimatedAsset old) {
-    super.didUpdateWidget(old);
-    if (old.path != widget.path) {
-      _reset();
-      _load();
+  void _resolve() {
+    final stream = _provider.resolve(createLocalImageConfiguration(context));
+    if (stream.key == _stream?.key) return;
+    _stopListening();
+    _stream = stream;
+  }
+
+  void _updateListening() {
+    final active = TickerMode.of(context);
+    if (active && !_listening) {
+      _stream?.addListener(_listener);
+      _listening = true;
+    } else if (!active) {
+      _stopListening();
     }
+  }
+
+  void _stopListening() {
+    if (_listening) _stream?.removeListener(_listener);
+    _listening = false;
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final active = TickerMode.of(context);
-    if (active == _active) return;
-    _active = active;
-    if (active) {
-      _scheduleNext(Duration.zero);
-    } else {
-      _timer?.cancel();
-    }
+    _resolve();
+    _updateListening();
   }
 
-  void _reset() {
-    _generation++;
-    _timer?.cancel();
-    _codec?.dispose();
-    _codec = null;
-    _frame?.dispose();
-    _frame = null;
-    _failed = false;
-  }
-
-  Future<void> _load() async {
-    final gen = _generation;
-    try {
-      final buffer = await ui.ImmutableBuffer.fromUint8List(await _bytes(widget.path));
-      final codec = await ui.instantiateImageCodecFromBuffer(buffer);
-      if (!mounted || gen != _generation) {
-        codec.dispose();
-        return;
-      }
-      _codec = codec;
-      await _nextFrame(gen);
-    } catch (_) {
-      if (mounted && gen == _generation) setState(() => _failed = true);
-    }
-  }
-
-  void _scheduleNext(Duration after) {
-    _timer?.cancel();
-    if (_codec == null || !_active) return;
-    final gen = _generation;
-    _timer = Timer(after, () => _nextFrame(gen));
-  }
-
-  Future<void> _nextFrame(int gen) async {
-    final codec = _codec;
-    if (codec == null || _decoding) return;
-    _decoding = true;
-    try {
-      final info = await codec.getNextFrame();
-      if (!mounted || gen != _generation) {
-        info.image.dispose();
-        return;
-      }
-      final old = _frame;
-      setState(() => _frame = info.image);
-      old?.dispose();
-      if (codec.frameCount > 1) {
-        final d = info.duration == Duration.zero ? const Duration(milliseconds: 100) : info.duration;
-        _scheduleNext(d * (1 / widget.speed));
-      }
-    } catch (_) {
-      if (mounted && gen == _generation && _frame == null) setState(() => _failed = true);
-    } finally {
-      _decoding = false;
+  @override
+  void didUpdateWidget(FilteredAssetImage old) {
+    super.didUpdateWidget(old);
+    if (old.path != widget.path || old.cacheWidth != widget.cacheWidth) {
+      _failed = false;
+      _resolve();
+      _updateListening();
     }
   }
 
   @override
   void dispose() {
-    _generation++;
-    _timer?.cancel();
-    _codec?.dispose();
-    _frame?.dispose();
+    _stopListening();
+    _info?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_failed) return widget.fallback();
-    final frame = _frame;
-    if (frame == null) return const SizedBox.expand();
-    final img = RawImage(image: frame, fit: BoxFit.contain, filterQuality: FilterQuality.medium);
-    return widget.colorFilter == null ? img : ColorFiltered(colorFilter: widget.colorFilter!, child: img);
+    final img = _info?.image;
+    if (img == null) return const SizedBox.expand();
+    return CustomPaint(size: Size.infinite, painter: _FilteredImagePainter(img, widget.colorFilter));
   }
+}
+
+class _FilteredImagePainter extends CustomPainter {
+  _FilteredImagePainter(this.image, this.filter);
+  final ui.Image image;
+  final ColorFilter filter;
+
+  @override
+  void paint(Canvas canvas, Size size) => paintImage(
+    canvas: canvas,
+    rect: Offset.zero & size,
+    image: image,
+    fit: BoxFit.contain,
+    colorFilter: filter,
+    filterQuality: FilterQuality.medium,
+  );
+
+  @override
+  bool shouldRepaint(_FilteredImagePainter old) => old.image != image || old.filter != filter;
 }
 
 /// Dark-mode rendering of the white-background exercise illustrations: inverts the

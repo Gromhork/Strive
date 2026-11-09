@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme.dart';
 import 'features/auth/login_page.dart';
+import 'features/calendar/auto_adjust.dart' show rootMessengerKey;
 import 'features/onboarding/onboarding_page.dart';
 import 'features/shell/home_shell.dart';
 import 'features/shell/gcal_sync.dart';
@@ -49,6 +50,7 @@ class StriveApp extends ConsumerWidget {
     ref.watch(programUpgradeSyncProvider);
     return MaterialApp(
       title: 'Strive',
+      scaffoldMessengerKey: rootMessengerKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
@@ -103,23 +105,27 @@ class _Splash extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.bgDark,
-    body: Stack(
-      alignment: Alignment.center,
-      children: [
-        const _LogoMark(size: _size),
-        Transform.translate(
-          offset: const Offset(0, _size / 2 + _size * 0.2 + _size * 0.25),
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: 1),
-            duration: const Duration(milliseconds: 400),
-            builder: (_, v, child) => Opacity(opacity: v, child: child),
-            child: Text(
-              'STRIVE',
-              style: TextStyle(color: Colors.white, fontSize: _size * 0.36, fontWeight: FontWeight.w700, letterSpacing: _size * 0.08),
+    // SizedBox.expand: a Stack under loose constraints shrinks to its largest child and
+    // would sit in the top-left corner.
+    body: SizedBox.expand(
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          const _LogoMark(size: _size),
+          Transform.translate(
+            offset: const Offset(0, _size / 2 + _size * 0.2 + _size * 0.25),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: const Duration(milliseconds: 400),
+              builder: (_, v, child) => Opacity(opacity: v, child: child),
+              child: Text(
+                'STRIVE',
+                style: TextStyle(color: Colors.white, fontSize: _size * 0.36, fontWeight: FontWeight.w700, letterSpacing: _size * 0.08),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }

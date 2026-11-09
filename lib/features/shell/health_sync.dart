@@ -7,6 +7,7 @@ import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../services/health_service.dart';
 import '../../services/plan_match.dart';
+import '../calendar/auto_adjust.dart';
 
 final healthServiceProvider = Provider<HealthService>((ref) => HealthService(ref.watch(prefsProvider)));
 
@@ -72,6 +73,9 @@ final healthSyncProvider = FutureProvider<int>((ref) async {
     final planUpdates = <String, Map<String, dynamic>>{};
     var added = 0;
     final open = [...plans];
+    // Newly linked sessions of the last days → small automatic plan adjustments.
+    final linkedNow = <(Session, PlannedWorkout)>[];
+    final recent = DateTime.now().subtract(const Duration(days: 3));
     // Watch workouts imported before plans were linked on import complete their plan now.
     final cutoff = DateTime.now().subtract(const Duration(days: 60));
     // Their load also uses the heart-rate RPE estimate instead of the flat default.
@@ -84,6 +88,7 @@ final healthSyncProvider = FutureProvider<int>((ref) async {
         planUpdates[plan.id] = {'status': 'done', 'sessionId': old.id};
         fix['planId'] = plan.id;
         open.remove(plan);
+        if (old.start.isAfter(recent)) linkedNow.add((old, plan));
       }
       if (fix.isNotEmpty) merged[old.id] = fix;
     }
@@ -121,9 +126,13 @@ final healthSyncProvider = FutureProvider<int>((ref) async {
       if (plan != null && plan.status == 'planned') {
         planUpdates[plan.id] = {'status': 'done', 'sessionId': s.id};
         open.remove(plan);
+        if (s.start.isAfter(recent)) linkedNow.add((s, plan));
       }
     }
     if (merged.isNotEmpty || planUpdates.isNotEmpty) repo.updateMany(sessions: merged, plans: planUpdates);
+    if (linkedNow.isNotEmpty) {
+      autoAdjustAfterSessions(repo: repo, l: l, profile: profile, plans: plans, sessions: sessions, done: linkedNow);
+    }
     return added;
   } catch (e) {
     debugPrint('health sync failed: $e');

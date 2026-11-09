@@ -811,6 +811,72 @@ interval session keeps its intensity (Bosquet 2007 [18]: cut volume, keep intens
 
 ---
 
+## 12. Session feedback and progressive adaptation of endurance plans (run, bike, swim) [M/P]
+
+Two speeds of adaptation ("auto small + preview large"):
+
+* **Automatic, small** – right after a completed endurance session is linked to its planned workout (phone recording,
+  manual entry, watch import), the next 1–2 planned sessions of the *same sport* may change by a few percent
+  (`AutoAdjuster`, lib/services/cardio_progression.dart). The athlete sees a notice ("Plan adjusted: long run Sun 6.8 km
+  instead of 8 km – Undo") and a marker with the reason and the original values on the planned workout; undo restores the
+  generator's workout.
+* **Proposal, large** – weekly volume, quality → easy swaps and threshold changes (VDOT, FTP, CSS) stay in "Re-plan &
+  recalibrate" (§11), which now also reads the session evaluations and the multi-week trends below.
+
+### 12.1 Evaluating one session (`evaluateSession`, lib/services/session_feedback.dart)
+
+Every available signal gives a score from −1 (much easier than intended) to +1 (much harder) and a weight; the verdict is
+the weighted mean (≥ +0.35 harder, ≤ −0.35 easier). Confidence = W / (W + 1) × (0.5 + 0.5 × share of the weight that agrees),
+W = total weight – one signal ≈ 0.5, three agreeing signals ≈ 0.75. Signals that are missing are simply left out, so the
+model works with RPE only, HR only, pace only or any mix.
+
+| Signal | Rule | Weight | Basis |
+|---|---|---|---|
+| Session RPE (CR10) | intended band: easy/technique 2–4, long 3–4, tempo 5–7, intervals 7–8; ±0.4 per point outside | 1 (0.3 when imported with an HR-estimated RPE) | session-RPE, Foster 2001 [43, 66]; three-zone model §0 |
+| Average HR | vs. the time-weighted HR target of the steps (step HR targets, else the zone's mid; recoveries at the zone top); dead band ±3 % HRmax, full score at +8 % HRmax; on easy days a low HR is not "too easy" (capped at −0.3) | 1 · intervals 0.5 (HR lag) · swim 0.3 (water, wrist HR) | Seiler zones [1], §5 |
+| Average pace (run: VDOT paces, swim: CSS paces incl. rests) | tolerance run 3 %, swim 4 %; easy / long: only *faster* than the easy range counts (too hard), slower is fine; quality: slower = could not hold the targets (harder), faster = targets too soft (easier, ×0.7) | 1 · intervals 0.4 (recovery jogs dilute the average) · run with > 15 m/km climbing ½, > 30 m/km 0 | Daniels [7], Wakayoshi / Swim Smooth [53, 54] |
+| Average power (bike) | vs. the time-weighted Coggan targets, tolerance 5 %; same easy / quality logic as pace | 1 · intervals 0.7 | Allen & Coggan [48] |
+| Pace fade (run, continuous sessions, ≥ 4 km splits) | 2nd half vs. 1st half; > 5 % slower = decoupling (0.5 → 1 at 10 %) | 0.5 | aerobic decoupling Pa:HR < 5 % = aerobically fit (Friel [49]); cardiac drift [79]. Without an HR stream, the pace drift at a steady effort is the proxy |
+| Completion | actual / planned (distance for runs / swims, else time); < 80 % = *incomplete* | – (separate) | §11 "cut short" |
+
+Bike *speed* is ignored (terrain, wind, drafting); heat is not modelled (no temperature per session) – it shows up as a
+higher HR / RPE and the athlete sees the reason. Aerobic efficiency (EF) of steady easy / long sessions: run speed (m/min)
+per beat, bike power per beat (Coggan's EF = NP / HR, with average power).
+
+### 12.2 Automatic small adjustments (`AutoAdjuster`)
+
+| After … | Next session(s) of the same sport | Rationale |
+|---|---|---|
+| long session cut short (< 80 %) at a high or unknown effort | next long one ≤ achieved + 10 %, the one after ≤ + 20 % (never above the plan) | rebuild by ~10 %/week from what was sustainable (10 % rule [9, 10], R1 Frandsen [11]) |
+| long session complete but harder than intended | next long one does not grow (held at this volume, ≥ −10 %) | "repeat the step" instead of progressing on fatigue (§7.9, [67]) |
+| easy session harder than intended (HR / RPE / pace too fast) | next easy session within 7 days −10 %, with the hint to slow down | 80/20: easy days must stay easy (Seiler [1]); Maffetone [78] |
+| quality session harder than intended, or cut short at a high effort | next quality session not increased (held at this volume) | keep intensity, don't add volume on top of a struggle (Bosquet [18]) |
+| quality session easier than intended, complete, targets hit | next quality session +5 % | only in loading weeks (base / build / peak), no race within 10 days, no heart / joint-impact limitation (§9.1), and the sport's planned week ≤ 110 % of its 4-week average (≥ 3 sessions as a base) – acute:chronic caution [13, 14] |
+
+Bounds: −15 … +5 % per step; all automatic steps together −15 … +10 % of the workout's original volume; taper / recovery
+weeks never get more volume. Interval sets (≥ 3 identical repeats) change by whole repeats (a 100 m swim repeat or a 1 km
+interval keeps its length and pace); continuous parts scale in length. Never touched: races, strength sessions, done /
+skipped / past workouts. Each session triggers adjustments at most once (the record on the changed workout names the
+session); a manual edit or a recalibration with a new volume replaces the record.
+
+### 12.3 Multi-session trend → recalibration proposals (`CardioTrend`, last 6 weeks)
+
+* **Sessions without RPE** count toward the §11 "too hard" score when the evaluation is clearly harder (score ≥ 0.6 → 1,
+  else ½) and toward "too easy" for quality sessions – so watch imports with HR also adapt the plan.
+* **Run VDOT** (only when no best effort changed it): ≥ 3 key runs (tempo / intervals / long) slower than the targets with an
+  internal score ≥ 0.3 → VDOT −1; ≥ 3 quality runs on target that felt easier than intended, none too hard, EF not falling →
+  VDOT +1. Daniels [7]: adjust VDOT in steps of about one point after a few weeks of training at it.
+* **Bike FTP** (only with a known FTP): ≥ 2 quality rides above the power targets without feeling harder, none too hard →
+  FTP +3 %; ≥ 2 key rides below target at a high effort → FTP −3 %. Power targets of the upcoming rides follow (Coggan
+  zones [48]); the profile's FTP is updated on "Apply".
+* **Swim CSS**: ≥ 3 quality swims faster than the targets at a comfortable effort, none too hard → CSS −2 s / 100 m; ≥ 2 key
+  swims slower at a high effort → CSS +2 s. The profile's 400 / 200 m test times are set so that (t400 − t200) / 2 is the new
+  CSS (t200 = 2·CSS − 4 s, t400 = 4·CSS − 4 s).
+* **Aerobic efficiency**: least-squares change of EF over the window (≥ 4 steady easy / long sessions over ≥ 14 days);
+  ±3 % or more is reported ("your base is growing" / "watch recovery, sleep and heat") – informational, no changes by itself.
+
+---
+
 ## 10. References
 
 Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
@@ -891,3 +957,5 @@ Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
 75. Sen PK. Estimates of the regression coefficient based on Kendall's tau. *J Am Stat Assoc.* 1968;63(324):1379–1389.
 76. Winter DA. *Biomechanics and Motor Control of Human Movement.* 4th ed. Wiley; 2009 (body segment parameters).
 77. Androulakis-Korakakis P, Fisher JP, Steele J. The minimum effective training dose required to increase 1RM strength in resistance-trained men: a systematic review and meta-analysis. *Sports Med.* 2020;50(4):751–765. doi:10.1007/s40279-019-01236-0
+78. Maffetone P. *The Big Book of Endurance Training and Racing.* Skyhorse; 2010 (aerobic base, MAF heart rate, easy days kept easy).
+79. Coyle EF, González-Alonso J. Cardiovascular drift during prolonged exercise: new perspectives. *Exerc Sport Sci Rev.* 2001;29(2):88–92. doi:10.1097/00003677-200104000-00009

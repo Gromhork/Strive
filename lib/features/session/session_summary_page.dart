@@ -7,6 +7,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
 import '../../services/plan_match.dart';
 import '../../services/insights.dart';
@@ -56,8 +57,20 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     repo.saveSession(s);
     ref.read(healthServiceProvider).writeSession(s);
     // Mark the matching planned workout as done.
-    final plan = matchPlan(s, ref.read(planListProvider));
-    if (plan != null) repo.updatePlan(plan.id, {'status': 'done', 'sessionId': s.id});
+    final plans = ref.read(planListProvider);
+    final plan = matchPlan(s, plans);
+    if (plan != null) {
+      repo.updatePlan(plan.id, {'status': 'done', 'sessionId': s.id});
+      // Endurance: small automatic adjustments of the next sessions (with undo).
+      autoAdjustAfterSessions(
+        repo: repo,
+        l: context.l10n,
+        profile: ref.read(profileOrDefaultProvider),
+        plans: plans,
+        sessions: ref.read(sessionListProvider),
+        done: [(s, plan)],
+      );
+    }
     Navigator.pop(context);
   }
 

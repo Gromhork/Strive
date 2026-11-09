@@ -306,6 +306,26 @@ void toast(BuildContext context, String msg) {
     ..showSnackBar(SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating));
 }
 
+/// Snack bar with an icon and an "Undo" action on one line. Takes the messenger (captured
+/// before an async gap / pop) so it also works after the calling page is gone.
+void undoToast(
+  ScaffoldMessengerState messenger, {
+  required String text,
+  required String undoLabel,
+  required VoidCallback onUndo,
+  IconData icon = Icons.delete_outline,
+}) {
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 6),
+        content: Row(children: [Icon(icon, size: 20, color: Colors.white70), const SizedBox(width: 12), Expanded(child: Text(text))]),
+        action: SnackBarAction(label: undoLabel, onPressed: onUndo),
+      ),
+    );
+}
+
 /// Number input dialog (returns parsed value or null). [signed] allows negative values.
 Future<double?> askNumber(BuildContext context, String title, {double? initial, String? suffix, bool signed = false}) async {
   final ctrl = TextEditingController(text: initial == null ? '' : Units.num(initial, 2));

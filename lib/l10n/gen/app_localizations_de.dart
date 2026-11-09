@@ -3493,6 +3493,119 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String wGymLoadDesc(int rir) {
+    return 'Belastungswoche: Beende jeden Arbeitssatz mit etwa $rir Wdh. im Tank – die Reserve wird von Woche zu Woche kleiner, bis zur nächsten Entlastungswoche. Sätze, Wiederholungsbereich und Gewichtsvorschlag stehen bei jeder Übung.';
+  }
+
+  @override
+  String get wGymProgressNote => 'Steigerung: Erst die Wiederholungen bis zum oberen Ende des Bereichs aufbauen, dann Gewicht erhöhen und wieder unten beginnen.';
+
+  @override
+  String get wGymDeloadNote => 'Entlastungswoche: Die Gewichte sind ca. 10 % leichter eingetragen, bei Übungen mit 3 oder mehr Sätzen fällt ein Satz weg. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.';
+
+  @override
+  String get wGymTaperNote => 'Tapering vor dem Wettkampf: Gewichte ca. 10 % leichter, nichts bis zur Erschöpfung – Kraft erhalten, frisch bleiben.';
+
+  @override
+  String wGymTimeCapNote2(int min) {
+    return 'Heute nur $min min Zeit: Hauptübungen wie geplant, bei den letzten Übungen je einen Satz weniger oder sie weglassen.';
+  }
+
+  @override
+  String get wRecoveryWeekNote => 'Entlastungswoche: Der Umfang ist bewusst reduziert – locker bleiben, auch wenn du dich frisch fühlst. Jetzt verarbeitet der Körper die letzten Wochen.';
+
+  @override
+  String get wTaperWeekNote => 'Tapering: weniger Umfang, kurze Belastungen halten dich spritzig. Nichts nachholen – jetzt zählt die Frische für den Wettkampf.';
+
+  @override
+  String get wLongRunHmpDesc => 'Lockerer langer Lauf, das letzte Viertel im Halbmarathon-Zieltempo – die wettkampfspezifischste Einheit.';
+
+  @override
+  String get stepHmpNote => 'Halbmarathon-Zieltempo – kontrolliert';
+
+  @override
+  String get wLongRunMpDesc2 => 'Lockerer langer Lauf, das letzte Viertel im Marathon-Zieltempo – die wettkampfspezifischste Einheit.';
+
+  @override
+  String recalWhyRunTrendSlower(String from, String to) {
+    return 'Deine Schlüsselläufe waren bei hoher Anstrengung langsamer als die Zielpaces – Paces entschärft (VDOT $from → $to).';
+  }
+
+  @override
+  String recalWhyRunTrendFaster(String from, String to) {
+    return 'Deine Qualitätsläufe trafen die Zielpaces und fühlten sich leicht an – Paces etwas schneller (VDOT $from → $to).';
+  }
+
+  @override
+  String recalWhyFtpUp(String from, String to) {
+    return 'Rad: Leistung über den Zielwerten ohne Mehranstrengung – FTP $from → $to W, Wattvorgaben angepasst.';
+  }
+
+  @override
+  String recalWhyFtpDown(String from, String to) {
+    return 'Rad: Die Wattvorgaben waren kaum zu halten – FTP $from → $to W, Wattvorgaben angepasst.';
+  }
+
+  @override
+  String recalWhyCssFaster(String from, String to) {
+    return 'Schwimmen: schneller als die Zielpaces bei angenehmer Anstrengung – CSS $from → $to pro 100 m.';
+  }
+
+  @override
+  String recalWhyCssSlower(String from, String to) {
+    return 'Schwimmen: Die Zielpaces waren kaum zu halten – CSS $from → $to pro 100 m.';
+  }
+
+  @override
+  String recalWhyAerobicUp(int pct) {
+    return 'Aerobe Effizienz (Tempo pro Herzschlag im lockeren Bereich) +$pct % in 6 Wochen – deine Grundlage wächst.';
+  }
+
+  @override
+  String recalWhyAerobicDown(int pct) {
+    return 'Aerobe Effizienz (Tempo pro Herzschlag im lockeren Bereich) −$pct % in 6 Wochen – achte auf Erholung, Schlaf und Hitze.';
+  }
+
+  @override
+  String autoAdjSnack(String workout, String date, String after, String before) {
+    return 'Plan angepasst: $workout $date jetzt $after statt $before';
+  }
+
+  @override
+  String autoAdjSnackMany(int n) {
+    return 'Plan angepasst: $n kommende Einheiten';
+  }
+
+  @override
+  String get autoAdjTitle => 'Automatisch angepasst';
+
+  @override
+  String autoAdjOriginal(String value) {
+    return 'Ursprünglich geplant: $value';
+  }
+
+  @override
+  String get autoAdjUndone => 'Ursprünglicher Plan wiederhergestellt';
+
+  @override
+  String get autoAdjLongCutShort => 'Deine letzte lange Einheit endete vorzeitig bei hoher Anstrengung – diese bleibt bei deinem Erreichten plus etwa 10 %, statt weiter zu wachsen.';
+
+  @override
+  String get autoAdjLongHard => 'Deine letzte lange Einheit war härter als geplant – diese bleibt gleich lang, statt zu wachsen.';
+
+  @override
+  String get autoAdjEasyHard => 'Deine letzte lockere Einheit war härter als geplant (Puls / Anstrengung) – diese ist etwas kürzer. Bleib wirklich locker: Du solltest in ganzen Sätzen reden können.';
+
+  @override
+  String get autoAdjEasyTooFast => 'Deine letzte lockere Einheit war schneller als das lockere Tempo – diese ist etwas kürzer. Nimm Tempo raus: Lockere Tage bauen die Grundlage auf (80/20).';
+
+  @override
+  String get autoAdjQualityHard => 'Deine letzte Qualitätseinheit war härter als geplant – diese wird nicht gesteigert.';
+
+  @override
+  String get autoAdjQualityEasy => 'Deine letzte Qualitätseinheit traf die Vorgaben und fühlte sich leicht an – diese ist 5 % länger.';
+
+  @override
   String get progTopReached => 'alle Sätze am oberen Ende – mehr Gewicht';
 
   @override

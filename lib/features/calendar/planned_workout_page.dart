@@ -7,6 +7,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/plan_text.dart';
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart';
@@ -15,6 +16,7 @@ import '../session/start_helpers.dart';
 import '../session/step_list.dart';
 import '../session/zone_info.dart' show ZoneInfoButton;
 import '../stats/session_detail_page.dart';
+import 'auto_adjust.dart';
 import 'plan_editor.dart';
 
 String phaseLabel(AppLocalizations l, String? phase) => switch (phase) {
@@ -110,6 +112,17 @@ class PlannedWorkoutPage extends ConsumerWidget {
               ],
             ),
           ),
+          if (p.auto != null && !p.isDone) ...[
+            const SizedBox(height: 16),
+            AutoAdjustCard(
+              plan: p,
+              profile: ref.watch(profileOrDefaultProvider),
+              onUndo: () {
+                undoAutoAdjust(ref.read(repoProvider)!, [p]);
+                toast(context, l.autoAdjUndone);
+              },
+            ),
+          ],
           if (p.description.isNotEmpty) ...[
             const SizedBox(height: 16),
             Row(
@@ -117,7 +130,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
               children: [
                 const Icon(Icons.lightbulb_outline_rounded, size: 20, color: AppColors.warning),
                 const SizedBox(width: 10),
-                Expanded(child: Text(p.description, style: const TextStyle(height: 1.4))),
+                Expanded(child: Text(planDescription(p.description, l), style: const TextStyle(height: 1.4))),
               ],
             ),
           ],

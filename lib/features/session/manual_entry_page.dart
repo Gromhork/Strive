@@ -7,6 +7,7 @@ import '../../core/sport.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/plan_match.dart';
+import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
 import '../../widgets/common.dart';
 import '../../widgets/rpe_picker.dart';
@@ -77,9 +78,20 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
     );
     repo.saveSession(s);
     ref.read(healthServiceProvider).writeSession(s);
-    final plan = matchPlan(s, ref.read(planListProvider));
+    final plans = ref.read(planListProvider);
+    final plan = matchPlan(s, plans);
     if (plan != null) repo.updatePlan(plan.id, {'status': 'done', 'sessionId': s.id});
     toast(context, l.saved);
+    if (plan != null) {
+      autoAdjustAfterSessions(
+        repo: repo,
+        l: l,
+        profile: ref.read(profileOrDefaultProvider),
+        plans: plans,
+        sessions: ref.read(sessionListProvider),
+        done: [(s, plan)],
+      );
+    }
     Navigator.pop(context);
   }
 

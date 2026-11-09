@@ -503,6 +503,9 @@ class Session {
   final int? calories;
   final int? maxHr;
 
+  /// Average power in watts (bike with a power meter), if known.
+  final int? avgPower;
+
   Session({
     required this.id,
     required this.sport,
@@ -527,6 +530,7 @@ class Session {
     this.externalId,
     this.calories,
     this.maxHr,
+    this.avgPower,
   });
 
   double get volume => exercises.fold(0, (a, e) => a + e.volume);
@@ -562,6 +566,7 @@ class Session {
       externalId: m['externalId'],
       calories: m['calories'],
       maxHr: m['maxHr'],
+      avgPower: (m['avgPower'] as num?)?.round(),
     );
   }
 
@@ -590,6 +595,7 @@ class Session {
     if (externalId != null) 'externalId': externalId,
     if (calories != null) 'calories': calories,
     if (maxHr != null) 'maxHr': maxHr,
+    if (avgPower != null) 'avgPower': avgPower,
   };
 }
 
@@ -723,6 +729,9 @@ class PlannedWorkout {
   /// Gym: exercises adjusted for this one workout (empty = use the program's exercises).
   final List<GymExercise> exercises;
 
+  /// Small automatic adjustment after a completed session (original values for undo).
+  final AutoAdjustment? auto;
+
   PlannedWorkout({
     required this.id,
     required this.date,
@@ -739,6 +748,7 @@ class PlannedWorkout {
     this.phase,
     this.isKey = false,
     this.exercises = const [],
+    this.auto,
   });
 
   bool get isDone => status == 'done';
@@ -760,6 +770,7 @@ class PlannedWorkout {
     phase: m['phase'],
     isKey: m['isKey'] ?? false,
     exercises: ((m['exercises'] as List?) ?? []).map((e) => GymExercise.fromMap(e as Map)).toList(),
+    auto: m['auto'] is Map ? AutoAdjustment.fromMap(m['auto'] as Map) : null,
   );
 
   Map<String, dynamic> toMap() => {
@@ -777,6 +788,51 @@ class PlannedWorkout {
     if (phase != null) 'phase': phase,
     if (isKey) 'isKey': true,
     'exercises': exercises.map((e) => e.toMap()).toList(),
+    if (auto != null) 'auto': auto!.toMap(),
+  };
+}
+
+/// Record of a small automatic plan adjustment made after a completed session
+/// (lib/services/cardio_progression.dart): why, triggered by which session, and the
+/// workout's original volume so the athlete can undo it.
+class AutoAdjustment {
+  const AutoAdjustment({
+    required this.sessionId,
+    required this.reason,
+    required this.at,
+    required this.durationMin,
+    this.distanceKm,
+    this.steps = const [],
+  });
+
+  /// Session whose evaluation triggered the change (idempotency: once per session).
+  final String sessionId;
+
+  /// longCutShort | longHard | easyHard | easyTooFast | qualityHard | qualityEasy
+  final String reason;
+  final DateTime at;
+
+  /// Original values (before any automatic adjustment).
+  final int durationMin;
+  final double? distanceKm;
+  final List<WorkoutStep> steps;
+
+  factory AutoAdjustment.fromMap(Map m) => AutoAdjustment(
+    sessionId: m['sessionId'] ?? '',
+    reason: m['reason'] ?? '',
+    at: _date(m['at']),
+    durationMin: _i(m['durationMin'], 45),
+    distanceKm: _dn(m['distanceKm']),
+    steps: ((m['steps'] as List?) ?? []).map((e) => WorkoutStep.fromMap(e as Map)).toList(),
+  );
+
+  Map<String, dynamic> toMap() => {
+    'sessionId': sessionId,
+    'reason': reason,
+    'at': Timestamp.fromDate(at),
+    'durationMin': durationMin,
+    'distanceKm': distanceKm,
+    if (steps.isNotEmpty) 'steps': steps.map((e) => e.toMap()).toList(),
   };
 }
 
