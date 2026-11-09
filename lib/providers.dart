@@ -10,6 +10,7 @@ import 'data/exercise_db.dart';
 import 'data/models.dart';
 import 'data/repository.dart';
 import 'services/insights.dart';
+import 'services/load_prescription.dart';
 import 'services/weather_service.dart';
 
 // ───────────────────────────── Auth & repository ─────────────────────────────
@@ -73,6 +74,19 @@ final gameStatsProvider = Provider<GameStats>((ref) {
 });
 
 final recoveryProvider = Provider<RecoveryInfo>((ref) => RecoveryInfo.compute(ref.watch(sessionListProvider)));
+
+/// Prescribed gym loads from history, setup 1RMs or body weight (see [LoadPrescriber]).
+final loadPrescriberProvider = Provider<LoadPrescriber>(
+  (ref) => LoadPrescriber(
+    history: ref.watch(sessionListProvider),
+    profile: ref.watch(profileOrDefaultProvider),
+    db: ref.watch(exerciseDbProvider).value,
+  ),
+);
+
+/// Plan phase ('base' | 'build' | 'peak' | 'taper' | 'recovery') of a planned workout id.
+String? planPhaseOf(List<PlannedWorkout> plans, String? planId) =>
+    planId == null ? null : plans.where((p) => p.id == planId).firstOrNull?.phase;
 
 final weatherProvider = FutureProvider<Weather>((ref) async {
   final lang = ref.watch(settingsProvider).locale ?? 'de';

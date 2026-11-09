@@ -13,8 +13,10 @@ import '../../providers.dart';
 import '../../services/active_workout.dart';
 import '../../services/gym_tools.dart';
 import '../../services/insights.dart';
+import '../../services/load_prescription.dart';
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
+import '../../widgets/prescription.dart';
 import '../train/exercise_detail_page.dart';
 import 'gym_session_page.dart';
 
@@ -162,7 +164,7 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
     final lastWork = last?.where((s) => !s.warmup).toList();
     final firstOpen = e.sets.indexWhere((s) => !s.done);
     final sel = (_sel != null && _sel! < e.sets.length) ? _sel! : (firstOpen < 0 ? null : firstOpen);
-    final prog = suggestProgression(e, last, info);
+    final rx = ref.watch(loadPrescriberProvider).forExercise(e, phase: planPhaseOf(ref.watch(planListProvider), w.planId));
     final group = w.groupOf(widget.index);
     final t = Theme.of(context).textTheme;
 
@@ -232,17 +234,23 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                   style: t.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
-              if (prog != null && prog.kind != ProgressionKind.hold && e.doneSets == 0) ...[
+              if (rx != null && e.doneSets == 0 && (rx.source != LoadSource.bodyweight || rx.fromHistory)) ...[
                 const SizedBox(height: 12),
-                _ProgressionHint(
-                  prog: prog,
+                PrescriptionHint(
+                  prescription: rx,
                   units: u,
-                  onApply: () {
-                    for (var k = 0; k < e.sets.length; k++) {
-                      if (e.sets[k].warmup || e.sets[k].done) continue;
-                      n.updateSet(widget.index, k, weight: prog.weight, reps: prog.reps);
-                    }
-                  },
+                  onApply:
+                      _matches(e, rx)
+                          ? null
+                          : () {
+                            var wi = 0;
+                            for (var k = 0; k < e.sets.length; k++) {
+                              final s = e.sets[k];
+                              if (s.warmup || s.type == SetType.drop) continue;
+                              final reps = rx.repsForSet(wi++);
+                              if (!s.done) n.updateSet(widget.index, k, weight: rx.weight, reps: reps);
+                            }
+                          },
                 ),
               ],
               const SizedBox(height: 16),
@@ -365,38 +373,15 @@ class _GlassButton extends StatelessWidget {
   );
 }
 
-class _ProgressionHint extends StatelessWidget {
-  const _ProgressionHint({required this.prog, required this.units, required this.onApply});
-  final Progression prog;
-  final Units units;
-  final VoidCallback onApply;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    final (icon, color, text) = switch (prog.kind) {
-      ProgressionKind.increase => (Icons.trending_up_rounded, AppColors.success, l.progIncrease(units.weight(prog.weight))),
-      ProgressionKind.addReps => (Icons.add_circle_outline, AppColors.brand, l.progAddReps(prog.reps)),
-      ProgressionKind.deload => (Icons.restart_alt_rounded, AppColors.warning, l.progDeload(units.weight(prog.weight))),
-      ProgressionKind.hold => (Icons.drag_handle_rounded, AppColors.brand, l.progHold),
-    };
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 13, height: 1.3))),
-          TextButton(onPressed: onApply, child: Text(l.apply)),
-        ],
-      ),
-    );
+/// True when the open work sets already carry the prescribed load.
+bool _matches(GymExercise e, Prescription p) {
+  var wi = 0;
+  for (final s in e.sets) {
+    if (s.warmup || s.type == SetType.drop) continue;
+    final reps = p.repsForSet(wi++);
+    if (!s.done && ((s.weight - p.weight).abs() > 0.01 || s.reps != reps)) return false;
   }
+  return true;
 }
 
 class _SetLine extends StatelessWidget {

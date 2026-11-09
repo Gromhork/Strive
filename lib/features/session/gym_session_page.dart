@@ -9,8 +9,10 @@ import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/active_workout.dart';
 import '../../services/insights.dart';
+import '../../services/load_prescription.dart';
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
+import '../../widgets/prescription.dart';
 import '../train/exercise_picker.dart';
 import 'exercise_focus_page.dart';
 import 'session_summary_page.dart';
@@ -59,17 +61,21 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
     final n = ref.read(activeGymProvider.notifier);
     final history = ref.read(sessionListProvider);
     final picked = await pickExercises(context);
+    if (!mounted) return;
+    final prescriber = ref.read(loadPrescriberProvider);
+    final phase = planPhaseOf(ref.read(planListProvider), ref.read(activeGymProvider)?.planId);
     for (final e in picked) {
-      final prev = lastSetsFor(history, e.id);
-      n.addExercise(
-        GymExercise(
-          exId: e.id,
-          name: e.name,
-          sets:
-              prev?.where((s) => !s.warmup).map((s) => GymSet(weight: s.weight, reps: s.reps)).toList() ??
-              [GymSet(reps: 10), GymSet(reps: 10), GymSet(reps: 10)],
-        ),
+      // Same number of work sets as last time; weights & reps come from the prescriber.
+      final prev = lastSetsFor(history, e.id)?.where((s) => !s.warmup && s.type != SetType.drop).toList();
+      final raw = GymExercise(
+        exId: e.id,
+        name: e.name,
+        sets: [
+          for (var k = 0; k < (prev == null || prev.isEmpty ? 3 : prev.length.clamp(1, 6)); k++)
+            GymSet(reps: prev == null || prev.isEmpty ? 10 : prev[k].reps),
+        ],
       );
+      n.addExercise(prescriber.apply([raw], phase: phase).single);
     }
   }
 
@@ -561,6 +567,10 @@ class _ExerciseCard extends ConsumerWidget {
     final w = ref.watch(activeGymProvider)!;
     final allDone = exercise.allDone;
     final work = previous?.where((s) => !s.warmup).toList();
+    final rx =
+        exercise.doneSets == 0
+            ? ref.watch(loadPrescriberProvider).forExercise(exercise, phase: planPhaseOf(ref.watch(planListProvider), w.planId))
+            : null;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Card(
@@ -592,6 +602,11 @@ class _ExerciseCard extends ConsumerWidget {
                   ExerciseMenu(index: index, w: w, n: n),
                 ],
               ),
+              if (rx != null && (rx.source != LoadSource.bodyweight || rx.fromHistory))
+                Padding(
+                  padding: const EdgeInsets.only(right: 8, top: 2),
+                  child: PrescriptionHint(prescription: rx, units: units, dense: true),
+                ),
               Padding(
                 padding: const EdgeInsets.only(right: 8, bottom: 4, top: 4),
                 child: Row(
