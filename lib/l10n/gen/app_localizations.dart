@@ -5476,6 +5476,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Day by day'**
   String get byDay;
+
+  /// No description provided for @planExercisesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes apply to this workout only – the program stays as it is.'**
+  String get planExercisesHint;
+
+  /// No description provided for @planExercisesCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusted for this workout (program: {name}).'**
+  String planExercisesCustom(String name);
+
+  /// No description provided for @saveToProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to program'**
+  String get saveToProgram;
+
+  /// No description provided for @savedToProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to \"{name}\"'**
+  String savedToProgram(String name);
+
+  /// No description provided for @resetToProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get resetToProgram;
+
+  /// No description provided for @adjustExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust exercises'**
+  String get adjustExercises;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

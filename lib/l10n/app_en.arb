@@ -1539,5 +1539,25 @@
       }
     }
   },
-  "byDay": "Day by day"
+  "byDay": "Day by day",
+  "planExercisesHint": "Changes apply to this workout only – the program stays as it is.",
+  "planExercisesCustom": "Adjusted for this workout (program: {name}).",
+  "@planExercisesCustom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "saveToProgram": "Save to program",
+  "savedToProgram": "Saved to \"{name}\"",
+  "@savedToProgram": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "resetToProgram": "Reset",
+  "adjustExercises": "Adjust exercises"
 }
