@@ -3291,7 +3291,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get editSession => 'Einheit bearbeiten';
 
   @override
-  String get durationHms => 'Dauer (h:mm:ss)';
+  String get durationHms => 'Dauer (h:mm:ss oder mm:ss)';
 
   @override
   String get invalidDuration => 'Gib die Dauer als h:mm:ss oder in Minuten ein.';

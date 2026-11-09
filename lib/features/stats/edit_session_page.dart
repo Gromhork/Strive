@@ -189,7 +189,7 @@ class _ExerciseEditor extends StatelessWidget {
     final e = exercise;
     final bw = e.bw == true;
     return SectionCard(
-      title: e.name,
+      title: e.name.isEmpty ? '' : e.name[0].toUpperCase() + e.name.substring(1),
       trailing: FilterChip(
         key: const ValueKey('edit-bw'),
         avatar: const Icon(Icons.accessibility_new_rounded, size: 16),
@@ -217,8 +217,11 @@ class _ExerciseEditor extends StatelessWidget {
                       keyboardType: TextInputType.numberWithOptions(decimal: true, signed: bw),
                       decoration: InputDecoration(
                         isDense: true,
-                        labelText: bw ? l.addedWeight : l.weight,
-                        suffixText: bw ? '${l.bodyweightShort} ± ${units.weightUnit}' : units.weightUnit,
+                        // Short label so it fits next to the reps on phones ("BW ± kg").
+                        labelText: bw ? '${l.bodyweightShort} ± ${units.weightUnit}' : l.weight,
+                        hintText: bw ? '0' : null,
+                        suffixText: bw ? null : units.weightUnit,
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
                       ),
                       onChanged: (v) => e.sets[i].weight = units.weightIn(parseNum(v) ?? 0),
                     ),
@@ -228,7 +231,7 @@ class _ExerciseEditor extends StatelessWidget {
                     child: TextFormField(
                       initialValue: e.sets[i].reps == 0 ? '' : '${e.sets[i].reps}',
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(isDense: true, labelText: l.reps),
+                      decoration: InputDecoration(isDense: true, labelText: l.reps, floatingLabelBehavior: FloatingLabelBehavior.always),
                       onChanged: (v) => e.sets[i].reps = int.tryParse(v.trim()) ?? 0,
                     ),
                   ),

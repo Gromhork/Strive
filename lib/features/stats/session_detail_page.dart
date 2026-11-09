@@ -219,9 +219,13 @@ class SessionDetailPage extends ConsumerWidget {
                       Builder(
                         builder: (_) {
                           final pe = prev.exercises.where((x) => x.exId == e.exId).firstOrNull;
-                          if (pe == null || e.bestE1rm <= 0) return const SizedBox.shrink();
+                          // Only like with like: a set logged before bodyweight mode existed (or
+                          // in the other mode) has no comparable e1RM.
+                          if (pe == null || e.bestE1rm <= 0 || pe.bestE1rm <= 0 || (e.bw == true) != (pe.bw == true)) {
+                            return const SizedBox.shrink();
+                          }
                           return _CompareRow(
-                            e.name,
+                            e.name.isEmpty ? '' : e.name[0].toUpperCase() + e.name.substring(1),
                             'e1RM ${u.weight(e.bestE1rm, digits: 0)}',
                             delta(u.weightOut(e.bestE1rm), u.weightOut(pe.bestE1rm), fmt: (d) => d.toStringAsFixed(1)),
                           );

@@ -1835,7 +1835,7 @@
     }
   },
   "editSession": "Edit workout",
-  "durationHms": "Duration (h:mm:ss)",
+  "durationHms": "Duration (h:mm:ss or mm:ss)",
   "invalidDuration": "Enter the duration as h:mm:ss or minutes.",
   "rpeNotSet": "not set",
   "sessionCorrected": "Workout updated",
