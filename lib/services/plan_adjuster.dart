@@ -68,7 +68,12 @@ List<PlanChange> proposeWeekAdjustment(List<PlannedWorkout> plans, DateTime now)
       continue;
     }
     PlanChange? best;
-    for (var day = today; !day.isAfter(weekEnd); day = day.add(const Duration(days: 1))) {
+    // Only inside the missed workout's own week: a Sunday long run missed and looked at on
+    // Monday must not land in the next week, which already has its own long run.
+    final md = _d(m.date);
+    final ownWeekEnd = md.add(Duration(days: 7 - md.weekday));
+    final last = ownWeekEnd.isBefore(weekEnd) ? ownWeekEnd : weekEnd;
+    for (var day = today; !day.isAfter(last); day = day.add(const Duration(days: 1))) {
       if (hardOn(day, except: m.id) ||
           hardOn(day.subtract(const Duration(days: 1)), except: m.id) ||
           hardOn(day.add(const Duration(days: 1)), except: m.id)) {

@@ -184,6 +184,8 @@ class PlanGenerator {
     for (var w = 0; w < total; w++) {
       final phase = phases[w];
       final roles = _roles(schedule, phase);
+      // Quality rides that really got a slot this week (spacing may leave fewer than allowed).
+      final qRides = roles.values.expand((x) => x).where((r) => r.sport == Sport.ride && r.role.startsWith('q')).length;
       final weekStart = monday.add(Duration(days: w * 7));
       final rest = phase == 'recovery' || phase == 'taper';
       // Recovery / taper weeks shrink the time available as well: sessions that are
@@ -236,7 +238,7 @@ class PlanGenerator {
           }
           week.add(switch (r.sport) {
             Sport.run => _run(day, r.role, phase, wk, longKm, tempoMin, intervalReps, w, cap),
-            Sport.ride => _ride(day, r.role, phase, rideH[w], ridePerWeek, loadWeeks, cap),
+            Sport.ride => _ride(day, r.role, phase, rideH[w], ridePerWeek, loadWeeks, cap, qRides),
             Sport.swim => _swim(day, r.role, phase, swimKm[w], swimPerWeek, w, cap),
             Sport.gym => _gym(day, gymQueue, schedule, phase, block, r.role, cap),
           });
@@ -916,6 +918,12 @@ class PlanGenerator {
         desc = l.wFartlekDesc;
         intensity = 'tempo';
       }
+    } else if (phase == 'peak' && dist == 'm' && second) {
+      final mp = _r1(min(weekKm * 0.2, 14));
+      steps = [wu, _runStep('work', 'M', km: mp, note: l.stepMpNote), cd];
+      title = l.wMpRun;
+      desc = l.wMpRunDesc;
+      intensity = 'tempo';
     } else if (useIntervals && (second ? !shortRace : shortRace)) {
       // VO2max intervals (I), volume ≤ min(8 % weekly km, 10 km).
       final repM = level == 'advanced' ? 1000.0 : 800.0;
@@ -931,12 +939,6 @@ class PlanGenerator {
       title = l.wIntervals(reps, (repM).round());
       desc = l.wIntervalsDesc;
       intensity = 'intervals';
-    } else if (phase == 'peak' && dist == 'm' && second) {
-      final mp = _r1(min(weekKm * 0.2, 14));
-      steps = [wu, _runStep('work', 'M', km: mp, note: l.stepMpNote), cd];
-      title = l.wMpRun;
-      desc = l.wMpRunDesc;
-      intensity = 'tempo';
     } else {
       // Threshold: cruise intervals once tempo ≥ 20 min (T ≤ 10 % weekly km).
       final tKm = min(weekKm * 0.10, tempoMin * 60 / pz.threshold);
@@ -1043,7 +1045,7 @@ class PlanGenerator {
   int _longRideMin(double weekH, {bool rest = false}) => max(rest ? 45 : 60, ((weekH * 0.42) * 60 / 15).round() * 15);
 
   /// [loadWeek] counts the loading weeks so far: quality rides progress only in those.
-  PlannedWorkout _ride(DateTime day, String role, String phase, double weekH, int perWeek, int loadWeek, int capMin) {
+  PlannedWorkout _ride(DateTime day, String role, String phase, double weekH, int perWeek, int loadWeek, int capMin, int nQ) {
     final rest = phase == 'recovery' || phase == 'taper';
     final wu = _rideStep('warmup', 'Z2', 600);
     final cd = _rideStep('cooldown', 'Z1', 600);
@@ -1097,7 +1099,6 @@ class PlanGenerator {
       // Remaining time after the long ride and ~65 min per quality ride, never longer
       // than 75 % of the long ride.
       final longMin = _longRideMin(weekH, rest: rest);
-      final nQ = _maxQualityRides(perWeek, phase);
       final easyCount = max(1, perWeek - 1 - nQ);
       final left = weekH * 60 - longMin - nQ * 65;
       final floor = rest ? 30 : 40;
