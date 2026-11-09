@@ -3488,4 +3488,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recalMore => 'More';
+
+  @override
+  String wGymDescRange(int sets, int rir) {
+    return '$sets sets per exercise in each exercise\'s rep range, leave $rir reps in the tank. Add reps first; once every set reaches the top of the range, add weight and start again at the bottom.';
+  }
 }

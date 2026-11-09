@@ -3488,4 +3488,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get recalMore => 'Mehr';
+
+  @override
+  String wGymDescRange(int sets, int rir) {
+    return '$sets Sätze pro Übung im jeweiligen Wiederholungsbereich, $rir Wdh. im Tank lassen. Erst Wiederholungen steigern – schaffst du in allen Sätzen das obere Ende, Gewicht erhöhen und wieder unten beginnen.';
+  }
 }

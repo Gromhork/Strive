@@ -1080,5 +1080,6 @@
   "recalApply": "{n} Änderungen übernehmen",
   "recalApplied": "Plan rekalibriert",
   "recalNewPlan": "Neuen Plan erstellen",
-  "recalMore": "Mehr"
+  "recalMore": "Mehr",
+  "wGymDescRange": "{sets} Sätze pro Übung im jeweiligen Wiederholungsbereich, {rir} Wdh. im Tank lassen. Erst Wiederholungen steigern – schaffst du in allen Sätzen das obere Ende, Gewicht erhöhen und wieder unten beginnen."
 }
