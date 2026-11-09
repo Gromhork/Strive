@@ -2020,5 +2020,128 @@
   "wTaperWeekNote": "Taper: less volume, short efforts stay sharp. Don't make up for anything – freshness for race day counts now.",
   "wLongRunHmpDesc": "Easy long run, the last quarter at your half-marathon goal pace – the most race-specific session.",
   "stepHmpNote": "Half-marathon goal pace – controlled",
-  "wLongRunMpDesc2": "Easy long run, the last quarter at your marathon goal pace – the most race-specific session."
+  "wLongRunMpDesc2": "Easy long run, the last quarter at your marathon goal pace – the most race-specific session.",
+  "recalWhyRunTrendSlower": "Your key runs were slower than the target paces at a high effort – paces eased (VDOT {from} → {to}).",
+  "@recalWhyRunTrendSlower": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "recalWhyRunTrendFaster": "Your quality runs hit the target paces and felt easy – paces a little faster (VDOT {from} → {to}).",
+  "@recalWhyRunTrendFaster": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "recalWhyFtpUp": "Bike: power above the targets without extra effort – FTP {from} → {to} W, power targets updated.",
+  "@recalWhyFtpUp": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "recalWhyFtpDown": "Bike: the power targets were too hard to hold – FTP {from} → {to} W, power targets updated.",
+  "@recalWhyFtpDown": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "recalWhyCssFaster": "Swim: faster than the target paces at a comfortable effort – CSS {from} → {to} per 100 m.",
+  "@recalWhyCssFaster": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "recalWhyCssSlower": "Swim: the target paces were too hard to hold – CSS {from} → {to} per 100 m.",
+  "@recalWhyCssSlower": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "recalWhyAerobicUp": "Aerobic efficiency (speed per heartbeat at easy effort) +{pct} % over 6 weeks – your base is growing.",
+  "@recalWhyAerobicUp": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "recalWhyAerobicDown": "Aerobic efficiency (speed per heartbeat at easy effort) −{pct} % over 6 weeks – watch recovery, sleep and heat.",
+  "@recalWhyAerobicDown": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "autoAdjSnack": "Plan adjusted: {workout} {date} now {after} instead of {before}",
+  "@autoAdjSnack": {
+    "placeholders": {
+      "workout": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      }
+    }
+  },
+  "autoAdjSnackMany": "Plan adjusted: {n} upcoming sessions",
+  "@autoAdjSnackMany": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "autoAdjTitle": "Adjusted automatically",
+  "autoAdjOriginal": "Originally planned: {value}",
+  "@autoAdjOriginal": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "autoAdjUndone": "Original plan restored",
+  "autoAdjLongCutShort": "Your last long session ended early at a high effort – this one is held at what you managed plus about 10 % instead of growing.",
+  "autoAdjLongHard": "Your last long session felt harder than intended – this one stays at the same length instead of growing.",
+  "autoAdjEasyHard": "Your last easy session was harder than intended (heart rate / effort) – this one is a little shorter. Keep it truly easy: you should be able to talk in full sentences.",
+  "autoAdjEasyTooFast": "Your last easy session was faster than the easy pace – this one is a little shorter. Slow down: easy days build the aerobic base (80/20).",
+  "autoAdjQualityHard": "Your last quality session was harder than intended – this one is not increased.",
+  "autoAdjQualityEasy": "Your last quality session hit the targets and felt easy – this one is 5 % longer."
 }

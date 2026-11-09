@@ -6646,6 +6646,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Easy long run, the last quarter at your marathon goal pace – the most race-specific session.'**
   String get wLongRunMpDesc2;
+
+  /// No description provided for @recalWhyRunTrendSlower.
+  ///
+  /// In en, this message translates to:
+  /// **'Your key runs were slower than the target paces at a high effort – paces eased (VDOT {from} → {to}).'**
+  String recalWhyRunTrendSlower(String from, String to);
+
+  /// No description provided for @recalWhyRunTrendFaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quality runs hit the target paces and felt easy – paces a little faster (VDOT {from} → {to}).'**
+  String recalWhyRunTrendFaster(String from, String to);
+
+  /// No description provided for @recalWhyFtpUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Bike: power above the targets without extra effort – FTP {from} → {to} W, power targets updated.'**
+  String recalWhyFtpUp(String from, String to);
+
+  /// No description provided for @recalWhyFtpDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Bike: the power targets were too hard to hold – FTP {from} → {to} W, power targets updated.'**
+  String recalWhyFtpDown(String from, String to);
+
+  /// No description provided for @recalWhyCssFaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Swim: faster than the target paces at a comfortable effort – CSS {from} → {to} per 100 m.'**
+  String recalWhyCssFaster(String from, String to);
+
+  /// No description provided for @recalWhyCssSlower.
+  ///
+  /// In en, this message translates to:
+  /// **'Swim: the target paces were too hard to hold – CSS {from} → {to} per 100 m.'**
+  String recalWhyCssSlower(String from, String to);
+
+  /// No description provided for @recalWhyAerobicUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Aerobic efficiency (speed per heartbeat at easy effort) +{pct} % over 6 weeks – your base is growing.'**
+  String recalWhyAerobicUp(int pct);
+
+  /// No description provided for @recalWhyAerobicDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Aerobic efficiency (speed per heartbeat at easy effort) −{pct} % over 6 weeks – watch recovery, sleep and heat.'**
+  String recalWhyAerobicDown(int pct);
+
+  /// No description provided for @autoAdjSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan adjusted: {workout} {date} now {after} instead of {before}'**
+  String autoAdjSnack(String workout, String date, String after, String before);
+
+  /// No description provided for @autoAdjSnackMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan adjusted: {n} upcoming sessions'**
+  String autoAdjSnackMany(int n);
+
+  /// No description provided for @autoAdjTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusted automatically'**
+  String get autoAdjTitle;
+
+  /// No description provided for @autoAdjOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Originally planned: {value}'**
+  String autoAdjOriginal(String value);
+
+  /// No description provided for @autoAdjUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'Original plan restored'**
+  String get autoAdjUndone;
+
+  /// No description provided for @autoAdjLongCutShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last long session ended early at a high effort – this one is held at what you managed plus about 10 % instead of growing.'**
+  String get autoAdjLongCutShort;
+
+  /// No description provided for @autoAdjLongHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last long session felt harder than intended – this one stays at the same length instead of growing.'**
+  String get autoAdjLongHard;
+
+  /// No description provided for @autoAdjEasyHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last easy session was harder than intended (heart rate / effort) – this one is a little shorter. Keep it truly easy: you should be able to talk in full sentences.'**
+  String get autoAdjEasyHard;
+
+  /// No description provided for @autoAdjEasyTooFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last easy session was faster than the easy pace – this one is a little shorter. Slow down: easy days build the aerobic base (80/20).'**
+  String get autoAdjEasyTooFast;
+
+  /// No description provided for @autoAdjQualityHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last quality session was harder than intended – this one is not increased.'**
+  String get autoAdjQualityHard;
+
+  /// No description provided for @autoAdjQualityEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last quality session hit the targets and felt easy – this one is 5 % longer.'**
+  String get autoAdjQualityEasy;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

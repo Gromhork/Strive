@@ -16,6 +16,7 @@ import '../session/start_helpers.dart';
 import '../session/step_list.dart';
 import '../session/zone_info.dart' show ZoneInfoButton;
 import '../stats/session_detail_page.dart';
+import 'auto_adjust.dart';
 import 'plan_editor.dart';
 
 String phaseLabel(AppLocalizations l, String? phase) => switch (phase) {
@@ -111,6 +112,17 @@ class PlannedWorkoutPage extends ConsumerWidget {
               ],
             ),
           ),
+          if (p.auto != null && !p.isDone) ...[
+            const SizedBox(height: 16),
+            AutoAdjustCard(
+              plan: p,
+              profile: ref.watch(profileOrDefaultProvider),
+              onUndo: () {
+                undoAutoAdjust(ref.read(repoProvider)!, [p]);
+                toast(context, l.autoAdjUndone);
+              },
+            ),
+          ],
           if (p.description.isNotEmpty) ...[
             const SizedBox(height: 16),
             Row(

@@ -3527,4 +3527,83 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wLongRunMpDesc2 => 'Easy long run, the last quarter at your marathon goal pace – the most race-specific session.';
+
+  @override
+  String recalWhyRunTrendSlower(String from, String to) {
+    return 'Your key runs were slower than the target paces at a high effort – paces eased (VDOT $from → $to).';
+  }
+
+  @override
+  String recalWhyRunTrendFaster(String from, String to) {
+    return 'Your quality runs hit the target paces and felt easy – paces a little faster (VDOT $from → $to).';
+  }
+
+  @override
+  String recalWhyFtpUp(String from, String to) {
+    return 'Bike: power above the targets without extra effort – FTP $from → $to W, power targets updated.';
+  }
+
+  @override
+  String recalWhyFtpDown(String from, String to) {
+    return 'Bike: the power targets were too hard to hold – FTP $from → $to W, power targets updated.';
+  }
+
+  @override
+  String recalWhyCssFaster(String from, String to) {
+    return 'Swim: faster than the target paces at a comfortable effort – CSS $from → $to per 100 m.';
+  }
+
+  @override
+  String recalWhyCssSlower(String from, String to) {
+    return 'Swim: the target paces were too hard to hold – CSS $from → $to per 100 m.';
+  }
+
+  @override
+  String recalWhyAerobicUp(int pct) {
+    return 'Aerobic efficiency (speed per heartbeat at easy effort) +$pct % over 6 weeks – your base is growing.';
+  }
+
+  @override
+  String recalWhyAerobicDown(int pct) {
+    return 'Aerobic efficiency (speed per heartbeat at easy effort) −$pct % over 6 weeks – watch recovery, sleep and heat.';
+  }
+
+  @override
+  String autoAdjSnack(String workout, String date, String after, String before) {
+    return 'Plan adjusted: $workout $date now $after instead of $before';
+  }
+
+  @override
+  String autoAdjSnackMany(int n) {
+    return 'Plan adjusted: $n upcoming sessions';
+  }
+
+  @override
+  String get autoAdjTitle => 'Adjusted automatically';
+
+  @override
+  String autoAdjOriginal(String value) {
+    return 'Originally planned: $value';
+  }
+
+  @override
+  String get autoAdjUndone => 'Original plan restored';
+
+  @override
+  String get autoAdjLongCutShort => 'Your last long session ended early at a high effort – this one is held at what you managed plus about 10 % instead of growing.';
+
+  @override
+  String get autoAdjLongHard => 'Your last long session felt harder than intended – this one stays at the same length instead of growing.';
+
+  @override
+  String get autoAdjEasyHard => 'Your last easy session was harder than intended (heart rate / effort) – this one is a little shorter. Keep it truly easy: you should be able to talk in full sentences.';
+
+  @override
+  String get autoAdjEasyTooFast => 'Your last easy session was faster than the easy pace – this one is a little shorter. Slow down: easy days build the aerobic base (80/20).';
+
+  @override
+  String get autoAdjQualityHard => 'Your last quality session was harder than intended – this one is not increased.';
+
+  @override
+  String get autoAdjQualityEasy => 'Your last quality session hit the targets and felt easy – this one is 5 % longer.';
 }

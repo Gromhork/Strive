@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme.dart';
 import 'features/auth/login_page.dart';
+import 'features/calendar/auto_adjust.dart' show rootMessengerKey;
 import 'features/onboarding/onboarding_page.dart';
 import 'features/shell/home_shell.dart';
 import 'features/shell/gcal_sync.dart';
@@ -49,6 +50,7 @@ class StriveApp extends ConsumerWidget {
     ref.watch(programUpgradeSyncProvider);
     return MaterialApp(
       title: 'Strive',
+      scaffoldMessengerKey: rootMessengerKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
