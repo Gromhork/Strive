@@ -2256,5 +2256,36 @@
   },
   "feasRunWalkFinish": "Finish with run/walk – race day in your plan shows the rhythm",
   "feasPlanAnyway": "The plan is created anyway and builds up as far as is safely possible.",
-  "wGymDeloadNote2": "Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger."
+  "wGymDeloadNote2": "Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.",
+  "raceSearch": "Find races",
+  "raceSport": "Sport",
+  "raceAnyDistance": "Any distance",
+  "raceRegion": "Region (country or city)",
+  "raceRegionHint": "e.g. Germany, Munich – empty = worldwide",
+  "raceWindow": "Time window",
+  "raceNextMonths": "{n} months",
+  "@raceNextMonths": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "raceSearchButton": "Search the web",
+  "raceIntro": "Searches the web for upcoming races with AI – or open a race calendar directly.",
+  "raceSearching": "Searching the web for races…",
+  "raceWebResults": "Web results (AI search)",
+  "raceDisclaimer": "Found on the web by AI – no guarantee. Check date and details on the organiser's page before you sign up.",
+  "raceOrganiserPage": "Organiser page",
+  "raceSetAsGoal": "Set as goal",
+  "raceGoalSet": "Race set as your goal",
+  "raceEmpty": "No races found for these filters. Try a longer time window or a wider region – or browse a race calendar.",
+  "raceUnavailable": "The AI web search is not available right now (quota or plan of the AI service). Browse a race calendar instead.",
+  "raceError": "The search failed. Check your connection and try again – or browse a race calendar.",
+  "raceBadResponse": "The search returned no usable result. Try again – or browse a race calendar.",
+  "raceRetry": "Try again",
+  "racePortals": "Race calendars",
+  "racePortalsHint": "Opens in the browser, filtered where the site supports it.",
+  "raceSources": "Sources",
+  "raceGoogleSuggestions": "Google searches"
 }

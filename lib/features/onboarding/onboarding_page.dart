@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/format.dart';
 import '../../core/sport.dart';
@@ -10,6 +9,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../data/default_programs.dart';
 import '../calendar/feasibility_card.dart';
+import '../goals/race_search_page.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/plan_generator.dart';
@@ -65,6 +65,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     super.initState();
     p = ref.read(profileProvider).value ?? UserProfile(name: _accountName(), birthYear: DateTime.now().year - 28);
     a = p.athlete;
+    _eventName.text = a.eventName ?? '';
     _name.text = p.name;
     _imperial = p.imperial;
     _generatePlan = widget.mode != SetupMode.profile;
@@ -142,6 +143,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final sports = _sports;
     a = a.merge({
       'dayPlan': {for (final e in a.dayPlan.entries) e.key: e.value.where(sports.contains).toList()},
+      'eventName': _eventName.text.trim().isEmpty ? null : _eventName.text.trim(),
     });
     var days = [
       ...(p.trainingDays.isEmpty ? const [1, 3, 5] : p.trainingDays),
@@ -1339,9 +1341,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         ],
         const SizedBox(height: 12),
         TextButton.icon(
-          icon: const Icon(Icons.search),
-          label: Text(l.searchMarathonDe),
-          onPressed: () => launchUrl(Uri.parse('https://www.marathon.de/laufkalender'), mode: LaunchMode.externalApplication),
+          icon: const Icon(Icons.travel_explore_rounded),
+          label: Text(l.raceSearch),
+          onPressed: () async {
+            // The setup saves the profile itself when finished.
+            final r = await openRaceSearch(context, saveToProfile: false);
+            if (r == null || !mounted) return;
+            _eventName.text = r.name;
+            _setA({'eventDate': r.date, if (r.distance != null && dists.contains(r.distance)) 'eventDistance': r.distance});
+          },
         ),
       ],
     );

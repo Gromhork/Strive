@@ -7066,6 +7066,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
   String get wGymDeloadNote2;
+
+  /// No description provided for @raceSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Find races'**
+  String get raceSearch;
+
+  /// No description provided for @raceSport.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport'**
+  String get raceSport;
+
+  /// No description provided for @raceAnyDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Any distance'**
+  String get raceAnyDistance;
+
+  /// No description provided for @raceRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Region (country or city)'**
+  String get raceRegion;
+
+  /// No description provided for @raceRegionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Germany, Munich – empty = worldwide'**
+  String get raceRegionHint;
+
+  /// No description provided for @raceWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Time window'**
+  String get raceWindow;
+
+  /// No description provided for @raceNextMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} months'**
+  String raceNextMonths(int n);
+
+  /// No description provided for @raceSearchButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Search the web'**
+  String get raceSearchButton;
+
+  /// No description provided for @raceIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Searches the web for upcoming races with AI – or open a race calendar directly.'**
+  String get raceIntro;
+
+  /// No description provided for @raceSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching the web for races…'**
+  String get raceSearching;
+
+  /// No description provided for @raceWebResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Web results (AI search)'**
+  String get raceWebResults;
+
+  /// No description provided for @raceDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Found on the web by AI – no guarantee. Check date and details on the organiser\'s page before you sign up.'**
+  String get raceDisclaimer;
+
+  /// No description provided for @raceOrganiserPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Organiser page'**
+  String get raceOrganiserPage;
+
+  /// No description provided for @raceSetAsGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as goal'**
+  String get raceSetAsGoal;
+
+  /// No description provided for @raceGoalSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Race set as your goal'**
+  String get raceGoalSet;
+
+  /// No description provided for @raceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No races found for these filters. Try a longer time window or a wider region – or browse a race calendar.'**
+  String get raceEmpty;
+
+  /// No description provided for @raceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI web search is not available right now (quota or plan of the AI service). Browse a race calendar instead.'**
+  String get raceUnavailable;
+
+  /// No description provided for @raceError.
+  ///
+  /// In en, this message translates to:
+  /// **'The search failed. Check your connection and try again – or browse a race calendar.'**
+  String get raceError;
+
+  /// No description provided for @raceBadResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The search returned no usable result. Try again – or browse a race calendar.'**
+  String get raceBadResponse;
+
+  /// No description provided for @raceRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get raceRetry;
+
+  /// No description provided for @racePortals.
+  ///
+  /// In en, this message translates to:
+  /// **'Race calendars'**
+  String get racePortals;
+
+  /// No description provided for @racePortalsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens in the browser, filtered where the site supports it.'**
+  String get racePortalsHint;
+
+  /// No description provided for @raceSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get raceSources;
+
+  /// No description provided for @raceGoogleSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Google searches'**
+  String get raceGoogleSuggestions;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

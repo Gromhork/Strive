@@ -3781,4 +3781,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wGymDeloadNote2 => 'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+
+  @override
+  String get raceSearch => 'Find races';
+
+  @override
+  String get raceSport => 'Sport';
+
+  @override
+  String get raceAnyDistance => 'Any distance';
+
+  @override
+  String get raceRegion => 'Region (country or city)';
+
+  @override
+  String get raceRegionHint => 'e.g. Germany, Munich – empty = worldwide';
+
+  @override
+  String get raceWindow => 'Time window';
+
+  @override
+  String raceNextMonths(int n) {
+    return '$n months';
+  }
+
+  @override
+  String get raceSearchButton => 'Search the web';
+
+  @override
+  String get raceIntro => 'Searches the web for upcoming races with AI – or open a race calendar directly.';
+
+  @override
+  String get raceSearching => 'Searching the web for races…';
+
+  @override
+  String get raceWebResults => 'Web results (AI search)';
+
+  @override
+  String get raceDisclaimer => 'Found on the web by AI – no guarantee. Check date and details on the organiser\'s page before you sign up.';
+
+  @override
+  String get raceOrganiserPage => 'Organiser page';
+
+  @override
+  String get raceSetAsGoal => 'Set as goal';
+
+  @override
+  String get raceGoalSet => 'Race set as your goal';
+
+  @override
+  String get raceEmpty => 'No races found for these filters. Try a longer time window or a wider region – or browse a race calendar.';
+
+  @override
+  String get raceUnavailable => 'The AI web search is not available right now (quota or plan of the AI service). Browse a race calendar instead.';
+
+  @override
+  String get raceError => 'The search failed. Check your connection and try again – or browse a race calendar.';
+
+  @override
+  String get raceBadResponse => 'The search returned no usable result. Try again – or browse a race calendar.';
+
+  @override
+  String get raceRetry => 'Try again';
+
+  @override
+  String get racePortals => 'Race calendars';
+
+  @override
+  String get racePortalsHint => 'Opens in the browser, filtered where the site supports it.';
+
+  @override
+  String get raceSources => 'Sources';
+
+  @override
+  String get raceGoogleSuggestions => 'Google searches';
 }
