@@ -214,7 +214,8 @@ class SmartProgression extends Progression {
 /// * **Training level** [level]: beginners progress faster (+2 reps with even sets,
 ///   two load steps when not hard – novices adapt fastest and underestimate their
 ///   reserve, Steele et al. 2017); advanced lifters only take bigger steps on an
-///   explicit "easy" rating.
+///   explicit "easy" rating (trained lifters gain less per unit of stimulus,
+///   Androulakis-Korakakis et al. 2020). See docs/training-science.md §2.4a.
 /// * **Microloading:** when one [increment] is > 10 % of the total load (light
 ///   dumbbells, isolation work), reps go beyond the top first (up to +25 %; hypertrophy
 ///   is similar across ~6–30 reps near failure, Schoenfeld et al. 2017), then the load

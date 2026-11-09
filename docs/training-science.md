@@ -344,6 +344,68 @@ doubleProgression(range [lo,hi], sets n):
 DUP weekly template (per main lift): Day H 4–6 reps @RIR2 · Day M 8–10 @RIR2 · Day L 12–15 @RIR1–2
 ```
 
+### 2.4a Autoregulated multi-session progression (what the app does) [M/P]
+
+Implemented in `lib/services/smart_progression.dart` (used by `LoadPrescriber`). Double progression stays the base –
+adding reps or adding load progresses strength and hypertrophy equally well (Plotkin 2022 [69]) – but the step is
+**autoregulated** by effort (RIR-based autoregulation ≥ fixed loading: Helms 2018 [29]; Graham & Cleather 2021 [70]) and
+judged over the **last 3–6 sessions** instead of the last one only.
+
+**Effort per exercise** (reps in reserve after the last work set), first source that exists:
+
+| Source | RIR |
+|---|---|
+| Optional chip after the last work set: Leicht / Passend / Schwer / Limit | 4+ / 2–3 / 1 / 0 (RIR-based RPE scale [30,31]) |
+| Logged set RPE (hardest set) | 10 − RPE |
+| A work set marked "failure" | 0 |
+| Inferred: rep drop-off across sets at the same load ≥ 30 % (and ≥ 2 reps) | 0 (limit) |
+| Inferred: drop-off ≥ 15 % (and ≥ 2 reps) | 1 (hard) – sets far from failure can be repeated with the same reps; losses across sets mean the sets were close to failure (Willardson & Burkett 2005 [73]; Refalo 2023 [28]) |
+| Inferred: every set ≥ 2 reps above the top of the range | ≥ 3 (easy – load clearly too light) |
+| Nothing of the above | unknown → treated as "about right" |
+
+Self-rated RIR is accurate to about ±1 rep near failure and worse far from it, and novices tend to underestimate their
+reserve (Halperin 2022 [71]; Steele 2017 [72]) – so the effort only moves the step **one notch**.
+
+**Trend:** session performance = top-set e1RM of the total load (Epley, RIR from RPE else 1; mean reps for exercises
+without load). Theil–Sen slope (median of pairwise slopes, Sen 1968 [75] – robust to one bad day) over the last ≤ 6
+sessions within 8 weeks, × time span ÷ median: ≥ +2 % progressing, ≤ −3 % regressing (day-to-day e1RM noise ≈ 2–4 %),
+else plateau. Needs ≥ 3 sessions over ≥ 10 days.
+
+```text
+order of rules (first match wins); w = last top weight, total = w + body load (bodyweight exercises)
+1. stall:  same weight 3 sessions (≤ 6 wk), never all sets at the top, no more total reps, trend not rising
+           → reset w × 0.9 (bodyweight: shed added load, never into assistance)
+2. drop:   the last two sessions both worse than the one before them
+           (same load ±1 % and ≥ 1 rep/set fewer, or lighter load without more reps)
+           → ≥ 2 reps/set lost or limit: −7.5 % of total (reactive deload, Bell 2023 [74]); else hold w, repeat reps
+3. top:    all sets ≥ top of range
+           limit → hold w, top reps once more
+           one increment > 10 % of total (light dumbbells, isolation) → MICROLOADING: reps beyond the top first
+               (+1/session, +2 when rated easy) up to top + max(2, 25 %) – hypertrophy is similar across ~6–30 reps
+               near failure (Schoenfeld 2017 [26]) – then +1 increment with reps matched to the same e1RM − 1
+           else k increments, restart at the bottom: k = 2 when easy (intermediate: rated or inferred; advanced:
+               rated only) or beginner and not hard; never > 10 % of total at once (NSCA 2–10 %); k = 1 when regressing
+4. missed: ≥ half of the sets below the bottom: ≤ 1 rep short → hold (limit → one step back);
+           2–3 short → one step back; more → −10 %
+5. inside: limit → repeat the same reps; hard twice in a row at the same load without more reps → repeat;
+           else +1 rep per set below the top (+2 when easy, or beginner with even sets and not hard)
+breaks (unchanged): 3–6 wk → last weight × 0.95/0.9; > 6 wk → e1RM × 0.9 (× 0.85 beyond 12 wk) [68]
+deload / taper week (unchanged): load × 0.9, deload drops one set
+```
+
+**Training level:** beginners progress fastest and misjudge RIR conservatively → bigger steps unless a session was hard;
+advanced lifters need more stimulus for smaller gains (Androulakis-Korakakis 2020 [77]) → one notch at a time unless they
+explicitly rate a set easy.
+
+**Bodyweight exercises** use the same rules on the total load (body share × body weight + added weight; pull-ups/dips
+100 %, push-ups ~65 %, inverted rows 60 %; user-switched loaded exercises: squat/lunge 85 % – body minus shanks and
+feet, Winter 2009 [76]). Exercises without a load step (push-ups, core) progress by reps beyond the range. Sessions
+logged in the other mode are converted (old pull-ups logged with the body weight as weight → +0 kg added).
+
+Every suggestion carries a machine-readable reason (`ProgressReason`) that the workout screens show, e.g.
+"alle Sätze am oberen Ende mit Reserve – größerer Sprung" or "Gewicht halten: letzte 2 Einheiten schwer".
+Not used (deliberately): daily readiness / HRV – no cheap, reliable per-exercise signal; the effort rating covers it.
+
 ### 2.5 Rest intervals
 
 | Rule | Value | Tag |
@@ -820,3 +882,12 @@ Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
 66. Haddad M, Stylianides G, Djaoui L, Dellal A, Chamari K. Session-RPE method for training load monitoring: validity, ecological usefulness, and influencing factors. *Front Neurosci.* 2017;11:612. doi:10.3389/fnins.2017.00612
 67. Meeusen R, Duclos M, Foster C, et al. Prevention, diagnosis, and treatment of the overtraining syndrome: joint consensus statement of the European College of Sport Science and the American College of Sports Medicine. *Med Sci Sports Exerc.* 2013;45(1):186–205. doi:10.1249/MSS.0b013e318279a10a
 68. Mujika I, Padilla S. Detraining: loss of training-induced physiological and performance adaptations. Part I: short term insufficient training stimulus. *Sports Med.* 2000;30(2):79–87. doi:10.2165/00007256-200030020-00002
+69. Plotkin D, Coleman M, Van Every D, et al. Progressive overload without progressing load? The effects of load or repetition progression on muscular adaptations. *PeerJ.* 2022;10:e14142. doi:10.7717/peerj.14142
+70. Graham T, Cleather DJ. Autoregulation by "repetitions in reserve" leads to greater improvements in strength over a 12-week training program than fixed loading. *J Strength Cond Res.* 2021;35(9):2451–2456. doi:10.1519/JSC.0000000000003164
+71. Halperin I, Malleron T, Har-Nir I, et al. Accuracy in predicting repetitions to task failure in resistance exercise: a scoping review and exploratory meta-analysis. *Sports Med.* 2022;52(2):377–390. doi:10.1007/s40279-021-01559-x
+72. Steele J, Endres A, Fisher J, Gentil P, Giessing J. Ability to predict repetitions to momentary failure is not perfectly accurate, though improves with resistance training experience. *PeerJ.* 2017;5:e4105. doi:10.7717/peerj.4105
+73. Willardson JM, Burkett LN. A comparison of 3 different rest intervals on the exercise volume completed during a workout. *J Strength Cond Res.* 2005;19(1):23–26.
+74. Bell L, Strafford BW, Coleman M, Androulakis Korakakis P, Nolan D. Integrating deloading into strength and physique sports training programmes: an international Delphi consensus approach. *Sports Med Open.* 2023;9:87. doi:10.1186/s40798-023-00633-0
+75. Sen PK. Estimates of the regression coefficient based on Kendall's tau. *J Am Stat Assoc.* 1968;63(324):1379–1389.
+76. Winter DA. *Biomechanics and Motor Control of Human Movement.* 4th ed. Wiley; 2009 (body segment parameters).
+77. Androulakis-Korakakis P, Fisher JP, Steele J. The minimum effective training dose required to increase 1RM strength in resistance-trained men: a systematic review and meta-analysis. *Sports Med.* 2020;50(4):751–765. doi:10.1007/s40279-019-01236-0
