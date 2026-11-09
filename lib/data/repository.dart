@@ -65,6 +65,26 @@ class Repository {
   void saveTemplate(WorkoutTemplate t) => _fire(_templates.doc(t.id).set(t.toMap()));
   void deleteTemplate(String id) => _fire(_templates.doc(id).delete());
 
+  /// Partial updates of several plans / programs in batches (e.g. after a language change).
+  void updateMany({
+    Map<String, Map<String, dynamic>> plans = const {},
+    Map<String, Map<String, dynamic>> templates = const {},
+    Map<String, Map<String, dynamic>> sessions = const {},
+  }) {
+    final ops = [
+      for (final e in sessions.entries) (_sessions.doc(e.key), e.value),
+      for (final e in plans.entries) (_plans.doc(e.key), e.value),
+      for (final e in templates.entries) (_templates.doc(e.key), e.value),
+    ];
+    for (var i = 0; i < ops.length; i += 400) {
+      final batch = _db.batch();
+      for (final (doc, data) in ops.skip(i).take(400)) {
+        batch.update(doc, data);
+      }
+      _fire(batch.commit());
+    }
+  }
+
   // ── Plans
   Stream<List<PlannedWorkout>> plans() => _plans.snapshots().map(
     (q) => q.docs.map((d) => PlannedWorkout.fromMap(d.id, d.data())).toList()..sort((a, b) => a.date.compareTo(b.date)),

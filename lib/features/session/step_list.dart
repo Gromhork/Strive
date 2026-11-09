@@ -160,7 +160,12 @@ class StepList extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${s.isWork ? '' : '${stepTitle(l, steps, index, sport: sport)} · '}${stepAmount(s, units, sport)} · ${zoneLabel(l, s.zone, sport: sport)}',
+                    () {
+                      final title = s.isWork ? null : stepTitle(l, steps, index, sport: sport);
+                      final zone = zoneLabel(l, s.zone, sport: sport);
+                      // "Recovery · 1:30 · Recovery" → "Recovery · 1:30".
+                      return [if (title != null) title, stepAmount(s, units, sport), if (zone != title) zone].join(' · ');
+                    }(),
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: dense ? 13 : 14),
                   ),
                   if (target.isNotEmpty) Text(target, style: t.bodySmall),

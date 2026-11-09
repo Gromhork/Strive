@@ -115,7 +115,7 @@ String stepTarget(AppLocalizations l, WorkoutStep s, Units u, Sport sport) {
   }
   if (s.powerMin != null && s.powerMax != null) parts.add('${s.powerMin}–${s.powerMax} W');
   final z = hrZoneOf(s.zone);
-  if (s.hrMin != null && s.hrMax != null) {
+  if (s.hrMin != null && s.hrMax != null && s.zone != 'REC') {
     parts.add('${z != null ? 'Z$z · ' : ''}${s.hrMin}–${s.hrMax} bpm');
   }
   return parts.join(' · ');

@@ -439,8 +439,9 @@ class PlanGenerator {
       zone: zone,
       paceMin: noPace ? null : fast,
       paceMax: noPace ? null : slow,
-      hrMin: zone == 'walk' ? null : hr.$1,
-      hrMax: zone == 'walk' ? null : hr.$2,
+      // No HR target for walks and short recovery jogs: heart rate lags far behind there.
+      hrMin: zone == 'walk' || zone == 'REC' ? null : hr.$1,
+      hrMax: zone == 'walk' || zone == 'REC' ? null : hr.$2,
       note: note,
     );
   }
