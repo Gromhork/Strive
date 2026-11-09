@@ -91,10 +91,55 @@ class AuthGate extends ConsumerWidget {
   }
 }
 
+/// Loading screen. The logo sits exactly in the screen centre on the app's dark background –
+/// the same place, size and colour as the native splash (android res/drawable/splash_logo.xml),
+/// so the hand-over from the system splash is invisible; only the name fades in below it.
 class _Splash extends StatelessWidget {
   const _Splash();
+  static const _size = 72.0;
+
   @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: StriveLogo(size: 72)));
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.bgDark,
+    body: Stack(
+      alignment: Alignment.center,
+      children: [
+        const _LogoMark(size: _size),
+        Transform.translate(
+          offset: const Offset(0, _size / 2 + _size * 0.2 + _size * 0.25),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 400),
+            builder: (_, v, child) => Opacity(opacity: v, child: child),
+            child: Text(
+              'STRIVE',
+              style: TextStyle(color: Colors.white, fontSize: _size * 0.36, fontWeight: FontWeight.w700, letterSpacing: _size * 0.08),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _LogoMark extends StatelessWidget {
+  const _LogoMark({required this.size});
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(size * 0.3),
+      gradient: const LinearGradient(
+        colors: [AppColors.gym, AppColors.brand, AppColors.swim],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    child: Icon(Icons.bolt_rounded, color: Colors.white, size: size * 0.66),
+  );
 }
 
 class StriveLogo extends StatelessWidget {
@@ -106,19 +151,7 @@ class StriveLogo extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(size * 0.3),
-            gradient: const LinearGradient(
-              colors: [AppColors.gym, AppColors.brand, AppColors.swim],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Icon(Icons.bolt_rounded, color: Colors.white, size: size * 0.66),
-        ),
+        _LogoMark(size: size),
         SizedBox(height: size * 0.2),
         Text('STRIVE', style: TextStyle(fontSize: size * 0.36, fontWeight: FontWeight.w700, letterSpacing: size * 0.08)),
       ],

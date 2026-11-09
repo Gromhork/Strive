@@ -90,7 +90,10 @@ abstract class AppLocalizations {
   ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('de'), Locale('en')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('de'),
+    Locale('en')
+  ];
 
   /// No description provided for @tagline.
   ///
@@ -6218,6 +6221,48 @@ abstract class AppLocalizations {
   /// **'Swim {swim} km · Bike {bike} km · Run {run} km'**
   String wTriLegs(String swim, String bike, String run);
 
+  /// No description provided for @editSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit workout'**
+  String get editSession;
+
+  /// No description provided for @durationHms.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (h:mm:ss)'**
+  String get durationHms;
+
+  /// No description provided for @invalidDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the duration as h:mm:ss or minutes.'**
+  String get invalidDuration;
+
+  /// No description provided for @rpeNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'not set'**
+  String get rpeNotSet;
+
+  /// No description provided for @sessionCorrected.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout updated'**
+  String get sessionCorrected;
+
+  /// No description provided for @editSessionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct wrong measurements or entries. Recorded route and splits stay as they are.'**
+  String get editSessionHint;
+
+  /// No description provided for @deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get deleted;
+
   /// No description provided for @quickMinOneDay.
   ///
   /// In en, this message translates to:
@@ -6307,18 +6352,18 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'de':
-      return AppLocalizationsDe();
-    case 'en':
-      return AppLocalizationsEn();
+    case 'de': return AppLocalizationsDe();
+    case 'en': return AppLocalizationsEn();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+    'that was used.'
   );
 }

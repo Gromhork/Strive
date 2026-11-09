@@ -12,6 +12,7 @@ import '../../providers.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
 import '../session/route_map.dart';
+import 'edit_session_page.dart';
 import '../session/session_summary_page.dart' show rpeLabel;
 
 class SessionDetailPage extends ConsumerWidget {
@@ -45,17 +46,39 @@ class SessionDetailPage extends ConsumerWidget {
             onPressed: () => SharePlus.instance.share(ShareParams(text: _shareText(context, s, u))),
           ),
           IconButton(
+            tooltip: l.editSession,
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditSessionPage(session: s))),
+          ),
+          IconButton(
             tooltip: l.delete,
             icon: const Icon(Icons.delete_outline),
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
               if (await confirm(context, l.deleteSession, ok: l.delete, danger: true)) {
                 final repo = ref.read(repoProvider)!;
                 repo.deleteSession(s.id);
                 // The planned workout it completed is open again (no dangling link).
-                for (final p in ref.read(planListProvider).where((p) => p.sessionId == s.id)) {
+                final linked = ref.read(planListProvider).where((p) => p.sessionId == s.id).toList();
+                for (final p in linked) {
                   repo.updatePlan(p.id, {'status': 'planned', 'sessionId': FieldValue.delete()});
                 }
                 if (context.mounted) Navigator.pop(context);
+                // Undo restores the session and its plan link.
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(l.deleted),
+                    action: SnackBarAction(
+                      label: l.undo,
+                      onPressed: () {
+                        repo.saveSession(s);
+                        for (final p in linked) {
+                          repo.updatePlan(p.id, {'status': 'done', 'sessionId': s.id});
+                        }
+                      },
+                    ),
+                  ),
+                );
               }
             },
           ),

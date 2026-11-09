@@ -1841,6 +1841,13 @@
       }
     }
   },
+  "editSession": "Edit workout",
+  "durationHms": "Duration (h:mm:ss)",
+  "invalidDuration": "Enter the duration as h:mm:ss or minutes.",
+  "rpeNotSet": "not set",
+  "sessionCorrected": "Workout updated",
+  "editSessionHint": "Correct wrong measurements or entries. Recorded route and splits stay as they are.",
+  "deleted": "Deleted",
   "quickMinOneDay": "Choose at least one training day",
   "quickDaysCapped": "Your plan uses {n} of your {total} days – the others stay rest days so you recover between sessions.",
   "@quickDaysCapped": {

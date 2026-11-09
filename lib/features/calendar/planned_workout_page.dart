@@ -10,6 +10,7 @@ import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart';
+import '../session/manual_entry_page.dart';
 import '../session/start_helpers.dart';
 import '../session/step_list.dart';
 import '../session/zone_info.dart' show ZoneInfoButton;
@@ -44,7 +45,15 @@ class PlannedWorkoutPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(DateFormat.MMMEd(context.localeName).format(p.date)),
-        actions: [IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => showPlanEditor(context, ref, existing: p))],
+        actions: [
+          if (!p.isDone)
+            IconButton(
+              tooltip: l.logManually,
+              icon: const Icon(Icons.playlist_add_check_rounded),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ManualEntryPage(plan: p))),
+            ),
+          IconButton(tooltip: l.edit, icon: const Icon(Icons.edit_outlined), onPressed: () => showPlanEditor(context, ref, existing: p)),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
