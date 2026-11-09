@@ -9,6 +9,7 @@ import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/plan_recalibrate.dart';
+import '../../services/zones.dart' show fmtPace;
 import '../../widgets/common.dart';
 
 /// "Re-plan & recalibrate": computes the proposal for the next two weeks and shows it as
@@ -34,7 +35,11 @@ Future<void> showRecalibration(BuildContext context, WidgetRef ref) {
             final repo = ref.read(repoProvider)!;
             // Only planned workouts of the coming days are in [updates] – done ones stay untouched.
             if (r.updates.isNotEmpty) repo.updateMany(plans: r.updates);
-            if (r.raceTimes != null) repo.saveProfile(profile.copyWith(athlete: profile.athlete.merge({'raceTimes': r.raceTimes})));
+            if (r.raceTimes != null || r.athlete.isNotEmpty) {
+              repo.saveProfile(
+                profile.copyWith(athlete: profile.athlete.merge({if (r.raceTimes != null) 'raceTimes': r.raceTimes, ...r.athlete})),
+              );
+            }
             Navigator.pop(sheet);
             toast(context, context.l10n.recalApplied);
           },
@@ -56,7 +61,18 @@ class RecalibrationSheet extends StatelessWidget {
     RecalReason.missedKey => l.recalWhyMissed,
     RecalReason.fasterRuns => l.recalWhyFaster(s.oldVdot.toStringAsFixed(1), (s.newVdot ?? s.oldVdot).toStringAsFixed(1)),
     RecalReason.slowerRuns => l.recalWhySlower(s.oldVdot.toStringAsFixed(1), (s.newVdot ?? s.oldVdot).toStringAsFixed(1)),
+    RecalReason.runTrendSlower => l.recalWhyRunTrendSlower(s.oldVdot.toStringAsFixed(1), (s.newVdot ?? s.oldVdot).toStringAsFixed(1)),
+    RecalReason.runTrendFaster => l.recalWhyRunTrendFaster(s.oldVdot.toStringAsFixed(1), (s.newVdot ?? s.oldVdot).toStringAsFixed(1)),
+    RecalReason.ftpUp => l.recalWhyFtpUp('${s.oldFtp ?? ''}', '${s.newFtp ?? ''}'),
+    RecalReason.ftpDown => l.recalWhyFtpDown('${s.oldFtp ?? ''}', '${s.newFtp ?? ''}'),
+    RecalReason.cssFaster => l.recalWhyCssFaster(fmtPace(s.oldCss ?? 0), fmtPace(s.newCss ?? s.oldCss ?? 0)),
+    RecalReason.cssSlower => l.recalWhyCssSlower(fmtPace(s.oldCss ?? 0), fmtPace(s.newCss ?? s.oldCss ?? 0)),
+    RecalReason.aerobicUp => l.recalWhyAerobicUp((_ef(s) * 100).round().abs()),
+    RecalReason.aerobicDown => l.recalWhyAerobicDown((_ef(s) * 100).round().abs()),
   };
+
+  /// Largest change of the aerobic efficiency factor (any sport).
+  static double _ef(RecalStats s) => s.efficiency.values.fold<double>(0, (x, v) => v.abs() > x.abs() ? v : x);
 
   static (IconData, Color, String) kindStyle(AppLocalizations l, RecalKind k) => switch (k) {
     RecalKind.easier => (Icons.trending_down_rounded, AppColors.success, l.recalEasier),
@@ -95,7 +111,8 @@ class RecalibrationSheet extends StatelessWidget {
                   if (r.reasons.isEmpty) _Bullet(icon: Icons.check_circle_rounded, color: AppColors.success, text: l.recalOnTrack),
                   for (final reason in r.reasons)
                     _Bullet(icon: Icons.insights_rounded, color: AppColors.brand, text: _reason(l, reason, r.stats)),
-                  if (r.stats.rated == 0) _Bullet(icon: Icons.lightbulb_outline_rounded, color: AppColors.warning, text: l.recalNoRpe),
+                  if (r.stats.rated == 0 && r.stats.estimated == 0)
+                    _Bullet(icon: Icons.lightbulb_outline_rounded, color: AppColors.warning, text: l.recalNoRpe),
                   if (n > 0) ...[
                     const SizedBox(height: 14),
                     Text(l.recalChanges, style: const TextStyle(fontWeight: FontWeight.w700)),
