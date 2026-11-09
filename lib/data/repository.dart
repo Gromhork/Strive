@@ -15,7 +15,8 @@ class Repository {
   Repository(this.uid);
   final String uid;
 
-  final _db = FirebaseFirestore.instance;
+  // Lazy, so a test double (subclass) can be created without Firebase.
+  late final _db = FirebaseFirestore.instance;
 
   DocumentReference<Map<String, dynamic>> get _user => _db.collection('users').doc(uid);
   CollectionReference<Map<String, dynamic>> get _sessions => _user.collection('sessions');

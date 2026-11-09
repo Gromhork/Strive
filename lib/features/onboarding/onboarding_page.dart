@@ -61,16 +61,42 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   void initState() {
     super.initState();
-    p =
-        ref.read(profileProvider).value ??
-        UserProfile(name: FirebaseAuth.instance.currentUser?.displayName ?? '', birthYear: DateTime.now().year - 28);
+    p = ref.read(profileProvider).value ?? UserProfile(name: _accountName(), birthYear: DateTime.now().year - 28);
     a = p.athlete;
     _name.text = p.name;
     _imperial = p.imperial;
     _generatePlan = widget.mode != SetupMode.profile;
   }
 
+  /// Display name of the signed-in account (empty without Firebase, e.g. in tests).
+  static String _accountName() {
+    try {
+      return FirebaseAuth.instance.currentUser?.displayName ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
   bool get _advanced => a.setupMode == 'advanced';
+
+  /// The profile as edited so far ([p] holds the personal data, [a] the athlete data).
+  UserProfile get _profile => p.copyWith(athlete: a);
+
+  /// The quick setup's view of the profile: one session a day, no detailed day plan –
+  /// exactly what the plan generator uses for it.
+  UserProfile get _quickProfile => p.copyWith(athlete: a.merge({'setupMode': 'simple', 'sessionsPerDay': 1}));
+
+  /// Detailed setup: a day plan without one of the focus sports (e.g. derived while the
+  /// focus was still "strength", or after switching to triathlon) is derived anew.
+  void _syncDayPlan() {
+    if (!_advanced) return;
+    final sports = _sports;
+    final plan = [for (final v in a.dayPlan.values) ...v.where(sports.contains)];
+    if (p.focus.sports.any((s) => !plan.contains(s))) _setA({'dayPlan': PlanGenerator.deriveSchedule(_profile)});
+  }
+
+  /// Sets the long-session day ([d] null = automatic).
+  void _setLongDay(int? d) => setState(() => p = UserProfile.fromMap({...p.toMap(), 'longDay': d}));
   Set<Sport> get _sports => {...p.focus.sports, if (p.goals.contains('strength') || p.goals.contains('muscle')) Sport.gym};
 
   void _setA(Map<String, dynamic> changes) => setState(() => a = a.merge(changes));
@@ -89,7 +115,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       if (plan && _advanced && _sports.contains(Sport.ride)) ('ride', _cycling),
       if (plan && _advanced && _sports.contains(Sport.swim)) ('swim', _swimming),
       if (plan && _sports.contains(Sport.gym)) ('gym', _strength),
-      if ((profile && _advanced) || widget.mode == SetupMode.profile) ('health', _health),
+      // Health limitations shape the plan (less impact, intensity caps) – asked in both setups.
+      if (profile) ('health', _health),
       if (plan) ('event', _event),
       if (plan) ('plan', _plan),
     ];
@@ -114,17 +141,34 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     a = a.merge({
       'dayPlan': {for (final e in a.dayPlan.entries) e.key: e.value.where(sports.contains).toList()},
     });
-    var days = p.trainingDays;
+    var days = [
+      ...(p.trainingDays.isEmpty ? const [1, 3, 5] : p.trainingDays),
+    ]..sort();
+    var longDays = days; // days that can hold the long endurance session
     if (_advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) {
       days = (a.dayPlan.entries.where((e) => e.value.isNotEmpty).map((e) => e.key).toList()..sort());
+      longDays = [
+        for (final e in a.dayPlan.entries)
+          if (e.value.any((s) => s != Sport.gym)) e.key,
+      ];
+    } else if (widget.mode != SetupMode.profile) {
+      // Quick setup: the generator derives the week from the training days – a day plan
+      // left over from an earlier detailed setup must not override the days just chosen.
+      a = a.merge({'dayPlan': <int, List<Sport>>{}, 'sessionsPerDay': 1});
     }
-    final profile = p.copyWith(
-      name: _name.text.trim().isEmpty ? p.name : _name.text.trim(),
-      imperial: _imperial,
-      onboarded: true,
-      athlete: a,
-      trainingDays: days,
-    );
+    final profile = UserProfile.fromMap({
+      ...p
+          .copyWith(
+            name: _name.text.trim().isEmpty ? p.name : _name.text.trim(),
+            imperial: _imperial,
+            onboarded: true,
+            athlete: a,
+            trainingDays: days,
+          )
+          .toMap(),
+      // A long day that is no longer a training day would be silently ignored – store "automatic".
+      'longDay': longDays.contains(p.longDay) ? p.longDay : null,
+    });
     repo.saveProfile(profile);
     final now = DateTime.now();
 
@@ -179,6 +223,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    // Keep programs and plans loaded: finishing the setup reads them (built-in programs
+    // are only added when missing, old planned workouts are replaced).
+    ref.watch(templateListProvider);
+    ref.watch(planListProvider);
     final steps = _steps;
     final last = _page == steps.length - 1;
     return Scaffold(
@@ -375,7 +423,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         badge: l.recommended,
         onTap: () {
           _setA({'setupMode': 'advanced'});
-          if (a.dayPlan.values.every((v) => v.isEmpty)) _setA({'dayPlan': PlanGenerator.deriveSchedule(p)});
+          if (a.dayPlan.values.every((v) => v.isEmpty)) _setA({'dayPlan': PlanGenerator.deriveSchedule(_profile)});
         },
       ),
     ],
@@ -532,7 +580,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             value: a.setupMode,
             onChanged: (v) {
               _setA({'setupMode': v});
-              if (v == 'advanced' && a.dayPlan.values.every((x) => x.isEmpty)) _setA({'dayPlan': PlanGenerator.deriveSchedule(p)});
+              if (v == 'advanced' && a.dayPlan.values.every((x) => x.isEmpty)) _setA({'dayPlan': PlanGenerator.deriveSchedule(_profile)});
+              _syncDayPlan();
             },
           ),
           const SizedBox(height: 20),
@@ -548,7 +597,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             for (final f in TrainingFocus.values)
               InkWell(
                 borderRadius: BorderRadius.circular(16),
-                onTap: () => setState(() => p = p.copyWith(focus: f)),
+                onTap: () {
+                  setState(() => p = p.copyWith(focus: f));
+                  _syncDayPlan();
+                },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   decoration: BoxDecoration(
@@ -580,12 +632,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               FilterChip(
                 label: Text(g.value),
                 selected: p.goals.contains(g.key),
-                onSelected:
-                    (v) => setState(() {
-                      final list = [...p.goals];
-                      v ? list.add(g.key) : list.remove(g.key);
-                      p = p.copyWith(goals: list);
-                    }),
+                onSelected: (v) {
+                  setState(() {
+                    final list = [...p.goals];
+                    v ? list.add(g.key) : list.remove(g.key);
+                    p = p.copyWith(goals: list);
+                  });
+                  _syncDayPlan();
+                },
               ),
           ],
         ),
@@ -596,10 +650,26 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   String _dayName(int d) => DateFormat.E(context.localeName).format(startOfWeek(DateTime.now()).add(Duration(days: d - 1)));
 
   /// Quick setup: training days + long day + time + units.
+  ///
+  /// Shows the week the plan will really use (one session a day, beginners keep rest days,
+  /// strength days for a strength goal), so the chosen days and the plan never disagree.
   Widget _schedule(AppLocalizations l) {
-    final adv = ScheduleAdvisor(p, _sports);
-    final freq = adv.recommended();
-    final recDays = adv.autoSchedule(freq).keys.toList()..sort();
+    final quick = _quickProfile;
+    final adv = ScheduleAdvisor(quick, _sports);
+    final recPlan = adv.autoSchedule(adv.recommended());
+    final recDays = recPlan.keys.toList()..sort();
+    // The advisor puts the long session on the preferred day (default Saturday).
+    final recLong = recDays.contains(p.longDay ?? 6) ? (p.longDay ?? 6) : null;
+    final recProfile = UserProfile.fromMap({...quick.toMap(), 'trainingDays': recDays, 'longDay': recLong});
+    final recWeek = PlanGenerator.scheduleOf(recProfile).values.expand((v) => v);
+    final freq = {
+      for (final s in Sport.values)
+        if (recWeek.contains(s)) s: recWeek.where((x) => x == s).length,
+    };
+    final week = PlanGenerator.scheduleOf(quick);
+    final used = week.keys.toList()..sort();
+    final chosen = [...p.trainingDays]..sort();
+    final outline = Theme.of(context).colorScheme.outline;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -608,8 +678,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           freq: freq,
           title: l.recDays(recDays.length),
           action: l.recAutoDays,
-          applied: _listEq(recDays, [...p.trainingDays]..sort()),
-          onApply: () => setState(() => p = p.copyWith(trainingDays: recDays)),
+          applied: _listEq(recDays, chosen),
+          onApply: () => setState(() => p = UserProfile.fromMap({...p.toMap(), 'trainingDays': recDays, 'longDay': recLong})),
         ),
         const SizedBox(height: 14),
         Row(
@@ -619,34 +689,73 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: _DayChip(
+                    key: ValueKey('day$d'),
                     label: _dayName(d),
-                    selected: p.trainingDays.contains(d),
-                    onTap:
-                        () => setState(() {
-                          final days = [...p.trainingDays];
-                          days.contains(d) ? days.remove(d) : days.add(d);
-                          days.sort();
-                          p = p.copyWith(trainingDays: days);
-                        }),
+                    selected: chosen.contains(d),
+                    onTap: () {
+                      final days = [...p.trainingDays];
+                      if (days.contains(d)) {
+                        // At least one training day – an empty week would silently become Mon/Wed/Fri.
+                        if (days.length <= 1) {
+                          toast(context, l.quickMinOneDay);
+                          return;
+                        }
+                        days.remove(d);
+                      } else {
+                        days.add(d);
+                      }
+                      days.sort();
+                      // A long day that is no longer a training day goes back to "automatic".
+                      setState(
+                        () => p = UserProfile.fromMap({...p.toMap(), 'trainingDays': days, if (!days.contains(p.longDay)) 'longDay': null}),
+                      );
+                    },
                   ),
                 ),
               ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(l.daysPerWeek(p.trainingDays.length), style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 6),
+        // The plan's week: sport per day; chosen days the plan keeps free are marked as rest.
+        Row(
+          children: [
+            for (var d = 1; d <= 7; d++)
+              Expanded(
+                child: SizedBox(
+                  key: ValueKey('use$d'),
+                  height: 22,
+                  child: Center(
+                    child:
+                        week[d] != null
+                            ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [for (final s in week[d]!) Icon(s.icon, size: 16, color: s.color)],
+                            )
+                            : (chosen.contains(d) ? Icon(Icons.bedtime_outlined, size: 16, color: outline) : null),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          used.length < chosen.length ? l.quickDaysCapped(used.length, chosen.length) : l.daysPerWeek(used.length),
+          key: const ValueKey('daysHint'),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         if (p.focus != TrainingFocus.gym) ...[
           _label(l.longSessionDay),
           DropdownButtonFormField<int?>(
-            value: p.trainingDays.contains(p.longDay) ? p.longDay : null,
+            key: const ValueKey('longDay'),
+            value: chosen.contains(p.longDay) ? p.longDay : null,
             items: [
               DropdownMenuItem(value: null, child: Text(l.automatic)),
-              for (final d in p.trainingDays) DropdownMenuItem(value: d, child: Text(_dayName(d))),
+              for (final d in chosen) DropdownMenuItem(value: d, child: Text(_dayName(d))),
             ],
-            onChanged: (v) => setState(() => p = UserProfile.fromMap({...p.toMap(), 'longDay': v})),
+            onChanged: _setLongDay,
           ),
         ],
-        _timeSection(l, days: p.trainingDays),
+        _timeSection(l, days: used),
         if (widget.mode == SetupMode.setup) ...[_label(l.units), _unitsSwitch(l)],
       ],
     );
@@ -656,7 +765,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   /// Max. training time per day (global) with optional per-day overrides.
   Widget _timeSection(AppLocalizations l, {required List<int> days}) {
-    final profile = p.copyWith(athlete: a);
+    final profile = _advanced ? _profile : _quickProfile;
     final longDay = PlanGenerator.longDayOf(profile);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -742,7 +851,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _h(l.weekPlanTitle, l.weekPlanSub, icon: Icons.view_week_rounded),
         Builder(
           builder: (_) {
-            final adv = ScheduleAdvisor(p.copyWith(athlete: a), _sports);
+            final adv = ScheduleAdvisor(_profile, _sports);
             final freq = adv.recommended();
             return _RecommendationCard(
               freq: freq,
@@ -753,11 +862,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               onApply: () {
                 final plan = adv.autoSchedule(freq);
                 final ld = plan.entries.where((e) => e.value.any((s) => s != Sport.gym)).map((e) => e.key).toList()..sort();
-                setState(() {
-                  if (ld.isNotEmpty && !ld.contains(p.longDay)) {
-                    p = UserProfile.fromMap({...p.toMap(), 'longDay': ld.contains(6) ? 6 : ld.last});
-                  }
-                });
+                if (ld.isNotEmpty && !ld.contains(p.longDay)) _setLongDay(ld.contains(6) ? 6 : ld.last);
                 _setA({'dayPlan': plan});
                 toast(context, l.recApplied);
               },
@@ -814,7 +919,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                               p.longDay == d ? Icons.star_rounded : Icons.star_outline_rounded,
                               color: p.longDay == d ? AppColors.brand : Theme.of(context).colorScheme.outline,
                             ),
-                            onPressed: () => setState(() => p = UserProfile.fromMap({...p.toMap(), 'longDay': d})),
+                            onPressed: () => _setLongDay(d),
                           )
                           : null,
                 ),
@@ -1065,15 +1170,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   /// Gym days in the current schedule (week plan or quick training days).
-  int get _gymDays {
-    if (_advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) return a.dayPlan.values.where((v) => v.contains(Sport.gym)).length;
-    return PlanGenerator.deriveSchedule(p).values.where((v) => v.contains(Sport.gym)).length;
-  }
+  Map<int, List<Sport>> get _week => PlanGenerator.scheduleOf(_advanced ? _profile : _quickProfile);
 
-  int get _enduranceSessions {
-    final plan = _advanced && a.dayPlan.values.any((v) => v.isNotEmpty) ? a.dayPlan : PlanGenerator.deriveSchedule(p);
-    return plan.values.expand((v) => v).where((s) => s != Sport.gym).length;
-  }
+  int get _gymDays => _week.values.where((v) => v.contains(Sport.gym)).length;
+
+  int get _enduranceSessions => _week.values.expand((v) => v).where((s) => s != Sport.gym).length;
 
   String _splitName(AppLocalizations l, String s) => switch (s) {
     'fullbody' => l.splitFullbody,
@@ -1497,7 +1598,7 @@ class _RecommendationCard extends StatelessWidget {
 
 /// Weekday toggle for the quick setup.
 class _DayChip extends StatelessWidget {
-  const _DayChip({required this.label, required this.selected, required this.onTap});
+  const _DayChip({super.key, required this.label, required this.selected, required this.onTap});
   final String label;
   final bool selected;
   final VoidCallback onTap;

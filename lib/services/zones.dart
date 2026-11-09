@@ -97,6 +97,9 @@ class HrZones {
 
   static int tanaka(int age) => (208 - 0.7 * age).round();
 
+  /// HRmax prediction for women (Gulati 2010, St. James Women Take Heart Project).
+  static int gulati(int age) => (206 - 0.88 * age).round();
+
   static const _pct = [0.55, 0.72, 0.82, 0.87, 0.92, 1.0];
   static const _hrr = [0.40, 0.60, 0.72, 0.80, 0.88, 1.0];
 

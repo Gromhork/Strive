@@ -6364,6 +6364,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'total'**
   String get loadTotal;
+
+  /// No description provided for @quickMinOneDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one training day'**
+  String get quickMinOneDay;
+
+  /// No description provided for @quickDaysCapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan uses {n} of your {total} days – the others stay rest days so you recover between sessions.'**
+  String quickDaysCapped(int n, int total);
+
+  /// No description provided for @wCrossRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy ride instead of a run'**
+  String get wCrossRide;
+
+  /// No description provided for @wCrossRideDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Same aerobic training without impact – easier on knees, hips and Achilles tendons. Bike or indoor trainer at a conversational effort.'**
+  String get wCrossRideDesc;
+
+  /// No description provided for @healthRunNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Joints: prefer soft surfaces; stop if pain goes above 3/10 or changes your stride.'**
+  String get healthRunNote;
+
+  /// No description provided for @healthHeartNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart / blood pressure: intensity capped at threshold – no all-out efforts.'**
+  String get healthHeartNote;
+
+  /// No description provided for @healthSwimShoulderNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulder: no paddles, breathe to both sides, stop if it hurts.'**
+  String get healthSwimShoulderNote;
+
+  /// No description provided for @healthGymBackNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Back: no heavy axial loading – swap back squats and deadlifts for leg press, split squats or hip thrusts; keep a neutral spine.'**
+  String get healthGymBackNote;
+
+  /// No description provided for @healthGymShoulderNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulder: no heavy overhead pressing – use landmine or neutral-grip variants and stay pain-free.'**
+  String get healthGymShoulderNote;
+
+  /// No description provided for @healthGymJointNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Joints: train in a pain-free range – reduce depth or load if knee or hip hurt.'**
+  String get healthGymJointNote;
+
+  /// No description provided for @healthGymHeartNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.'**
+  String get healthGymHeartNote;
+
+  /// No description provided for @recalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusted to your recent training (effort and completed sessions).'**
+  String get recalNote;
+
+  /// No description provided for @recalButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-plan & recalibrate'**
+  String get recalButton;
+
+  /// No description provided for @recalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-plan & recalibrate'**
+  String get recalTitle;
+
+  /// No description provided for @recalIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Your next two weeks, adapted to the last two: effort (RPE), completed and missed sessions, new best efforts. Completed workouts stay as they are.'**
+  String get recalIntro;
+
+  /// No description provided for @recalFindings.
+  ///
+  /// In en, this message translates to:
+  /// **'What we see'**
+  String get recalFindings;
+
+  /// No description provided for @recalChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed changes'**
+  String get recalChanges;
+
+  /// No description provided for @recalWhyRpeHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Several sessions felt harder than planned – more recovery first.'**
+  String get recalWhyRpeHigh;
+
+  /// No description provided for @recalWhyRpeLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quality sessions felt easy – a little more volume.'**
+  String get recalWhyRpeLow;
+
+  /// No description provided for @recalWhyCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct} % of the planned training done – no increase for now, a bit less volume.'**
+  String recalWhyCompletion(int pct);
+
+  /// No description provided for @recalWhyCutShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} sessions ended early – long sessions get shorter.'**
+  String recalWhyCutShort(int n);
+
+  /// No description provided for @recalWhyMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed key sessions move to a free day this week.'**
+  String get recalWhyMissed;
+
+  /// No description provided for @recalWhyFaster.
+  ///
+  /// In en, this message translates to:
+  /// **'New best effort: running fitness (VDOT) {from} → {to} – paces updated.'**
+  String recalWhyFaster(String from, String to);
+
+  /// No description provided for @recalWhySlower.
+  ///
+  /// In en, this message translates to:
+  /// **'Your real running fitness (VDOT {to}) differs from the estimate ({from}) – paces updated.'**
+  String recalWhySlower(String to, String from);
+
+  /// No description provided for @recalOnTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'You are on track – the plan fits your training. Nothing to change.'**
+  String get recalOnTrack;
+
+  /// No description provided for @recalNoRpe.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: rate your effort (RPE) after workouts – the plan can then adapt to how they felt.'**
+  String get recalNoRpe;
+
+  /// No description provided for @recalEasier.
+  ///
+  /// In en, this message translates to:
+  /// **'Easier'**
+  String get recalEasier;
+
+  /// No description provided for @recalHarder.
+  ///
+  /// In en, this message translates to:
+  /// **'A bit more'**
+  String get recalHarder;
+
+  /// No description provided for @recalToEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy instead of hard'**
+  String get recalToEasy;
+
+  /// No description provided for @recalMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved'**
+  String get recalMoved;
+
+  /// No description provided for @recalDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'Dropped'**
+  String get recalDropped;
+
+  /// No description provided for @recalPaces.
+  ///
+  /// In en, this message translates to:
+  /// **'New paces'**
+  String get recalPaces;
+
+  /// No description provided for @recalApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply {n} changes'**
+  String recalApply(int n);
+
+  /// No description provided for @recalApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan recalibrated'**
+  String get recalApplied;
+
+  /// No description provided for @recalNewPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new plan'**
+  String get recalNewPlan;
+
+  /// No description provided for @recalMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get recalMore;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

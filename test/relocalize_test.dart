@@ -22,8 +22,15 @@ void main() {
     final de = lang == 'de';
     final templates = defaultTemplates(() => 't${n++}', de: de);
     final hybrid = UserProfile(level: 'intermediate', focus: TrainingFocus.hybrid, trainingDays: const [1, 2, 3, 5, 6, 7], longDay: 6);
+    // Health limitations add note lines and swap sessions (easy ride instead of a run).
+    final limited = profile().copyWith(
+      athlete: profile().athlete.merge({
+        'limitations': ['knee', 'shoulder', 'heart'],
+      }),
+    );
+    final limitedGym = hybrid.copyWith(athlete: const AthleteData(limitations: ['back', 'hip', 'heart', 'shoulder']));
     return [
-      for (final p in [profile(), hybrid])
+      for (final p in [profile(), hybrid, limited, limitedGym])
         ...PlanGenerator(
           lookupAppLocalizations(Locale(lang)),
           p,

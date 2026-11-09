@@ -1898,5 +1898,92 @@
   "loadSrcStall": "no progress for 3 workouts – a bit lighter, then build up again",
   "loadSrcIncreaseBw": "all reps done – add a little weight (belt or vest)",
   "loadSrcMoreReps": "all reps done – go for more reps",
-  "loadTotal": "total"
+  "loadTotal": "total",
+  "quickMinOneDay": "Choose at least one training day",
+  "quickDaysCapped": "Your plan uses {n} of your {total} days – the others stay rest days so you recover between sessions.",
+  "@quickDaysCapped": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "wCrossRide": "Easy ride instead of a run",
+  "wCrossRideDesc": "Same aerobic training without impact – easier on knees, hips and Achilles tendons. Bike or indoor trainer at a conversational effort.",
+  "healthRunNote": "Joints: prefer soft surfaces; stop if pain goes above 3/10 or changes your stride.",
+  "healthHeartNote": "Heart / blood pressure: intensity capped at threshold – no all-out efforts.",
+  "healthSwimShoulderNote": "Shoulder: no paddles, breathe to both sides, stop if it hurts.",
+  "healthGymBackNote": "Back: no heavy axial loading – swap back squats and deadlifts for leg press, split squats or hip thrusts; keep a neutral spine.",
+  "healthGymShoulderNote": "Shoulder: no heavy overhead pressing – use landmine or neutral-grip variants and stay pain-free.",
+  "healthGymJointNote": "Joints: train in a pain-free range – reduce depth or load if knee or hip hurt.",
+  "healthGymHeartNote": "Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.",
+  "recalNote": "Adjusted to your recent training (effort and completed sessions).",
+  "recalButton": "Re-plan & recalibrate",
+  "recalTitle": "Re-plan & recalibrate",
+  "recalIntro": "Your next two weeks, adapted to the last two: effort (RPE), completed and missed sessions, new best efforts. Completed workouts stay as they are.",
+  "recalFindings": "What we see",
+  "recalChanges": "Proposed changes",
+  "recalWhyRpeHigh": "Several sessions felt harder than planned – more recovery first.",
+  "recalWhyRpeLow": "Your quality sessions felt easy – a little more volume.",
+  "recalWhyCompletion": "{pct} % of the planned training done – no increase for now, a bit less volume.",
+  "@recalWhyCompletion": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "recalWhyCutShort": "{n} sessions ended early – long sessions get shorter.",
+  "@recalWhyCutShort": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recalWhyMissed": "Missed key sessions move to a free day this week.",
+  "recalWhyFaster": "New best effort: running fitness (VDOT) {from} → {to} – paces updated.",
+  "@recalWhyFaster": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "recalWhySlower": "Your real running fitness (VDOT {to}) differs from the estimate ({from}) – paces updated.",
+  "@recalWhySlower": {
+    "placeholders": {
+      "to": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      }
+    }
+  },
+  "recalOnTrack": "You are on track – the plan fits your training. Nothing to change.",
+  "recalNoRpe": "Tip: rate your effort (RPE) after workouts – the plan can then adapt to how they felt.",
+  "recalEasier": "Easier",
+  "recalHarder": "A bit more",
+  "recalToEasy": "Easy instead of hard",
+  "recalMoved": "Moved",
+  "recalDropped": "Dropped",
+  "recalPaces": "New paces",
+  "recalApply": "Apply {n} changes",
+  "@recalApply": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recalApplied": "Plan recalibrated",
+  "recalNewPlan": "Create a new plan",
+  "recalMore": "More"
 }

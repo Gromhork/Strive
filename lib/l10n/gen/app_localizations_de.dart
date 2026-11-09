@@ -3368,4 +3368,124 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get loadTotal => 'gesamt';
+
+  @override
+  String get quickMinOneDay => 'Wähle mindestens einen Trainingstag';
+
+  @override
+  String quickDaysCapped(int n, int total) {
+    return 'Dein Plan nutzt $n deiner $total Tage – die übrigen bleiben Ruhetage, damit du dich zwischen den Einheiten erholst.';
+  }
+
+  @override
+  String get wCrossRide => 'Lockere Radeinheit statt Lauf';
+
+  @override
+  String get wCrossRideDesc => 'Gleicher Ausdauerreiz ohne Stoßbelastung – schont Knie, Hüfte und Achillessehne. Rad oder Rollentrainer im Plaudertempo.';
+
+  @override
+  String get healthRunNote => 'Gelenke: möglichst weicher Untergrund; abbrechen, wenn der Schmerz über 3/10 steigt oder den Laufstil verändert.';
+
+  @override
+  String get healthHeartNote => 'Herz / Blutdruck: Intensität bis zur Schwelle begrenzt – keine Maximalbelastungen.';
+
+  @override
+  String get healthSwimShoulderNote => 'Schulter: keine Paddles, beidseitig atmen, bei Schmerzen abbrechen.';
+
+  @override
+  String get healthGymBackNote => 'Rücken: keine schwere axiale Last – Kniebeugen und Kreuzheben durch Beinpresse, Split Squats oder Hip Thrusts ersetzen; neutrale Wirbelsäule.';
+
+  @override
+  String get healthGymShoulderNote => 'Schulter: kein schweres Drücken über Kopf – Landmine- oder Neutralgriff-Varianten, schmerzfrei bleiben.';
+
+  @override
+  String get healthGymJointNote => 'Gelenke: im schmerzfreien Bewegungsumfang trainieren – Tiefe oder Last reduzieren, wenn Knie oder Hüfte schmerzen.';
+
+  @override
+  String get healthGymHeartNote => 'Herz / Blutdruck: 2–3 Wiederholungen Reserve lassen und bei der Anstrengung ausatmen – kein Pressen, keine Pressatmung.';
+
+  @override
+  String get recalNote => 'An dein bisheriges Training angepasst (Anstrengung und erledigte Einheiten).';
+
+  @override
+  String get recalButton => 'Neu planen & rekalibrieren';
+
+  @override
+  String get recalTitle => 'Neu planen & rekalibrieren';
+
+  @override
+  String get recalIntro => 'Deine nächsten zwei Wochen, angepasst an die letzten zwei: Anstrengung (RPE), erledigte und verpasste Einheiten, neue Bestleistungen. Erledigte Einheiten bleiben unverändert.';
+
+  @override
+  String get recalFindings => 'Was wir sehen';
+
+  @override
+  String get recalChanges => 'Vorgeschlagene Änderungen';
+
+  @override
+  String get recalWhyRpeHigh => 'Mehrere Einheiten waren anstrengender als geplant – erst mehr Erholung.';
+
+  @override
+  String get recalWhyRpeLow => 'Deine harten Einheiten fielen dir leicht – etwas mehr Umfang.';
+
+  @override
+  String recalWhyCompletion(int pct) {
+    return '$pct % des geplanten Trainings erledigt – vorerst keine Steigerung, etwas weniger Umfang.';
+  }
+
+  @override
+  String recalWhyCutShort(int n) {
+    return '$n Einheiten früher beendet – lange Einheiten werden kürzer.';
+  }
+
+  @override
+  String get recalWhyMissed => 'Verpasste Schlüsseleinheiten wandern auf einen freien Tag dieser Woche.';
+
+  @override
+  String recalWhyFaster(String from, String to) {
+    return 'Neue Bestleistung: Laufform (VDOT) $from → $to – Pace-Vorgaben angepasst.';
+  }
+
+  @override
+  String recalWhySlower(String to, String from) {
+    return 'Deine echte Laufform (VDOT $to) weicht von der Schätzung ($from) ab – Pace-Vorgaben angepasst.';
+  }
+
+  @override
+  String get recalOnTrack => 'Du bist im Plan – er passt zu deinem Training. Nichts zu ändern.';
+
+  @override
+  String get recalNoRpe => 'Tipp: Bewerte nach dem Training deine Anstrengung (RPE) – dann passt sich der Plan an dein Empfinden an.';
+
+  @override
+  String get recalEasier => 'Leichter';
+
+  @override
+  String get recalHarder => 'Etwas mehr';
+
+  @override
+  String get recalToEasy => 'Locker statt hart';
+
+  @override
+  String get recalMoved => 'Verschoben';
+
+  @override
+  String get recalDropped => 'Entfällt';
+
+  @override
+  String get recalPaces => 'Neue Pace';
+
+  @override
+  String recalApply(int n) {
+    return '$n Änderungen übernehmen';
+  }
+
+  @override
+  String get recalApplied => 'Plan rekalibriert';
+
+  @override
+  String get recalNewPlan => 'Neuen Plan erstellen';
+
+  @override
+  String get recalMore => 'Mehr';
 }

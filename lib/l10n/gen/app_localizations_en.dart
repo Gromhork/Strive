@@ -3368,4 +3368,124 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loadTotal => 'total';
+
+  @override
+  String get quickMinOneDay => 'Choose at least one training day';
+
+  @override
+  String quickDaysCapped(int n, int total) {
+    return 'Your plan uses $n of your $total days – the others stay rest days so you recover between sessions.';
+  }
+
+  @override
+  String get wCrossRide => 'Easy ride instead of a run';
+
+  @override
+  String get wCrossRideDesc => 'Same aerobic training without impact – easier on knees, hips and Achilles tendons. Bike or indoor trainer at a conversational effort.';
+
+  @override
+  String get healthRunNote => 'Joints: prefer soft surfaces; stop if pain goes above 3/10 or changes your stride.';
+
+  @override
+  String get healthHeartNote => 'Heart / blood pressure: intensity capped at threshold – no all-out efforts.';
+
+  @override
+  String get healthSwimShoulderNote => 'Shoulder: no paddles, breathe to both sides, stop if it hurts.';
+
+  @override
+  String get healthGymBackNote => 'Back: no heavy axial loading – swap back squats and deadlifts for leg press, split squats or hip thrusts; keep a neutral spine.';
+
+  @override
+  String get healthGymShoulderNote => 'Shoulder: no heavy overhead pressing – use landmine or neutral-grip variants and stay pain-free.';
+
+  @override
+  String get healthGymJointNote => 'Joints: train in a pain-free range – reduce depth or load if knee or hip hurt.';
+
+  @override
+  String get healthGymHeartNote => 'Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.';
+
+  @override
+  String get recalNote => 'Adjusted to your recent training (effort and completed sessions).';
+
+  @override
+  String get recalButton => 'Re-plan & recalibrate';
+
+  @override
+  String get recalTitle => 'Re-plan & recalibrate';
+
+  @override
+  String get recalIntro => 'Your next two weeks, adapted to the last two: effort (RPE), completed and missed sessions, new best efforts. Completed workouts stay as they are.';
+
+  @override
+  String get recalFindings => 'What we see';
+
+  @override
+  String get recalChanges => 'Proposed changes';
+
+  @override
+  String get recalWhyRpeHigh => 'Several sessions felt harder than planned – more recovery first.';
+
+  @override
+  String get recalWhyRpeLow => 'Your quality sessions felt easy – a little more volume.';
+
+  @override
+  String recalWhyCompletion(int pct) {
+    return '$pct % of the planned training done – no increase for now, a bit less volume.';
+  }
+
+  @override
+  String recalWhyCutShort(int n) {
+    return '$n sessions ended early – long sessions get shorter.';
+  }
+
+  @override
+  String get recalWhyMissed => 'Missed key sessions move to a free day this week.';
+
+  @override
+  String recalWhyFaster(String from, String to) {
+    return 'New best effort: running fitness (VDOT) $from → $to – paces updated.';
+  }
+
+  @override
+  String recalWhySlower(String to, String from) {
+    return 'Your real running fitness (VDOT $to) differs from the estimate ($from) – paces updated.';
+  }
+
+  @override
+  String get recalOnTrack => 'You are on track – the plan fits your training. Nothing to change.';
+
+  @override
+  String get recalNoRpe => 'Tip: rate your effort (RPE) after workouts – the plan can then adapt to how they felt.';
+
+  @override
+  String get recalEasier => 'Easier';
+
+  @override
+  String get recalHarder => 'A bit more';
+
+  @override
+  String get recalToEasy => 'Easy instead of hard';
+
+  @override
+  String get recalMoved => 'Moved';
+
+  @override
+  String get recalDropped => 'Dropped';
+
+  @override
+  String get recalPaces => 'New paces';
+
+  @override
+  String recalApply(int n) {
+    return 'Apply $n changes';
+  }
+
+  @override
+  String get recalApplied => 'Plan recalibrated';
+
+  @override
+  String get recalNewPlan => 'Create a new plan';
+
+  @override
+  String get recalMore => 'More';
 }
