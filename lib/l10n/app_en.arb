@@ -2255,5 +2255,6 @@
     }
   },
   "feasRunWalkFinish": "Finish with run/walk – race day in your plan shows the rhythm",
-  "feasPlanAnyway": "The plan is created anyway and builds up as far as is safely possible."
+  "feasPlanAnyway": "The plan is created anyway and builds up as far as is safely possible.",
+  "wGymDeloadNote2": "Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger."
 }

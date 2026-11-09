@@ -1160,5 +1160,6 @@
   "feasLaterDate": "Ein Wettkampf am {date} oder später",
   "feasShorter": "Eine kürzere Distanz: {dist}",
   "feasRunWalkFinish": "Mit Lauf-Geh-Strategie ins Ziel – der Wettkampftag im Plan zeigt den Rhythmus",
-  "feasPlanAnyway": "Der Plan wird trotzdem erstellt und baut so weit auf, wie es sicher möglich ist."
+  "feasPlanAnyway": "Der Plan wird trotzdem erstellt und baut so weit auf, wie es sicher möglich ist.",
+  "wGymDeloadNote2": "Entlastungswoche: Die Gewichte sind ca. 10 % leichter eingetragen, jede Übung behält etwa die Hälfte ihrer Arbeitssätze. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück."
 }

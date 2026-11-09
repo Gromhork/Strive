@@ -1121,4 +1121,5 @@ const l10nPairs = <(String, String)>[
   ('A shorter distance: {dist}', 'Eine kürzere Distanz: {dist}'),
   ('Finish with run/walk – race day in your plan shows the rhythm', 'Mit Lauf-Geh-Strategie ins Ziel – der Wettkampftag im Plan zeigt den Rhythmus'),
   ('The plan is created anyway and builds up as far as is safely possible.', 'Der Plan wird trotzdem erstellt und baut so weit auf, wie es sicher möglich ist.'),
+  ('Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.', 'Entlastungswoche: Die Gewichte sind ca. 10 % leichter eingetragen, jede Übung behält etwa die Hälfte ihrer Arbeitssätze. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.'),
 ];

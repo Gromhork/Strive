@@ -3772,4 +3772,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get feasPlanAnyway => 'Der Plan wird trotzdem erstellt und baut so weit auf, wie es sicher möglich ist.';
+
+  @override
+  String get wGymDeloadNote2 => 'Entlastungswoche: Die Gewichte sind ca. 10 % leichter eingetragen, jede Übung behält etwa die Hälfte ihrer Arbeitssätze. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.';
 }

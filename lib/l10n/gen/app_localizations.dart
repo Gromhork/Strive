@@ -7060,6 +7060,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The plan is created anyway and builds up as far as is safely possible.'**
   String get feasPlanAnyway;
+
+  /// No description provided for @wGymDeloadNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
+  String get wGymDeloadNote2;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

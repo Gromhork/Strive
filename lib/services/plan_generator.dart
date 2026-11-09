@@ -1517,10 +1517,10 @@ class PlanGenerator {
     final est = lighter ? estimateGymMinutes(exercises) : (t?.estimatedMinutes ?? 60);
     final minutes = deload ? (est * 0.7).round() : est;
     // Sets, rep ranges and loads are per exercise (program + exercise_class.dart +
-    // LoadPrescriber, which also applies the deload: −10 % load, one set less) – the note
+    // LoadPrescriber, which also applies the deload: −10 % load, about half the work sets) – the note
     // only states what is true for every exercise: the effort target and the progression.
     final notes = [
-      if (phase == 'taper') l.wGymTaperNote else if (deload) l.wGymDeloadNote else ...[l.wGymLoadDesc(rir), l.wGymProgressNote],
+      if (phase == 'taper') l.wGymTaperNote else if (deload) l.wGymDeloadNote2 else ...[l.wGymLoadDesc(rir), l.wGymProgressNote],
       if (endurance && role == 'nolegs' && legsInside) l.wGymConcurrentNote,
       if (lighter) l.wGymLegsHalvedNote,
       if (minutes > capMin) l.wGymTimeCapNote2(capMin),
