@@ -36,10 +36,12 @@ import 'zones.dart';
 /// 4. Too easy (≥ 2 quality sessions at RPE ≤ 4), no fatigue, completion ≥ 90 %: easy and
 ///    long sessions of loading weeks in the next 7 days +5 % (inside the 5–10 %/week
 ///    growth rule; long runs never above +10 % of the longest run of the last 30 days, R1).
-/// 5. Missed key sessions of the last 3 days move inside the week ([proposeWeekAdjustment]).
+/// 5. Missed key sessions of the last 3 days move inside their week ([proposeWeekAdjustment]);
+///    on re-entry (completion < 50 %) they are dropped instead.
 /// 6. Faster running best effort: pace targets of upcoming runs follow the new VDOT (with
 ///    race times only upwards and at most +2 points at once – Daniels; without race times
-///    the plan's default VDOT is replaced in both directions).
+///    the plan's default VDOT is replaced in both directions – downwards only by a real effort:
+///    race, RPE ≥ 8 or HR ≥ 88 % HRmax).
 ///
 /// Session evaluation (§12, [evaluateSession]): sessions without an RPE still count as too
 /// hard / too easy when heart rate, pace / power and pace fade say so; and the trend of the
@@ -180,7 +182,10 @@ class Recalibrator {
     // ── Missed key sessions: move inside the week (same rules as "adjust my week").
     final changes = <RecalChange>[];
     final moved = <String>{};
-    final adjust = proposeWeekAdjustment(plans, now);
+    // Re-entry after mostly missed training (< 50 %, e.g. illness): missed key sessions
+    // are not made up – stacking them onto the return week contradicts the re-entry.
+    final reentry = completion != null && completion < 0.5;
+    final adjust = [for (final c in proposeWeekAdjustment(plans, now)) reentry && c.isMove ? PlanChange.skip(c.plan) : c];
     for (final c in adjust) {
       moved.add(c.plan.id);
       if (c.isMove) {
@@ -314,19 +319,37 @@ class Recalibrator {
   /// New VDOT from running best efforts of the last 90 days (5 km and longer), or null.
   double? _newVdot(double current) {
     final recent = sessions.where((s) => now.difference(s.start).inDays <= 90).toList();
-    double? best;
-    for (final e in runBestEfforts(recent).values) {
-      if (!Vdot.distances.containsKey(e.key)) continue;
-      final v = Vdot.fromRace(e.meters, e.seconds);
-      if (best == null || v > best) best = v;
+    double? bestOf(List<Session> list) {
+      double? best;
+      for (final e in runBestEfforts(list).values) {
+        if (!Vdot.distances.containsKey(e.key)) continue;
+        final v = Vdot.fromRace(e.meters, e.seconds);
+        if (best == null || v > best) best = v;
+      }
+      return best;
     }
+
+    var best = bestOf(recent);
     if (best == null) return null;
     if (a.raceTimes.isEmpty) {
-      // The plan uses a level default: any real effort is a better anchor.
+      // The plan uses a level default: any real effort is a better anchor. Lowering it
+      // needs a real (near-)maximal effort, though – a "best 5 km" inside an easy run says
+      // nothing about VDOT (easy pace is ~59–74 % VO2max) and would slow every pace.
+      if (best < current) best = bestOf(recent.where(_maximalEffort).toList());
+      if (best == null) return null;
       return (best - current).abs() >= 1 ? double.parse(best.toStringAsFixed(1)) : null;
     }
     if (best < current + 0.5) return null;
     return double.parse(min(best, current + 2).toStringAsFixed(1));
+  }
+
+  /// A race / time trial, or a run that was rated (RPE ≥ 8) or measured (average HR
+  /// ≥ 88 % HRmax, zone 4+) as hard.
+  bool _maximalEffort(Session s) {
+    if ((s.rpe ?? 0) >= 8) return true;
+    if (s.avgHr != null && s.avgHr! >= 0.88 * profile.estimatedMaxHr) return true;
+    final p = plans.where((p) => p.id == s.planId || (p.sessionId != null && p.sessionId == s.id)).firstOrNull;
+    return p?.intensity == 'race';
   }
 
   double? _longestRecentRunKm() {
@@ -342,7 +365,9 @@ class Recalibrator {
     WorkoutStep s(WorkoutStep x) {
       if (x.kind != 'steady' && x.kind != 'work') return x;
       // Short repeats (strides, intervals) keep their length – only continuous parts scale.
-      if (x.kind == 'work' && (x.durationSec ?? 600) < 600 && (x.distanceM ?? 2000) < 2000) return x;
+      // A step usually has only a time or only a distance: the missing one must not make
+      // it "long" (a 20 s stride was scaled to the 5 min floor before).
+      if (x.kind == 'work' && (x.durationSec ?? 0) < 600 && (x.distanceM ?? 0) < 2000) return x;
       return _step(
         x,
         durationSec: x.durationSec == null ? null : max(300, (x.durationSec! * f / 60).round() * 60),

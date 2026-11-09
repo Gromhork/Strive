@@ -98,6 +98,17 @@ void main() {
         if (s.paceMin != null) expect(s.paceMin! <= s.paceMax!, isTrue);
       }
       expect(c.after.durationMin, greaterThanOrEqualTo(15));
+      // A reduction never adds time, an increase stays small (≤ +10 %), and short repeats
+      // (strides, VO2 reps) keep their length.
+      if (c.kind == RecalKind.easier || c.kind == RecalKind.toEasy) {
+        expect(c.after.durationMin, lessThanOrEqualTo(c.before.durationMin), reason: c.before.title);
+      }
+      if (c.kind == RecalKind.harder) {
+        expect(c.after.durationMin, lessThanOrEqualTo(c.before.durationMin * 1.1 + 5), reason: c.before.title);
+      }
+      final shortBefore = c.before.steps.where((s) => s.isWork && (s.durationSec ?? 0) > 0 && s.durationSec! < 600).length;
+      final shortAfter = c.after.steps.where((s) => s.isWork && (s.durationSec ?? 0) > 0 && s.durationSec! < 600).length;
+      if (c.kind == RecalKind.easier || c.kind == RecalKind.harder) expect(shortAfter, shortBefore, reason: c.before.title);
     }
     final ids = {for (final p in plans.where((p) => p.isDone)) p.id};
     expect(r.updates.keys.toSet().intersection(ids), isEmpty);
@@ -170,7 +181,7 @@ void main() {
     }
   });
 
-  test('low completion: volume down, no progression; missed key sessions move inside the week', () {
+  test('low completion: volume down, no progression; missed key sessions are not made up on re-entry', () {
     final p = profile();
     // Everything of the last 10 days missed (incl. the key sessions of the last 3 days).
     final (plans, sessions) = history(p, skip: (w) => dayOnly(now).difference(dayOnly(w.date)).inDays <= 10);
@@ -183,9 +194,10 @@ void main() {
     expect(r.changes.where((c) => c.kind == RecalKind.toEasy).length, 1, reason: 're-entry: first quality session easy');
     final missed = r.changes.where((c) => c.kind == RecalKind.moved || c.kind == RecalKind.dropped);
     expect(missed, isNotEmpty);
-    for (final c in missed.where((c) => c.kind == RecalKind.moved)) {
-      expect(dayOnly(c.after.date).isBefore(dayOnly(now)), isFalse);
-      expect(c.update.keys, ['date']);
+    // < 50 % done (e.g. ill): the missed key sessions are dropped, not stacked onto the return.
+    expect(missed.where((c) => c.kind == RecalKind.moved), isEmpty);
+    for (final c in missed) {
+      expect(c.update, {'status': 'skipped'});
     }
   });
 
@@ -279,10 +291,30 @@ void main() {
       durationSec: 33 * 60,
       distanceM: 5000,
       splits: const [396, 396, 396, 396, 396],
+      rpe: 9, // an all-out 5 km
     );
     final r = recal(p, plans, [...sessions, slow]);
     expect(r.stats.newVdot, lessThan(Vdot.defaultFor('intermediate')));
     expect(r.reasons, contains(RecalReason.slowerRuns));
+  });
+
+  test('without race times an easy training run does not lower the level default', () {
+    final p = profile(race: const {});
+    final (plans, sessions) = history(p);
+    // The same 5 km, but an unrated easy jog (no RPE, low HR): its "best 5 km" is no VDOT.
+    final jog = Session(
+      id: 'jog',
+      sport: Sport.run,
+      title: 'Lauf',
+      start: now.subtract(const Duration(days: 1)),
+      durationSec: 33 * 60,
+      distanceM: 5000,
+      avgHr: 130,
+      splits: const [396, 396, 396, 396, 396],
+    );
+    final r = recal(p, plans, [...sessions, jog]);
+    expect(r.reasons, isNot(contains(RecalReason.slowerRuns)));
+    expect(r.raceTimes, isNull);
   });
 
   test('multi-sport: rides and swims are recalibrated, strength is never touched', () {

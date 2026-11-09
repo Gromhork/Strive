@@ -801,8 +801,8 @@ best effort:           fastest 5 km / 10 km / HM / M of the last 90 days (km spl
 | completion < 50 % | days 1–7 −20 %, days 8–14 −10 %, first quality per sport → easy (re-entry) | detraining after ~2 weeks of reduced training [68]; gradual return |
 | ≥ 2 sessions cut short | long sessions of the next 14 days −10 % | the planned duration was not sustainable |
 | ≥ 2 quality sessions at RPE ≤ 4, no fatigue signal, completion ≥ 90 % | easy + long sessions of loading weeks, days 1–7, +5 % | within the 5–10 %/week growth rule (§1.5); long run ≤ +10 % of the longest run of the last 30 days (R1, Frandsen 2025 [11]) |
-| missed key session in the last 3 days | moved to a free day of the same week, never next to another hard day; missed easy sessions dropped | same rules as "adjust my week" (plan_adjuster) |
-| faster best effort | run pace targets follow the new VDOT: with race times only upwards and ≤ +2 points at once; without race times the level default is replaced (also downwards); the profile's race time is updated | Daniels [7]: update VDOT from races / time trials, small steps |
+| missed key session in the last 3 days | moved to a free day of the same week (the missed workout's week – never into the next one), never next to another hard day; missed easy sessions dropped; with completion < 50 % (re-entry) key sessions are dropped, not made up | same rules as "adjust my week" (plan_adjuster) |
+| faster best effort | run pace targets follow the new VDOT: with race times only upwards and ≤ +2 points at once; without race times the level default is replaced (downwards only by a real effort: race, RPE ≥ 8 or HR ≥ 88 % HRmax – not by the fastest 5 km of an easy run); the profile's race time is updated | Daniels [7]: update VDOT from races / time trials, small steps |
 
 Reductions never stack beyond the strongest rule (the minimum factor wins); an increase only happens without any reduction
 reason. Volume changes scale continuous parts (steady runs / rides, swim sets); short repeats keep their length, so a reduced

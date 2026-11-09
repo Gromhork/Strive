@@ -41,6 +41,20 @@ void main() {
     expect(c.isMove, isFalse);
   });
 
+  test('a key session missed last week is not moved into the new week', () {
+    // Monday 16 Nov: Sunday's long run was missed; the new week has its own long run.
+    final monday = DateTime(2026, 11, 16, 8);
+    final plans = [
+      p('longSun', 15, intensity: 'long', key: true),
+      p('easyTue', 17),
+      p('easyThu', 19),
+      p('longSun2', 22, intensity: 'long', key: true),
+    ];
+    final c = proposeWeekAdjustment(plans, monday).single;
+    expect(c.plan.id, 'longSun');
+    expect(c.isMove, isFalse);
+  });
+
   test('replaces an easy session of the same sport', () {
     final plans = [
       p('int', 9, intensity: 'intervals', key: true), // missed Mon

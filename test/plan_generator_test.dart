@@ -24,6 +24,45 @@ void main() {
     expect(z.interval, closeTo(234, 4)); // 3:54/km
   });
 
+  test('marathon peak: marathon-pace run instead of a second VO2max session', () {
+    final p = UserProfile(
+      level: 'advanced',
+      focus: TrainingFocus.run,
+      trainingDays: const [1, 2, 3, 4, 6, 7],
+      longDay: 7,
+      athlete: AthleteData(
+        raceTimes: const {'10k': 38 * 60},
+        runWeeklyKm: 55,
+        longestRunKm: 22,
+        eventDistance: 'm',
+        eventDate: DateTime(2026, 11, 9).add(const Duration(days: 18 * 7 - 1)),
+      ),
+    );
+    final peak = gen(p).where((w) => w.phase == 'peak' && w.sport == Sport.run).toList();
+    expect(peak, isNotEmpty);
+    expect(peak.where((w) => w.title == l.wMpRun), isNotEmpty);
+    expect(peak.where((w) => w.steps.any((s) => s.zone == 'M')), isNotEmpty);
+  });
+
+  test('easy rides get the volume of quality rides that could not be placed', () {
+    // 70.3 beginner, 5 days: the Wednesday ride sits between two key days and stays easy,
+    // so the weekly ride hours must not be planned as if a ~65 min quality ride existed.
+    final p = UserProfile(
+      level: 'beginner',
+      focus: TrainingFocus.triathlon,
+      trainingDays: const [1, 2, 3, 4, 6, 7],
+      longDay: 6,
+      athlete: AthleteData(
+        eventDistance: '70.3',
+        eventDate: DateTime(2026, 11, 9).add(const Duration(days: 20 * 7 - 1)),
+        sessionMinutes: 90,
+      ),
+    );
+    final easy = gen(p).where((w) => w.sport == Sport.ride && w.intensity == 'easy' && w.phase == 'build').toList();
+    expect(easy, isNotEmpty);
+    expect(easy.map((w) => w.durationMin).reduce(max), greaterThan(40));
+  });
+
   test('half-marathon plan: taper, easy share, long-run cap', () {
     final p = UserProfile(
       level: 'intermediate',
