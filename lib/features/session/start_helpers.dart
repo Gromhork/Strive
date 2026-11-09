@@ -24,6 +24,7 @@ Future<void> startPlanned(BuildContext context, WidgetRef ref, PlannedWorkout p)
       title: p.title,
       template: template,
       planId: p.id,
+      phase: p.phase,
       exercises: p.exercises.isNotEmpty ? p.exercises : null,
     );
   } else {
@@ -32,19 +33,20 @@ Future<void> startPlanned(BuildContext context, WidgetRef ref, PlannedWorkout p)
 }
 
 /// Starts a gym workout. [exercises] overrides the program's exercises (e.g. a
-/// planned workout that was adjusted for one day).
+/// planned workout adjusted for one day). Work sets get prescribed weights
+/// ([loadPrescriberProvider]), adjusted for the plan [phase] (deload / taper).
 Future<void> startGym(
   BuildContext context,
   WidgetRef ref, {
   required String title,
   WorkoutTemplate? template,
   String? planId,
+  String? phase,
   List<GymExercise>? exercises,
 }) async {
   if (!await _ensureNothingRunning(context, ref)) return;
-  ref
-      .read(activeGymProvider.notifier)
-      .start(title: title, templateId: template?.id, planId: planId, exercises: exercises ?? template?.exercises ?? const []);
+  final list = ref.read(loadPrescriberProvider).apply(exercises ?? template?.exercises ?? const [], phase: phase);
+  ref.read(activeGymProvider.notifier).start(title: title, templateId: template?.id, planId: planId, exercises: list);
   if (context.mounted) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => const GymSessionPage()));
   }

@@ -9,6 +9,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
+import '../../widgets/prescription.dart';
 import '../session/start_helpers.dart';
 import '../session/step_list.dart';
 import '../session/zone_info.dart' show ZoneInfoButton;
@@ -145,7 +146,18 @@ class PlannedWorkoutPage extends ConsumerWidget {
                 contentPadding: EdgeInsets.zero,
                 leading: ExerciseMedia(exId: e.exId, animated: false, size: 48, radius: 12),
                 title: Text(e.name.isEmpty ? '' : e.name[0].toUpperCase() + e.name.substring(1)),
-                subtitle: Text('${e.workSets.length} × ${e.workSets.isEmpty ? '' : e.workSets.first.reps}'),
+                subtitle: Builder(
+                  builder: (_) {
+                    final rx = p.isDone ? null : ref.watch(loadPrescriberProvider).forExercise(e, phase: p.phase);
+                    final reps = e.repMin != null && e.repMax != null ? '${e.repMin}–${e.repMax}' : '${e.workSets.isEmpty ? '' : e.workSets.first.reps}';
+                    return Text(
+                      [
+                        '${e.workSets.length} × $reps',
+                        if (rx != null && rx.weight > 0) prescriptionLabel(l, rx, u),
+                      ].join(' · '),
+                    );
+                  },
+                ),
               ),
           ],
         ],

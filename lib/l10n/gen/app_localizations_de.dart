@@ -3083,4 +3083,56 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get showPastWeeks => 'Vergangene Wochen';
+
+  @override
+  String loadSuggestion(String load) {
+    return 'Vorschlag: $load';
+  }
+
+  @override
+  String loadApprox(String weight, int reps) {
+    return '≈ $weight × $reps';
+  }
+
+  @override
+  String loadApproxPerHand(String weight, int reps) {
+    return '≈ $weight × $reps pro Hand';
+  }
+
+  @override
+  String loadBodyweight(int reps) {
+    return 'Körpergewicht × $reps';
+  }
+
+  @override
+  String loadBodyweightPlus(String weight, int reps) {
+    return 'Körpergewicht +$weight × $reps';
+  }
+
+  @override
+  String get loadSrcHistory => 'aus deinem letzten Training';
+
+  @override
+  String get loadSrcIncrease => 'letztes Mal alle Wiederholungen geschafft – mehr Gewicht';
+
+  @override
+  String get loadSrcAddReps => 'aus deinem letzten Training – schaff eine Wiederholung mehr';
+
+  @override
+  String get loadSrcDeload => 'letztes Mal war hart – etwas leichter';
+
+  @override
+  String get loadSrcBreak => 'nach deiner Pause etwas leichter';
+
+  @override
+  String get loadSrcOneRm => 'aus deinem 1RM im Setup';
+
+  @override
+  String get loadSrcEstimate => 'geschätzt aus Körpergewicht – passe es an';
+
+  @override
+  String get loadPhaseLighter => 'Entlastungswoche';
+
+  @override
+  String get loadTaperLighter => 'Taper-Woche';
 }

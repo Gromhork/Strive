@@ -1669,5 +1669,63 @@
   },
   "streakLastWeeks": "Last 8 weeks",
   "streakHow": "A week counts when you train on as many days as planned. With a training plan, the goal is the number of days with planned workouts that week (two sessions on one day count as one day); without a plan it is your number of training days. The current week never breaks your streak – it is added as soon as you reach the goal.",
-  "showPastWeeks": "Past weeks"
+  "showPastWeeks": "Past weeks",
+  "loadSuggestion": "Suggestion: {load}",
+  "@loadSuggestion": {
+    "placeholders": {
+      "load": {
+        "type": "String"
+      }
+    }
+  },
+  "loadApprox": "≈ {weight} × {reps}",
+  "@loadApprox": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "loadApproxPerHand": "≈ {weight} × {reps} per hand",
+  "@loadApproxPerHand": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "loadBodyweight": "Bodyweight × {reps}",
+  "@loadBodyweight": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "loadBodyweightPlus": "Bodyweight +{weight} × {reps}",
+  "@loadBodyweightPlus": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "loadSrcHistory": "from your last workout",
+  "loadSrcIncrease": "all reps done last time – more weight",
+  "loadSrcAddReps": "from your last workout – aim for one more rep",
+  "loadSrcDeload": "last time was tough – a bit lighter",
+  "loadSrcBreak": "a bit lighter after your break",
+  "loadSrcOneRm": "from your 1RM in the setup",
+  "loadSrcEstimate": "estimated from body weight – adjust it",
+  "loadPhaseLighter": "deload week",
+  "loadTaperLighter": "taper week"
 }

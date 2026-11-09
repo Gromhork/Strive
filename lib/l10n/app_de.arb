@@ -965,5 +965,19 @@
   "streakWeekLeft": "{done} von {target} Trainingstagen – noch {count}, dann zählt die Woche.",
   "streakLastWeeks": "Letzte 8 Wochen",
   "streakHow": "Eine Woche zählt, wenn du an so vielen Tagen trainierst wie geplant. Mit Trainingsplan ist das Ziel die Anzahl der Tage mit geplanten Einheiten in dieser Woche (zwei Einheiten an einem Tag zählen als ein Tag), ohne Plan deine Anzahl Trainingstage. Die laufende Woche unterbricht deinen Streak nie – sie wird gezählt, sobald du das Ziel erreichst.",
-  "showPastWeeks": "Vergangene Wochen"
+  "showPastWeeks": "Vergangene Wochen",
+  "loadSuggestion": "Vorschlag: {load}",
+  "loadApprox": "≈ {weight} × {reps}",
+  "loadApproxPerHand": "≈ {weight} × {reps} pro Hand",
+  "loadBodyweight": "Körpergewicht × {reps}",
+  "loadBodyweightPlus": "Körpergewicht +{weight} × {reps}",
+  "loadSrcHistory": "aus deinem letzten Training",
+  "loadSrcIncrease": "letztes Mal alle Wiederholungen geschafft – mehr Gewicht",
+  "loadSrcAddReps": "aus deinem letzten Training – schaff eine Wiederholung mehr",
+  "loadSrcDeload": "letztes Mal war hart – etwas leichter",
+  "loadSrcBreak": "nach deiner Pause etwas leichter",
+  "loadSrcOneRm": "aus deinem 1RM im Setup",
+  "loadSrcEstimate": "geschätzt aus Körpergewicht – passe es an",
+  "loadPhaseLighter": "Entlastungswoche",
+  "loadTaperLighter": "Taper-Woche"
 }
