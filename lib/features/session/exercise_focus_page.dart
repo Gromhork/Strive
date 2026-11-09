@@ -702,39 +702,65 @@ class _RestOverlay extends ConsumerWidget {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
-                const Spacer(),
-                SizedBox(
-                  width: 240,
-                  height: 240,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox.expand(
-                        child: CircularProgressIndicator(
-                          value: progress,
-                          strokeWidth: 14,
-                          strokeCap: StrokeCap.round,
-                          color: AppColors.gym,
-                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                // Ring and ±15 s fill the middle; the ring shrinks on short screens (effort
+                // question + up-next card below) so the bottom buttons always fit.
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, c) {
+                      final ring = (c.maxHeight - 72).clamp(96.0, 240.0);
+                      return Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: ring,
+                                height: ring,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    SizedBox.expand(
+                                      child: CircularProgressIndicator(
+                                        value: progress,
+                                        strokeWidth: 14,
+                                        strokeCap: StrokeCap.round,
+                                        color: AppColors.gym,
+                                        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(28),
+                                      child: FittedBox(
+                                        child: Text(
+                                          clock(left.ceil().clamp(0, 9999)),
+                                          style: const TextStyle(
+                                            fontSize: 56,
+                                            fontWeight: FontWeight.w700,
+                                            fontFeatures: [FontFeature.tabularFigures()],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  FilledButton.tonal(onPressed: () => n.adjustRest(-15), child: const Text('− 15 s')),
+                                  const SizedBox(width: 16),
+                                  FilledButton.tonal(onPressed: () => n.adjustRest(15), child: const Text('+ 15 s')),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      Text(
-                        clock(left.ceil().clamp(0, 9999)),
-                        style: const TextStyle(fontSize: 56, fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()]),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    FilledButton.tonal(onPressed: () => n.adjustRest(-15), child: const Text('− 15 s')),
-                    const SizedBox(width: 16),
-                    FilledButton.tonal(onPressed: () => n.adjustRest(15), child: const Text('+ 15 s')),
-                  ],
-                ),
-                const Spacer(),
                 if (rated >= 0) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),

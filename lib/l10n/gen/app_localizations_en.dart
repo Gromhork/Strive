@@ -3291,7 +3291,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editSession => 'Edit workout';
 
   @override
-  String get durationHms => 'Duration (h:mm:ss)';
+  String get durationHms => 'Duration (h:mm:ss or mm:ss)';
 
   @override
   String get invalidDuration => 'Enter the duration as h:mm:ss or minutes.';

@@ -11,6 +11,7 @@ import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
 import '../../services/plan_match.dart';
 import '../../services/insights.dart';
+import 'gym_session_page.dart' show capitalize;
 import '../../widgets/common.dart';
 import '../../widgets/rpe_picker.dart';
 import 'route_map.dart';
@@ -199,7 +200,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                         dense: true,
                         leading: const Icon(Icons.trending_up_rounded, color: AppColors.success),
                         title: Text(l.newPr),
-                        subtitle: Text(p),
+                        subtitle: Text(capitalize(p)),
                       ),
                   ],
                   if (newBadges.isNotEmpty) ...[
