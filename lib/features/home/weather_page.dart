@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -103,15 +104,23 @@ class WeatherCard extends ConsumerWidget {
                   const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.white70),
                 ],
               ),
-              const Spacer(),
+              const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    '${w.temp.round()}°',
-                    style: const TextStyle(color: Colors.white, fontSize: 44, fontWeight: FontWeight.w600, height: 1),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.bottomLeft,
+                      child: Text(
+                        '${w.temp.round()}°',
+                        maxLines: 1,
+                        softWrap: false,
+                        style: const TextStyle(color: Colors.white, fontSize: 44, fontWeight: FontWeight.w600, height: 1),
+                      ),
+                    ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 4),
                   Icon(weatherIcon(w.code, night: !w.isDay), color: Colors.white, size: 34),
                 ],
               ),
@@ -122,7 +131,25 @@ class WeatherCard extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
+              // Uses the free height the neighbouring week card gives (IntrinsicHeight row) without
+              // adding to the card's own intrinsic height; hidden when there is no room.
+              Expanded(
+                child: _NoIntrinsicHeight(
+                  child: LayoutBuilder(
+                    builder:
+                        (_, box) =>
+                            box.maxHeight < 40
+                                ? const SizedBox.shrink()
+                                : Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: Center(
+                                    child: FittedBox(fit: BoxFit.scaleDown, child: SizedBox(width: box.maxWidth, child: _NextHours(w: w))),
+                                  ),
+                                ),
+                  ),
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(10)),
@@ -137,6 +164,65 @@ class WeatherCard extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Reports zero intrinsic height so a flexible filler doesn't make an [IntrinsicHeight] row taller.
+class _NoIntrinsicHeight extends SingleChildRenderObjectWidget {
+  const _NoIntrinsicHeight({super.child});
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderNoIntrinsicHeight();
+}
+
+class _RenderNoIntrinsicHeight extends RenderProxyBox {
+  @override
+  double computeMinIntrinsicHeight(double width) => 0;
+  @override
+  double computeMaxIntrinsicHeight(double width) => 0;
+  @override
+  double computeMinIntrinsicWidth(double height) => 0;
+  @override
+  double computeMaxIntrinsicWidth(double height) => 0;
+}
+
+/// Compact strip of the next four hours (time, sky, temperature; rain chance for screen readers).
+class _NextHours extends StatelessWidget {
+  const _NextHours({required this.w});
+  final Weather w;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final hours = w.hours.where((h) => h.time.isAfter(now)).take(4).toList();
+    if (hours.isEmpty) return const SizedBox.shrink();
+    final fmt = DateFormat.H(context.localeName);
+    const small = TextStyle(color: Colors.white70, fontSize: 10, height: 1.1);
+    return Row(
+      children: [
+        for (final h in hours)
+          Expanded(
+            child: Semantics(
+              label: '${fmt.format(h.time)}: ${h.temp.round()}°, ${context.l10n.rainChanceN(h.rainChance)}',
+              excludeSemantics: true,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  children: [
+                    Text(fmt.format(h.time), style: small),
+                    const SizedBox(height: 2),
+                    Icon(weatherIcon(h.code, night: !h.isDay), color: Colors.white, size: 16),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${h.temp.round()}°',
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700, height: 1.1),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

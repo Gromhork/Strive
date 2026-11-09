@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +9,9 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../data/repository.dart';
 import '../../providers.dart';
+import '../../services/compliance.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
 import '../profile/health_connect_page.dart';
@@ -45,8 +49,8 @@ class HomePage extends ConsumerWidget {
               children: [Expanded(child: WeatherCard()), SizedBox(width: 12), Expanded(child: _WeekCard())],
             ),
           ),
-          _VitalsCard(),
           SizedBox(height: 12),
+          _VitalsCard(),
           _RecoveryCard(),
           SizedBox(height: 12),
           _WeightCard(),
@@ -171,7 +175,8 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
             if (plans.length > 1)
               IconButton(
                 visualDensity: VisualDensity.compact,
-                onPressed: plans.length > 1 ? () => setState(() => _i = (_i - 1) % plans.length) : null,
+                tooltip: l.previousWorkout,
+                onPressed: () => setState(() => _i = (_i - 1) % plans.length),
                 icon: const Icon(Icons.chevron_left),
               ),
             Expanded(
@@ -254,6 +259,7 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
             if (plans.length > 1)
               IconButton(
                 visualDensity: VisualDensity.compact,
+                tooltip: l.nextWorkout,
                 onPressed: () => setState(() => _i = (_i + 1) % plans.length),
                 icon: const Icon(Icons.chevron_right),
               ),
@@ -342,6 +348,7 @@ class _ComingUp extends ConsumerWidget {
   /// Bottom sheet listing all workouts of a day with several sessions.
   void _showDay(BuildContext context, WidgetRef ref, DateTime d, List<PlannedWorkout> list) {
     final l = context.l10n;
+    final u = ref.read(profileOrDefaultProvider).units;
     showModalBottomSheet(
       context: context,
       builder:
@@ -368,7 +375,7 @@ class _ComingUp extends ConsumerWidget {
                           [
                             l.sessionN(i + 1),
                             '${p.durationMin} min',
-                            if (p.distanceKm != null) '${Units.num(p.distanceKm!)} km',
+                            if (p.distanceKm != null && p.distanceKm! > 0) u.dist(p.distanceKm! * 1000, digits: 1),
                             if (p.isKey) '★',
                           ].join(' · '),
                         ),
@@ -470,6 +477,7 @@ class _WeekCard extends ConsumerWidget {
       values[s] = target == 0 ? 1 : d / target;
     }
     final totalSec = done.fold<int>(0, (a, s) => a + s.durationSec);
+    final completion = weeklyCompletion(planned, ref.watch(planSessionsProvider));
     return SectionCard(
       padding: const EdgeInsets.all(14),
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeekPage())),
@@ -479,6 +487,15 @@ class _WeekCard extends ConsumerWidget {
           Row(
             children: [
               Expanded(child: Text(l.thisWeek, style: Theme.of(context).textTheme.labelMedium)),
+              if (completion != null)
+                Semantics(
+                  label: l.planCompletion((completion * 100).round()),
+                  excludeSemantics: true,
+                  child: Text(
+                    NumberFormat.percentPattern(context.localeName).format(completion),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: completionColor(completion)),
+                  ),
+                ),
               Icon(Icons.chevron_right, size: 16, color: Theme.of(context).colorScheme.outline),
             ],
           ),
@@ -514,8 +531,7 @@ class _WeekCard extends ConsumerWidget {
           const SizedBox(height: 10),
           Text(clock(totalSec), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
           Text(l.trainedThisWeek, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 4),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
             children: [
               for (final s in Sport.values)
@@ -593,32 +609,70 @@ class _RecoveryCard extends ConsumerWidget {
 
 // ───────────────────────────── Weight ─────────────────────────────
 
-class _WeightCard extends ConsumerWidget {
+class _WeightCard extends ConsumerStatefulWidget {
   const _WeightCard();
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_WeightCard> createState() => _WeightCardState();
+}
+
+class _WeightCardState extends ConsumerState<_WeightCard> {
+  /// Value shown while +/- taps are being collected; written after [_debounce] of no taps.
+  double? _pending;
+  Timer? _timer;
+  static const _debounce = Duration(milliseconds: 800);
+
+  @override
+  void dispose() {
+    // Don't lose the last taps when the page goes away.
+    _timer?.cancel();
+    _flush();
+    super.dispose();
+  }
+
+  /// Captured at tap time so the write needs no `ref` (also safe from [dispose]).
+  void Function()? _write;
+
+  void _flush() {
+    _write?.call();
+    _write = null;
+  }
+
+  static void _save(Repository repo, List<BodyEntry> body, UserProfile profile, double kg) {
+    final today = body.where((b) => sameDay(b.date, DateTime.now())).firstOrNull;
+    repo.saveBody(
+      BodyEntry(
+        id: today?.id ?? repo.newId(),
+        date: DateTime.now(),
+        weightKg: double.parse(kg.toStringAsFixed(2)),
+        fatPct: today?.fatPct,
+        musclePct: today?.musclePct,
+      ),
+    );
+    repo.saveProfile(profile.copyWith(weightKg: kg));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l = context.l10n;
     final body = ref.watch(bodyProvider).value ?? const [];
     final profile = ref.watch(profileOrDefaultProvider);
     final u = profile.units;
-    final current = body.isNotEmpty ? body.last.weightKg : profile.weightKg;
+    final current = _pending ?? (body.isNotEmpty ? body.last.weightKg : profile.weightKg);
     final recent = body.where((b) => DateTime.now().difference(b.date).inDays <= 90).toList();
     final yRange = paddedRange([for (final b in recent) u.weightOut(b.weightKg)], minSpan: u.weightOut(3));
     final delta = recent.length >= 2 ? recent.last.weightKg - recent.first.weightKg : null;
 
     void log(double kg) {
-      final repo = ref.read(repoProvider)!;
-      final today = body.where((b) => sameDay(b.date, DateTime.now())).firstOrNull;
-      repo.saveBody(
-        BodyEntry(
-          id: today?.id ?? repo.newId(),
-          date: DateTime.now(),
-          weightKg: double.parse(kg.toStringAsFixed(2)),
-          fatPct: today?.fatPct,
-          musclePct: today?.musclePct,
-        ),
-      );
-      repo.saveProfile(profile.copyWith(weightKg: kg));
+      final repo = ref.read(repoProvider);
+      if (repo == null) return;
+      _write = () => _save(repo, body, profile, kg);
+      setState(() => _pending = kg);
+      _timer?.cancel();
+      _timer = Timer(_debounce, () {
+        _flush();
+        // Firestore reports local writes immediately, so the stream already shows the new value.
+        if (mounted) setState(() => _pending = null);
+      });
     }
 
     final step = u.imperial ? Units.kgPerLb * 0.2 : 0.1;
@@ -671,8 +725,8 @@ class _WeightCard extends ConsumerWidget {
               Text(u.weight(current), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
               Row(
                 children: [
-                  IconButton.filledTonal(onPressed: () => log(current - step), icon: const Icon(Icons.remove)),
-                  IconButton.filledTonal(onPressed: () => log(current + step), icon: const Icon(Icons.add)),
+                  IconButton.filledTonal(tooltip: l.weightMinus, onPressed: () => log(current - step), icon: const Icon(Icons.remove)),
+                  IconButton.filledTonal(tooltip: l.weightPlus, onPressed: () => log(current + step), icon: const Icon(Icons.add)),
                 ],
               ),
             ],
@@ -761,7 +815,7 @@ class _VitalsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final v = ref.watch(vitalsProvider).value;
-    if (v == null || v.isEmpty) return const SizedBox(height: 12);
+    if (v == null || v.isEmpty) return const SizedBox.shrink();
     Widget item(IconData i, Color c, String value, String label) => Expanded(
       child: Column(
         children: [
@@ -773,7 +827,7 @@ class _VitalsCard extends ConsumerWidget {
       ),
     );
     return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 12),
+      padding: const EdgeInsets.only(bottom: 12),
       child: SectionCard(
         padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthConnectPage())),

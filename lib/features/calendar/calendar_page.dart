@@ -10,6 +10,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
+import '../../services/compliance.dart';
 import '../../widgets/common.dart';
 import '../stats/session_detail_page.dart';
 import 'plan_editor.dart';
@@ -407,15 +408,14 @@ class PlanCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final p = plan;
-    final (icon, color) =
-        p.isDone
-            ? (Icons.check_circle_rounded, AppColors.success)
-            : p.isMissed
-            ? (Icons.cancel_outlined, AppColors.danger)
-            : (Icons.radio_button_unchecked, Theme.of(context).colorScheme.outline);
+    final u = ref.watch(profileOrDefaultProvider).units;
+    final c = planCompliance(p, ref.watch(planSessionsProvider)[p.id]);
     return Material(
       color: p.sport.color.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: c.level == ComplianceLevel.none ? BorderSide.none : BorderSide(color: c.color(context).withValues(alpha: 0.55)),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id))),
@@ -433,7 +433,7 @@ class PlanCard extends ConsumerWidget {
                     Text(
                       [
                         '${p.durationMin} min',
-                        if (p.distanceKm != null) '${Units.num(p.distanceKm!)} km',
+                        if (p.distanceKm != null && p.distanceKm! > 0) u.dist(p.distanceKm! * 1000, digits: 1),
                         if (p.sport != Sport.gym) intensityLabel(l, p.intensity),
                       ].join(' · '),
                       style: Theme.of(context).textTheme.bodySmall,
@@ -441,7 +441,7 @@ class PlanCard extends ConsumerWidget {
                   ],
                 ),
               ),
-              Icon(icon, color: color, size: 20),
+              ComplianceRing(compliance: c, skipped: p.status == 'skipped'),
             ],
           ),
         ),
