@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart' show FieldValue;
+
 import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/models.dart';
@@ -8,6 +10,7 @@ import '../l10n/gen/app_localizations.dart';
 import 'compliance.dart';
 import 'insights.dart';
 import 'plan_adjuster.dart';
+import 'session_feedback.dart';
 import 'zones.dart';
 
 /// "Re-plan & recalibrate": adapts the upcoming weeks of the current plan to how the
@@ -37,6 +40,18 @@ import 'zones.dart';
 /// 6. Faster running best effort: pace targets of upcoming runs follow the new VDOT (with
 ///    race times only upwards and at most +2 points at once – Daniels; without race times
 ///    the plan's default VDOT is replaced in both directions).
+///
+/// Session evaluation (§12, [evaluateSession]): sessions without an RPE still count as too
+/// hard / too easy when heart rate, pace / power and pace fade say so; and the trend of the
+/// last [trendDays] days per sport ([CardioTrend]) adjusts the thresholds:
+/// 7. Run, no best-effort change: ≥ 3 key runs slower than the targets at a high effort →
+///    VDOT −1; ≥ 3 quality runs on target that felt easy, none too hard, aerobic efficiency
+///    not falling → VDOT +1 (Daniels: small steps after a few weeks).
+/// 8. Bike with a known FTP: ≥ 2 quality rides above the power targets without extra effort
+///    (none too hard) → FTP +3 %; ≥ 2 key rides below target at a high effort → FTP −3 %
+///    (Coggan zones follow).
+/// 9. Swim: ≥ 3 quality swims faster than the targets at a comfortable effort → CSS −2 s /
+///    100 m; ≥ 2 key swims slower at a high effort → CSS +2 s.
 class Recalibrator {
   Recalibrator(this.l, this.profile, {required this.plans, required this.sessions, required this.now});
 
@@ -48,6 +63,7 @@ class Recalibrator {
 
   static const lookbackDays = 14;
   static const horizonDays = 14;
+  static const trendDays = 42;
 
   AthleteData get a => profile.athlete;
   DateTime get today => dayOnly(now);
@@ -58,13 +74,21 @@ class Recalibrator {
     final window = plans.where((p) => !dayOnly(p.date).isBefore(from) && dayOnly(p.date).isBefore(today)).toList();
 
     // ── RPE signals
-    var tooHard = 0.0, tooEasy = 0, rated = 0, cutShort = 0;
+    var tooHard = 0.0, tooEasy = 0, rated = 0, cutShort = 0, estimated = 0;
     for (final p in window.where((p) => p.sport != Sport.gym && p.intensity != 'race')) {
       final s = linked[p.id];
       if (s == null) continue;
       final r = complianceRatio(p, s);
       if (r != null && r < 0.8) cutShort++;
-      if (s.rpe == null) continue;
+      if (s.rpe == null) {
+        // No RPE: heart rate, pace / power and pace fade still tell how hard it was.
+        final f = evaluateSession(p, s, profile);
+        if (!f.rated) continue;
+        estimated++;
+        if (f.clearlyHarder) tooHard += f.score >= 0.6 ? 1 : 0.5;
+        if (f.isQuality && f.clearlyEasier) tooEasy++;
+        continue;
+      }
       rated++;
       tooHard += rpeLoad(p.intensity, s.rpe!);
       if (rpeTooEasy(p.intensity, s.rpe!)) tooEasy++;
@@ -109,8 +133,49 @@ class Recalibrator {
 
     // ── Thresholds
     final oldVdot = Vdot.of(a) ?? Vdot.defaultFor(profile.level);
-    final newVdot = _newVdot(oldVdot);
+    var newVdot = _newVdot(oldVdot);
     if (newVdot != null) reasons.add(newVdot > oldVdot ? RecalReason.fasterRuns : RecalReason.slowerRuns);
+    final trends = CardioTrend.of(plans, linked, profile, now: now, days: trendDays);
+    final run = trends[Sport.run], ride = trends[Sport.ride], swim = trends[Sport.swim];
+    if (newVdot == null && run != null) {
+      if (run.slowAndHard >= 3) {
+        newVdot = oldVdot - 1;
+        reasons.add(RecalReason.runTrendSlower);
+      } else if (run.easyAndOnTarget >= 3 && run.harder == 0 && (run.efficiencyChange ?? 0) >= 0) {
+        newVdot = oldVdot + 1;
+        reasons.add(RecalReason.runTrendFaster);
+      }
+      if (newVdot != null) newVdot = double.parse(newVdot.toStringAsFixed(1));
+    }
+    int? newFtp;
+    if (a.ftp != null && ride != null) {
+      if (ride.strongAndComfortable >= 2 && ride.harder == 0) {
+        newFtp = (a.ftp! * 1.03).round();
+        reasons.add(RecalReason.ftpUp);
+      } else if (ride.slowAndHard >= 2) {
+        newFtp = (a.ftp! * 0.97).round();
+        reasons.add(RecalReason.ftpDown);
+      }
+    }
+    final oldCss = SwimZones.fromTests(a.swim400Sec, a.swim200Sec) ?? SwimZones.defaultFor(profile.level);
+    int? newCss;
+    if (swim != null) {
+      if (swim.strongAndComfortable >= 3 && swim.harder == 0) {
+        newCss = oldCss - 2;
+        reasons.add(RecalReason.cssFaster);
+      } else if (swim.slowAndHard >= 2) {
+        newCss = oldCss + 2;
+        reasons.add(RecalReason.cssSlower);
+      }
+    }
+    // Aerobic efficiency (pace or power per heartbeat at easy effort) – informational.
+    final efficiency = <Sport, double>{
+      for (final t in [run, ride])
+        if (t != null && t.efficiencyChange != null) t.sport: t.efficiencyChange!,
+    };
+    final ef = efficiency.values.fold<double>(0, (x, v) => v.abs() > x.abs() ? v : x);
+    if (ef >= 0.03) reasons.add(RecalReason.aerobicUp);
+    if (ef <= -0.03) reasons.add(RecalReason.aerobicDown);
 
     // ── Missed key sessions: move inside the week (same rules as "adjust my week").
     final changes = <RecalChange>[];
@@ -180,6 +245,20 @@ class Recalibrator {
           kind ??= RecalKind.paces;
         }
       }
+      if (newFtp != null && w.sport == Sport.ride) {
+        final powered = _withPower(w, PowerZones(newFtp));
+        if (powered != null) {
+          w = powered;
+          kind ??= RecalKind.paces;
+        }
+      }
+      if (newCss != null && w.sport == Sport.swim) {
+        final paced = _withSwimPaces(w, SwimZones(newCss));
+        if (paced != null) {
+          w = paced;
+          kind ??= RecalKind.paces;
+        }
+      }
       if (kind != null) changes.add(RecalChange(p, kind == RecalKind.paces ? w : _noted(w), kind));
     }
 
@@ -189,9 +268,21 @@ class Recalibrator {
       final key = a.eventDistance != null && Vdot.distances.containsKey(a.eventDistance) ? a.eventDistance! : '10k';
       raceTimes = {...a.raceTimes, key: Vdot.raceTime(newVdot, Vdot.distances[key]!)};
     }
+    // Swim test times that give the new CSS ((t400 − t200) / 2), for the profile.
+    final athlete = <String, dynamic>{
+      if (newFtp != null) 'ftp': newFtp,
+      if (newCss != null) ...{'swim200Sec': 2 * newCss - 4, 'swim400Sec': 4 * newCss - 4},
+    };
     return Recalibration(
       reasons: reasons,
+      athlete: athlete,
       stats: RecalStats(
+        estimated: estimated,
+        oldFtp: a.ftp,
+        newFtp: newFtp,
+        oldCss: oldCss,
+        newCss: newCss,
+        efficiency: efficiency,
         rated: rated,
         tooHard: tooHard,
         tooEasy: tooEasy,
@@ -375,6 +466,42 @@ class Recalibrator {
     return changed ? _copy(p, steps: steps) : null;
   }
 
+  /// Bike steps that show power get the targets of the new FTP (null = no change).
+  PlannedWorkout? _withPower(PlannedWorkout p, PowerZones z) {
+    var changed = false;
+    final steps = [
+      for (final s in p.steps)
+        if (s.powerMin != null)
+          () {
+            final (lo, hi) = z.range(s.zone);
+            if (lo == s.powerMin && hi == s.powerMax) return s;
+            changed = true;
+            return _step(s, powerMin: lo, powerMax: hi);
+          }()
+        else
+          s,
+    ];
+    return changed ? _copy(p, steps: steps) : null;
+  }
+
+  /// Swim steps that show a pace get the targets of the new CSS (null = no change).
+  PlannedWorkout? _withSwimPaces(PlannedWorkout p, SwimZones z) {
+    var changed = false;
+    final steps = [
+      for (final s in p.steps)
+        if (s.paceMin != null)
+          () {
+            final (fast, slow) = z.range(s.zone);
+            if (fast == s.paceMin && slow == s.paceMax) return s;
+            changed = true;
+            return _step(s, paceMin: fast, paceMax: slow);
+          }()
+        else
+          s,
+    ];
+    return changed ? _copy(p, steps: steps) : null;
+  }
+
   /// Adds the recalibration note (once) to the description.
   PlannedWorkout _noted(PlannedWorkout p) {
     final notes = {recalNote('en'), recalNote('de')};
@@ -384,15 +511,23 @@ class Recalibrator {
 
   static String recalNote(String lang) => lookupAppLocalizations(Locale(lang)).recalNote;
 
-  static WorkoutStep _step(WorkoutStep s, {int? durationSec, double? distanceM, int? paceMin, int? paceMax}) => WorkoutStep(
+  static WorkoutStep _step(
+    WorkoutStep s, {
+    int? durationSec,
+    double? distanceM,
+    int? paceMin,
+    int? paceMax,
+    int? powerMin,
+    int? powerMax,
+  }) => WorkoutStep(
     kind: s.kind,
     durationSec: durationSec ?? s.durationSec,
     distanceM: distanceM ?? s.distanceM,
     zone: s.zone,
     paceMin: paceMin ?? s.paceMin,
     paceMax: paceMax ?? s.paceMax,
-    powerMin: s.powerMin,
-    powerMax: s.powerMax,
+    powerMin: powerMin ?? s.powerMin,
+    powerMax: powerMax ?? s.powerMax,
     hrMin: s.hrMin,
     hrMax: s.hrMax,
     note: s.note,
@@ -429,7 +564,23 @@ class Recalibrator {
 }
 
 /// Why the plan changes.
-enum RecalReason { rpeHigh, rpeLow, lowCompletion, cutShort, missedKey, fasterRuns, slowerRuns }
+enum RecalReason {
+  rpeHigh,
+  rpeLow,
+  lowCompletion,
+  cutShort,
+  missedKey,
+  fasterRuns,
+  slowerRuns,
+  runTrendSlower,
+  runTrendFaster,
+  ftpUp,
+  ftpDown,
+  cssFaster,
+  cssSlower,
+  aerobicUp,
+  aerobicDown,
+}
 
 /// What happens to one workout.
 enum RecalKind { easier, harder, toEasy, moved, dropped, paces }
@@ -440,12 +591,15 @@ class RecalChange {
   final PlannedWorkout after;
   final RecalKind kind;
 
-  /// Firestore update of this workout (only the fields that change).
+  /// Firestore update of this workout (only the fields that change). A new volume
+  /// replaces an automatic adjustment (its undo would bring back stale values).
   Map<String, dynamic> get update {
     final b = before.toMap(), a = after.toMap();
+    final volume = kind == RecalKind.easier || kind == RecalKind.harder || kind == RecalKind.toEasy;
     return {
       for (final k in a.keys)
         if (!_eq(a[k], b[k])) k: a[k],
+      if (volume && before.auto != null) 'auto': FieldValue.delete(),
     };
   }
 
@@ -454,6 +608,12 @@ class RecalChange {
 
 class RecalStats {
   const RecalStats({
+    this.estimated = 0,
+    this.oldFtp,
+    this.newFtp,
+    this.oldCss,
+    this.newCss,
+    this.efficiency = const {},
     required this.rated,
     required this.tooHard,
     required this.tooEasy,
@@ -479,10 +639,20 @@ class RecalStats {
   final int cutShort;
   final double oldVdot;
   final double? newVdot;
+
+  /// Sessions without RPE judged from heart rate / pace / power instead.
+  final int estimated;
+  final int? oldFtp, newFtp;
+
+  /// CSS in sec / 100 m (current, new).
+  final int? oldCss, newCss;
+
+  /// Change of the aerobic efficiency factor over [Recalibrator.trendDays] (0.04 = +4 %).
+  final Map<Sport, double> efficiency;
 }
 
 class Recalibration {
-  const Recalibration({required this.reasons, required this.stats, required this.changes, this.raceTimes});
+  const Recalibration({required this.reasons, required this.stats, required this.changes, this.raceTimes, this.athlete = const {}});
   final List<RecalReason> reasons;
   final RecalStats stats;
   final List<RecalChange> changes;
@@ -490,7 +660,10 @@ class Recalibration {
   /// New race times for the profile (VDOT update), or null.
   final Map<String, int>? raceTimes;
 
-  bool get isEmpty => changes.isEmpty && raceTimes == null;
+  /// Other threshold updates for the profile ([AthleteData.merge] keys: ftp, swim times).
+  final Map<String, dynamic> athlete;
+
+  bool get isEmpty => changes.isEmpty && raceTimes == null && athlete.isEmpty;
 
   /// Plan id → changed fields, for [Repository.updateMany].
   Map<String, Map<String, dynamic>> get updates => {

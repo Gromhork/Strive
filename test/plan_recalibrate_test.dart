@@ -208,7 +208,10 @@ void main() {
     final p = profile();
     final (plans, sessions) = history(p, rpe: (w) => quality(w) ? 3 : null);
     final r = recal(p, plans, sessions);
-    expect(r.reasons, [RecalReason.rpeLow]);
+    // Quality runs on target paces that felt easy for weeks also lift the VDOT by one point
+    // (session evaluation trend, §12).
+    expect(r.reasons, [RecalReason.rpeLow, RecalReason.runTrendFaster]);
+    expect(r.stats.newVdot, closeTo(r.stats.oldVdot + 1, 0.05));
     expectSafe(r, plans);
     final harder = r.changes.where((c) => c.kind == RecalKind.harder).toList();
     expect(harder, isNotEmpty);
