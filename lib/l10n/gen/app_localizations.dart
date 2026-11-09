@@ -5476,6 +5476,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Day by day'**
   String get byDay;
+
+  /// No description provided for @scoreLegendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor training conditions'**
+  String get scoreLegendTitle;
+
+  /// No description provided for @scoreGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get scoreGood;
+
+  /// No description provided for @scoreFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get scoreFair;
+
+  /// No description provided for @scorePoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor'**
+  String get scorePoor;
+
+  /// No description provided for @scoreHowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How the score works'**
+  String get scoreHowTitle;
+
+  /// No description provided for @scoreHowIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Every hour gets a score from 0 to 100 for outdoor endurance training. It starts at 100 and loses points for:'**
+  String get scoreHowIntro;
+
+  /// No description provided for @scoreHowTemp.
+  ///
+  /// In en, this message translates to:
+  /// **'Feels-like temperature outside 7–16 °C (ideal for running): −3.5 per °C colder, −4.5 per °C warmer'**
+  String get scoreHowTemp;
+
+  /// No description provided for @scoreHowRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain: chance of rain and expected amount'**
+  String get scoreHowRain;
+
+  /// No description provided for @scoreHowWind.
+  ///
+  /// In en, this message translates to:
+  /// **'Wind above 20 km/h'**
+  String get scoreHowWind;
+
+  /// No description provided for @scoreHowUv.
+  ///
+  /// In en, this message translates to:
+  /// **'UV index above 6'**
+  String get scoreHowUv;
+
+  /// No description provided for @scoreHowDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Darkness (−18)'**
+  String get scoreHowDark;
+
+  /// No description provided for @scoreHowStorm.
+  ///
+  /// In en, this message translates to:
+  /// **'Thunderstorm (−40)'**
+  String get scoreHowStorm;
+
+  /// No description provided for @scoreHowLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'Good from 70, fair from 45, below that rather train indoors.'**
+  String get scoreHowLevels;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
