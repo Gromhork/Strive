@@ -106,7 +106,12 @@ class HealthService {
 
   /// Reads workouts since [since] and converts them to sessions. Workouts that
   /// Strive wrote itself and ones already imported ([knownIds]) are skipped.
-  Future<List<Session>> importWorkouts({required DateTime since, required Set<String> knownIds, required String Function() newId}) async {
+  Future<List<Session>> importWorkouts({
+    required DateTime since,
+    required Set<String> knownIds,
+    required String Function() newId,
+    String Function(Sport)? titleFor,
+  }) async {
     await _configure();
     final now = DateTime.now();
     final points = await _h.getHealthDataFromTypes(types: [HealthDataType.WORKOUT], startTime: since, endTime: now);
@@ -133,7 +138,7 @@ class HealthService {
         Session(
           id: newId(),
           sport: sport,
-          title: _titleFor(sport),
+          title: (titleFor ?? _titleFor)(sport),
           start: p.dateFrom,
           durationSec: p.dateTo.difference(p.dateFrom).inSeconds,
           distanceM: (v.totalDistance ?? 0).toDouble(),

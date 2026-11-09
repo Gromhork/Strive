@@ -58,7 +58,11 @@ class UserProfile {
   });
 
   int? get age => birthYear == null ? null : DateTime.now().year - birthYear!;
-  int get weeklyTarget => trainingDays.isEmpty ? 3 : trainingDays.length;
+
+  /// Training days the generated plan uses at most (quick setup): beginners keep ≥ 2
+  /// rest days (pure strength ≤ 4 days), athletes ≥ 60 one – see PlanGenerator.
+  int get maxPlanDays => level == 'beginner' ? (focus == TrainingFocus.gym ? 4 : 5) : ((age ?? 0) >= 60 ? 6 : 7);
+  int get weeklyTarget => trainingDays.isEmpty ? 3 : (trainingDays.length < maxPlanDays ? trainingDays.length : maxPlanDays);
   double get bmi => heightCm <= 0 ? 0 : weightKg / ((heightCm / 100) * (heightCm / 100));
   int get estimatedMaxHr => maxHr ?? (age == null ? 190 : (208 - 0.7 * age!).round());
   Units get units => Units(imperial);

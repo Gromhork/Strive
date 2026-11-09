@@ -29,19 +29,26 @@ void main() {
   for (final level in ['beginner', 'intermediate', 'advanced']) {
     for (final diff in ['easy', 'balanced', 'challenging']) {
       for (final focus in TrainingFocus.values) {
-        for (final event in [null, '5k', '10k', 'hm', 'm']) {
+        for (final event in [null, '5k', '10k', 'hm', 'm', 'sprint', 'olympic', '70.3']) {
           if (event != null && !focus.sports.contains(Sport.run)) continue;
+          if (const {'sprint', 'olympic', '70.3'}.contains(event) != (focus == TrainingFocus.triathlon && event != null)) continue;
           final days =
               [
                 [2, 4, 6],
                 [1, 3, 5, 6],
                 [1, 2, 4, 6, 7],
                 [1, 2, 3, 4, 6, 7],
-              ][rnd.nextInt(4)];
+                [1, 2, 3, 4, 5, 6, 7],
+              ][rnd.nextInt(5)];
           final minutes = [45, 60, 90][rnd.nextInt(3)];
-          profiles['$level/$diff/${focus.name}/$event/${days.length}d/${minutes}m'] = UserProfile(
+          final age = [25, 55, 70][rnd.nextInt(3)];
+          final bmi = [22.0, 33.0][rnd.nextInt(2)];
+          profiles['$level/$diff/${focus.name}/$event/${days.length}d/${minutes}m/${age}y/bmi${bmi.round()}'] = UserProfile(
             level: level,
             focus: focus,
+            birthYear: DateTime.now().year - age,
+            weightKg: bmi * 1.75 * 1.75,
+            experience: rnd.nextBool() ? {...focus.sports} : const {},
             goals: rnd.nextBool() ? const ['strength'] : const ['endurance'],
             trainingDays: days,
             athlete: AthleteData(
@@ -196,5 +203,187 @@ void main() {
       }
     }
     expect(templates.map((t) => t.key).toSet().length, templates.length);
+  });
+
+  // ───────────── Plan-wide training-science invariants (matrix audit) ─────────────
+
+  // Plans of the whole matrix, generated once for the checks below.
+  final plans = {for (final e in profiles.entries) e.key: PlanGenerator(l, e.value, templates, id).generate(start: start, weeks: 12)};
+  bool hard(PlannedWorkout p) => p.intensity == 'tempo' || p.intensity == 'intervals';
+  bool runWalk(PlannedWorkout p) => p.steps.any((s) => s.note == l.stepTalkPace);
+  Map<DateTime, List<PlannedWorkout>> byWeek(List<PlannedWorkout> plan) {
+    final m = <DateTime, List<PlannedWorkout>>{};
+    for (final p in plan.where((p) => p.intensity != 'race')) {
+      m.putIfAbsent(startOfWeek(p.date), () => []).add(p);
+    }
+    return m;
+  }
+
+  test('sane values, titles, descriptions and workout structure', () {
+    for (final e in plans.entries) {
+      final a = profiles[e.key]!.athlete;
+      for (final w in e.value) {
+        final tag = '${e.key}: ${w.title} ${w.date}';
+        expect(w.title.trim(), isNotEmpty, reason: tag);
+        expect(w.description.trim(), isNotEmpty, reason: tag);
+        expect(w.durationMin, inInclusiveRange(15, w.intensity == 'race' ? 720 : 240), reason: tag);
+        if (w.distanceKm != null) expect(w.distanceKm!.isFinite && w.distanceKm! >= 0, isTrue, reason: tag);
+        if (w.sport != Sport.gym && w.intensity != 'race') expect(w.steps, isNotEmpty, reason: tag);
+        for (final s in w.steps) {
+          expect((s.durationSec ?? 1) > 0 && (s.distanceM ?? 1) > 0, isTrue, reason: tag);
+          if (s.paceMin != null) expect(s.paceMin! <= s.paceMax!, isTrue, reason: tag);
+          if (s.hrMin != null) expect(s.hrMin! < s.hrMax! && s.hrMin! > 50 && s.hrMax! < 225, isTrue, reason: tag);
+        }
+        if (w.sport == Sport.run && hard(w)) {
+          expect(w.steps.first.kind, 'warmup', reason: tag);
+          expect(w.steps.last.kind, 'cooldown', reason: tag);
+        }
+        if (w.sport == Sport.run && a.raceTimes.isNotEmpty && w.intensity != 'race' && !runWalk(w)) {
+          expect(w.steps.where((s) => s.zone != 'walk').every((s) => s.paceMin != null), isTrue, reason: tag);
+        }
+      }
+    }
+  });
+
+  test('no back-to-back quality days (non-advanced, masters), never 3 key days in a row, H2 budget', () {
+    for (final e in plans.entries) {
+      final p = profiles[e.key]!;
+      final masters = (p.age ?? 30) >= 50;
+      bool endurance(PlannedWorkout w) => w.sport == Sport.run || w.sport == Sport.ride;
+      final quality = {for (final w in e.value.where((w) => endurance(w) && hard(w))) dayOnly(w.date)};
+      final keys = {for (final w in e.value.where((w) => endurance(w) && (hard(w) || w.intensity == 'long'))) dayOnly(w.date)};
+      for (final d in quality) {
+        final next = d.add(const Duration(days: 1)), prev = d.subtract(const Duration(days: 1));
+        if (p.level != 'advanced' || masters) {
+          expect(keys.contains(next) || keys.contains(prev), isFalse, reason: '${e.key}: quality on $d next to another key day');
+        }
+      }
+      for (final d in keys) {
+        final three = keys.contains(d.add(const Duration(days: 1))) && keys.contains(d.add(const Duration(days: 2)));
+        expect(three, isFalse, reason: '${e.key}: three key days from $d');
+      }
+      for (final wk in byWeek(e.value).entries) {
+        final n = wk.value.where((w) => w.sport != Sport.gym).length;
+        final budget = n <= 4 ? 2 : (n <= 7 ? 3 : 4);
+        final h = wk.value.where(hard).fold<double>(0, (x, w) => x + (w.sport == Sport.swim ? 0.5 : (w.sport == Sport.gym ? 0 : 1)));
+        expect(h, lessThanOrEqualTo(budget), reason: '${e.key}: ${wk.key} $h hard sessions > $budget');
+      }
+    }
+  });
+
+  test('taper is 1–3 weeks and at most a third of short plans', () {
+    for (final weeks in [3, 5, 6, 9, 14]) {
+      for (final ev in ['5k', 'hm', 'm', 'olympic', '70.3']) {
+        final p = UserProfile(
+          level: 'intermediate',
+          focus: ev.contains('.') || ev == 'olympic' ? TrainingFocus.triathlon : TrainingFocus.run,
+          trainingDays: const [1, 2, 4, 6, 7],
+          longDay: 7,
+          athlete: AthleteData(eventDistance: ev, eventDate: start.add(Duration(days: 7 * weeks - 1))),
+        );
+        final plan = PlanGenerator(l, p, templates, id).generate(start: start);
+        final taperWeeks = byWeek(plan.where((w) => w.phase == 'taper').toList()).length;
+        expect(taperWeeks, inInclusiveRange(1, 3), reason: '$ev $weeks weeks');
+        expect(taperWeeks, lessThanOrEqualTo(max(1, weeks ~/ 3)), reason: '$ev $weeks weeks: $taperWeeks taper weeks');
+      }
+    }
+  });
+
+  test('rest days: beginners ≥ 2 a week, athletes ≥ 60 at least 1', () {
+    for (final e in plans.entries) {
+      final p = profiles[e.key]!;
+      final need = p.level == 'beginner' ? 2 : ((p.age ?? 30) >= 60 ? 1 : 0);
+      for (final wk in byWeek(e.value).entries) {
+        final days = wk.value.map((w) => dayOnly(w.date)).toSet().length;
+        expect(7 - days, greaterThanOrEqualTo(need), reason: '${e.key}: ${wk.key}');
+      }
+    }
+  });
+
+  test('recovery weeks: masters ≤ 3 loading weeks (≥ 65: 2), and the volume really drops', () {
+    for (final e in plans.entries) {
+      final age = profiles[e.key]!.age ?? 30;
+      final weeks = byWeek(e.value);
+      final keys = weeks.keys.toList()..sort();
+      var loading = 0;
+      double? lastLoad;
+      for (final k in keys) {
+        final ws = weeks[k]!;
+        final phases = ws.map((w) => w.phase).toSet();
+        final minutes = ws.where((w) => w.sport != Sport.gym).fold<double>(0, (x, w) => x + w.durationMin);
+        if (!phases.contains('recovery') && !phases.contains('taper')) {
+          loading++;
+          lastLoad = minutes;
+          continue;
+        }
+        // Loading blocks before a recovery week (the block right before the taper or at the
+        // end of the plan may be one week longer – no deload right before a taper).
+        if (phases.contains('recovery') && age >= 50) expect(loading, lessThanOrEqualTo(age >= 65 ? 2 : 3), reason: '${e.key}: $k');
+        // Above the minimum session lengths (3 km run, 40 min ride, 1 km swim) the deload
+        // must show in the time spent – also when the athlete's time is the limit.
+        if (phases.contains('recovery') && lastLoad != null && lastLoad >= 180 && !ws.any(runWalk)) {
+          expect(minutes, lessThanOrEqualTo(lastLoad * 0.9), reason: '${e.key}: recovery $k $minutes vs $lastLoad');
+        }
+        loading = 0;
+      }
+    }
+  });
+
+  test('triathlon: every discipline with ≥ 3 days, 5 days → 2 runs, 6 days → 2/2/2', () {
+    for (final days in [3, 4, 5, 6, 7]) {
+      final p = UserProfile(level: 'intermediate', focus: TrainingFocus.triathlon, trainingDays: [1, 2, 3, 4, 5, 6, 7].take(days).toList());
+      final s = PlanGenerator.deriveSchedule(p).values.expand((v) => v).toList();
+      int n(Sport x) => s.where((y) => y == x).length;
+      expect([n(Sport.swim), n(Sport.ride), n(Sport.run)].every((c) => c >= 1), isTrue, reason: '$days d: $s');
+      if (days == 5) expect(n(Sport.run), 2);
+      if (days == 6) expect([n(Sport.swim), n(Sport.ride), n(Sport.run)], [2, 2, 2]);
+    }
+  });
+
+  test('run/walk: quick-setup beginners without running experience, one stage a week, no jump afterwards', () {
+    final novice = UserProfile(level: 'beginner', focus: TrainingFocus.run, trainingDays: const [2, 4, 6]);
+    final plan = PlanGenerator(l, novice, templates, id).generate(start: start, weeks: 16);
+    final weeks = byWeek(plan);
+    final keys = weeks.keys.toList()..sort();
+    // Run/walk until 30 min continuous (11 stages plus repeated stages in recovery weeks).
+    final rw = keys.takeWhile((k) => weeks[k]!.every(runWalk)).length;
+    expect(rw, inInclusiveRange(11, 15));
+    // R1: the first long run is at most ~10 % longer than the 30 min run before.
+    final firstLong = plan.firstWhere((p) => p.intensity == 'long');
+    expect(firstLong.distanceKm, lessThanOrEqualTo(30 * 60 / PlanGenerator(l, novice, templates, id).pz.easySlow * 1.1 + 0.5));
+    // A returning runner gets continuous runs; with BMI ≥ 30 a shortened run/walk start.
+    final returning = UserProfile(
+      level: 'beginner',
+      focus: TrainingFocus.run,
+      trainingDays: const [2, 4, 6],
+      experience: const {Sport.run},
+    );
+    expect(PlanGenerator(l, returning, templates, id).generate(start: start, weeks: 2).any(runWalk), isFalse);
+    final heavy = returning.copyWith(weightKg: 105);
+    expect(PlanGenerator.runWalkStartFor(heavy), 4);
+    expect(PlanGenerator(l, heavy, templates, id).generate(start: start, weeks: 2).first.title, l.wRunWalk(3, 5));
+  });
+
+  test('goal-specific volume: HM long run ≥ 14 km, olympic long ride ≥ 90 min, realistic race durations', () {
+    UserProfile goal(TrainingFocus f, String event, List<int> days, int weeks) => UserProfile(
+      level: 'intermediate',
+      focus: f,
+      trainingDays: days,
+      longDay: days.last,
+      athlete: AthleteData(sessionMinutes: 90, eventDistance: event, eventDate: start.add(Duration(days: 7 * (weeks - 1) + 6))),
+    );
+    final hm = PlanGenerator(l, goal(TrainingFocus.run, 'hm', const [2, 4, 6, 7], 14), templates, id).generate(start: start);
+    expect(hm.where((p) => p.intensity == 'long').map((p) => p.distanceKm!).reduce(max), greaterThanOrEqualTo(14));
+    final tri = PlanGenerator(
+      l,
+      goal(TrainingFocus.triathlon, 'olympic', const [1, 2, 3, 4, 6, 7], 16),
+      templates,
+      id,
+    ).generate(start: start);
+    final longRide = tri.where((p) => p.sport == Sport.ride && p.intensity == 'long').map((p) => p.durationMin).reduce(max);
+    expect(longRide, greaterThanOrEqualTo(90));
+    expect(tri.firstWhere((p) => p.intensity == 'race').durationMin, inInclusiveRange(120, 240));
+    final m = PlanGenerator(l, goal(TrainingFocus.run, 'm', const [2, 4, 6, 7], 18), templates, id).generate(start: start);
+    expect(m.firstWhere((p) => p.intensity == 'race').durationMin, greaterThan(180));
   });
 }

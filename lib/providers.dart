@@ -9,6 +9,7 @@ import 'core/sport.dart';
 import 'data/exercise_db.dart';
 import 'data/models.dart';
 import 'data/repository.dart';
+import 'services/compliance.dart';
 import 'services/insights.dart';
 import 'services/load_prescription.dart';
 import 'services/weather_service.dart';
@@ -196,3 +197,16 @@ class SettingsNotifier extends Notifier<AppSettings> {
 }
 
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
+
+// ───────────────────────────── Cached heavy computations ─────────────────────────────
+
+/// Banister fitness/fatigue series of all sessions (recomputed only when sessions change).
+final fitnessSeriesProvider = Provider<List<FitnessPoint>>((ref) => fitnessSeries(ref.watch(sessionListProvider)));
+
+/// Best lifts per exercise id over all sessions.
+final exerciseRecordsProvider = Provider<Map<String, ExerciseRecord>>((ref) => exerciseRecords(ref.watch(sessionListProvider)));
+
+/// Plan id → linked session (for plan compliance).
+final planSessionsProvider = Provider<Map<String, Session>>(
+  (ref) => linkPlanSessions(ref.watch(planListProvider), ref.watch(sessionListProvider)),
+);

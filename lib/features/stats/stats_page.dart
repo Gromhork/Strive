@@ -70,8 +70,10 @@ class _PerformanceState extends ConsumerState<_Performance> {
     for (final x in all) {
       minutesByDay[dayOnly(x.start)] = (minutesByDay[dayOnly(x.start)] ?? 0) + x.minutes;
     }
-    final records = exerciseRecords(all).values.toList()..sort((a, b) => b.sessions.compareTo(a.sessions));
-    _exId ??= records.isNotEmpty ? records.first.exId : null;
+    final records = ref.watch(exerciseRecordsProvider).values.toList()..sort((a, b) => b.sessions.compareTo(a.sessions));
+    final shownRecords = records.take(25).toList();
+    // The selection may drop out of the top 25 (or vanish) when sessions change → fall back to the first.
+    final exId = shownRecords.any((r) => r.exId == _exId) ? _exId : shownRecords.firstOrNull?.exId;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -138,11 +140,11 @@ class _PerformanceState extends ConsumerState<_Performance> {
           SectionCard(
             title: l.strengthProgress,
             trailing: DropdownButton<String>(
-              value: _exId,
+              value: exId,
               isDense: true,
               underline: const SizedBox.shrink(),
               items: [
-                for (final r in records.take(25))
+                for (final r in shownRecords)
                   DropdownMenuItem(
                     value: r.exId,
                     child: SizedBox(
@@ -153,7 +155,7 @@ class _PerformanceState extends ConsumerState<_Performance> {
               ],
               onChanged: (v) => setState(() => _exId = v),
             ),
-            child: SizedBox(height: 170, child: _E1rmChart(points: e1rmHistory(all, _exId ?? ''), units: u)),
+            child: SizedBox(height: 170, child: _E1rmChart(points: e1rmHistory(all, exId ?? ''), units: u)),
           ),
         ],
         if (filter != null && filter != Sport.gym) ...[
@@ -317,7 +319,9 @@ class _Records extends ConsumerWidget {
     final u = ref.watch(profileOrDefaultProvider).units;
     final g = ref.watch(gameStatsProvider);
     final db = ref.watch(exerciseDbProvider).value;
-    final recs = exerciseRecords(all).values.where((r) => r.exId != 'manual').toList()..sort((a, b) => b.bestE1rm.compareTo(a.bestE1rm));
+    final recs =
+        ref.watch(exerciseRecordsProvider).values.where((r) => r.exId != 'manual').toList()
+          ..sort((a, b) => b.bestE1rm.compareTo(a.bestE1rm));
 
     Session? best(Sport s, double Function(Session) f) {
       final list = all.where((x) => x.sport == s && x.distanceM > 0).toList();

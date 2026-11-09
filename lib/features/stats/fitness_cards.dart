@@ -17,7 +17,7 @@ class FitnessFormCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final series = fitnessSeries(ref.watch(sessionListProvider));
+    final series = ref.watch(fitnessSeriesProvider);
     if (series.length < 7) return const SizedBox.shrink();
     final now = series.last;
     final form = now.form;

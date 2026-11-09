@@ -7,6 +7,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
+import '../../services/compliance.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
 import '../calendar/planned_workout_page.dart';
@@ -38,6 +39,8 @@ class _WeekPageState extends ConsumerState<WeekPage> {
     final totalSec = sessions.fold<int>(0, (a, s) => a + s.durationSec);
     final totalKm = sessions.fold<double>(0, (a, s) => a + s.distanceM) / 1000;
     final doneCount = plans.where((p) => p.isDone).length;
+    final linked = ref.watch(planSessionsProvider);
+    final completion = weeklyCompletion(plans, linked);
 
     return Scaffold(
       appBar: AppBar(title: Text(l.thisWeek)),
@@ -63,6 +66,7 @@ class _WeekPageState extends ConsumerState<WeekPage> {
               ),
             ],
           ),
+          if (completion != null) ...[_CompletionBar(share: completion), const SizedBox(height: 12)],
           Row(
             children: [
               Expanded(child: StatTile(label: l.duration, value: humanDuration(totalSec))),
@@ -100,6 +104,7 @@ class _WeekPageState extends ConsumerState<WeekPage> {
                   _DayRow(
                     day: _week.add(Duration(days: i)),
                     plans: plans.where((p) => sameDay(p.date, _week.add(Duration(days: i)))).toList(),
+                    linked: linked,
                     sessions: sessions.where((s) => sameDay(s.start, _week.add(Duration(days: i))) && s.planId == null).toList(),
                     units: u,
                   ),
@@ -170,9 +175,10 @@ class _SportRow extends StatelessWidget {
 }
 
 class _DayRow extends StatelessWidget {
-  const _DayRow({required this.day, required this.plans, required this.sessions, required this.units});
+  const _DayRow({required this.day, required this.plans, required this.linked, required this.sessions, required this.units});
   final DateTime day;
   final List<PlannedWorkout> plans;
+  final Map<String, Session> linked;
   final List<Session> sessions;
   final Units units;
 
@@ -185,8 +191,12 @@ class _DayRow extends StatelessWidget {
         _Item(
           sport: p.sport,
           title: p.title,
-          sub: [if (p.durationMin > 0) '${p.durationMin} min', if (p.distanceKm != null) '${Units.num(p.distanceKm!)} km'].join(' · '),
-          status: p.isDone ? _Status.done : (p.isMissed ? _Status.missed : _Status.planned),
+          sub: [
+            if (p.durationMin > 0) '${p.durationMin} min',
+            if (p.distanceKm != null && p.distanceKm! > 0) units.dist(p.distanceKm! * 1000, digits: 1),
+          ].join(' · '),
+          compliance: planCompliance(p, linked[p.id]),
+          skipped: p.status == 'skipped',
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id))),
         ),
       for (final s in sessions)
@@ -197,7 +207,7 @@ class _DayRow extends StatelessWidget {
             humanDuration(s.durationSec),
             if (s.distanceM > 0) '${Units.num(units.distOut(s.distanceM), 1)} ${units.distUnit}',
           ].join(' · '),
-          status: _Status.done,
+          compliance: const Compliance(ComplianceLevel.green),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: s.id))),
         ),
     ];
@@ -227,14 +237,20 @@ class _DayRow extends StatelessWidget {
   }
 }
 
-enum _Status { planned, done, missed }
-
 class _Item extends StatelessWidget {
-  const _Item({required this.sport, required this.title, required this.sub, required this.status, required this.onTap});
+  const _Item({
+    required this.sport,
+    required this.title,
+    required this.sub,
+    required this.compliance,
+    this.skipped = false,
+    required this.onTap,
+  });
   final Sport sport;
   final String title;
   final String sub;
-  final _Status status;
+  final Compliance compliance;
+  final bool skipped;
   final VoidCallback onTap;
 
   @override
@@ -242,7 +258,13 @@ class _Item extends StatelessWidget {
     padding: const EdgeInsets.only(bottom: 6),
     child: Material(
       color: sport.color.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side:
+            compliance.level == ComplianceLevel.none
+                ? BorderSide.none
+                : BorderSide(color: compliance.color(context).withValues(alpha: 0.55)),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
@@ -261,25 +283,45 @@ class _Item extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                switch (status) {
-                  _Status.done => Icons.check_circle_rounded,
-                  _Status.missed => Icons.cancel_outlined,
-                  _Status.planned => Icons.radio_button_unchecked,
-                },
-                size: 20,
-                color: switch (status) {
-                  _Status.done => AppColors.success,
-                  _Status.missed => AppColors.danger,
-                  _Status.planned => Theme.of(context).colorScheme.outline,
-                },
-              ),
+              ComplianceRing(compliance: compliance, skipped: skipped),
             ],
           ),
         ),
       ),
     ),
   );
+}
+
+/// Weekly plan completion (weighted by planned minutes).
+class _CompletionBar extends StatelessWidget {
+  const _CompletionBar({required this.share});
+  final double share;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = context.l10n.planCompletion((share * 100).round());
+    final color = completionColor(share);
+    return Semantics(
+      label: text,
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(text, style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: color)),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: share.clamp(0.0, 1.0),
+              minHeight: 6,
+              color: color,
+              backgroundColor: color.withValues(alpha: 0.15),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Readiness / training-load explanation (from the recovery tile).
