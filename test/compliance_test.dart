@@ -100,12 +100,19 @@ void main() {
         _plan(id: 'd', durationMin: 0), // ignored
       ];
       final linked = {'a': _session(id: 's1', minutes: 120), 'b': _session(id: 's2', minutes: 15)};
-      expect(weeklyCompletion(plans, linked), closeTo(75 / 120, 1e-9));
+      expect(weeklyCompletion(plans, linked, now: _now), closeTo(75 / 120, 1e-9));
     });
 
     test('skipped counts as 0, done without session as full', () {
       final plans = [_plan(id: 'a', durationMin: 40, status: 'skipped'), _plan(id: 'b', durationMin: 40, status: 'done')];
-      expect(weeklyCompletion(plans, const {}), closeTo(0.5, 1e-9));
+      expect(weeklyCompletion(plans, const {}, now: _now), closeTo(0.5, 1e-9));
+    });
+
+    test('workouts not due yet do not count', () {
+      final plans = [_plan(id: 'today', date: DateTime(2026, 11, 9)), _plan(id: 'fri', date: DateTime(2026, 11, 13))];
+      expect(weeklyCompletion(plans, const {}, now: _now), isNull);
+      final early = [...plans, _plan(id: 'x', date: DateTime(2026, 11, 13), status: 'done', durationMin: 30)];
+      expect(weeklyCompletion(early, const {}, now: _now), closeTo(1, 1e-9));
     });
 
     test('null when nothing planned', () {

@@ -109,19 +109,24 @@ Map<String, Session> linkPlanSessions(List<PlannedWorkout> plans, List<Session> 
 
 /// Share (0…1) of the planned minutes that were completed, weighted by planned minutes.
 /// Each workout contributes at most its planned minutes (over-delivery doesn't hide a miss).
-/// Skipped/missed/future workouts count as 0. Null when nothing with a duration is planned.
-double? weeklyCompletion(List<PlannedWorkout> plans, Map<String, Session> linked) {
+/// Only workouts that are already due count – past days, plus anything done early – so
+/// Monday morning doesn't read "0 %". Skipped and missed workouts count as 0.
+/// Null when nothing with a duration is due yet.
+double? weeklyCompletion(List<PlannedWorkout> plans, Map<String, Session> linked, {DateTime? now}) {
+  final today = dayOnly(now ?? DateTime.now());
   var planned = 0.0, done = 0.0;
   for (final p in plans) {
     final min = p.durationMin.toDouble();
     if (min <= 0) continue;
-    planned += min;
     final s = linked[p.id];
-    if (p.status == 'skipped') continue;
+    final completed = p.status != 'skipped' && (s != null || p.isDone);
+    if (!completed && !dayOnly(p.date).isBefore(today)) continue; // not due yet
+    planned += min;
+    if (!completed) continue;
     if (s != null) {
       final r = complianceRatio(p, s) ?? 1;
       done += min * r.clamp(0.0, 1.0);
-    } else if (p.isDone) {
+    } else {
       done += min;
     }
   }
