@@ -2,60 +2,101 @@ import 'dart:math';
 
 import '../data/exercise_db.dart';
 import '../data/models.dart';
+import 'exercise_class.dart';
 
-/// Load increment for an exercise (kg). Lower-body barbell lifts progress faster
-/// than upper-body or isolation work (practice-based, cf. NSCA guidelines).
-double loadIncrement(Exercise? e) {
-  if (e == null) return 2.5;
-  final lower = const {'upper legs', 'lower legs'}.contains(e.bodyPart) || e.target == 'glutes';
+/// Smallest sensible load step (kg) for progressing an exercise: +5 kg for lower-body
+/// barbell / sled compounds, +2.5 kg for upper-body barbell and machine/cable work,
+/// +2 kg for dumbbells (+1 kg for light dumbbells < 10 kg, where 2 kg would be a 20–30 %
+/// jump), +2.5 kg added load for pull-ups / chin-ups / dips, 0 for exercises that are
+/// progressed by reps (push-ups, bodyweight leg and core work). Practice-based, in line
+/// with NSCA guidance of ~2–10 % steps (larger for lower body).
+double loadIncrement(Exercise? e, {double weight = 0, bool? bodyweight}) {
+  if (e == null) return bodyweight == true ? 0 : 2.5;
+  final lift = classifyLift(e.id, e.name, info: e);
+  if (bodyweight ?? lift.bodyweight) return lift.loadableBodyweight ? 2.5 : 0;
+  final lowerCompound = lift.lower && lift.isCompound;
   switch (e.equipment) {
     case 'barbell':
+    case 'olympic barbell':
     case 'trap bar':
     case 'smith machine':
-      return lower ? 5 : 2.5;
+    case 'ez barbell':
+      return lowerCompound ? 5 : 2.5;
     case 'dumbbell':
     case 'kettlebell':
-      return 2;
+      return weight > 0 && weight < 10 ? 1 : 2;
+    case 'sled machine':
+    case 'leverage machine':
+    case 'cable':
+      return lowerCompound && lift.move == Movement.squat ? 5 : 2.5;
     case 'body weight':
     case 'band':
     case 'resistance band':
-      return 0;
+      return lift.loadableBodyweight ? 2.5 : 0;
     default:
       return 2.5;
   }
 }
 
-enum ProgressionKind { increase, addReps, hold, deload }
+/// Outcome of the double-progression rule for the next session ([reset]: lighter after
+/// a stall of several sessions).
+enum ProgressionKind { increase, addReps, hold, deload, reset }
 
 class Progression {
   final ProgressionKind kind;
   final double weight;
+
+  /// Lowest per-set rep target (the start of the range after a load increase).
   final int reps;
-  const Progression(this.kind, this.weight, this.reps);
+
+  /// Per-work-set rep targets (same order as last time).
+  final List<int> setReps;
+  const Progression(this.kind, this.weight, this.reps, [this.setReps = const []]);
+
+  @override
+  String toString() => 'Progression($kind, $weight × $reps $setReps)';
 }
 
-/// Double progression (Helms et al. 2018, "The Muscle and Strength Pyramid"):
-/// work within a rep range; once every work set reaches the top of the range at
-/// RPE ≤ 9, add load and restart at the bottom of the range.
-Progression? suggestProgression(GymExercise planned, List<GymSet>? last, Exercise? info) {
-  final work = last?.where((s) => !s.warmup && s.done).toList() ?? const [];
-  if (work.isEmpty) return null;
-  final top = planned.repMax ?? planned.workSets.fold<int>(0, (a, s) => max(a, s.reps));
-  final bottom = planned.repMin ?? max(1, top - 4);
-  if (top <= 0) return null;
+/// Double progression (Helms et al. 2018, "The Muscle and Strength Pyramid"; Plotkin et
+/// al. 2022: adding reps or load progresses equally well):
+/// * keep the weight and add reps set by set inside the rep range [bottom]–[top];
+/// * when **every** work set reached the top (and the last set was not a grinder at
+///   RPE ≥ 9.5), add the smallest step [increment] and restart at [bottom];
+/// * reps clearly missed (most sets below [bottom]): keep the weight when it was close
+///   (≤ 1 rep short), else go back one step (≤ 3 reps short) or ~10 % (more);
+/// * exercises without a load step ([increment] = 0, e.g. push-ups) keep adding reps.
+Progression? suggestProgression(List<GymSet>? last, {required int bottom, required int top, required double increment}) {
+  final work = last?.where((s) => !s.warmup && s.type != SetType.drop && s.done && s.reps > 0).toList() ?? const [];
+  if (work.isEmpty || top <= 0) return null;
+  if (bottom > top) bottom = top;
   final w = work.map((s) => s.weight).reduce(max);
-  final atTop = work.every((s) => s.reps >= top);
+  final reps = work.map((s) => s.reps).toList();
+  final atTop = reps.every((r) => r >= top);
   final hardRpe = work.any((s) => (s.rpe ?? 8) >= 9.5);
-  final missed = work.where((s) => s.reps < bottom).length;
-  final inc = loadIncrement(info);
-  if (atTop && !hardRpe && inc > 0) return Progression(ProgressionKind.increase, w + inc, bottom);
-  if (atTop && inc == 0) return Progression(ProgressionKind.addReps, w, top + 1);
-  if (missed >= (work.length / 2).ceil() && w > 0) {
-    return Progression(ProgressionKind.deload, roundToPlate(w * 0.9), bottom);
+  if (atTop) {
+    if (increment > 0 && !hardRpe) return Progression(ProgressionKind.increase, w + increment, bottom);
+    if (increment > 0) return Progression(ProgressionKind.hold, w, top, [for (final _ in work) top]);
+    // No load step: keep adding reps beyond the range.
+    final r = reps.reduce(min) + 1;
+    return Progression(ProgressionKind.addReps, w, r, [for (final x in reps) max(x, r - 1) + 1]);
   }
-  final minReps = work.map((s) => s.reps).reduce(min);
-  if (minReps < top) return Progression(ProgressionKind.addReps, w, minReps + 1);
-  return Progression(ProgressionKind.hold, w, top);
+  final missed = reps.where((r) => r < bottom).length;
+  if (missed >= (work.length / 2).ceil()) {
+    final sorted = [...reps]..sort();
+    final median = sorted[sorted.length ~/ 2];
+    final short = bottom - median;
+    if (increment > 0 && w > 0 && short > 1) {
+      final target = short <= 3 ? w - increment : min(w - increment, w * 0.9);
+      return Progression(ProgressionKind.deload, max(0, target), bottom);
+    }
+    if (increment <= 0 || w <= 0) {
+      // Bodyweight / no load: beat last time by one rep.
+      return Progression(ProgressionKind.addReps, w, reps.reduce(min) + 1, [for (final r in reps) r + 1]);
+    }
+    return Progression(ProgressionKind.hold, w, bottom, [for (final _ in work) bottom]);
+  }
+  final targets = [for (final r in reps) r < top ? max(r + 1, bottom) : top];
+  return Progression(ProgressionKind.addReps, w, targets.reduce(min), targets);
 }
 
 double roundToPlate(double kg, [double step = 2.5]) => (kg / step).round() * step;

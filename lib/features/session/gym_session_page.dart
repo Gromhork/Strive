@@ -9,9 +9,9 @@ import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/active_workout.dart';
 import '../../services/insights.dart';
-import '../../services/load_prescription.dart';
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../widgets/prescription.dart';
 import '../train/exercise_picker.dart';
 import 'exercise_focus_page.dart';
@@ -160,12 +160,15 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
     );
   }
 
+  /// Exercises in order; adjacent superset members are framed together. (Supersets are
+  /// adjacent runs only – a letter shared by distant exercises never pulls the
+  /// exercises in between out of the list.)
   List<Widget> _exerciseList(ActiveGym w, Units u) {
     final out = <Widget>[];
     var i = 0;
     while (i < w.exercises.length) {
       final group = w.groupOf(i);
-      if (group.length > 1 && group.first == i) {
+      if (group.length > 1) {
         out.add(
           _SupersetFrame(
             letter: w.exercises[i].group!,
@@ -173,17 +176,12 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
           ),
         );
         i = group.last + 1;
-        // Non-adjacent members are rendered inside the frame; skip them later.
-        continue;
-      }
-      if (group.length > 1 && group.first != i) {
-        i++;
         continue;
       }
       // Copy the index: the closure must not capture the loop variable (it would open
       // the last exercise for every tile).
-      final idx = i;
-      out.add(_ExerciseTile(w: w, index: idx, units: u, onTap: () => _openFocus(idx)));
+      final k = i;
+      out.add(_ExerciseTile(w: w, index: k, units: u, onTap: () => _openFocus(k)));
       i++;
     }
     return out;
@@ -314,7 +312,7 @@ class _UpNextCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     if (set != null)
                       Text(
-                        '${l.setXofY(setIdx + 1, e.sets.length)} · ${setLabel(set, units)}',
+                        '${l.setXofY(setIdx + 1, e.sets.length)} · ${setLabelOf(l, e, set, units)}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                   ],
@@ -384,6 +382,15 @@ class _SupersetFrame extends StatelessWidget {
                   '${context.l10n.superset} $letter',
                   style: const TextStyle(color: c, fontWeight: FontWeight.w700, fontSize: 12, letterSpacing: 0.6),
                 ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    context.l10n.supersetHint,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+                  ),
+                ),
               ],
             ),
           ),
@@ -409,10 +416,10 @@ class _ExerciseTile extends ConsumerWidget {
     final total = e.sets.length;
     final done = e.sets.where((s) => s.done).length;
     final work = e.workSets;
-    final summary =
-        work.isEmpty
-            ? '$total ${l.sets}'
-            : '${work.length} × ${work.first.reps} · ${units.weight(work.map((s) => s.weight).reduce((a, b) => a > b ? a : b))}';
+    final (lo, hi) = ref.watch(loadPrescriberProvider).range(e);
+    final top = work.isEmpty ? 0.0 : work.map((s) => s.weight).reduce((a, b) => a > b ? a : b);
+    final load = e.bw == true ? bodyweightLoad(l.bodyweightShort, top, units) : (top > 0 ? units.weight(top) : null);
+    final summary = work.isEmpty ? '$total ${l.sets}' : '${work.length} × $lo–$hi${load == null ? '' : ' · $load'}';
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -477,7 +484,7 @@ class _ExerciseTile extends ConsumerWidget {
 }
 
 /// Shared overflow menu for an exercise (overview + focus view).
-class ExerciseMenu extends StatelessWidget {
+class ExerciseMenu extends ConsumerWidget {
   const ExerciseMenu({super.key, required this.index, required this.w, required this.n, this.icon});
   final int index;
   final ActiveGym w;
@@ -485,7 +492,7 @@ class ExerciseMenu extends StatelessWidget {
   final Widget? icon;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final e = w.exercises[index];
     return PopupMenuButton<String>(
@@ -493,7 +500,10 @@ class ExerciseMenu extends StatelessWidget {
       onSelected: (v) async {
         switch (v) {
           case 'superset':
-            n.toggleSuperset(index);
+            if (!n.toggleSuperset(index) && context.mounted) toast(context, l.supersetMax);
+          case 'bodyweight':
+            final on = e.bw != true;
+            n.setBodyweight(index, on, bodyKg: on ? ref.read(loadPrescriberProvider).bodyLoad(e) : 0);
           case 'replace':
             final picked = await pickExercises(context, single: true);
             if (picked.isNotEmpty) n.replaceExercise(index, picked.first.id, picked.first.name);
@@ -530,6 +540,7 @@ class ExerciseMenu extends StatelessWidget {
                 title: Text(l.replaceExercise),
               ),
             ),
+            CheckedPopupMenuItem(value: 'bodyweight', checked: e.bw == true, child: Text(l.bodyweight)),
             PopupMenuItem(
               value: 'rest',
               child: ListTile(
@@ -549,7 +560,15 @@ class ExerciseMenu extends StatelessWidget {
 
 String capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
-String setLabel(GymSet s, Units u) => s.weight > 0 ? '${u.weight(s.weight)} × ${s.reps}' : '${s.reps} ×';
+/// "60 kg × 8", "8 ×" (no weight) or, with [bw] (short bodyweight label), "BW × 8",
+/// "BW +5 kg × 8" / "BW −10 kg × 8".
+String setLabel(GymSet s, Units u, {String? bw}) {
+  if (bw != null) return '${bodyweightLoad(bw, s.weight, u)} × ${s.reps}';
+  return s.weight > 0 ? '${u.weight(s.weight)} × ${s.reps}' : '${s.reps} ×';
+}
+
+/// [setLabel] for a set of [e] (bodyweight exercises show "BW + added load").
+String setLabelOf(AppLocalizations l, GymExercise e, GymSet s, Units u) => setLabel(s, u, bw: e.bw == true ? l.bodyweightShort : null);
 
 // ───────────────────────────── Table view (compact, power users) ─────────────────────────────
 
@@ -602,7 +621,7 @@ class _ExerciseCard extends ConsumerWidget {
                   ExerciseMenu(index: index, w: w, n: n),
                 ],
               ),
-              if (rx != null && (rx.source != LoadSource.bodyweight || rx.fromHistory))
+              if (rx != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 8, top: 2),
                   child: PrescriptionHint(prescription: rx, units: units, dense: true),
@@ -613,7 +632,15 @@ class _ExerciseCard extends ConsumerWidget {
                   children: [
                     SizedBox(width: 32, child: Text(l.setShort, style: Theme.of(context).textTheme.labelSmall)),
                     Expanded(flex: 3, child: Text(l.previous, style: Theme.of(context).textTheme.labelSmall)),
-                    Expanded(flex: 3, child: Center(child: Text(units.weightUnit, style: Theme.of(context).textTheme.labelSmall))),
+                    Expanded(
+                      flex: 3,
+                      child: Center(
+                        child: Text(
+                          exercise.bw == true ? '${l.bodyweightShort} ± ${units.weightUnit}' : units.weightUnit,
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                      ),
+                    ),
                     Expanded(flex: 3, child: Center(child: Text(l.reps, style: Theme.of(context).textTheme.labelSmall))),
                     const SizedBox(width: 44),
                   ],
@@ -627,6 +654,7 @@ class _ExerciseCard extends ConsumerWidget {
                   data: exercise.sets[s],
                   previous: _prevFor(exercise, s, work),
                   units: units,
+                  bodyweight: exercise.bw == true,
                 ),
               Align(
                 alignment: Alignment.centerLeft,
@@ -648,11 +676,20 @@ GymSet? _prevFor(GymExercise e, int s, List<GymSet>? work) {
 }
 
 class _SetRow extends ConsumerStatefulWidget {
-  const _SetRow({super.key, required this.ex, required this.set, required this.data, required this.previous, required this.units});
+  const _SetRow({
+    super.key,
+    required this.ex,
+    required this.set,
+    required this.data,
+    required this.previous,
+    required this.units,
+    this.bodyweight = false,
+  });
   final int ex, set;
   final GymSet data;
   final GymSet? previous;
   final Units units;
+  final bool bodyweight;
 
   @override
   ConsumerState<_SetRow> createState() => _SetRowState();
@@ -719,7 +756,11 @@ class _SetRowState extends ConsumerState<_SetRow> {
                           n.updateSet(widget.ex, widget.set, weight: p.weight, reps: p.reps);
                         },
                 child: Text(
-                  p == null ? '–' : '${Units.num(widget.units.weightOut(p.weight))}×${p.reps}',
+                  p == null
+                      ? '–'
+                      : widget.bodyweight
+                      ? setLabel(p, widget.units, bw: context.l10n.bodyweightShort)
+                      : '${Units.num(widget.units.weightOut(p.weight))}×${p.reps}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -731,7 +772,7 @@ class _SetRowState extends ConsumerState<_SetRow> {
                 child: TextField(
                   controller: _w,
                   textAlign: TextAlign.center,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true, signed: widget.bodyweight),
                   decoration: deco(p == null ? '0' : Units.num(widget.units.weightOut(p.weight))),
                   onChanged: (v) => n.updateSet(widget.ex, widget.set, weight: widget.units.weightIn(parseNum(v) ?? 0)),
                 ),

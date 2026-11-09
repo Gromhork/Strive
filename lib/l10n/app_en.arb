@@ -1848,6 +1848,57 @@
   "sessionCorrected": "Workout updated",
   "editSessionHint": "Correct wrong measurements or entries. Recorded route and splits stay as they are.",
   "deleted": "Deleted",
+  "supersetHint": "Alternate the exercises – short switch, full rest after each round",
+  "supersetMax": "A superset has at most 3 exercises.",
+  "supersetSwitch": "Switch exercise",
+  "supersetSwitchHint": "Short break – then straight on to the next exercise of the superset.",
+  "bodyweight": "Bodyweight",
+  "bodyweightShort": "BW",
+  "bodyweightHint": "Weight = added load on top of your body weight (negative = assistance).",
+  "addedWeight": "Added weight",
+  "targetLoad": "Target: {load} · {lo}–{hi} reps",
+  "@targetLoad": {
+    "placeholders": {
+      "load": {
+        "type": "String"
+      },
+      "lo": {
+        "type": "int"
+      },
+      "hi": {
+        "type": "int"
+      }
+    }
+  },
+  "targetToday": "Today: {list} reps",
+  "@targetToday": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "loadWeightApprox": "≈ {weight}",
+  "@loadWeightApprox": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "loadWeightPerHand": "≈ {weight} per hand",
+  "@loadWeightPerHand": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "loadSrcHold": "keep the weight and hit all target reps",
+  "loadSrcStall": "no progress for 3 workouts – a bit lighter, then build up again",
+  "loadSrcIncreaseBw": "all reps done – add a little weight (belt or vest)",
+  "loadSrcMoreReps": "all reps done – go for more reps",
+  "loadTotal": "total",
   "quickMinOneDay": "Choose at least one training day",
   "quickDaysCapped": "Your plan uses {n} of your {total} days – the others stay rest days so you recover between sessions.",
   "@quickDaysCapped": {

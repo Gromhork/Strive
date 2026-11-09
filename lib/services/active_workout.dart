@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../core/sport.dart';
 import '../data/models.dart';
 import '../providers.dart';
+import 'supersets.dart';
 
 /// State of the gym workout currently in progress (survives tab switches).
 class ActiveGym {
@@ -17,6 +19,9 @@ class ActiveGym {
   final List<GymExercise> exercises;
   final DateTime? restEnd;
   final int restTotal;
+
+  /// The running rest is the short switch between members of a superset.
+  final bool restIsTransition;
 
   /// Exercise shown in the focus view (follows supersets automatically).
   final int focus;
@@ -29,6 +34,7 @@ class ActiveGym {
     required this.exercises,
     this.restEnd,
     this.restTotal = 0,
+    this.restIsTransition = false,
     this.focus = 0,
   });
 
@@ -36,15 +42,8 @@ class ActiveGym {
   int get doneSets => exercises.fold(0, (a, e) => a + e.doneSets);
   int get totalSets => exercises.fold(0, (a, e) => a + e.sets.length);
 
-  /// Members of the superset that exercise [i] belongs to (in order).
-  List<int> groupOf(int i) {
-    final g = exercises[i].group;
-    if (g == null) return [i];
-    return [
-      for (var k = 0; k < exercises.length; k++)
-        if (exercises[k].group == g) k,
-    ];
-  }
+  /// Members of the superset that exercise [i] belongs to (adjacent, in order).
+  List<int> groupOf(int i) => supersetOf(exercises, i);
 
   /// Index of the next exercise that still has open sets (from [from] on, wrapping).
   int? nextOpen([int from = 0]) {
@@ -55,16 +54,18 @@ class ActiveGym {
     return null;
   }
 
-  ActiveGym copyWith({String? title, DateTime? restEnd, bool clearRest = false, int? restTotal, int? focus}) => ActiveGym(
-    title: title ?? this.title,
-    templateId: templateId,
-    planId: planId,
-    start: start,
-    exercises: exercises,
-    restEnd: clearRest ? null : (restEnd ?? this.restEnd),
-    restTotal: restTotal ?? this.restTotal,
-    focus: (focus ?? this.focus).clamp(0, exercises.isEmpty ? 0 : exercises.length - 1),
-  );
+  ActiveGym copyWith({String? title, DateTime? restEnd, bool clearRest = false, int? restTotal, bool? restIsTransition, int? focus}) =>
+      ActiveGym(
+        title: title ?? this.title,
+        templateId: templateId,
+        planId: planId,
+        start: start,
+        exercises: exercises,
+        restEnd: clearRest ? null : (restEnd ?? this.restEnd),
+        restTotal: restTotal ?? this.restTotal,
+        restIsTransition: clearRest ? false : (restIsTransition ?? this.restIsTransition),
+        focus: (focus ?? this.focus).clamp(0, exercises.isEmpty ? 0 : exercises.length - 1),
+      );
 }
 
 class ActiveGymNotifier extends Notifier<ActiveGym?> {
@@ -77,13 +78,10 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
   }
 
   void start({required String title, String? templateId, String? planId, List<GymExercise> exercises = const []}) {
-    state = ActiveGym(
-      title: title,
-      templateId: templateId,
-      planId: planId,
-      start: DateTime.now(),
-      exercises: exercises.map((e) => e.copy(resetDone: true)).toList(),
-    );
+    final list = exercises.map((e) => e.copy(resetDone: true)).toList();
+    // Repairs superset data of older programs (non-adjacent letters, long chains).
+    normalizeSupersets(list);
+    state = ActiveGym(title: title, templateId: templateId, planId: planId, start: DateTime.now(), exercises: list);
     WakelockPlus.enable();
   }
 
@@ -97,15 +95,20 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
   }
 
   void removeExercise(int i) {
-    state?.exercises.removeAt(i);
+    final list = state?.exercises;
+    if (list == null) return;
+    list.removeAt(i);
+    normalizeSupersets(list);
     _touch();
   }
 
+  /// Moves an exercise; a superset member that is moved away leaves its superset.
   void moveExercise(int from, int to) {
     final list = state?.exercises;
     if (list == null) return;
     final e = list.removeAt(from);
     list.insert(to > from ? to - 1 : to, e);
+    normalizeSupersets(list);
     _touch();
   }
 
@@ -122,9 +125,17 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     _touch();
   }
 
+  /// Updates a set. A new weight on an open work set is carried over to the following
+  /// open work sets that had the same weight (so changing the load once is enough).
   void updateSet(int ex, int set, {double? weight, int? reps, bool? warmup, SetType? type, double? rpe, bool clearRpe = false}) {
-    final s = state?.exercises[ex].sets[set];
-    if (s == null) return;
+    final e = state?.exercises[ex];
+    final s = e?.sets[set];
+    if (e == null || s == null) return;
+    if (weight != null && !s.done && !s.warmup && s.type != SetType.drop) {
+      for (final o in e.sets.skip(set + 1)) {
+        if (!o.done && !o.warmup && o.type != SetType.drop && (o.weight - s.weight).abs() < 1e-6) o.weight = weight;
+      }
+    }
     if (weight != null) s.weight = weight;
     if (reps != null) s.reps = reps;
     if (warmup != null) s.warmup = warmup;
@@ -136,7 +147,8 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
   void setFocus(int i) => state = state?.copyWith(focus: i);
 
   /// Checks a set off (or un-checks it). Handles rest timers and superset flow:
-  /// A1 → A2 → rest → A1 → A2 … (no rest between members of a superset).
+  /// A1 → short switch → A2 → full rest → A1 → A2 … Warm-up sets get a short rest and
+  /// stay on the same exercise.
   void toggleDone(int ex, int set) {
     final w = state;
     final e = w?.exercises[ex];
@@ -146,19 +158,25 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     HapticFeedback.lightImpact();
     if (!s.done) return _touch();
 
+    final finished = w.nextOpen() == null;
+    if (s.warmup && !e.allDone) {
+      state = w.copyWith(focus: ex);
+      if (!finished) startRest(min(60, e.restSec));
+      return;
+    }
     final group = w.groupOf(ex);
     final pos = group.indexOf(ex);
     // Next member of the superset in this round that still has open sets.
     final laterInRound = group.skip(pos + 1).where((i) => !w.exercises[i].allDone);
     if (group.length > 1 && laterInRound.isNotEmpty) {
       state = w.copyWith(focus: laterInRound.first, clearRest: true);
+      if (s.type != SetType.drop) startRest(supersetTransitionSec, transition: true);
       return;
     }
     final groupOpen = group.where((i) => !w.exercises[i].allDone);
     final nextFocus = groupOpen.isNotEmpty ? groupOpen.first : (w.nextOpen(group.last + 1) ?? ex);
     final rest = group.map((i) => w.exercises[i].restSec).reduce((a, b) => a > b ? a : b);
-    final finishedAll = w.nextOpen() == null;
-    if (rest > 0 && !finishedAll && s.type != SetType.drop) {
+    if (rest > 0 && !finished && s.type != SetType.drop) {
       state = w.copyWith(focus: nextFocus);
       startRest(rest);
     } else {
@@ -166,30 +184,57 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     }
   }
 
-  /// Links exercise [i] with the next one into a superset, or removes it from its group.
-  void toggleSuperset(int i) {
+  /// Links exercise [i] with the next one into a superset, or removes it from its
+  /// superset. Returns false when linking would exceed [maxSupersetSize] exercises.
+  bool toggleSuperset(int i) {
     final list = state?.exercises;
-    if (list == null) return;
-    final e = list[i];
-    if (e.group != null) {
-      final g = e.group;
-      e.group = null;
-      final rest = list.where((x) => x.group == g).toList();
-      if (rest.length == 1) rest.first.group = null;
-    } else if (i + 1 < list.length) {
-      final used = list.map((x) => x.group).whereType<String>().toSet();
-      final g = list[i + 1].group ?? 'ABCDEFGHIJ'.split('').firstWhere((c) => !used.contains(c), orElse: () => 'Z');
-      e.group = g;
-      list[i + 1].group = g;
+    if (list == null) return false;
+    var ok = true;
+    if (supersetOf(list, i).length > 1) {
+      leaveSuperset(list, i);
+    } else {
+      ok = linkSuperset(list, i);
+    }
+    _touch();
+    return ok;
+  }
+
+  /// Switches bodyweight mode of exercise [ex]: the weight becomes added load on top of
+  /// the body weight ([bodyKg] = body load per rep), or a normal weight again.
+  void setBodyweight(int ex, bool on, {double bodyKg = 0}) {
+    final e = state?.exercises[ex];
+    if (e == null) return;
+    e.bw = on;
+    e.bodyKg = on ? bodyKg : 0;
+    for (final s in e.sets.where((s) => !s.done)) {
+      s.weight = 0;
     }
     _touch();
   }
 
+  /// Swaps the exercise of slot [i]: rep range, bodyweight mode and the open sets'
+  /// loads are re-derived for the new exercise.
   void replaceExercise(int i, String exId, String name) {
     final e = state?.exercises[i];
     if (e == null) return;
     e.exId = exId;
     e.name = name;
+    e.repMin = null;
+    e.repMax = null;
+    e.bw = null;
+    e.bodyKg = 0;
+    final rx = ref.read(loadPrescriberProvider);
+    if (rx.isBodyweight(e)) {
+      e.bw = true;
+      e.bodyKg = rx.bodyLoad(e);
+    }
+    final p = rx.forExercise(e);
+    var k = 0;
+    for (final s in e.sets) {
+      if (s.done || s.warmup || s.type == SetType.drop) continue;
+      s.weight = p?.weight ?? 0;
+      s.reps = p?.repsForSet(k++) ?? s.reps;
+    }
     _touch();
   }
 
@@ -219,10 +264,10 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     _touch();
   }
 
-  void startRest(int seconds) {
+  void startRest(int seconds, {bool transition = false}) {
     _restTimer?.cancel();
     final end = DateTime.now().add(Duration(seconds: seconds));
-    state = state?.copyWith(restEnd: end, restTotal: seconds);
+    state = state?.copyWith(restEnd: end, restTotal: seconds, restIsTransition: transition);
     _restTimer = Timer(Duration(seconds: seconds), _restDone);
   }
 

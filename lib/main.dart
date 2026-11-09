@@ -16,6 +16,7 @@ import 'features/auth/login_page.dart';
 import 'features/onboarding/onboarding_page.dart';
 import 'features/shell/home_shell.dart';
 import 'features/shell/gcal_sync.dart';
+import 'features/shell/program_upgrade_sync.dart';
 import 'features/shell/relocalize_sync.dart';
 import 'features/shell/health_sync.dart';
 import 'features/shell/reminder_sync.dart';
@@ -45,6 +46,7 @@ class StriveApp extends ConsumerWidget {
     ref.watch(healthSyncProvider);
     ref.watch(gcalAutoSyncProvider);
     ref.watch(relocalizeSyncProvider);
+    ref.watch(programUpgradeSyncProvider);
     return MaterialApp(
       title: 'Strive',
       debugShowCheckedModeBanner: false,
