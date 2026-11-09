@@ -72,16 +72,19 @@ class AutoAdjuster {
       if (c != null) out.add(c);
     }
 
-    final notEasier = f.effort != Effort.easier;
+    // Cut short at a high (or unknown) effort: the planned volume was not sustainable.
+    // Cut short at the intended effort or easier is more likely lack of time – no change.
+    final hardStop = f.cutShort && (f.effort == Effort.harder || !f.rated);
     if (done.intensity == 'long') {
       final longs = next.where((p) => p.intensity == 'long').take(2).toList();
-      if (f.cutShort && notEasier) {
+      if (hardStop) {
         // Hold at what was achieved + 10 % (+ 20 % for the one after), never above the plan.
         for (var i = 0; i < longs.length; i++) {
           final p = longs[i];
           final achieved = _achieved(p, s);
           if (achieved == null) continue;
-          add(p, achieved * (1.1 + 0.1 * i) / _amount(p), 'longCutShort');
+          final k = achieved * (1.1 + 0.1 * i) / _amount(p);
+          if (k < 1) add(p, k, 'longCutShort');
         }
       } else if (f.clearlyHarder && longs.isNotEmpty) {
         final p = longs.first;
@@ -90,14 +93,14 @@ class AutoAdjuster {
       }
     } else if (isEasy(done)) {
       if (f.clearlyHarder || (f.cutShort && f.effort == Effort.harder)) {
-        final p = next.where(isEasy).firstOrNull;
+        final p = next.where(isEasy).where((p) => dayOnly(p.date).difference(day).inDays < 7).firstOrNull;
         final fast = f.signals.any((x) => x.kind == SignalKind.pace && x.score >= 0.3);
         if (p != null) add(p, 0.9, fast ? 'easyTooFast' : 'easyHard');
       }
     } else if (isQuality(done)) {
       final p = next.where(isQuality).firstOrNull;
       if (p != null) {
-        if (f.clearlyHarder || (f.cutShort && notEasier)) {
+        if (f.clearlyHarder || hardStop) {
           final mine = _comparable(done, p);
           if (mine != null && _amount(p) > mine) add(p, max(0.9, mine / _amount(p)), 'qualityHard');
         } else if (f.clearlyEasier && (f.completion ?? 1) >= 0.95 && !f.belowTarget && _mayGrow(p, done, hf)) {
@@ -108,18 +111,22 @@ class AutoAdjuster {
     return out.take(2).toList();
   }
 
+  /// Runs and swims are measured in distance; rides in time (their planned km are only an
+  /// estimate at ~27 km/h).
+  static bool _byKm(PlannedWorkout p) => p.sport != Sport.ride && (p.distanceKm ?? 0) > 0;
+
   /// Volume measure of a plan: km for distance-based plans, else minutes.
-  static double _amount(PlannedWorkout p) => (p.distanceKm ?? 0) > 0 ? p.distanceKm! : p.durationMin.toDouble();
+  static double _amount(PlannedWorkout p) => _byKm(p) ? p.distanceKm! : p.durationMin.toDouble();
 
   /// What [s] achieved in the unit of [target]'s volume, or null.
   static double? _achieved(PlannedWorkout target, Session s) {
-    if ((target.distanceKm ?? 0) > 0) return s.distanceM > 0 ? s.distanceM / 1000 : null;
+    if (_byKm(target)) return s.distanceM > 0 ? s.distanceM / 1000 : null;
     return s.durationSec > 0 ? s.durationSec / 60 : null;
   }
 
   /// [done]'s planned volume in [target]'s unit.
   static double? _comparable(PlannedWorkout done, PlannedWorkout target) {
-    if ((target.distanceKm ?? 0) > 0) return (done.distanceKm ?? 0) > 0 ? done.distanceKm : null;
+    if (_byKm(target)) return (done.distanceKm ?? 0) > 0 ? done.distanceKm : null;
     return done.durationMin > 0 ? done.durationMin.toDouble() : null;
   }
 
@@ -149,9 +156,7 @@ class AutoAdjuster {
   AutoChange? _change(PlannedWorkout p, double factor, String reason, String sessionId) {
     final orig = p.auto;
     final origAmount =
-        orig == null
-            ? _amount(p)
-            : ((orig.distanceKm ?? 0) > 0 && (p.distanceKm ?? 0) > 0 ? orig.distanceKm! : orig.durationMin.toDouble());
+        orig == null ? _amount(p) : (_byKm(p) && (orig.distanceKm ?? 0) > 0 ? orig.distanceKm! : orig.durationMin.toDouble());
     final rest = p.phase == 'taper' || p.phase == 'recovery';
     var f = factor.clamp(maxCut, bump);
     if (rest) f = min(f, 1.0);
@@ -201,7 +206,7 @@ class AutoAdjuster {
       );
     }
 
-    final steps = [for (final x in p.steps) s(x)];
+    final steps = _repeatsScaled(p.steps, f, p.sport, profile) ?? [for (final x in p.steps) s(x)];
     final before = estimateStepsSec(p.steps, p.sport, profile), after = estimateStepsSec(steps, p.sport, profile);
     final g = p.steps.isEmpty || before <= 0 ? f : after / before;
     double? km;
@@ -211,6 +216,35 @@ class AutoAdjuster {
       km = double.parse((p.distanceKm! * (allDistance && d0 > 0 ? d1 / d0 : g)).toStringAsFixed(1));
     }
     return _copy(p, steps: steps, durationMin: max(10, (p.durationMin * g).round()), distanceKm: km);
+  }
+
+  /// Interval sets (≥ 3 identical work steps in one block) change by whole repeats – a
+  /// 100 m swim repeat or a 1 km interval keeps its length and intensity (Bosquet 2007:
+  /// adjust volume, keep intensity). Null when the set can't get closer to [f] that way.
+  static List<WorkoutStep>? _repeatsScaled(List<WorkoutStep> steps, double f, Sport sport, UserProfile profile) {
+    final work = [
+      for (var i = 0; i < steps.length; i++)
+        if (steps[i].kind == 'work') i,
+    ];
+    if (work.length < 3) return null;
+    final w0 = steps[work.first];
+    if (work.any((i) => steps[i].zone != w0.zone || steps[i].durationSec != w0.durationSec || steps[i].distanceM != w0.distanceM)) {
+      return null;
+    }
+    for (var i = work.first; i <= work.last; i++) {
+      if (steps[i].kind != 'work' && steps[i].kind != 'recovery') return null;
+    }
+    final reps = work.length, target = max(2, (reps * f).round());
+    if (target == reps) return null;
+    final rec = steps[work.first + 1].kind == 'recovery' ? steps[work.first + 1] : null;
+    final out = [
+      ...steps.take(work.first),
+      for (var i = 0; i < target; i++) ...[w0, if (rec != null && i < target - 1) rec],
+      ...steps.skip(work.last + 1),
+    ];
+    final g = estimateStepsSec(out, sport, profile) / max(1, estimateStepsSec(steps, sport, profile));
+    if ((g - f).abs() > 0.06 || (f < 1) != (g < 1)) return null;
+    return out;
   }
 
   static PlannedWorkout _copy(PlannedWorkout p, {List<WorkoutStep>? steps, int? durationMin, double? distanceKm, AutoAdjustment? auto}) =>

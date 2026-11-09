@@ -77,13 +77,13 @@ void undoAutoAdjust(Repository repo, List<PlannedWorkout> plans) {
   if (updates.isNotEmpty) repo.updateMany(plans: updates);
 }
 
-/// "8 km" for distance-based workouts, else "45 min".
-String amountLabel(PlannedWorkout p, UserProfile profile) =>
-    (p.distanceKm ?? 0) > 0 && p.sport != Sport.swim
-        ? profile.units.dist(p.distanceKm! * 1000, digits: 1)
-        : (p.distanceKm ?? 0) > 0
-        ? profile.units.swimDist(p.distanceKm! * 1000)
-        : '${p.durationMin} min';
+/// "8 km" for runs, "1500 m" for swims, else "45 min" (as [AutoAdjuster] measures them).
+String amountLabel(PlannedWorkout p, UserProfile profile) => switch (p.sport) {
+  _ when (p.distanceKm ?? 0) <= 0 => '${p.durationMin} min',
+  Sport.run => profile.units.dist(p.distanceKm! * 1000, digits: 1),
+  Sport.swim => profile.units.swimDist(p.distanceKm! * 1000),
+  _ => '${p.durationMin} min',
+};
 
 /// Reason text of an automatic adjustment.
 String autoAdjustReason(AppLocalizations l, String reason) => switch (reason) {
@@ -136,7 +136,12 @@ class AutoAdjustCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  l.autoAdjOriginal([amountLabel(original, profile), if ((a.distanceKm ?? 0) > 0) '${a.durationMin} min'].join(' · ')),
+                  l.autoAdjOriginal(
+                    [
+                      amountLabel(original, profile),
+                      if ((a.distanceKm ?? 0) > 0 && plan.sport != Sport.ride) '${a.durationMin} min',
+                    ].join(' · '),
+                  ),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),

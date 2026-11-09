@@ -242,7 +242,7 @@ SessionFeedback evaluateSession(PlannedWorkout p, Session s, UserProfile profile
 
   // ── Aerobic efficiency of easy / long sessions
   double? ef;
-  if (!quality && s.avgHr != null && s.avgHr! > 0 && s.durationSec > 0) {
+  if (!quality && !p.steps.any((x) => x.kind == 'work') && s.avgHr != null && s.avgHr! > 0 && s.durationSec > 0) {
     if (p.sport == Sport.run && s.distanceM > 0) ef = s.distanceM / (s.durationSec / 60) / s.avgHr!;
     if (p.sport == Sport.ride && s.avgPower != null) ef = s.avgPower! / s.avgHr!;
   }
@@ -299,7 +299,7 @@ double? _expectedPace(PlannedWorkout p, UserProfile profile) {
             ? (x.paceMin! + x.paceMax!) / 2
             : x.zone == 'walk'
             ? 570.0
-            : pz.easySlow + 40.0;
+            : pz.easySlow.toDouble();
     if (x.distanceM != null) {
       d += x.distanceM!;
       t += x.distanceM! / 1000 * pace;
