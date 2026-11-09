@@ -1565,7 +1565,7 @@
   "zCss": "CSS pace",
   "zTempo": "Tempo",
   "zoneInfoTitle": "Intensity zones",
-  "zoneInfoRun": "Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.",
+  "zoneInfoRun": "Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.",
   "zoneInfoRide": "Power zones are percentages of your FTP (the power you can hold for about one hour). Without a power meter, ride by heart rate and feel.",
   "zoneInfoSwim": "Paces per 100 m come from your critical swim speed (CSS, from a 400 m and 200 m test).",
   "zoneInfoEstimated": "≈ values are estimated from your level – add a test result in the plan settings for exact targets.",
@@ -1633,7 +1633,7 @@
     }
   },
   "showDrills": "Show drills",
-  "streakWeeks": "{count} weeks in a row",
+  "streakWeeks": "{count, plural, =1{1 week in a row} other{{count} weeks in a row}}",
   "@streakWeeks": {
     "placeholders": {
       "count": {
@@ -1740,5 +1740,6 @@
   "scoreHowUv": "UV index above 6",
   "scoreHowDark": "Darkness (−18)",
   "scoreHowStorm": "Thunderstorm (−40)",
-  "scoreHowLevels": "Good from 70, fair from 45, below that rather train indoors."
+  "scoreHowLevels": "Good from 70, fair from 45, below that rather train indoors.",
+  "streakSub": "with your weekly training goal reached"
 }

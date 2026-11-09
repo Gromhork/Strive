@@ -74,7 +74,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
                             [
                               '${p.durationMin} min',
                               if (p.distanceKm != null && p.distanceKm! > 0) u.dist(p.distanceKm! * 1000, digits: 1),
-                              intensityLabel(l, p.intensity),
+                              if (p.sport != Sport.gym) intensityLabel(l, p.intensity),
                             ].join(' · '),
                             style: t.bodyMedium,
                           ),

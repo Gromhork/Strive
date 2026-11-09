@@ -15,7 +15,9 @@ import 'exercise_picker.dart';
 /// notes). Mutates [exercises] in place and calls [onChanged] after every change.
 /// Used by the program editor and the planned-workout editor.
 class GymExerciseEditor extends ConsumerWidget {
-  const GymExerciseEditor({super.key, required this.exercises, required this.onChanged});
+  const GymExerciseEditor({super.key, required this.exercises, required this.onChanged, this.subtitle, this.phase});
+  final String? subtitle; // explanation under the header
+  final String? phase; // plan phase for the weight suggestions shown as hints
   final List<GymExercise> exercises;
   final VoidCallback onChanged;
 
@@ -65,6 +67,7 @@ class GymExerciseEditor extends ConsumerWidget {
           if (exercises.isNotEmpty) Text('${l.setsN(sets)} · ~$minutes min', style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
+      if (subtitle != null) ...[const SizedBox(height: 4), Text(subtitle!, style: Theme.of(context).textTheme.bodySmall)],
       const SizedBox(height: 8),
       ReorderableListView(
         shrinkWrap: true,
@@ -81,6 +84,7 @@ class GymExerciseEditor extends ConsumerWidget {
               key: ObjectKey(exercises[i]),
               children: [
                 _ExerciseEditCard(
+                  suggested: ref.watch(loadPrescriberProvider).forExercise(exercises[i], phase: phase)?.weight,
                   index: i,
                   exercise: exercises[i],
                   units: u,
@@ -163,6 +167,7 @@ class _ExerciseEditCard extends ConsumerWidget {
     required this.onChanged,
     required this.onRemove,
     required this.onReplace,
+    this.suggested,
   });
   final int index;
   final GymExercise exercise;
@@ -171,6 +176,7 @@ class _ExerciseEditCard extends ConsumerWidget {
   final VoidCallback onChanged;
   final VoidCallback onRemove;
   final VoidCallback onReplace;
+  final double? suggested; // prescribed weight, shown as hint in empty weight fields
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -343,7 +349,7 @@ class _ExerciseEditCard extends ConsumerWidget {
                   Expanded(
                     child: _NumField(
                       initial: e.sets[s].weight == 0 ? '' : Units.num(u.weightOut(e.sets[s].weight), 2),
-                      hint: '–',
+                      hint: suggested != null && suggested! > 0 ? '≈${Units.num(u.weightOut(suggested!), 2)}' : '–',
                       onChanged: (v) => e.sets[s].weight = u.weightIn(parseNum(v) ?? 0),
                     ),
                   ),

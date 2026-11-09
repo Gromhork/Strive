@@ -102,8 +102,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     Widget? trailing;
     if (w < 0) {
       // Past week: completed vs. planned at a glance.
-      final done = sessions.where((s) => !s.start.isBefore(week) && s.start.isBefore(end)).length;
-      final planned = plans.where((p) => !p.date.isBefore(week) && p.date.isBefore(end)).length;
+      final weekPlans = plans.where((p) => !p.date.isBefore(week) && p.date.isBefore(end)).toList();
+      final planned = weekPlans.length;
+      final done = planned > 0
+          ? weekPlans.where((p) => p.isDone).length
+          : sessions.where((s) => !s.start.isBefore(week) && s.start.isBefore(end)).length;
       trailing = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -425,7 +428,7 @@ class PlanCard extends ConsumerWidget {
                   children: [
                     Text(
                       p.title,
-                      style: TextStyle(fontWeight: FontWeight.w600, decoration: p.isDone ? TextDecoration.lineThrough : null),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

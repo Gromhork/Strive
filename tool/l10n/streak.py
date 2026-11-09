@@ -1,5 +1,5 @@
 {
- 'streakWeeks': ['{count} weeks in a row', '{count} Wochen in Folge'],
+ 'streakWeeks': ['{count, plural, =1{1 week in a row} other{{count} weeks in a row}}', '{count, plural, =1{1 Woche in Folge} other{{count} Wochen in Folge}}'],
  'streakThisWeek': ['This week', 'Diese Woche'],
  'streakWeekDone': ['Goal reached: {done} of {target} training days – this week counts!', 'Ziel erreicht: {done} von {target} Trainingstagen – diese Woche zählt!'],
  'streakWeekLeft': ['{done} of {target} training days – {count} more to keep the streak going.', '{done} von {target} Trainingstagen – noch {count}, dann zählt die Woche.'],

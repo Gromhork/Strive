@@ -140,14 +140,12 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
     final template = ref.watch(templateListProvider).where((t) => t.id == _templateId).firstOrNull;
     return [
       const SizedBox(height: 20),
-      Text(l.exercises, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-      const SizedBox(height: 4),
-      Text(
-        _customEx && template != null ? l.planExercisesCustom(template.name) : l.planExercisesHint,
-        style: Theme.of(context).textTheme.bodySmall,
+      GymExerciseEditor(
+        exercises: _gymEx,
+        phase: widget.existing?.phase,
+        subtitle: _customEx && template != null ? l.planExercisesCustom(template.name) : l.planExercisesHint,
+        onChanged: () => setState(() => _customEx = true),
       ),
-      const SizedBox(height: 10),
-      GymExerciseEditor(exercises: _gymEx, onChanged: () => setState(() => _customEx = true)),
       if (_customEx && template != null)
         Wrap(
           spacing: 4,
@@ -182,7 +180,6 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
     final templates = ref.watch(templateListProvider).where((t) => t.sport == _sport).toList();
     final profile = ref.watch(profileOrDefaultProvider);
     final ex = widget.existing;
-    final est = _structured ? _estimate(profile) : null;
     return Scaffold(
       appBar: AppBar(title: Text(ex == null ? l.planWorkout : l.editWorkout), actions: [TextButton(onPressed: _save, child: Text(l.save))]),
       body: ListView(
@@ -272,14 +269,6 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
               profile: profile,
               onChanged: (s) => setState(() => _steps = s),
             ),
-            if (est != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  '${l.duration}: ~${humanDuration(est.$1 * 60)}${est.$2 == null ? '' : ' · ${Units.num(est.$2!)} km'}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
           ],
           if (_sport == Sport.gym) ..._gymSection(),
           if (!_structured && !(_sport == Sport.gym && _gymEx.isNotEmpty)) ...[
