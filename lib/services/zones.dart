@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../core/sport.dart';
 import '../data/models.dart';
 
 /// Training zones derived from field tests / race times.
@@ -148,6 +149,36 @@ class PowerZones {
 }
 
 /// Critical swim speed zones (sec / 100 m).
+/// Duration estimate of one structured step – the single formula used by the plan
+/// generator, the editors, the program list and the calendar, so a workout shows the
+/// same duration everywhere. Distance steps use the step's own pace target, else the
+/// athlete's easy pace (run), ~27 km/h (ride) or CSS + 12 s (swim, plus ~10 s per
+/// repeat for the wall).
+int estimateStepSec(WorkoutStep s, Sport sport, {required int easyPace, required int css}) {
+  if (s.durationSec != null) return s.durationSec!;
+  final d = s.distanceM ?? 0;
+  if (d <= 0) return 0;
+  return switch (sport) {
+    Sport.swim => (d / 100 * (s.paceMax ?? css + 12)).round() + 10,
+    Sport.ride => (d / 1000 * 133).round(),
+    _ => (d / 1000 * ((s.paceMin ?? easyPace) + (s.paceMax ?? easyPace)) / 2).round(),
+  };
+}
+
+/// Total duration of [steps] for [p] (see [estimateStepSec]).
+int estimateStepsSec(List<WorkoutStep> steps, Sport sport, UserProfile p) {
+  final easy = PaceZones(Vdot.of(p.athlete) ?? Vdot.defaultFor(p.level)).easySlow;
+  final css = SwimZones.fromTests(p.athlete.swim400Sec, p.athlete.swim200Sec) ?? SwimZones.defaultFor(p.level);
+  return steps.fold(0, (x, s) => x + estimateStepSec(s, sport, easyPace: easy, css: css));
+}
+
+/// Minutes of a program for [p]: structured endurance programs from their steps,
+/// everything else from [WorkoutTemplate.estimatedMinutes].
+int templateMinutes(WorkoutTemplate t, UserProfile p) {
+  if (t.targetMin != null || t.sport == Sport.gym || t.steps.isEmpty) return t.estimatedMinutes;
+  return (estimateStepsSec(t.steps, t.sport, p) / 60).round().clamp(5, 400);
+}
+
 class SwimZones {
   final int css; // sec per 100 m
   SwimZones(this.css);

@@ -76,8 +76,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     final plans = ref.watch(planListProvider);
     final before = GameStats.compute(history.where((h) => h.id != s.id).toList(), target, plans: plans);
     final after = GameStats.compute([s, ...history.where((h) => h.id != s.id)], target, plans: plans);
-    final newBadges =
-        after.badges.where((b) => b.earned && !before.badges.firstWhere((x) => x.def.id == b.def.id).earned).toList();
+    final newBadges = after.badges.where((b) => b.earned && !before.badges.firstWhere((x) => x.def.id == b.def.id).earned).toList();
     final levelUp = after.level.level > before.level.level;
 
     // "Coach battle": beat the coach's prediction (previous session + 2.5 %).
@@ -124,12 +123,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                   _cell(StatTile(label: l.duration, value: clock(s.durationSec), icon: Icons.timer_outlined)),
                   if (s.sport == Sport.gym) ...[
                     _cell(
-                      StatTile(
-                        label: l.volume,
-                        value: u.weight(s.volume, digits: 0),
-                        icon: Icons.fitness_center,
-                        color: AppColors.gym,
-                      ),
+                      StatTile(label: l.volume, value: u.weight(s.volume, digits: 0), icon: Icons.fitness_center, color: AppColors.gym),
                     ),
                     _cell(StatTile(label: l.sets, value: '${s.setsDone}', icon: Icons.check_circle_outline)),
                     _cell(StatTile(label: l.exercises, value: '${s.exercises.length}', icon: Icons.list)),
@@ -149,8 +143,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                         icon: Icons.speed,
                       ),
                     ),
-                    if (s.elevationM > 0)
-                      _cell(StatTile(label: l.elevation, value: '${s.elevationM.round()} m', icon: Icons.terrain)),
+                    if (s.elevationM > 0) _cell(StatTile(label: l.elevation, value: '${s.elevationM.round()} m', icon: Icons.terrain)),
                   ],
                 ],
               ),
@@ -181,10 +174,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                     const Divider(height: 24),
                     Row(
                       children: [
-                        Icon(
-                          battleWon ? Icons.emoji_events_rounded : Icons.sports_mma_rounded,
-                          color: battleWon ? AppColors.ride : null,
-                        ),
+                        Icon(battleWon ? Icons.emoji_events_rounded : Icons.sports_mma_rounded, color: battleWon ? AppColors.ride : null),
                         const SizedBox(width: 8),
                         Expanded(child: Text(battleWon ? l.coachBattleWon : l.coachBattleLost)),
                       ],
@@ -220,14 +210,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Slider(
-                    value: _rpe,
-                    min: 1,
-                    max: 10,
-                    divisions: 9,
-                    label: '${_rpe.round()}',
-                    onChanged: (v) => setState(() => _rpe = v),
-                  ),
+                  Slider(value: _rpe, min: 1, max: 10, divisions: 9, label: '${_rpe.round()}', onChanged: (v) => setState(() => _rpe = v)),
                   Text('RPE ${_rpe.round()} – ${rpeLabel(l, _rpe.round())}', style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: 12),
                   TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),

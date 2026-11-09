@@ -100,6 +100,13 @@ String stepSetLabel(AppLocalizations l, List<WorkoutStep> steps, int i, Units u,
   return '${rep != null ? '${rep.reps} × ' : ''}$amount · ${zoneLabel(l, s.zone, sport: sport)}';
 }
 
+/// Total distance of the distance-based steps ("1600 m" / "8.5 km"), or null if none.
+String? stepsDistance(List<WorkoutStep> steps, Units u, Sport sport) {
+  final m = steps.fold<double>(0, (x, s) => x + (s.distanceM ?? 0));
+  if (m <= 0) return null;
+  return sport == Sport.swim ? u.swimDist(m) : u.dist(m, digits: 1);
+}
+
 String fmtPaceSec(int sec, Units u, {bool swim = false}) {
   final v = swim ? sec : (u.imperial ? (sec * 1.609344).round() : sec);
   return '${v ~/ 60}:${(v % 60).toString().padLeft(2, '0')}';

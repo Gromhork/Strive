@@ -962,12 +962,7 @@ class PlanGenerator {
 
   // ───────────────────────────── Helpers ─────────────────────────────
 
-  int _stepSec(WorkoutStep s, Sport sport) {
-    if (s.durationSec != null) return s.durationSec!;
-    final d = s.distanceM ?? 0;
-    if (sport == Sport.swim) return (d / 100 * (s.paceMax ?? sz.css + 12)).round() + 10;
-    return (d / 1000 * ((s.paceMin ?? pz.easySlow) + (s.paceMax ?? pz.easySlow)) / 2).round();
-  }
+  int _stepSec(WorkoutStep s, Sport sport) => estimateStepSec(s, sport, easyPace: pz.easySlow, css: sz.css);
 
   /// Shortens a structured workout to [capSec]: first warm-up/cool-down (to 60 %),
   /// then whole repeats from the end of the main set (≥ 2 left), then everything

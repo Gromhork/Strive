@@ -59,28 +59,24 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
     final t = ref.read(templateListProvider).where((t) => t.id == ex.templateId).firstOrNull;
     return [for (final e in t?.exercises ?? const <GymExercise>[]) e.copy(resetDone: true)];
   }
+
   int _editorGen = 0; // forces a fresh StepEditor when steps are replaced from outside
 
   bool get _structured => _sport != Sport.gym && _steps.isNotEmpty;
 
   /// Duration / distance estimate of the structured workout.
   (int, double?) _estimate(UserProfile p) {
-    var sec = 0;
     var m = 0.0;
     final pz = PaceZones(Vdot.of(p.athlete) ?? Vdot.defaultFor(p.level));
     for (final s in _steps) {
       if (s.durationSec != null) {
-        sec += s.durationSec!;
         if (_sport == Sport.run && s.zone != 'walk') m += s.durationSec! / ((s.paceMin ?? pz.easySlow) + (s.paceMax ?? pz.easySlow)) * 2000;
         if (_sport == Sport.ride) m += s.durationSec! / 3600 * (s.zone == 'Z1' ? 20000 : 27000);
       } else if (s.distanceM != null) {
         m += s.distanceM!;
-        sec +=
-            _sport == Sport.swim
-                ? (s.distanceM! / 100 * (s.paceMax ?? 130)).round()
-                : (s.distanceM! / 1000 * ((s.paceMin ?? pz.easySlow) + (s.paceMax ?? pz.easySlow)) / 2).round();
       }
     }
+    final sec = estimateStepsSec(_steps, _sport, p);
     return (max(5, (sec / 60).round()), m <= 0 ? null : double.parse((m / 1000).toStringAsFixed(1)));
   }
 
@@ -120,7 +116,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
     setState(() {
       _templateId = t.id;
       _title.text = t.name;
-      _min = t.estimatedMinutes;
+      _min = templateMinutes(t, ref.read(profileOrDefaultProvider));
       _intensity = t.intensity;
       if (t.description.isNotEmpty) _desc.text = t.description;
       if (t.targetKm != null) _km.text = Units.num(t.targetKm!);
@@ -143,7 +139,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
       GymExerciseEditor(
         exercises: _gymEx,
         phase: widget.existing?.phase,
-        subtitle: _customEx && template != null ? l.planExercisesCustom(template.name) : l.planExercisesHint,
+        subtitle: template == null ? null : (_customEx ? l.planExercisesCustom(template.name) : l.planExercisesHint),
         onChanged: () => setState(() => _customEx = true),
       ),
       if (_customEx && template != null)

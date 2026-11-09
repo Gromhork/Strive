@@ -145,7 +145,10 @@ class _PerformanceState extends ConsumerState<_Performance> {
                 for (final r in records.take(25))
                   DropdownMenuItem(
                     value: r.exId,
-                    child: SizedBox(width: 150, child: Text(capFirst(r.name), overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
+                    child: SizedBox(
+                      width: 150,
+                      child: Text(capFirst(r.name), overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+                    ),
                   ),
               ],
               onChanged: (v) => setState(() => _exId = v),

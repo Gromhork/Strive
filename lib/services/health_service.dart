@@ -68,10 +68,7 @@ class HealthService {
   Future<bool> connect() async {
     await _configure();
     final types = [...readTypes, ...writeTypes];
-    final perms = [
-      for (final _ in readTypes) HealthDataAccess.READ,
-      for (final _ in writeTypes) HealthDataAccess.WRITE,
-    ];
+    final perms = [for (final _ in readTypes) HealthDataAccess.READ, for (final _ in writeTypes) HealthDataAccess.WRITE];
     final ok = await _h.requestAuthorization(types, permissions: perms);
     if (ok) {
       try {
@@ -113,7 +110,9 @@ class HealthService {
     await _configure();
     final now = DateTime.now();
     final points = await _h.getHealthDataFromTypes(types: [HealthDataType.WORKOUT], startTime: since, endTime: now);
-    final hr = await _h.getHealthDataFromTypes(types: [HealthDataType.HEART_RATE], startTime: since, endTime: now).catchError((_) => <HealthDataPoint>[]);
+    final hr = await _h
+        .getHealthDataFromTypes(types: [HealthDataType.HEART_RATE], startTime: since, endTime: now)
+        .catchError((_) => <HealthDataPoint>[]);
     final out = <Session>[];
     for (final p in points) {
       if (knownIds.contains(p.uuid)) continue;
@@ -122,7 +121,11 @@ class HealthService {
       if (v is! WorkoutHealthValue) continue;
       final sport = _sportOf(v.workoutActivityType);
       if (sport == null) continue;
-      final inRange = hr.where((h) => !h.dateFrom.isBefore(p.dateFrom) && !h.dateFrom.isAfter(p.dateTo)).map((h) => (h.value as NumericHealthValue).numericValue.toDouble()).toList();
+      final inRange =
+          hr
+              .where((h) => !h.dateFrom.isBefore(p.dateFrom) && !h.dateFrom.isAfter(p.dateTo))
+              .map((h) => (h.value as NumericHealthValue).numericValue.toDouble())
+              .toList();
       final avgHr = inRange.isEmpty ? null : (inRange.reduce((a, b) => a + b) / inRange.length).round();
       final maxHr = inRange.isEmpty ? null : inRange.reduce((a, b) => a > b ? a : b).round();
       final name = v.workoutActivityType.name;
@@ -212,11 +215,6 @@ class HealthService {
     }
 
     final sleepMin = sleep.fold<int>(0, (a, p) => a + p.dateTo.difference(p.dateFrom).inMinutes);
-    return DailyVitals(
-      steps: steps,
-      restingHr: latest(rhr)?.round(),
-      hrv: latest(hrv),
-      sleepMin: sleepMin == 0 ? null : sleepMin,
-    );
+    return DailyVitals(steps: steps, restingHr: latest(rhr)?.round(), hrv: latest(hrv), sleepMin: sleepMin == 0 ? null : sleepMin);
   }
 }

@@ -80,8 +80,8 @@ class Relocalizer {
       final m = t.regex.firstMatch(s);
       if (m == null) continue;
       var out = t.target;
-      for (var i = 0; i < t.names.length; i++) {
-        out = out.replaceAll('{${t.names[i]}}', text(m.group(i + 1)!, depth: depth + 1));
+      for (final n in t.names) {
+        out = out.replaceAll('{$n}', text(m.namedGroup(n)!, depth: depth + 1));
       }
       return out;
     }
@@ -146,9 +146,13 @@ class _Template {
       final lit = from.substring(last, m.start);
       buf.write(RegExp.escape(lit));
       literal += lit.replaceAll(RegExp(r'[^A-Za-zÄÖÜäöüß]'), '').length;
-      if (names.contains(m.group(1))) return null; // repeated placeholder – not worth it
-      names.add(m.group(1)!);
-      buf.write('(.+?)');
+      final name = m.group(1)!;
+      if (names.contains(name)) {
+        buf.write('\\k<$name>'); // same value again (e.g. "{hi}" twice)
+      } else {
+        names.add(name);
+        buf.write('(?<$name>.+?)');
+      }
       last = m.end;
     }
     final tail = from.substring(last);

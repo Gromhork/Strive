@@ -80,10 +80,7 @@ class _ExerciseFocusPageState extends ConsumerState<ExerciseFocusPage> {
               ],
             ),
             actions: [ExerciseMenu(index: focus, w: w, n: n)],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(6),
-              child: _ExerciseDots(w: w, onTap: (i) => n.setFocus(i)),
-            ),
+            bottom: PreferredSize(preferredSize: const Size.fromHeight(6), child: _ExerciseDots(w: w, onTap: (i) => n.setFocus(i))),
           ),
           body: PageView.builder(
             controller: _pc,
@@ -191,19 +188,14 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                           onTap:
                               info == null
                                   ? null
-                                  : () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: info)),
-                                  ),
+                                  : () => Navigator.push(context, MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: info))),
                         ),
                         const SizedBox(height: 8),
                         _GlassButton(
                           icon: Icons.play_circle_outline_rounded,
                           onTap:
                               () => launchUrl(
-                                Uri.parse(
-                                  'https://www.youtube.com/results?search_query=${Uri.encodeComponent('${e.name} proper form')}',
-                                ),
+                                Uri.parse('https://www.youtube.com/results?search_query=${Uri.encodeComponent('${e.name} proper form')}'),
                                 mode: LaunchMode.externalApplication,
                               ),
                         ),
@@ -711,7 +703,12 @@ class _RestOverlay extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(l.upNext, style: const TextStyle(fontSize: 12, color: AppColors.gym, fontWeight: FontWeight.w700)),
-                              Text(capitalize(next.name), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              Text(
+                                capitalize(next.name),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
                               Text(
                                 '${l.setXofY(nextSetIdx + 1, next.sets.length)} · ${setLabel(nextSet, u)}',
                                 style: Theme.of(context).textTheme.bodySmall,
@@ -792,9 +789,7 @@ class _PlateCalcState extends State<_PlateCalc> {
             children: [
               IconButton.filledTonal(onPressed: () => setState(() => _kg = max(_bar, _kg - 2.5)), icon: const Icon(Icons.remove)),
               Expanded(
-                child: Center(
-                  child: Text('${Units.num(_kg, 2)} kg', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700)),
-                ),
+                child: Center(child: Text('${Units.num(_kg, 2)} kg', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700))),
               ),
               IconButton.filledTonal(onPressed: () => setState(() => _kg += 2.5), icon: const Icon(Icons.add)),
             ],

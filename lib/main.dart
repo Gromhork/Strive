@@ -132,6 +132,5 @@ class StriveLogo extends StatelessWidget {
 class _DevTlsInspectionOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) =>
-      super.createHttpClient(context)
-        ..badCertificateCallback = (cert, host, port) => cert.issuer.contains('Norton Web/Mail Shield');
+      super.createHttpClient(context)..badCertificateCallback = (cert, host, port) => cert.issuer.contains('Norton Web/Mail Shield');
 }

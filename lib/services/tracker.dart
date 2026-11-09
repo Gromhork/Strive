@@ -574,13 +574,17 @@ class TrackerNotifier extends Notifier<CardioState?> {
   void lap() {
     final s = state;
     if (s == null) return;
-    HapticFeedback.mediumImpact();
     if (s.poolMode) {
+      // No pool length takes under 5 s (25 m world record ≈ 10 s): a second tap that
+      // fast is an accidental double tap and would ruin pace and step progress.
+      if (s.elapsed - s.lastLengthAt < 5) return;
+      HapticFeedback.mediumImpact();
       final next = s.addLength();
       state = next;
       _announceStep(s, next);
       return;
     }
+    HapticFeedback.mediumImpact();
     state = s.copyWith(laps: s.laps + 1);
     _checkStep();
   }

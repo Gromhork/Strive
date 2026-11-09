@@ -106,9 +106,7 @@ class LoadPrescriber {
   LoadPrescriber({required List<Session> history, required this.profile, this.db, DateTime? now})
     : now = now ?? DateTime.now(),
       _sessions =
-          history
-              .where((s) => s.exercises.isNotEmpty && !s.start.isAfter(now ?? DateTime.now()))
-              .toList()
+          history.where((s) => s.exercises.isNotEmpty && !s.start.isAfter(now ?? DateTime.now())).toList()
             ..sort((a, b) => b.start.compareTo(a.start));
 
   final UserProfile profile;
@@ -163,9 +161,7 @@ class LoadPrescriber {
   /// Copies of [exercises] with weight (and target reps) filled into the work sets;
   /// warm-up sets derive their weights via [warmupSets] ratios. Explicit template weights
   /// (weight > 0) are kept when there is no history for that exercise.
-  List<GymExercise> apply(List<GymExercise> exercises, {String? phase}) => [
-    for (final e in exercises) _applyOne(e, phase),
-  ];
+  List<GymExercise> apply(List<GymExercise> exercises, {String? phase}) => [for (final e in exercises) _applyOne(e, phase)];
 
   GymExercise _applyOne(GymExercise src, String? phase) {
     final e = src.copy(resetDone: true);
@@ -220,8 +216,7 @@ class LoadPrescriber {
       var sets = <GymSet>[
         for (final ex in s.exercises.where((x) => x.exId == exId))
           for (final st in ex.sets)
-            if (st.done && !st.warmup && st.type != SetType.drop && st.reps >= 1 && st.reps <= 30 && st.weight >= 0 && st.weight < 1000)
-              st,
+            if (st.done && !st.warmup && st.type != SetType.drop && st.reps >= 1 && st.reps <= 30 && st.weight >= 0 && st.weight < 1000) st,
       ];
       if (loaded) sets = sets.where((st) => st.weight > 0).toList();
       // Imported sessions (Health Connect, …) rarely carry real sets; they only count when
@@ -263,9 +258,7 @@ class LoadPrescriber {
 
   /// Recency-weighted median of the last ≤ 6 sessions (half-life 14 days).
   double _robustE1rm(List<_Entry> hist) {
-    final pts = [
-      for (final h in hist.take(6)) (h.top, pow(0.5, now.difference(h.date).inHours / 24 / 14).toDouble()),
-    ];
+    final pts = [for (final h in hist.take(6)) (h.top, pow(0.5, now.difference(h.date).inHours / 24 / 14).toDouble())];
     return _weightedMedian(pts);
   }
 
@@ -315,10 +308,7 @@ class LoadPrescriber {
       e1rm: est,
       progression: prog.kind,
       fromHistory: true,
-      setReps:
-          prog.kind == ProgressionKind.addReps
-              ? [for (final s in last.sets) s.reps < top ? max(s.reps + 1, bottom) : top]
-              : const [],
+      setReps: prog.kind == ProgressionKind.addReps ? [for (final s in last.sets) s.reps < top ? max(s.reps + 1, bottom) : top] : const [],
     );
   }
 
@@ -355,13 +345,7 @@ class LoadPrescriber {
     // RIR 2 for a known 1RM; RIR 3 for a body-weight guess (start easy, let history take over).
     final rir = src == LoadSource.oneRm ? 2 : 3;
     final w = _clampMin(_floorStep(_loadFor(ex1Rm, reps, rir), info), info);
-    return Prescription(
-      weight: w,
-      reps: reps,
-      source: src,
-      e1rm: ex1Rm,
-      perHand: info.kind == _Kind.dumbbell,
-    );
+    return Prescription(weight: w, reps: reps, source: src, e1rm: ex1Rm, perHand: info.kind == _Kind.dumbbell);
   }
 
   /// 1RM of an anchor lift: from the setup, inferred from the other setup 1RMs via the
@@ -506,9 +490,33 @@ class LoadPrescriber {
   ];
 
   static const _bwWords = [
-    'push-up', 'push up', 'pushup', 'pull-up', 'pull up', 'pullup', 'chin-up', 'chin up', 'dip', 'plank', 'crunch',
-    'sit-up', 'sit up', 'leg raise', 'burpee', 'mountain climber', 'bodyweight', 'body weight', 'jump', 'dead bug',
-    'inverted row', 'air squat', 'bridge', 'hollow', 'bird dog', 'superman', 'flutter',
+    'push-up',
+    'push up',
+    'pushup',
+    'pull-up',
+    'pull up',
+    'pullup',
+    'chin-up',
+    'chin up',
+    'dip',
+    'plank',
+    'crunch',
+    'sit-up',
+    'sit up',
+    'leg raise',
+    'burpee',
+    'mountain climber',
+    'bodyweight',
+    'body weight',
+    'jump',
+    'dead bug',
+    'inverted row',
+    'air squat',
+    'bridge',
+    'hollow',
+    'bird dog',
+    'superman',
+    'flutter',
   ];
 
   _Info _info(GymExercise e) {
@@ -531,7 +539,13 @@ class LoadPrescriber {
         _ => mc ?? bb,
       };
       if (ratio == null) break;
-      return _Info(kind, anchor == Anchor.squat || anchor == Anchor.deadlift || lower, anchor: anchor, ratio: ratio, curl: name.contains('curl'));
+      return _Info(
+        kind,
+        anchor == Anchor.squat || anchor == Anchor.deadlift || lower,
+        anchor: anchor,
+        ratio: ratio,
+        curl: name.contains('curl'),
+      );
     }
     return _Info(kind, lower);
   }
@@ -540,8 +554,17 @@ class LoadPrescriber {
     'barbell' || 'ez barbell' || 'olympic barbell' || 'trap bar' => _Kind.barbell,
     'dumbbell' || 'kettlebell' => _Kind.dumbbell,
     'cable' || 'leverage machine' || 'sled machine' || 'smith machine' || 'skierg machine' || 'upper body ergometer' => _Kind.machine,
-    'body weight' || 'band' || 'resistance band' || 'assisted' || 'weighted' || 'stability ball' || 'roller' || 'wheel roller' ||
-    'rope' || 'medicine ball' || 'bosu ball' => _Kind.bodyweight,
+    'body weight' ||
+    'band' ||
+    'resistance band' ||
+    'assisted' ||
+    'weighted' ||
+    'stability ball' ||
+    'roller' ||
+    'wheel roller' ||
+    'rope' ||
+    'medicine ball' ||
+    'bosu ball' => _Kind.bodyweight,
     _ => _Kind.unknown,
   };
 

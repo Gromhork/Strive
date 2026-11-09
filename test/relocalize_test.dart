@@ -21,12 +21,16 @@ void main() {
     var n = 0;
     final de = lang == 'de';
     final templates = defaultTemplates(() => 't${n++}', de: de);
-    return PlanGenerator(
-      lookupAppLocalizations(Locale(lang)),
-      profile(),
-      templates,
-      () => 'p${n++}',
-    ).generate(start: DateTime(2026, 11, 9), weeks: 6);
+    final hybrid = UserProfile(level: 'intermediate', focus: TrainingFocus.hybrid, trainingDays: const [1, 2, 3, 5, 6, 7], longDay: 6);
+    return [
+      for (final p in [profile(), hybrid])
+        ...PlanGenerator(
+          lookupAppLocalizations(Locale(lang)),
+          p,
+          templates,
+          () => 'p${n++}',
+        ).generate(start: DateTime(2026, 11, 9), weeks: 6),
+    ];
   }
 
   PlannedWorkout apply(PlannedWorkout p, Map<String, dynamic> m) => PlannedWorkout.fromMap(p.id, {...p.toMap(), ...m});

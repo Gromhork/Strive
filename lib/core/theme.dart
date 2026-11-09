@@ -107,10 +107,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
       ),
-      dialogTheme: DialogThemeData(
-        backgroundColor: dark ? AppColors.surfaceDark : Colors.white,
-        surfaceTintColor: Colors.transparent,
-      ),
+      dialogTheme: DialogThemeData(backgroundColor: dark ? AppColors.surfaceDark : Colors.white, surfaceTintColor: Colors.transparent),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant.withValues(alpha: 0.5), space: 1),
     );
   }

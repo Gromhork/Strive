@@ -17,10 +17,7 @@ void main() {
   test('intensity is derived from the workout structure', () {
     const easy = [WorkoutStep(kind: 'steady', zone: 'E', durationSec: 2400)];
     const long = [WorkoutStep(kind: 'steady', zone: 'E', durationSec: 5400)];
-    const tempo = [
-      WorkoutStep(kind: 'warmup', zone: 'E', durationSec: 600),
-      WorkoutStep(kind: 'work', zone: 'T', durationSec: 1200),
-    ];
+    const tempo = [WorkoutStep(kind: 'warmup', zone: 'E', durationSec: 600), WorkoutStep(kind: 'work', zone: 'T', durationSec: 1200)];
     const vo2 = [WorkoutStep(kind: 'work', zone: 'I', distanceM: 800), WorkoutStep(kind: 'recovery', zone: 'REC', durationSec: 120)];
     const drills = [
       WorkoutStep(kind: 'work', zone: 'DR', distanceM: 50),

@@ -10,6 +10,8 @@ import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../session/manual_entry_page.dart';
 import '../session/start_helpers.dart';
+import '../session/step_text.dart';
+import '../../services/zones.dart' show templateMinutes;
 import 'exercise_picker.dart';
 import 'template_editor_page.dart';
 
@@ -295,7 +297,10 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        FilledButton(onPressed: chosen.isEmpty ? null : () => Navigator.pop(c, true), child: Text(l.addN(chosen.fold<int>(0, (n, f) => n + byFolder[f]!.length)))),
+                        FilledButton(
+                          onPressed: chosen.isEmpty ? null : () => Navigator.pop(c, true),
+                          child: Text(l.addN(chosen.fold<int>(0, (n, f) => n + byFolder[f]!.length))),
+                        ),
                       ],
                     ),
                   ),
@@ -508,8 +513,11 @@ class _TemplateTile extends ConsumerWidget {
         t.sport == Sport.gym
             ? '${t.exercises.length} ${l.exercises} · ~${t.estimatedMinutes} min'
             : [
-              '~${t.estimatedMinutes} min',
-              if (t.steps.where((s) => s.isWork).length > 1) l.stepsCount(t.steps.length),
+              '~${templateMinutes(t, ref.watch(profileOrDefaultProvider))} min',
+              if (stepsDistance(t.steps, ref.watch(profileOrDefaultProvider).units, t.sport) case final d?)
+                d
+              else if (t.steps.where((s) => s.isWork).length > 1)
+                l.stepsCount(t.steps.length),
               intensityLabel(l, t.intensity),
             ].join(' · ');
     final repo = ref.read(repoProvider)!;

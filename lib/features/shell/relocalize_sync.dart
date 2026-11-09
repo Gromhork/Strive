@@ -19,7 +19,8 @@ final relocalizeSyncProvider = Provider<void>((ref) {
   final sessions = ref.watch(sessionsProvider);
   if (!plans.hasValue || !templates.hasValue || !sessions.hasValue) return;
   final prefs = ref.read(prefsProvider);
-  final key = 'dataLang.$uid';
+  // Bump the version when the translation rules improve, so stored texts are checked again.
+  final key = 'dataLang.v2.$uid';
   if (prefs.getString(key) == lang) return;
 
   final r = Relocalizer.to(lang), rp = Relocalizer.to(lang, programs: true);

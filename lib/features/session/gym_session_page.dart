@@ -146,10 +146,7 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
             _UpNextCard(w: w, index: next, units: u, onTap: () => _openFocus(next)),
             const SizedBox(height: 18),
           ],
-          if (!_table && next == null && w.exercises.isNotEmpty) ...[
-            _AllDoneCard(onFinish: () => _finish(w)),
-            const SizedBox(height: 18),
-          ],
+          if (!_table && next == null && w.exercises.isNotEmpty) ...[_AllDoneCard(onFinish: () => _finish(w)), const SizedBox(height: 18)],
           if (_table)
             for (var i = 0; i < w.exercises.length; i++)
               _ExerciseCard(index: i, exercise: w.exercises[i], previous: lastSetsFor(history, w.exercises[i].exId), units: u)
@@ -613,10 +610,7 @@ class _ExerciseCard extends ConsumerWidget {
                   children: [
                     SizedBox(width: 32, child: Text(l.setShort, style: Theme.of(context).textTheme.labelSmall)),
                     Expanded(flex: 3, child: Text(l.previous, style: Theme.of(context).textTheme.labelSmall)),
-                    Expanded(
-                      flex: 3,
-                      child: Center(child: Text(units.weightUnit, style: Theme.of(context).textTheme.labelSmall)),
-                    ),
+                    Expanded(flex: 3, child: Center(child: Text(units.weightUnit, style: Theme.of(context).textTheme.labelSmall))),
                     Expanded(flex: 3, child: Center(child: Text(l.reps, style: Theme.of(context).textTheme.labelSmall))),
                     const SizedBox(width: 44),
                   ],
@@ -633,11 +627,7 @@ class _ExerciseCard extends ConsumerWidget {
                 ),
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => n.addSet(index),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: Text(l.addSet),
-                ),
+                child: TextButton.icon(onPressed: () => n.addSet(index), icon: const Icon(Icons.add, size: 18), label: Text(l.addSet)),
               ),
             ],
           ),
@@ -655,14 +645,7 @@ GymSet? _prevFor(GymExercise e, int s, List<GymSet>? work) {
 }
 
 class _SetRow extends ConsumerStatefulWidget {
-  const _SetRow({
-    super.key,
-    required this.ex,
-    required this.set,
-    required this.data,
-    required this.previous,
-    required this.units,
-  });
+  const _SetRow({super.key, required this.ex, required this.set, required this.data, required this.previous, required this.units});
   final int ex, set;
   final GymSet data;
   final GymSet? previous;
@@ -719,12 +702,7 @@ class _SetRowState extends ConsumerState<_SetRow> {
           children: [
             SizedBox(
               width: 32,
-              child: SetTypeBadge(
-                set: d,
-                index: widget.set,
-                onChanged: (t) => n.updateSet(widget.ex, widget.set, type: t),
-                compact: true,
-              ),
+              child: SetTypeBadge(set: d, index: widget.set, onChanged: (t) => n.updateSet(widget.ex, widget.set, type: t), compact: true),
             ),
             Expanded(
               flex: 3,
@@ -901,11 +879,7 @@ class RestBar extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Text(
                         clock(left.ceil().clamp(0, 9999)),
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()]),
                       ),
                       const Spacer(),
                       TextButton(onPressed: () => n.adjustRest(-15), child: const Text('-15')),

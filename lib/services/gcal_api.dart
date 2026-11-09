@@ -193,7 +193,8 @@ Future<void> runPooled(List<Future<void> Function()> tasks, {int concurrency = 3
       } catch (e, s) {
         error ??= e;
         stack ??= s;
-        if (e is GcalException && (e.kind == GcalErrorKind.auth || e.kind == GcalErrorKind.offline || e.kind == GcalErrorKind.apiDisabled)) {
+        if (e is GcalException &&
+            (e.kind == GcalErrorKind.auth || e.kind == GcalErrorKind.offline || e.kind == GcalErrorKind.apiDisabled)) {
           fatal = true;
         }
       }

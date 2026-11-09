@@ -104,9 +104,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       // Past week: completed vs. planned at a glance.
       final weekPlans = plans.where((p) => !p.date.isBefore(week) && p.date.isBefore(end)).toList();
       final planned = weekPlans.length;
-      final done = planned > 0
-          ? weekPlans.where((p) => p.isDone).length
-          : sessions.where((s) => !s.start.isBefore(week) && s.start.isBefore(end)).length;
+      final done =
+          planned > 0
+              ? weekPlans.where((p) => p.isDone).length
+              : sessions.where((s) => !s.start.isBefore(week) && s.start.isBefore(end)).length;
       trailing = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -128,7 +129,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
           title: '${df.format(week)} – ${df.format(week.add(const Duration(days: 6)))}',
           trailing: trailing,
-          child: Column(children: [for (var d = 0; d < 7; d++) _DayRow(day: week.add(Duration(days: d)), plans: plans, sessions: sessions)]),
+          child: Column(
+            children: [for (var d = 0; d < 7; d++) _DayRow(day: week.add(Duration(days: d)), plans: plans, sessions: sessions)],
+          ),
         ),
       ),
     );
@@ -426,12 +429,7 @@ class PlanCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      p.title,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Text(p.title, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                     Text(
                       [
                         '${p.durationMin} min',

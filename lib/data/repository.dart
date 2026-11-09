@@ -89,6 +89,7 @@ class Repository {
   Stream<List<PlannedWorkout>> plans() => _plans.snapshots().map(
     (q) => q.docs.map((d) => PlannedWorkout.fromMap(d.id, d.data())).toList()..sort((a, b) => a.date.compareTo(b.date)),
   );
+
   /// Current plans straight from the server (not a possibly incomplete local cache) – used
   /// by the calendar sync, which deletes events of plans that no longer exist.
   Future<List<PlannedWorkout>> plansFromServer() async {

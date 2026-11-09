@@ -15,7 +15,6 @@ import 'zone_info.dart';
 
 export 'zone_info.dart' show zonesFor, intensitiesFor, deriveIntensity, ZoneInfoButton, showZoneInfo;
 
-
 /// Fills pace / power / heart-rate targets of [s] from the athlete's zones.
 WorkoutStep withTargets(WorkoutStep s, Sport sport, UserProfile p) {
   final a = p.athlete;
@@ -185,7 +184,7 @@ class _StepEditorState extends State<StepEditor> {
     final l = context.l10n;
     final flat = [for (final b in _blocks) ...b.flatten()];
     final u = widget.profile.units;
-    final sec = flat.fold<int>(0, (a, s) => a + _approxSec(s));
+    final sec = estimateStepsSec(flat, widget.sport, widget.profile);
     final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -199,7 +198,11 @@ class _StepEditorState extends State<StepEditor> {
               children: [
                 WorkoutProfileBar(steps: flat, sport: widget.sport, height: 40),
                 const SizedBox(height: 8),
-                Text('≈ ${humanDuration(sec)} · ${l.stepsCount(flat.length)}', style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  // Distance says more than a section count (a swim set easily has 30 sections).
+                  '≈ ${humanDuration(sec)} · ${stepsDistance(flat, u, widget.sport) ?? l.stepsCount(flat.length)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -285,14 +288,6 @@ class _StepEditorState extends State<StepEditor> {
         ),
       ],
     );
-  }
-
-  int _approxSec(WorkoutStep s) {
-    if (s.durationSec != null) return s.durationSec!;
-    final d = s.distanceM ?? 0;
-    if (widget.sport == Sport.swim) return (d / 100 * (s.paceMax ?? 120)).round();
-    if (widget.sport == Sport.ride) return (d / 1000 * 130).round();
-    return (d / 1000 * (((s.paceMin ?? 360) + (s.paceMax ?? 360)) / 2)).round();
   }
 }
 
@@ -433,6 +428,7 @@ class _StepSheetState extends State<_StepSheet> {
     if (widget.step.zone == 'walk') return 'walk';
     return zonesFor(widget.sport).contains(z) ? z : zonesFor(widget.sport).first;
   }
+
   late final _note = TextEditingController(text: widget.step.note);
 
   List<double> get _distances =>
@@ -557,7 +553,10 @@ class _StepSheetState extends State<_StepSheet> {
           onTap: () => setState(() => _zone = z),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: sel ? c : Colors.transparent, width: 1.5)),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: sel ? c : Colors.transparent, width: 1.5),
+            ),
             child: Row(
               children: [
                 Container(width: 10, height: 10, decoration: BoxDecoration(color: c, shape: BoxShape.circle)),

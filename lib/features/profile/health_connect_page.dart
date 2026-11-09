@@ -121,7 +121,10 @@ class _HealthConnectPageState extends ConsumerState<HealthConnectPage> {
               height: 54,
               child: FilledButton.icon(
                 onPressed: _busy ? null : _connect,
-                icon: _busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.link_rounded),
+                icon:
+                    _busy
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.link_rounded),
                 label: Text(l.hcConnect),
               ),
             )
@@ -147,9 +150,29 @@ class _HealthConnectPageState extends ConsumerState<HealthConnectPage> {
                     const Divider(height: 24),
                     Row(
                       children: [
-                        Expanded(child: StatTile(label: l.steps, value: vitals.steps == null ? '–' : compactNumber(vitals.steps!.toDouble()), icon: Icons.directions_walk)),
-                        Expanded(child: StatTile(label: l.restingHr, value: vitals.restingHr == null ? '–' : '${vitals.restingHr}', icon: Icons.favorite_border, color: AppColors.danger)),
-                        Expanded(child: StatTile(label: l.sleep, value: vitals.sleepMin == null ? '–' : humanDuration(vitals.sleepMin! * 60), icon: Icons.bedtime_outlined, color: AppColors.brand)),
+                        Expanded(
+                          child: StatTile(
+                            label: l.steps,
+                            value: vitals.steps == null ? '–' : compactNumber(vitals.steps!.toDouble()),
+                            icon: Icons.directions_walk,
+                          ),
+                        ),
+                        Expanded(
+                          child: StatTile(
+                            label: l.restingHr,
+                            value: vitals.restingHr == null ? '–' : '${vitals.restingHr}',
+                            icon: Icons.favorite_border,
+                            color: AppColors.danger,
+                          ),
+                        ),
+                        Expanded(
+                          child: StatTile(
+                            label: l.sleep,
+                            value: vitals.sleepMin == null ? '–' : humanDuration(vitals.sleepMin! * 60),
+                            icon: Icons.bedtime_outlined,
+                            color: AppColors.brand,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -196,7 +219,11 @@ class _HealthConnectPageState extends ConsumerState<HealthConnectPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(radius: 13, backgroundColor: AppColors.brand.withValues(alpha: 0.2), child: Text('${i + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))),
+                  CircleAvatar(
+                    radius: 13,
+                    backgroundColor: AppColors.brand.withValues(alpha: 0.2),
+                    child: Text('${i + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(child: Text(step, style: const TextStyle(height: 1.35))),
                 ],
@@ -227,11 +254,7 @@ class _Info extends StatelessWidget {
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
     child: Row(
-      children: [
-        Icon(icon, color: color),
-        const SizedBox(width: 10),
-        Expanded(child: Text(text, style: const TextStyle(height: 1.35))),
-      ],
+      children: [Icon(icon, color: color), const SizedBox(width: 10), Expanded(child: Text(text, style: const TextStyle(height: 1.35)))],
     ),
   );
 }

@@ -96,10 +96,7 @@ class SessionDetailPage extends ConsumerWidget {
                   ),
                   _half(
                     context,
-                    StatTile(
-                      label: s.sport.usesPace ? l.avgPace : l.avgSpeed,
-                      value: u.paceOrSpeed(s.sport, s.distanceM, s.durationSec),
-                    ),
+                    StatTile(label: s.sport.usesPace ? l.avgPace : l.avgSpeed, value: u.paceOrSpeed(s.sport, s.distanceM, s.durationSec)),
                   ),
                   if (s.elevationM > 0) _half(context, StatTile(label: l.elevation, value: '${s.elevationM.round()} m')),
                   if (s.laps > 0) _half(context, StatTile(label: l.laps, value: '${s.laps} × ${s.poolLengthM} m')),
@@ -144,10 +141,7 @@ class SessionDetailPage extends ConsumerWidget {
             const SizedBox(height: 12),
             SectionCard(
               title: l.compareLast,
-              trailing: Text(
-                DateFormat.MMMd(context.localeName).format(prev.start),
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
+              trailing: Text(DateFormat.MMMd(context.localeName).format(prev.start), style: Theme.of(context).textTheme.labelSmall),
               child: Column(
                 children: [
                   _CompareRow(
@@ -246,10 +240,7 @@ class _CompareRow extends StatelessWidget {
           Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(width: 10),
-          SizedBox(
-            width: 80,
-            child: Text(delta, textAlign: TextAlign.right, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
-          ),
+          SizedBox(width: 80, child: Text(delta, textAlign: TextAlign.right, style: TextStyle(color: color, fontWeight: FontWeight.w600))),
         ],
       ),
     );

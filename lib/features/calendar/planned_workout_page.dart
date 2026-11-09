@@ -44,9 +44,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(DateFormat.MMMEd(context.localeName).format(p.date)),
-        actions: [
-          IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => showPlanEditor(context, ref, existing: p)),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => showPlanEditor(context, ref, existing: p))],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
@@ -88,7 +86,8 @@ class PlannedWorkoutPage extends ConsumerWidget {
                   Wrap(
                     spacing: 8,
                     children: [
-                      if (phase.isNotEmpty) Chip(label: Text(phase), visualDensity: VisualDensity.compact, avatar: const Icon(Icons.timeline, size: 16)),
+                      if (phase.isNotEmpty)
+                        Chip(label: Text(phase), visualDensity: VisualDensity.compact, avatar: const Icon(Icons.timeline, size: 16)),
                       if (p.isKey)
                         Chip(
                           label: Text(l.keySession),
@@ -98,10 +97,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
                     ],
                   ),
                 ],
-                if (p.steps.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  WorkoutProfileBar(steps: p.steps, sport: p.sport, height: 50),
-                ],
+                if (p.steps.isNotEmpty) ...[const SizedBox(height: 14), WorkoutProfileBar(steps: p.steps, sport: p.sport, height: 50)],
               ],
             ),
           ),
@@ -149,13 +145,11 @@ class PlannedWorkoutPage extends ConsumerWidget {
                 subtitle: Builder(
                   builder: (_) {
                     final rx = p.isDone ? null : ref.watch(loadPrescriberProvider).forExercise(e, phase: p.phase);
-                    final reps = e.repMin != null && e.repMax != null ? '${e.repMin}–${e.repMax}' : '${e.workSets.isEmpty ? '' : e.workSets.first.reps}';
-                    return Text(
-                      [
-                        '${e.workSets.length} × $reps',
-                        if (rx != null && rx.weight > 0) prescriptionLabel(l, rx, u),
-                      ].join(' · '),
-                    );
+                    final reps =
+                        e.repMin != null && e.repMax != null
+                            ? '${e.repMin}–${e.repMax}'
+                            : '${e.workSets.isEmpty ? '' : e.workSets.first.reps}';
+                    return Text(['${e.workSets.length} × $reps', if (rx != null && rx.weight > 0) prescriptionLabel(l, rx, u)].join(' · '));
                   },
                 ),
               ),
