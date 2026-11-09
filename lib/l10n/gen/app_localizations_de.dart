@@ -3357,4 +3357,7 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get healthGymHeartNote =>
       'Herz / Blutdruck: 2–3 Wiederholungen Reserve lassen und bei der Anstrengung ausatmen – kein Pressen, keine Pressatmung.';
+
+  @override
+  String get recalNote => 'An dein bisheriges Training angepasst (Anstrengung und erledigte Einheiten).';
 }

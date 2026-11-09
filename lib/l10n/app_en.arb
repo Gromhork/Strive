@@ -1861,5 +1861,6 @@
   "healthGymBackNote": "Back: no heavy axial loading – swap back squats and deadlifts for leg press, split squats or hip thrusts; keep a neutral spine.",
   "healthGymShoulderNote": "Shoulder: no heavy overhead pressing – use landmine or neutral-grip variants and stay pain-free.",
   "healthGymJointNote": "Joints: train in a pain-free range – reduce depth or load if knee or hip hurt.",
-  "healthGymHeartNote": "Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding."
+  "healthGymHeartNote": "Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.",
+  "recalNote": "Adjusted to your recent training (effort and completed sessions)."
 }

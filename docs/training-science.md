@@ -711,6 +711,44 @@ Sex is used only where the evidence gives a different number, never to change th
 
 ---
 
+## 11. Adaptive recalibration from RPE, compliance and new best efforts [M/P]
+
+"Re-plan & recalibrate" (calendar) adapts the next 14 days of the current plan to the last 14 days of training
+(`Recalibrator`, lib/services/plan_recalibrate.dart). The athlete sees every change before it is applied; done workouts,
+strength sessions (handled by the load prescription) and races are never changed.
+
+**Signals.** Session RPE (CR10, asked after the session) is compared with the intended intensity using the three-zone
+model of §0 (Z1 RPE 1–4, Z2 5–6, Z3 7–10) – session-RPE is a valid internal-load measure across sports [43, 66].
+
+```text
+too hard (score 1):    easy / technique / long RPE >= 7 · tempo RPE >= 9 · intervals RPE 10
+elevated (score 1/2):  easy / technique / long RPE 5–6 (threshold-like effort on an easy day)
+too easy:              tempo / intervals RPE <= 4 (a zone-1 effort for a quality set)
+completion:            done share of the due planned minutes (each workout <= its plan), needs >= 3 due workouts
+cut short:             session < 80 % of the planned duration / distance
+best effort:           fastest 5 km / 10 km / HM / M of the last 90 days (km splits or whole runs)
+```
+
+**Rules** (on planned endurance workouts of the next 14 days):
+
+| Signal (last 14 days) | Change | Rationale |
+|---|---|---|
+| too-hard score ≥ 2 | days 1–7 −10 %; next quality session per sport → easy (~80 % of its time) | §7.9 "RPE ≥ target + 2 twice → repeat the week"; rising RPE at the same external load is an early marker of non-functional overreaching [67] |
+| too-hard score ≥ 3 | days 1–7 −20 %, days 8–14 −10 %; all quality of days 1–7 → easy (taper keeps its intensity) | as above, stronger signal; reduce load before intensity is resumed [67] |
+| completion < 70 % | days 1–7 −10 % (no progression after missed training) | §8 auto-downgrade (< 70 % over 2 weeks); ACWR spikes after gaps raise injury risk [13] |
+| completion < 50 % | days 1–7 −20 %, days 8–14 −10 %, first quality per sport → easy (re-entry) | detraining after ~2 weeks of reduced training [68]; gradual return |
+| ≥ 2 sessions cut short | long sessions of the next 14 days −10 % | the planned duration was not sustainable |
+| ≥ 2 quality sessions at RPE ≤ 4, no fatigue signal, completion ≥ 90 % | easy + long sessions of loading weeks, days 1–7, +5 % | within the 5–10 %/week growth rule (§1.5); long run ≤ +10 % of the longest run of the last 30 days (R1, Frandsen 2025 [11]) |
+| missed key session in the last 3 days | moved to a free day of the same week, never next to another hard day; missed easy sessions dropped | same rules as "adjust my week" (plan_adjuster) |
+| faster best effort | run pace targets follow the new VDOT: with race times only upwards and ≤ +2 points at once; without race times the level default is replaced (also downwards); the profile's race time is updated | Daniels [7]: update VDOT from races / time trials, small steps |
+
+Reductions never stack beyond the strongest rule (the minimum factor wins); an increase only happens without any reduction
+reason. Volume changes scale continuous parts (steady runs / rides, swim sets); short repeats keep their length, so a reduced
+interval session keeps its intensity (Bosquet 2007 [18]: cut volume, keep intensity). Every changed workout gets the note
+"Adjusted to your recent training" (once, translatable).
+
+---
+
 ## 10. References
 
 Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
@@ -779,3 +817,6 @@ Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
 63. Wanivenhaus F, Fox AJS, Chaudhury S, Rodeo SA. Epidemiology of injuries and prevention strategies in competitive swimmers. *Sports Health.* 2012;4(3):246–251. doi:10.1177/1941738111434406
 64. Cappozzo A, Felici F, Figura F, Gazzani F. Lumbar spine loading during half-squat exercises. *Med Sci Sports Exerc.* 1985;17(5):613–620.
 65. MacDougall JD, Tuxen D, Sale DG, et al. Arterial blood pressure response to heavy resistance exercise. *J Appl Physiol.* 1985;58(3):785–790. doi:10.1152/jappl.1985.58.3.785
+66. Haddad M, Stylianides G, Djaoui L, Dellal A, Chamari K. Session-RPE method for training load monitoring: validity, ecological usefulness, and influencing factors. *Front Neurosci.* 2017;11:612. doi:10.3389/fnins.2017.00612
+67. Meeusen R, Duclos M, Foster C, et al. Prevention, diagnosis, and treatment of the overtraining syndrome: joint consensus statement of the European College of Sport Science and the American College of Sports Medicine. *Med Sci Sports Exerc.* 2013;45(1):186–205. doi:10.1249/MSS.0b013e318279a10a
+68. Mujika I, Padilla S. Detraining: loss of training-induced physiological and performance adaptations. Part I: short term insufficient training stimulus. *Sports Med.* 2000;30(2):79–87. doi:10.2165/00007256-200030020-00002

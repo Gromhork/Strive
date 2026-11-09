@@ -3336,4 +3336,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get healthGymHeartNote =>
       'Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.';
+
+  @override
+  String get recalNote => 'Adjusted to your recent training (effort and completed sessions).';
 }

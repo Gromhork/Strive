@@ -10,4 +10,5 @@
  'healthGymShoulderNote': ['Shoulder: no heavy overhead pressing – use landmine or neutral-grip variants and stay pain-free.', 'Schulter: kein schweres Drücken über Kopf – Landmine- oder Neutralgriff-Varianten, schmerzfrei bleiben.'],
  'healthGymJointNote': ['Joints: train in a pain-free range – reduce depth or load if knee or hip hurt.', 'Gelenke: im schmerzfreien Bewegungsumfang trainieren – Tiefe oder Last reduzieren, wenn Knie oder Hüfte schmerzen.'],
  'healthGymHeartNote': ['Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.', 'Herz / Blutdruck: 2–3 Wiederholungen Reserve lassen und bei der Anstrengung ausatmen – kein Pressen, keine Pressatmung.'],
+ 'recalNote': ['Adjusted to your recent training (effort and completed sessions).', 'An dein bisheriges Training angepasst (Anstrengung und erledigte Einheiten).'],
 }

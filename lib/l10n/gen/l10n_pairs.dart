@@ -1376,4 +1376,8 @@ const l10nPairs = <(String, String)>[
     'Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.',
     'Herz / Blutdruck: 2–3 Wiederholungen Reserve lassen und bei der Anstrengung ausatmen – kein Pressen, keine Pressatmung.',
   ),
+  (
+    'Adjusted to your recent training (effort and completed sessions).',
+    'An dein bisheriges Training angepasst (Anstrengung und erledigte Einheiten).',
+  ),
 ];

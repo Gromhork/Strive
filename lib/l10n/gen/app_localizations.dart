@@ -6283,6 +6283,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.'**
   String get healthGymHeartNote;
+
+  /// No description provided for @recalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusted to your recent training (effort and completed sessions).'**
+  String get recalNote;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

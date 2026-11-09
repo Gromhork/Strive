@@ -1,0 +1,500 @@
+import 'dart:math';
+import 'dart:ui';
+
+import '../core/format.dart';
+import '../core/sport.dart';
+import '../data/models.dart';
+import '../l10n/gen/app_localizations.dart';
+import 'compliance.dart';
+import 'insights.dart';
+import 'plan_adjuster.dart';
+import 'zones.dart';
+
+/// "Re-plan & recalibrate": adapts the upcoming weeks of the current plan to how the
+/// athlete actually trained (docs/training-science.md §11). Pure – no Firestore, no UI.
+///
+/// Signals (last [Recalibrator.lookbackDays] days):
+/// * **RPE vs. intended intensity** (session-RPE, Foster 2001; three-zone model §0: easy
+///   1–4, threshold 5–6, high 7–10). Too hard: easy / long ≥ 7, tempo ≥ 9, intervals 10;
+///   elevated (counts ½): easy / long 5–6. Too easy: tempo / intervals ≤ 4.
+/// * **Compliance**: share of the due planned minutes that were done ([weeklyCompletion]),
+///   sessions cut short (< 80 % of the plan), missed key sessions (last 3 days).
+/// * **Thresholds**: VDOT from recent running best efforts ([runBestEfforts]).
+///
+/// Rules (all on planned, not-yet-done endurance workouts of the next 14 days; strength
+/// sessions, done and race workouts are never touched):
+/// 1. Fatigue (too-hard score ≥ 2): next 7 days −10 % (≥ 3: −20 %, days 8–14 −10 %),
+///    the next quality session of each sport becomes easy (≥ 3: all in the next 7 days)
+///    – "RPE ≥ target + 2 twice → repeat the week" (§7.9), keep intensity otherwise.
+/// 2. Completion < 70 % of the due minutes: next 7 days −10 % (no progression after
+///    missed training); < 50 %: −20 % / −10 % and the first quality session per sport
+///    becomes easy (re-entry). Needs ≥ 3 due workouts.
+/// 3. ≥ 2 sessions cut short: long sessions of the next 14 days −10 %.
+/// 4. Too easy (≥ 2 quality sessions at RPE ≤ 4), no fatigue, completion ≥ 90 %: easy and
+///    long sessions of loading weeks in the next 7 days +5 % (inside the 5–10 %/week
+///    growth rule; long runs never above +10 % of the longest run of the last 30 days, R1).
+/// 5. Missed key sessions of the last 3 days move inside the week ([proposeWeekAdjustment]).
+/// 6. Faster running best effort: pace targets of upcoming runs follow the new VDOT (with
+///    race times only upwards and at most +2 points at once – Daniels; without race times
+///    the plan's default VDOT is replaced in both directions).
+class Recalibrator {
+  Recalibrator(this.l, this.profile, {required this.plans, required this.sessions, required this.now});
+
+  final AppLocalizations l;
+  final UserProfile profile;
+  final List<PlannedWorkout> plans;
+  final List<Session> sessions;
+  final DateTime now;
+
+  static const lookbackDays = 14;
+  static const horizonDays = 14;
+
+  AthleteData get a => profile.athlete;
+  DateTime get today => dayOnly(now);
+
+  Recalibration run() {
+    final linked = linkPlanSessions(plans, sessions);
+    final from = today.subtract(const Duration(days: lookbackDays));
+    final window = plans.where((p) => !dayOnly(p.date).isBefore(from) && dayOnly(p.date).isBefore(today)).toList();
+
+    // ── RPE signals
+    var tooHard = 0.0, tooEasy = 0, rated = 0, cutShort = 0;
+    for (final p in window.where((p) => p.sport != Sport.gym && p.intensity != 'race')) {
+      final s = linked[p.id];
+      if (s == null) continue;
+      final r = complianceRatio(p, s);
+      if (r != null && r < 0.8) cutShort++;
+      if (s.rpe == null) continue;
+      rated++;
+      tooHard += rpeLoad(p.intensity, s.rpe!);
+      if (rpeTooEasy(p.intensity, s.rpe!)) tooEasy++;
+    }
+    // ── Compliance (only meaningful with a few due workouts)
+    final due = window.where((p) => p.durationMin > 0).length;
+    final completion = due >= 3 ? weeklyCompletion(window, linked, now: now) : null;
+
+    // ── Decide the load factors
+    var f1 = 1.0, f2 = 1.0; // days 0–6, 7–13
+    var swapAll = false, swapFirst = false, shortenLong = false, progress = false;
+    final reasons = <RecalReason>[];
+    if (tooHard >= 2) {
+      reasons.add(RecalReason.rpeHigh);
+      if (tooHard >= 3) {
+        f1 = min(f1, 0.8);
+        f2 = min(f2, 0.9);
+        swapAll = true;
+      } else {
+        f1 = min(f1, 0.9);
+        swapFirst = true;
+      }
+    }
+    if (completion != null && completion < 0.7) {
+      reasons.add(RecalReason.lowCompletion);
+      if (completion < 0.5) {
+        f1 = min(f1, 0.8);
+        f2 = min(f2, 0.9);
+        swapFirst = true;
+      } else {
+        f1 = min(f1, 0.9);
+      }
+    }
+    if (cutShort >= 2) {
+      reasons.add(RecalReason.cutShort);
+      shortenLong = true;
+    }
+    if (reasons.isEmpty && tooEasy >= 2 && (completion ?? 1) >= 0.9) {
+      reasons.add(RecalReason.rpeLow);
+      progress = true;
+    }
+
+    // ── Thresholds
+    final oldVdot = Vdot.of(a) ?? Vdot.defaultFor(profile.level);
+    final newVdot = _newVdot(oldVdot);
+    if (newVdot != null) reasons.add(newVdot > oldVdot ? RecalReason.fasterRuns : RecalReason.slowerRuns);
+
+    // ── Missed key sessions: move inside the week (same rules as "adjust my week").
+    final changes = <RecalChange>[];
+    final moved = <String>{};
+    final adjust = proposeWeekAdjustment(plans, now);
+    for (final c in adjust) {
+      moved.add(c.plan.id);
+      if (c.isMove) {
+        changes.add(RecalChange(c.plan, _copy(c.plan, date: c.to), RecalKind.moved));
+      } else {
+        changes.add(RecalChange(c.plan, _copy(c.plan, status: 'skipped'), RecalKind.dropped));
+      }
+      if (c.replaces != null) {
+        moved.add(c.replaces!.id);
+        changes.add(RecalChange(c.replaces!, _copy(c.replaces!, status: 'skipped'), RecalKind.dropped));
+      }
+    }
+    if (adjust.any((c) => isHardPlan(c.plan))) reasons.add(RecalReason.missedKey);
+
+    // ── Upcoming endurance workouts
+    final end = today.add(const Duration(days: horizonDays));
+    final upcoming =
+        plans
+            .where(
+              (p) =>
+                  p.status == 'planned' &&
+                  !moved.contains(p.id) &&
+                  p.sport != Sport.gym &&
+                  p.intensity != 'race' &&
+                  !dayOnly(p.date).isBefore(today) &&
+                  dayOnly(p.date).isBefore(end),
+            )
+            .toList()
+          ..sort((x, y) => x.date.compareTo(y.date));
+    final longest30 = _longestRecentRunKm();
+    final swappedSports = <Sport>{};
+    final pz = newVdot == null ? null : PaceZones(newVdot);
+    for (final p in upcoming) {
+      final days = dayOnly(p.date).difference(today).inDays;
+      final quality = p.intensity == 'tempo' || p.intensity == 'intervals';
+      final rest = p.phase == 'recovery' || p.phase == 'taper';
+      var w = p;
+      RecalKind? kind;
+      // Fatigue / re-entry: quality → easy (never in the taper – it keeps its intensity).
+      if (quality && p.phase != 'taper' && ((swapAll && days < 7) || (swapFirst && !swappedSports.contains(p.sport)))) {
+        swappedSports.add(p.sport);
+        w = _toEasy(p, pz);
+        kind = RecalKind.toEasy;
+      } else if (!quality) {
+        var f = days < 7 ? f1 : f2;
+        if (shortenLong && p.intensity == 'long') f = min(f, 0.9);
+        if (progress && days < 7 && !rest && f == 1.0) {
+          f = 1.05;
+          // R1: a long run stays within +10 % of the longest run of the last 30 days.
+          final km = p.distanceKm ?? 0;
+          if (p.sport == Sport.run && p.intensity == 'long' && longest30 != null && km > 0) f = min(f, longest30 * 1.1 / km);
+        }
+        if ((f - 1).abs() >= 0.02) {
+          w = _scaled(p, f);
+          kind = f < 1 ? RecalKind.easier : RecalKind.harder;
+        }
+      }
+      if (pz != null && w.sport == Sport.run && kind != RecalKind.toEasy) {
+        final paced = _withPaces(w, pz);
+        if (paced != null) {
+          w = paced;
+          kind ??= RecalKind.paces;
+        }
+      }
+      if (kind != null) changes.add(RecalChange(p, kind == RecalKind.paces ? w : _noted(w), kind));
+    }
+
+    // Race times for the profile, so newly generated plans use the new VDOT too.
+    Map<String, int>? raceTimes;
+    if (newVdot != null) {
+      final key = a.eventDistance != null && Vdot.distances.containsKey(a.eventDistance) ? a.eventDistance! : '10k';
+      raceTimes = {...a.raceTimes, key: Vdot.raceTime(newVdot, Vdot.distances[key]!)};
+    }
+    return Recalibration(
+      reasons: reasons,
+      stats: RecalStats(
+        rated: rated,
+        tooHard: tooHard,
+        tooEasy: tooEasy,
+        completion: completion,
+        cutShort: cutShort,
+        oldVdot: oldVdot,
+        newVdot: newVdot,
+      ),
+      changes: changes,
+      raceTimes: raceTimes,
+    );
+  }
+
+  // ───────────────────────────── RPE rules ─────────────────────────────
+
+  /// How much a session counts toward "too hard" (0, ½ or 1) given its planned intensity.
+  static double rpeLoad(String intensity, int rpe) => switch (intensity) {
+    'easy' || 'technique' || 'long' => rpe >= 7 ? 1 : (rpe >= 5 ? 0.5 : 0),
+    'tempo' => rpe >= 9 ? 1 : 0,
+    'intervals' => rpe >= 10 ? 1 : 0,
+    _ => 0,
+  };
+
+  /// Quality session that felt easy (RPE ≤ 4 – zone 1 effort for a threshold / VO2 set).
+  static bool rpeTooEasy(String intensity, int rpe) => (intensity == 'tempo' || intensity == 'intervals') && rpe <= 4;
+
+  // ───────────────────────────── Thresholds ─────────────────────────────
+
+  /// New VDOT from running best efforts of the last 90 days (5 km and longer), or null.
+  double? _newVdot(double current) {
+    final recent = sessions.where((s) => now.difference(s.start).inDays <= 90).toList();
+    double? best;
+    for (final e in runBestEfforts(recent).values) {
+      if (!Vdot.distances.containsKey(e.key)) continue;
+      final v = Vdot.fromRace(e.meters, e.seconds);
+      if (best == null || v > best) best = v;
+    }
+    if (best == null) return null;
+    if (a.raceTimes.isEmpty) {
+      // The plan uses a level default: any real effort is a better anchor.
+      return (best - current).abs() >= 1 ? double.parse(best.toStringAsFixed(1)) : null;
+    }
+    if (best < current + 0.5) return null;
+    return double.parse(min(best, current + 2).toStringAsFixed(1));
+  }
+
+  double? _longestRecentRunKm() {
+    final runs = sessions.where((s) => s.sport == Sport.run && now.difference(s.start).inDays <= 30);
+    final km = runs.fold<double>(0, (x, s) => max(x, s.distanceM / 1000));
+    return km > 0 ? km : null;
+  }
+
+  // ───────────────────────────── Workout edits ─────────────────────────────
+
+  /// [p] with volume × [f]: steady / work steps, duration and distance.
+  PlannedWorkout _scaled(PlannedWorkout p, double f) {
+    WorkoutStep s(WorkoutStep x) {
+      if (x.kind != 'steady' && x.kind != 'work') return x;
+      // Short repeats (strides, intervals) keep their length – only continuous parts scale.
+      if (x.kind == 'work' && (x.durationSec ?? 600) < 600 && (x.distanceM ?? 2000) < 2000) return x;
+      return _step(
+        x,
+        durationSec: x.durationSec == null ? null : max(300, (x.durationSec! * f / 60).round() * 60),
+        distanceM: x.distanceM == null ? null : max(p.sport == Sport.swim ? 100.0 : 1000.0, (x.distanceM! * f / 100).round() * 100.0),
+      );
+    }
+
+    final steps = [for (final x in p.steps) s(x)];
+    // Duration and distance follow the steps (same estimate as the generator), so the
+    // card, the steps and the calendar agree; plans without steps scale directly.
+    final before = estimateStepsSec(p.steps, p.sport, profile), after = estimateStepsSec(steps, p.sport, profile);
+    final g = p.steps.isEmpty || before <= 0 ? f : after / before;
+    return _copy(
+      p,
+      steps: steps,
+      durationMin: max(15, (p.durationMin * g / 5).round() * 5),
+      distanceKm: p.distanceKm == null ? null : double.parse((p.distanceKm! * g).toStringAsFixed(1)),
+    );
+  }
+
+  /// Quality session → easy session of the same sport, ~80 % of the time.
+  PlannedWorkout _toEasy(PlannedWorkout p, PaceZones? newPz) {
+    final minutes = max(20, (p.durationMin * 0.8 / 5).round() * 5);
+    final hz = HrZones(profile.estimatedMaxHr, a.restHr);
+    switch (p.sport) {
+      case Sport.swim:
+        final css = SwimZones.fromTests(a.swim400Sec, a.swim200Sec);
+        final total = max(600.0, ((p.steps.fold<double>(0, (x, s) => x + (s.distanceM ?? 0)) * 0.8) / 100).round() * 100.0);
+        final reps = max(2, ((total - 300) / 200).floor());
+        (int?, int?) pace(String z) => css == null ? (null, null) : SwimZones(css).range(z);
+        final steps = <WorkoutStep>[
+          WorkoutStep(kind: 'warmup', distanceM: 200, zone: 'REC', paceMin: pace('REC').$1, paceMax: pace('REC').$2, note: l.stepSwimWu),
+          for (var i = 0; i < reps; i++) ...[
+            WorkoutStep(kind: 'work', distanceM: 200, zone: 'EN', paceMin: pace('EN').$1, paceMax: pace('EN').$2, note: l.stepSwimEnNote),
+            if (i < reps - 1) const WorkoutStep(kind: 'recovery', durationSec: 20, zone: 'REC'),
+          ],
+          WorkoutStep(kind: 'cooldown', distanceM: 100, zone: 'REC', paceMin: pace('REC').$1, paceMax: pace('REC').$2),
+        ];
+        final m = steps.fold<double>(0, (x, s) => x + (s.distanceM ?? 0));
+        return _copy(
+          p,
+          title: l.wSwimEndurance(reps, 200),
+          description: l.wSwimEnduranceDesc,
+          intensity: 'easy',
+          isKey: false,
+          steps: steps,
+          durationMin: max(15, (estimateStepsSec(steps, Sport.swim, profile) / 60 / 5).round() * 5),
+          distanceKm: double.parse((m / 1000).toStringAsFixed(1)),
+        );
+      case Sport.ride:
+        final ftp = a.ftp ?? (a.hasPowerMeter ? PowerZones.estimate(profile.level, profile.weightKg) : null);
+        final pw = ftp == null ? null : PowerZones(ftp).range('Z2');
+        final hr = hz.zone(2);
+        return _copy(
+          p,
+          title: l.planEasyRide,
+          description: l.wEasyRideDesc,
+          intensity: 'easy',
+          isKey: false,
+          steps: [
+            WorkoutStep(
+              kind: 'steady',
+              durationSec: minutes * 60,
+              zone: 'Z2',
+              powerMin: pw?.$1,
+              powerMax: pw?.$2,
+              hrMin: hr.$1 - 5,
+              hrMax: hr.$2 - 5,
+              note: l.stepZ2RideNote,
+            ),
+          ],
+          durationMin: minutes,
+          distanceKm: double.parse((minutes / 60 * 27).toStringAsFixed(1)),
+        );
+      case Sport.run:
+      case Sport.gym:
+        final pz = newPz ?? PaceZones(Vdot.of(a) ?? Vdot.defaultFor(profile.level));
+        final hadPace = p.steps.any((s) => s.paceMin != null);
+        final (fast, slow) = pz.range('E');
+        final km = double.parse((minutes * 60 / ((fast + slow) / 2)).toStringAsFixed(1));
+        final hr = hz.zone(2);
+        return _copy(
+          p,
+          title: l.planEasyRun,
+          description: l.wEasyDesc,
+          intensity: 'easy',
+          isKey: false,
+          steps: [
+            WorkoutStep(
+              kind: 'steady',
+              durationSec: minutes * 60,
+              zone: 'E',
+              paceMin: hadPace ? fast : null,
+              paceMax: hadPace ? slow : null,
+              hrMin: hr.$1,
+              hrMax: hr.$2,
+              note: l.stepEasyNote,
+            ),
+          ],
+          durationMin: minutes,
+          distanceKm: km,
+        );
+    }
+  }
+
+  /// Run steps that already show a pace get the targets of the new VDOT (null = no change).
+  PlannedWorkout? _withPaces(PlannedWorkout p, PaceZones pz) {
+    var changed = false;
+    final steps = [
+      for (final s in p.steps)
+        if (s.paceMin != null && s.zone != 'walk')
+          () {
+            final (fast, slow) = pz.range(s.zone);
+            if (fast == s.paceMin && slow == s.paceMax) return s;
+            changed = true;
+            return _step(s, paceMin: fast, paceMax: slow);
+          }()
+        else
+          s,
+    ];
+    return changed ? _copy(p, steps: steps) : null;
+  }
+
+  /// Adds the recalibration note (once) to the description.
+  PlannedWorkout _noted(PlannedWorkout p) {
+    final notes = {recalNote('en'), recalNote('de')};
+    final lines = p.description.split('\n').where((x) => x.isNotEmpty && !notes.contains(x)).toList();
+    return _copy(p, description: [...lines, l.recalNote].join('\n'));
+  }
+
+  static String recalNote(String lang) => lookupAppLocalizations(Locale(lang)).recalNote;
+
+  static WorkoutStep _step(WorkoutStep s, {int? durationSec, double? distanceM, int? paceMin, int? paceMax}) => WorkoutStep(
+    kind: s.kind,
+    durationSec: durationSec ?? s.durationSec,
+    distanceM: distanceM ?? s.distanceM,
+    zone: s.zone,
+    paceMin: paceMin ?? s.paceMin,
+    paceMax: paceMax ?? s.paceMax,
+    powerMin: s.powerMin,
+    powerMax: s.powerMax,
+    hrMin: s.hrMin,
+    hrMax: s.hrMax,
+    note: s.note,
+  );
+
+  static PlannedWorkout _copy(
+    PlannedWorkout p, {
+    DateTime? date,
+    String? title,
+    String? description,
+    int? durationMin,
+    double? distanceKm,
+    String? intensity,
+    String? status,
+    List<WorkoutStep>? steps,
+    bool? isKey,
+  }) => PlannedWorkout(
+    id: p.id,
+    date: date ?? p.date,
+    sport: p.sport,
+    title: title ?? p.title,
+    description: description ?? p.description,
+    durationMin: durationMin ?? p.durationMin,
+    distanceKm: distanceKm ?? p.distanceKm,
+    intensity: intensity ?? p.intensity,
+    templateId: p.templateId,
+    status: status ?? p.status,
+    sessionId: p.sessionId,
+    steps: steps ?? p.steps,
+    phase: p.phase,
+    isKey: isKey ?? p.isKey,
+    exercises: p.exercises,
+  );
+}
+
+/// Why the plan changes.
+enum RecalReason { rpeHigh, rpeLow, lowCompletion, cutShort, missedKey, fasterRuns, slowerRuns }
+
+/// What happens to one workout.
+enum RecalKind { easier, harder, toEasy, moved, dropped, paces }
+
+class RecalChange {
+  const RecalChange(this.before, this.after, this.kind);
+  final PlannedWorkout before;
+  final PlannedWorkout after;
+  final RecalKind kind;
+
+  /// Firestore update of this workout (only the fields that change).
+  Map<String, dynamic> get update {
+    final b = before.toMap(), a = after.toMap();
+    return {
+      for (final k in a.keys)
+        if (!_eq(a[k], b[k])) k: a[k],
+    };
+  }
+
+  static bool _eq(Object? x, Object? y) => x.toString() == y.toString();
+}
+
+class RecalStats {
+  const RecalStats({
+    required this.rated,
+    required this.tooHard,
+    required this.tooEasy,
+    required this.completion,
+    required this.cutShort,
+    required this.oldVdot,
+    required this.newVdot,
+  });
+
+  /// Completed endurance workouts with an RPE in the look-back window.
+  final int rated;
+
+  /// Too-hard score (1 per clearly too hard session, ½ per elevated easy session).
+  final double tooHard;
+
+  /// Quality sessions rated ≤ 4.
+  final int tooEasy;
+
+  /// Share of the due planned minutes done (null: too few due workouts).
+  final double? completion;
+
+  /// Sessions cut short (< 80 % of the plan).
+  final int cutShort;
+  final double oldVdot;
+  final double? newVdot;
+}
+
+class Recalibration {
+  const Recalibration({required this.reasons, required this.stats, required this.changes, this.raceTimes});
+  final List<RecalReason> reasons;
+  final RecalStats stats;
+  final List<RecalChange> changes;
+
+  /// New race times for the profile (VDOT update), or null.
+  final Map<String, int>? raceTimes;
+
+  bool get isEmpty => changes.isEmpty && raceTimes == null;
+
+  /// Plan id → changed fields, for [Repository.updateMany].
+  Map<String, Map<String, dynamic>> get updates => {
+    for (final c in changes)
+      if (c.update.isNotEmpty) c.before.id: c.update,
+  };
+}
