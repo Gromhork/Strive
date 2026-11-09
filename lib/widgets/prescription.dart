@@ -9,11 +9,32 @@ import '../services/load_prescription.dart';
 /// Compact load text, e.g. "≈ 60 kg × 8", "≈ 12 kg × 10 per hand" or "Bodyweight × 8".
 /// Usable anywhere a prescription should be shown (planned workout detail, plan editor, …).
 String prescriptionLabel(AppLocalizations l, Prescription p, Units u) {
-  if (p.source == LoadSource.bodyweight) {
+  if (p.source == LoadSource.bodyweight || p.bodyweight) {
+    if (p.weight < 0) return '${bodyweightLoad(l.bodyweight, p.weight, u)} × ${p.reps}';
     return p.weight > 0 ? l.loadBodyweightPlus(u.weight(p.weight), p.reps) : l.loadBodyweight(p.reps);
   }
   final w = u.weight(p.weight);
   return p.perHand ? l.loadApproxPerHand(w, p.reps) : l.loadApprox(w, p.reps);
+}
+
+/// Load part of a target without reps, e.g. "≈ 60 kg", "≈ 12 kg per hand",
+/// "Bodyweight", "Bodyweight +5 kg" or "Bodyweight −10 kg" (assisted).
+String prescriptionLoad(AppLocalizations l, Prescription p, Units u) {
+  if (p.bodyweight || p.source == LoadSource.bodyweight) return bodyweightLoad(l.bodyweight, p.weight, u);
+  final w = u.weight(p.weight);
+  return p.perHand ? l.loadWeightPerHand(w) : l.loadWeightApprox(w);
+}
+
+/// "Bodyweight", "Bodyweight +5 kg", "Bodyweight −10 kg" ([label] = long or short name).
+String bodyweightLoad(String label, double added, Units u) {
+  if (added.abs() < 1e-6) return label;
+  return '$label ${added > 0 ? '+' : '−'}${u.weight(added.abs())}';
+}
+
+/// Rep targets per work set ("9 · 9 · 8"), or null when they are all the same.
+String? todayReps(Prescription p) {
+  if (p.setReps.isEmpty || p.setReps.toSet().length == 1 && p.setReps.first == p.repMin) return null;
+  return p.setReps.join(' · ');
 }
 
 /// Why the suggestion looks like it does, or null when there is nothing worth saying
@@ -24,9 +45,13 @@ String? prescriptionReason(AppLocalizations l, Prescription p) {
     LoadSource.estimate => l.loadSrcEstimate,
     LoadSource.history || LoadSource.bodyweight when p.breakDays != null && p.breakDays! > 21 => l.loadSrcBreak,
     LoadSource.history || LoadSource.bodyweight when p.fromHistory => switch (p.progression) {
+      ProgressionKind.increase when p.bodyweight => l.loadSrcIncreaseBw,
       ProgressionKind.increase => l.loadSrcIncrease,
+      ProgressionKind.addReps when p.repMax != null && p.reps > p.repMax! => l.loadSrcMoreReps,
       ProgressionKind.addReps => l.loadSrcAddReps,
       ProgressionKind.deload => l.loadSrcDeload,
+      ProgressionKind.reset => l.loadSrcStall,
+      ProgressionKind.hold => l.loadSrcHold,
       _ => l.loadSrcHistory,
     },
     _ => null,
@@ -64,11 +89,16 @@ class PrescriptionHint extends StatelessWidget {
       LoadSource.estimate => Icons.tune_rounded,
       _ => Icons.auto_awesome_outlined,
     };
+    final ranged = p.repMin != null && p.repMax != null;
+    final today = todayReps(p);
+    final head =
+        ranged ? l.targetLoad(prescriptionLoad(l, p, units), p.repMin!, p.repMax!) : l.loadSuggestion(prescriptionLabel(l, p, units));
     final text = Text.rich(
       TextSpan(
         children: [
-          TextSpan(text: l.loadSuggestion(prescriptionLabel(l, p, units)), style: const TextStyle(fontWeight: FontWeight.w600)),
-          if (reason != null) TextSpan(text: ' · $reason'),
+          TextSpan(text: head, style: const TextStyle(fontWeight: FontWeight.w600)),
+          if (today != null) TextSpan(text: dense ? ' · ${l.targetToday(today)}' : '\n${l.targetToday(today)}'),
+          if (reason != null) TextSpan(text: today != null && !dense ? ' – $reason' : (dense || !ranged ? ' · $reason' : '\n$reason')),
         ],
       ),
       style: TextStyle(fontSize: dense ? 12 : 13, height: 1.3),

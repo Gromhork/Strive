@@ -3309,4 +3309,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleted => 'Deleted';
+
+  @override
+  String get supersetHint => 'Alternate the exercises – short switch, full rest after each round';
+
+  @override
+  String get supersetMax => 'A superset has at most 3 exercises.';
+
+  @override
+  String get supersetSwitch => 'Switch exercise';
+
+  @override
+  String get supersetSwitchHint => 'Short break – then straight on to the next exercise of the superset.';
+
+  @override
+  String get bodyweight => 'Bodyweight';
+
+  @override
+  String get bodyweightShort => 'BW';
+
+  @override
+  String get bodyweightHint => 'Weight = added load on top of your body weight (negative = assistance).';
+
+  @override
+  String get addedWeight => 'Added weight';
+
+  @override
+  String targetLoad(String load, int lo, int hi) {
+    return 'Target: $load · $lo–$hi reps';
+  }
+
+  @override
+  String targetToday(String list) {
+    return 'Today: $list reps';
+  }
+
+  @override
+  String loadWeightApprox(String weight) {
+    return '≈ $weight';
+  }
+
+  @override
+  String loadWeightPerHand(String weight) {
+    return '≈ $weight per hand';
+  }
+
+  @override
+  String get loadSrcHold => 'keep the weight and hit all target reps';
+
+  @override
+  String get loadSrcStall => 'no progress for 3 workouts – a bit lighter, then build up again';
+
+  @override
+  String get loadSrcIncreaseBw => 'all reps done – add a little weight (belt or vest)';
+
+  @override
+  String get loadSrcMoreReps => 'all reps done – go for more reps';
+
+  @override
+  String get loadTotal => 'total';
 }

@@ -3309,4 +3309,63 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get deleted => 'Gelöscht';
+
+  @override
+  String get supersetHint => 'Übungen abwechseln – kurzer Wechsel, volle Pause nach jeder Runde';
+
+  @override
+  String get supersetMax => 'Ein Supersatz hat höchstens 3 Übungen.';
+
+  @override
+  String get supersetSwitch => 'Übung wechseln';
+
+  @override
+  String get supersetSwitchHint => 'Kurze Pause – dann direkt weiter mit der nächsten Übung des Supersatzes.';
+
+  @override
+  String get bodyweight => 'Körpergewicht';
+
+  @override
+  String get bodyweightShort => 'KG';
+
+  @override
+  String get bodyweightHint => 'Gewicht = Zusatzlast zu deinem Körpergewicht (negativ = Unterstützung).';
+
+  @override
+  String get addedWeight => 'Zusatzgewicht';
+
+  @override
+  String targetLoad(String load, int lo, int hi) {
+    return 'Ziel: $load · $lo–$hi Wdh.';
+  }
+
+  @override
+  String targetToday(String list) {
+    return 'Heute: $list Wdh.';
+  }
+
+  @override
+  String loadWeightApprox(String weight) {
+    return '≈ $weight';
+  }
+
+  @override
+  String loadWeightPerHand(String weight) {
+    return '≈ $weight pro Hand';
+  }
+
+  @override
+  String get loadSrcHold => 'Gewicht halten und alle Ziel-Wiederholungen schaffen';
+
+  @override
+  String get loadSrcStall => '3 Trainings ohne Fortschritt – etwas leichter, dann wieder steigern';
+
+  @override
+  String get loadSrcIncreaseBw => 'alle Wiederholungen geschafft – etwas Zusatzgewicht (Gürtel oder Weste)';
+
+  @override
+  String get loadSrcMoreReps => 'alle Wiederholungen geschafft – jetzt mehr Wiederholungen';
+
+  @override
+  String get loadTotal => 'gesamt';
 }

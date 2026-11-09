@@ -5,6 +5,8 @@ import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
+import '../../services/exercise_class.dart';
+import '../../services/supersets.dart';
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
 import '../session/gym_session_page.dart' show SetTypeBadge;
@@ -30,29 +32,17 @@ class GymExerciseEditor extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) =>
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _gymEditor(context, ref));
 
-  String _nextGroup() {
-    final used = exercises.map((e) => e.group).whereType<String>().toSet();
-    for (final c in 'ABCDEFGHIJ'.split('')) {
-      if (!used.contains(c)) return c;
-    }
-    return 'Z';
-  }
-
-  /// Links exercise [i] with the next one into a superset (or unlinks).
-  void _toggleSuperset(int i) => touch(() {
-    final e = exercises[i];
-    final n = exercises[i + 1];
-    if (e.group != null && e.group == n.group) {
-      // Unlink: the lower part keeps a group only if it still has ≥ 2 members.
-      n.group = null;
-      final rest = exercises.where((x) => x.group == e.group).length;
-      if (rest < 2) e.group = null;
+  /// Links exercise [i] with the next one into a superset (or unlinks). Supersets are
+  /// adjacent runs of at most [maxSupersetSize] exercises.
+  void _toggleSuperset(BuildContext context, int i) {
+    if (supersetOf(exercises, i).contains(i + 1)) {
+      touch(() => unlinkSuperset(exercises, i));
+    } else if (canLinkSuperset(exercises, i)) {
+      touch(() => linkSuperset(exercises, i));
     } else {
-      final g = e.group ?? n.group ?? _nextGroup();
-      e.group = g;
-      n.group = g;
+      toast(context, context.l10n.supersetMax);
     }
-  });
+  }
 
   List<Widget> _gymEditor(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
@@ -76,6 +66,7 @@ class GymExerciseEditor extends ConsumerWidget {
             (a, b) => touch(() {
               final e = exercises.removeAt(a);
               exercises.insert(b > a ? b - 1 : b, e);
+              normalizeSupersets(exercises);
             }),
         children: [
           for (var i = 0; i < exercises.length; i++)
@@ -91,13 +82,8 @@ class GymExerciseEditor extends ConsumerWidget {
                   onChanged: () => touch(() {}),
                   onRemove:
                       () => touch(() {
-                        final g = exercises[i].group;
                         exercises.removeAt(i);
-                        if (g != null && exercises.where((x) => x.group == g).length < 2) {
-                          for (final x in exercises.where((x) => x.group == g)) {
-                            x.group = null;
-                          }
-                        }
+                        normalizeSupersets(exercises);
                       }),
                   onReplace: () async {
                     final picked = await pickExercises(context, single: true);
@@ -111,7 +97,7 @@ class GymExerciseEditor extends ConsumerWidget {
                 if (i < exercises.length - 1)
                   _SupersetLink(
                     linked: exercises[i].group != null && exercises[i].group == exercises[i + 1].group,
-                    onTap: () => _toggleSuperset(i),
+                    onTap: () => _toggleSuperset(context, i),
                   ),
               ],
             ),
@@ -123,10 +109,14 @@ class GymExerciseEditor extends ConsumerWidget {
         label: Text(l.addExercise),
         onPressed: () async {
           final picked = await pickExercises(context);
+          final goal = ref.read(profileOrDefaultProvider).athlete.gymGoal;
           touch(() {
             for (final e in picked) {
+              // Rep range from the exercise class and the gym goal (e.g. 5–8 for a squat,
+              // 12–20 for lateral raises).
+              final (lo, hi) = repRangeFor(classifyLift(e.id, e.name, info: e), goal);
               exercises.add(
-                GymExercise(exId: e.id, name: e.name, repMin: 8, repMax: 12, sets: [GymSet(reps: 8), GymSet(reps: 8), GymSet(reps: 8)]),
+                GymExercise(exId: e.id, name: e.name, repMin: lo, repMax: hi, sets: [for (var k = 0; k < 3; k++) GymSet(reps: lo)]),
               );
             }
           });
@@ -243,9 +233,13 @@ class _ExerciseEditCard extends ConsumerWidget {
                       children: [
                         _MiniChip(
                           icon: Icons.repeat_rounded,
-                          text: e.repMin != null && e.repMax != null ? '${e.repMin}–${e.repMax} ${l.reps}' : l.repRange,
+                          text: () {
+                            final (lo, hi) = repRangeOf(e, ref.watch(profileOrDefaultProvider).athlete.gymGoal);
+                            return '$lo–$hi ${l.reps}';
+                          }(),
                           onTap: () async {
-                            final r = await _askRange(context, e.repMin ?? 8, e.repMax ?? 12);
+                            final auto = repRangeOf(e, ref.read(profileOrDefaultProvider).athlete.gymGoal);
+                            final r = await _askRange(context, e.repMin ?? auto.$1, e.repMax ?? auto.$2);
                             if (r == null) return;
                             e.repMin = r.$1;
                             e.repMax = r.$2;
@@ -276,6 +270,9 @@ class _ExerciseEditCard extends ConsumerWidget {
                   switch (v) {
                     case 'replace':
                       onReplace();
+                    case 'bodyweight':
+                      e.bw = !_isBw(ref, e);
+                      onChanged();
                     case 'note':
                       final t = await askText(context, l.note, initial: e.note);
                       if (t != null) {
@@ -293,6 +290,7 @@ class _ExerciseEditCard extends ConsumerWidget {
                         child: ListTile(leading: const Icon(Icons.swap_horiz_rounded), title: Text(l.replaceExercise)),
                       ),
                       PopupMenuItem(value: 'note', child: ListTile(leading: const Icon(Icons.sticky_note_2_outlined), title: Text(l.note))),
+                      CheckedPopupMenuItem(value: 'bodyweight', checked: _isBw(ref, e), child: Text(l.bodyweight)),
                       PopupMenuItem(
                         value: 'remove',
                         child: ListTile(
@@ -321,7 +319,13 @@ class _ExerciseEditCard extends ConsumerWidget {
             child: Row(
               children: [
                 const SizedBox(width: 40),
-                Expanded(child: Text(u.weightUnit, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall)),
+                Expanded(
+                  child: Text(
+                    _isBw(ref, e) ? '${l.bodyweightShort} ± ${u.weightUnit}' : u.weightUnit,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ),
                 const SizedBox(width: 8),
                 Expanded(child: Text(l.reps, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall)),
                 const SizedBox(width: 40),
@@ -395,6 +399,8 @@ class _ExerciseEditCard extends ConsumerWidget {
       ),
     );
   }
+
+  static bool _isBw(WidgetRef ref, GymExercise e) => ref.read(loadPrescriberProvider).isBodyweight(e);
 
   static Future<(int, int)?> _askRange(BuildContext context, int lo, int hi) {
     final l = context.l10n;

@@ -13,6 +13,7 @@ DateTime _date(dynamic v) {
 double _d(dynamic v, [double def = 0]) => v is num ? v.toDouble() : def;
 double? _dn(dynamic v) => v is num ? v.toDouble() : null;
 int _i(dynamic v, [int def = 0]) => v is num ? v.toInt() : def;
+int? _in(dynamic v) => v is num ? v.toInt() : null;
 
 // ───────────────────────────── Profile ─────────────────────────────
 
@@ -368,6 +369,15 @@ class GymExercise {
   int? repMin;
   int? repMax;
 
+  /// Bodyweight mode: the set weight is *added* load (negative = assistance) on top of
+  /// the body weight. `null` = automatic (pull-ups, dips, push-ups, … are bodyweight).
+  bool? bw;
+
+  /// Body load per rep (kg) at the time of the session – body weight × the share of it
+  /// that is lifted (e.g. ~100 % pull-ups, ~65 % push-ups). Used for volume and e1RM of
+  /// bodyweight exercises; 0 = progressed by reps only.
+  double bodyKg;
+
   GymExercise({
     required this.exId,
     required this.name,
@@ -377,14 +387,22 @@ class GymExercise {
     this.group,
     this.repMin,
     this.repMax,
+    this.bw,
+    this.bodyKg = 0,
   }) : sets = sets ?? [GymSet(), GymSet(), GymSet()];
 
   List<GymSet> get workSets => sets.where((s) => !s.warmup).toList();
-  double get volume => sets.fold(0, (a, s) => a + s.volume);
+
+  /// Load per rep of a set: the weight, plus the body load in bodyweight mode.
+  double loadOf(GymSet s) => bw == true ? s.weight + bodyKg : s.weight;
+
+  double get volume => sets.fold(0, (a, s) => a + (s.done && !s.warmup ? (loadOf(s) > 0 ? loadOf(s) * s.reps : 0) : 0));
   int get doneSets => sets.where((s) => s.done && !s.warmup).length;
   bool get allDone => sets.isNotEmpty && sets.every((s) => s.done);
-  double get bestE1rm =>
-      sets.where((s) => s.done && !s.warmup).fold(0.0, (a, s) => a > e1rm(s.weight, s.reps) ? a : e1rm(s.weight, s.reps));
+  double get bestE1rm => sets.where((s) => s.done && !s.warmup).fold(0.0, (a, s) {
+    final v = e1rm(loadOf(s), s.reps);
+    return a > v ? a : v;
+  });
   double get maxWeight => sets.where((s) => s.done && !s.warmup).fold(0.0, (a, s) => a > s.weight ? a : s.weight);
 
   factory GymExercise.fromMap(Map m) => GymExercise(
@@ -394,8 +412,10 @@ class GymExercise {
     restSec: _i(m['rest'], 90),
     note: m['note'] ?? '',
     group: m['group'],
-    repMin: m['repMin'],
-    repMax: m['repMax'],
+    repMin: _in(m['repMin']),
+    repMax: _in(m['repMax']),
+    bw: m['bw'] is bool ? m['bw'] : null,
+    bodyKg: _d(m['bodyKg']),
   );
   Map<String, dynamic> toMap() => {
     'exId': exId,
@@ -406,6 +426,8 @@ class GymExercise {
     if (group != null) 'group': group,
     if (repMin != null) 'repMin': repMin,
     if (repMax != null) 'repMax': repMax,
+    if (bw != null) 'bw': bw,
+    if (bodyKg > 0) 'bodyKg': bodyKg,
   };
   GymExercise copy({bool resetDone = false}) => GymExercise(
     exId: exId,
@@ -416,6 +438,8 @@ class GymExercise {
     group: group,
     repMin: repMin,
     repMax: repMax,
+    bw: bw,
+    bodyKg: bodyKg,
   );
 }
 
@@ -630,8 +654,8 @@ class WorkoutTemplate {
   }
 }
 
-/// Session length estimate: ~40 s per set plus its rest (supersets rest once per round),
-/// plus ~6 min general warm-up.
+/// Session length estimate: ~40 s per set plus its rest (supersets: a short transition
+/// between members, the full rest once per round), plus ~6 min general warm-up.
 int estimateGymMinutes(List<GymExercise> exercises) {
   var sec = 360.0;
   for (var i = 0; i < exercises.length; i++) {
@@ -639,7 +663,7 @@ int estimateGymMinutes(List<GymExercise> exercises) {
     final next = i + 1 < exercises.length ? exercises[i + 1] : null;
     final inSupersetBeforeLast = e.group != null && next?.group == e.group;
     for (final st in e.sets) {
-      sec += 40 + (inSupersetBeforeLast ? 15 : (st.warmup ? 60 : e.restSec));
+      sec += 40 + (inSupersetBeforeLast ? 20 : (st.warmup ? 60 : e.restSec));
     }
   }
   return (sec / 60).round().clamp(10, 180);
