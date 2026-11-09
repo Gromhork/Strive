@@ -1985,5 +1985,16 @@
   },
   "recalApplied": "Plan recalibrated",
   "recalNewPlan": "Create a new plan",
-  "recalMore": "More"
+  "recalMore": "More",
+  "wGymDescRange": "{sets} sets per exercise in each exercise's rep range, leave {rir} reps in the tank. Add reps first; once every set reaches the top of the range, add weight and start again at the bottom.",
+  "@wGymDescRange": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "rir": {
+        "type": "int"
+      }
+    }
+  }
 }

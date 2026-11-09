@@ -1225,17 +1225,14 @@ class PlanGenerator {
     final name = t?.name ?? _builtinName(key);
     final deload = phase == 'recovery' || phase == 'taper';
     final rir = deload ? 4 : const [3, 2, 1][min(block, 2)];
-    final (lo, hi) = switch (a.gymGoal) {
-      'strength' => (4, 6),
-      'hypertrophy' => (8, 12),
-      _ => endurance ? (5, 8) : (6, 10),
-    };
     final sets = deload ? 2 : (a.difficulty == 'easy' ? 3 : (a.difficulty == 'challenging' && level != 'beginner' ? 4 : 3));
     final est = t?.estimatedMinutes ?? 60;
     final minutes = deload ? (est * 0.7).round() : est;
     final legsInside = key.startsWith('fb_') || key.startsWith('home_') || key.startsWith('bw_') || legHeavyKeys.contains(key);
     final notes = [
-      deload ? l.wGymDeloadDesc(sets) : l.wGymDesc(sets, lo, hi, rir),
+      // Rep ranges are per exercise (class + goal, see exercise_class.dart) and shown in the
+      // workout, so the note describes the double progression instead of one global range.
+      deload ? l.wGymDeloadDesc(sets) : l.wGymDescRange(sets, rir),
       if (endurance && role == 'nolegs' && legsInside) l.wGymConcurrentNote,
       if (minutes > capMin) l.wGymTimeCapNote(capMin),
     ];

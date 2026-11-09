@@ -6580,6 +6580,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More'**
   String get recalMore;
+
+  /// No description provided for @wGymDescRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{sets} sets per exercise in each exercise\'s rep range, leave {rir} reps in the tank. Add reps first; once every set reaches the top of the range, add weight and start again at the bottom.'**
+  String wGymDescRange(int sets, int rir);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
