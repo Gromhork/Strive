@@ -30,7 +30,11 @@ import 'zones.dart';
 ///   (10 % rule, acute:chronic caution).
 ///
 /// Bounds: one step −15 … +5 %; all automatic steps together stay within −15 … +10 % of
-/// the workout's original volume. Taper / recovery weeks never get more volume. Each
+/// the workout's original volume (also when the Recalibrator changed it before – its record
+/// keeps the generator's original; a workout it already cut by more than 15 % is not cut
+/// again). Heart rate is judged against [HrMax.of] (measured, else the highest HR of hard
+/// sessions, else predicted – then with half weight and, on easy days, only with a second
+/// signal). Taper / recovery weeks never get more volume. Each
 /// changed workout keeps an [AutoAdjustment] with its original values (undo).
 class AutoAdjuster {
   AutoAdjuster(this.profile, {required this.plans, required this.sessions, required this.now});
@@ -47,7 +51,7 @@ class AutoAdjuster {
   List<AutoChange> afterSession(Session s, PlannedWorkout done) {
     if (done.sport == Sport.gym || !done.sport.isCardio || done.intensity == 'race') return const [];
     if (plans.any((p) => p.auto?.sessionId == s.id)) return const [];
-    final f = evaluateSession(done, s, profile);
+    final f = evaluateSession(done, s, profile, hrMax: HrMax.of(profile, sessions: sessions, now: now));
     final hf = HealthFlags.of(profile);
     final day = dayOnly(s.start).isAfter(dayOnly(now)) ? dayOnly(s.start) : dayOnly(now);
     final next =
@@ -160,9 +164,12 @@ class AutoAdjuster {
     final rest = p.phase == 'taper' || p.phase == 'recovery';
     var f = factor.clamp(maxCut, bump);
     if (rest) f = min(f, 1.0);
-    // All automatic steps together: −15 … +10 % of the original.
+    // All automatic steps together: −15 … +10 % of the original. A step never turns into
+    // its opposite: a workout the Recalibrator already cut below −15 % is not cut further
+    // (and not raised by the bound either).
     final cur = _amount(p);
-    f = f.clamp(maxCut * origAmount / cur, maxGain * origAmount / cur);
+    final lo = maxCut * origAmount / cur, hi = maxGain * origAmount / cur;
+    f = f < 1 ? (lo >= 1 ? 1.0 : max(f, lo)) : (hi <= 1 ? 1.0 : min(f, hi));
     if ((f - 1).abs() < 0.02) return null;
     final after = scaleWorkout(p, f, profile);
     if (after.durationMin == p.durationMin && after.distanceKm == p.distanceKm) return null;

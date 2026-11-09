@@ -69,6 +69,9 @@ class RecalibrationSheet extends StatelessWidget {
     RecalReason.cssSlower => l.recalWhyCssSlower(fmtPace(s.oldCss ?? 0), fmtPace(s.newCss ?? s.oldCss ?? 0)),
     RecalReason.aerobicUp => l.recalWhyAerobicUp((_ef(s) * 100).round().abs()),
     RecalReason.aerobicDown => l.recalWhyAerobicDown((_ef(s) * 100).round().abs()),
+    RecalReason.returnAfterBreak => l.recalWhyBreak(s.breakDays ?? Recalibrator.lookbackDays),
+    RecalReason.longCap => l.recalWhyLongCap,
+    RecalReason.rpeLowHold => l.recalWhyRpeLowHold,
   };
 
   /// Largest change of the aerobic efficiency factor (any sport).
