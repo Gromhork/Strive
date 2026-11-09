@@ -6560,7 +6560,7 @@ abstract class AppLocalizations {
   /// No description provided for @recalApply.
   ///
   /// In en, this message translates to:
-  /// **'Apply {n} changes'**
+  /// **'{n, plural, =1{Apply 1 change} other{Apply {n} changes}}'**
   String recalApply(int n);
 
   /// No description provided for @recalApplied.

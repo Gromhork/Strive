@@ -1077,7 +1077,7 @@
   "recalMoved": "Verschoben",
   "recalDropped": "Entfällt",
   "recalPaces": "Neue Pace",
-  "recalApply": "{n} Änderungen übernehmen",
+  "recalApply": "{n, plural, =1{1 Änderung übernehmen} other{{n} Änderungen übernehmen}}",
   "recalApplied": "Plan rekalibriert",
   "recalNewPlan": "Neuen Plan erstellen",
   "recalMore": "Mehr",

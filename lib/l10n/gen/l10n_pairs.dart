@@ -1039,7 +1039,6 @@ const l10nPairs = <(String, String)>[
   ('Moved', 'Verschoben'),
   ('Dropped', 'Entfällt'),
   ('New paces', 'Neue Pace'),
-  ('Apply {n} changes', '{n} Änderungen übernehmen'),
   ('Plan recalibrated', 'Plan rekalibriert'),
   ('Create a new plan', 'Neuen Plan erstellen'),
   ('More', 'Mehr'),

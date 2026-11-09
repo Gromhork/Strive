@@ -3475,7 +3475,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String recalApply(int n) {
-    return '$n Änderungen übernehmen';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n Änderungen übernehmen',
+      one: '1 Änderung übernehmen',
+    );
+    return '$_temp0';
   }
 
   @override
