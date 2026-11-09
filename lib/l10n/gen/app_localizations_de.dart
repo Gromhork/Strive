@@ -2862,4 +2862,26 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get byDay => 'Tag für Tag';
+
+  @override
+  String get planExercisesHint => 'Änderungen gelten nur für dieses Training – das Programm bleibt unverändert.';
+
+  @override
+  String planExercisesCustom(String name) {
+    return 'Für dieses Training angepasst (Programm: $name).';
+  }
+
+  @override
+  String get saveToProgram => 'Ins Programm übernehmen';
+
+  @override
+  String savedToProgram(String name) {
+    return 'In „$name“ gespeichert';
+  }
+
+  @override
+  String get resetToProgram => 'Zurücksetzen';
+
+  @override
+  String get adjustExercises => 'Übungen anpassen';
 }

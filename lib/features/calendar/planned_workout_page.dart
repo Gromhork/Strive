@@ -37,6 +37,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
     final template = ref.watch(templateListProvider).where((t) => t.id == p.templateId).firstOrNull;
     final t = Theme.of(context).textTheme;
     final phase = phaseLabel(l, p.phase);
+    final exercises = p.exercises.isNotEmpty ? p.exercises : (template?.exercises ?? const []);
 
     return Scaffold(
       appBar: AppBar(
@@ -119,11 +120,21 @@ class PlannedWorkoutPage extends ConsumerWidget {
             const SizedBox(height: 8),
             StepList(steps: p.steps, sport: p.sport, units: u),
           ],
-          if (template != null && template.exercises.isNotEmpty) ...[
+          if (p.sport == Sport.gym) ...[
             const SizedBox(height: 20),
-            Text(l.exercises, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Row(
+              children: [
+                Expanded(child: Text(l.exercises, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                if (!p.isDone)
+                  TextButton.icon(
+                    icon: const Icon(Icons.tune_rounded, size: 18),
+                    label: Text(l.adjustExercises),
+                    onPressed: () => showPlanEditor(context, ref, existing: p),
+                  ),
+              ],
+            ),
             const SizedBox(height: 8),
-            for (final e in template.exercises)
+            for (final e in exercises)
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: ExerciseMedia(exId: e.exId, animated: false, size: 48, radius: 12),

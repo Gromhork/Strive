@@ -663,6 +663,9 @@ class PlannedWorkout {
   final String? phase; // base | build | peak | taper | recovery
   final bool isKey;
 
+  /// Gym: exercises adjusted for this one workout (empty = use the program's exercises).
+  final List<GymExercise> exercises;
+
   PlannedWorkout({
     required this.id,
     required this.date,
@@ -678,6 +681,7 @@ class PlannedWorkout {
     this.steps = const [],
     this.phase,
     this.isKey = false,
+    this.exercises = const [],
   });
 
   bool get isDone => status == 'done';
@@ -698,6 +702,7 @@ class PlannedWorkout {
     steps: ((m['steps'] as List?) ?? []).map((e) => WorkoutStep.fromMap(e as Map)).toList(),
     phase: m['phase'],
     isKey: m['isKey'] ?? false,
+    exercises: ((m['exercises'] as List?) ?? []).map((e) => GymExercise.fromMap(e as Map)).toList(),
   );
 
   Map<String, dynamic> toMap() => {
@@ -714,6 +719,7 @@ class PlannedWorkout {
     if (steps.isNotEmpty) 'steps': steps.map((e) => e.toMap()).toList(),
     if (phase != null) 'phase': phase,
     if (isKey) 'isKey': true,
+    'exercises': exercises.map((e) => e.toMap()).toList(),
   };
 }
 
