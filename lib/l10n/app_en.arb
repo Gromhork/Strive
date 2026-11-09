@@ -1840,5 +1840,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "editSession": "Edit workout",
+  "durationHms": "Duration (h:mm:ss)",
+  "invalidDuration": "Enter the duration as h:mm:ss or minutes.",
+  "rpeNotSet": "not set",
+  "sessionCorrected": "Workout updated",
+  "editSessionHint": "Correct wrong measurements or entries. Recorded route and splits stay as they are."
 }

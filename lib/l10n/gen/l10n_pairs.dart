@@ -984,4 +984,10 @@ const l10nPairs = <(String, String)>[
   ('Week adjusted', 'Woche angepasst'),
   ('Not now', 'Nicht jetzt'),
   ('Swim {swim} km · Bike {bike} km · Run {run} km', 'Schwimmen {swim} km · Rad {bike} km · Laufen {run} km'),
+  ('Edit workout', 'Einheit bearbeiten'),
+  ('Duration (h:mm:ss)', 'Dauer (h:mm:ss)'),
+  ('Enter the duration as h:mm:ss or minutes.', 'Gib die Dauer als h:mm:ss oder in Minuten ein.'),
+  ('not set', 'nicht angegeben'),
+  ('Workout updated', 'Einheit aktualisiert'),
+  ('Correct wrong measurements or entries. Recorded route and splits stay as they are.', 'Korrigiere fehlerhafte Messungen oder Eingaben. Aufgezeichnete Strecke und Splits bleiben erhalten.'),
 ];

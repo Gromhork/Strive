@@ -12,6 +12,7 @@ import '../../providers.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
 import '../session/route_map.dart';
+import 'edit_session_page.dart';
 import '../session/session_summary_page.dart' show rpeLabel;
 
 class SessionDetailPage extends ConsumerWidget {
@@ -43,6 +44,11 @@ class SessionDetailPage extends ConsumerWidget {
             tooltip: l.share,
             icon: const Icon(Icons.share_outlined),
             onPressed: () => SharePlus.instance.share(ShareParams(text: _shareText(context, s, u))),
+          ),
+          IconButton(
+            tooltip: l.editSession,
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditSessionPage(session: s))),
           ),
           IconButton(
             tooltip: l.delete,

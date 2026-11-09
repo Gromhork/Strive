@@ -6220,6 +6220,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Swim {swim} km · Bike {bike} km · Run {run} km'**
   String wTriLegs(String swim, String bike, String run);
+
+  /// No description provided for @editSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit workout'**
+  String get editSession;
+
+  /// No description provided for @durationHms.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (h:mm:ss)'**
+  String get durationHms;
+
+  /// No description provided for @invalidDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the duration as h:mm:ss or minutes.'**
+  String get invalidDuration;
+
+  /// No description provided for @rpeNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'not set'**
+  String get rpeNotSet;
+
+  /// No description provided for @sessionCorrected.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout updated'**
+  String get sessionCorrected;
+
+  /// No description provided for @editSessionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct wrong measurements or entries. Recorded route and splits stay as they are.'**
+  String get editSessionHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
