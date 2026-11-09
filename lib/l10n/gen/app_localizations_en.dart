@@ -2862,4 +2862,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get byDay => 'Day by day';
+
+  @override
+  String loadSuggestion(String load) {
+    return 'Suggestion: $load';
+  }
+
+  @override
+  String loadApprox(String weight, int reps) {
+    return '≈ $weight × $reps';
+  }
+
+  @override
+  String loadApproxPerHand(String weight, int reps) {
+    return '≈ $weight × $reps per hand';
+  }
+
+  @override
+  String loadBodyweight(int reps) {
+    return 'Bodyweight × $reps';
+  }
+
+  @override
+  String loadBodyweightPlus(String weight, int reps) {
+    return 'Bodyweight +$weight × $reps';
+  }
+
+  @override
+  String get loadSrcHistory => 'from your last workout';
+
+  @override
+  String get loadSrcIncrease => 'all reps done last time – more weight';
+
+  @override
+  String get loadSrcAddReps => 'from your last workout – aim for one more rep';
+
+  @override
+  String get loadSrcDeload => 'last time was tough – a bit lighter';
+
+  @override
+  String get loadSrcBreak => 'a bit lighter after your break';
+
+  @override
+  String get loadSrcOneRm => 'from your 1RM in the setup';
+
+  @override
+  String get loadSrcEstimate => 'estimated from body weight – adjust it';
+
+  @override
+  String get loadPhaseLighter => 'deload week';
+
+  @override
+  String get loadTaperLighter => 'taper week';
 }

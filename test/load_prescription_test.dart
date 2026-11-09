@@ -1,8 +1,12 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:strive/core/format.dart';
 import 'package:strive/core/sport.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/services/gym_tools.dart';
+import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/services/load_prescription.dart';
+import 'package:strive/widgets/prescription.dart';
 
 final now = DateTime(2026, 11, 9, 18);
 var _id = 0;
@@ -244,5 +248,21 @@ void main() {
       expect(warm.last.weight, lessThan(e.workSets.first.weight));
       expect(e.workSets.first.weight, 105);
     });
+  });
+
+  test('prescriptionLabel', () {
+    final de = lookupAppLocalizations(const Locale('de'));
+    const u = Units(false);
+    expect(prescriptionLabel(de, const Prescription(weight: 62.5, reps: 8, source: LoadSource.history), u), '≈ 62.5 kg × 8');
+    expect(
+      prescriptionLabel(de, const Prescription(weight: 12, reps: 10, source: LoadSource.estimate, perHand: true), u),
+      '≈ 12 kg × 10 pro Hand',
+    );
+    expect(prescriptionLabel(de, const Prescription(weight: 0, reps: 8, source: LoadSource.bodyweight), u), 'Körpergewicht × 8');
+    final reason = prescriptionReason(
+      de,
+      const Prescription(weight: 50, reps: 8, source: LoadSource.history, fromHistory: true, phaseAdjusted: true, phase: 'recovery'),
+    );
+    expect(reason, 'aus deinem letzten Training · Entlastungswoche');
   });
 }

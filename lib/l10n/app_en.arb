@@ -1539,5 +1539,63 @@
       }
     }
   },
-  "byDay": "Day by day"
+  "byDay": "Day by day",
+  "loadSuggestion": "Suggestion: {load}",
+  "@loadSuggestion": {
+    "placeholders": {
+      "load": {
+        "type": "String"
+      }
+    }
+  },
+  "loadApprox": "≈ {weight} × {reps}",
+  "@loadApprox": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "loadApproxPerHand": "≈ {weight} × {reps} per hand",
+  "@loadApproxPerHand": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "loadBodyweight": "Bodyweight × {reps}",
+  "@loadBodyweight": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "loadBodyweightPlus": "Bodyweight +{weight} × {reps}",
+  "@loadBodyweightPlus": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "loadSrcHistory": "from your last workout",
+  "loadSrcIncrease": "all reps done last time – more weight",
+  "loadSrcAddReps": "from your last workout – aim for one more rep",
+  "loadSrcDeload": "last time was tough – a bit lighter",
+  "loadSrcBreak": "a bit lighter after your break",
+  "loadSrcOneRm": "from your 1RM in the setup",
+  "loadSrcEstimate": "estimated from body weight – adjust it",
+  "loadPhaseLighter": "deload week",
+  "loadTaperLighter": "taper week"
 }

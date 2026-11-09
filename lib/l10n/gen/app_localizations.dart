@@ -5476,6 +5476,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Day by day'**
   String get byDay;
+
+  /// No description provided for @loadSuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion: {load}'**
+  String loadSuggestion(String load);
+
+  /// No description provided for @loadApprox.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {weight} × {reps}'**
+  String loadApprox(String weight, int reps);
+
+  /// No description provided for @loadApproxPerHand.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {weight} × {reps} per hand'**
+  String loadApproxPerHand(String weight, int reps);
+
+  /// No description provided for @loadBodyweight.
+  ///
+  /// In en, this message translates to:
+  /// **'Bodyweight × {reps}'**
+  String loadBodyweight(int reps);
+
+  /// No description provided for @loadBodyweightPlus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bodyweight +{weight} × {reps}'**
+  String loadBodyweightPlus(String weight, int reps);
+
+  /// No description provided for @loadSrcHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'from your last workout'**
+  String get loadSrcHistory;
+
+  /// No description provided for @loadSrcIncrease.
+  ///
+  /// In en, this message translates to:
+  /// **'all reps done last time – more weight'**
+  String get loadSrcIncrease;
+
+  /// No description provided for @loadSrcAddReps.
+  ///
+  /// In en, this message translates to:
+  /// **'from your last workout – aim for one more rep'**
+  String get loadSrcAddReps;
+
+  /// No description provided for @loadSrcDeload.
+  ///
+  /// In en, this message translates to:
+  /// **'last time was tough – a bit lighter'**
+  String get loadSrcDeload;
+
+  /// No description provided for @loadSrcBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'a bit lighter after your break'**
+  String get loadSrcBreak;
+
+  /// No description provided for @loadSrcOneRm.
+  ///
+  /// In en, this message translates to:
+  /// **'from your 1RM in the setup'**
+  String get loadSrcOneRm;
+
+  /// No description provided for @loadSrcEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'estimated from body weight – adjust it'**
+  String get loadSrcEstimate;
+
+  /// No description provided for @loadPhaseLighter.
+  ///
+  /// In en, this message translates to:
+  /// **'deload week'**
+  String get loadPhaseLighter;
+
+  /// No description provided for @loadTaperLighter.
+  ///
+  /// In en, this message translates to:
+  /// **'taper week'**
+  String get loadTaperLighter;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

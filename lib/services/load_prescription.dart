@@ -33,6 +33,9 @@ class Prescription {
   /// Load reduced because of the plan phase (deload / taper week).
   final bool phaseAdjusted;
 
+  /// Plan phase that reduced the load ('recovery' | 'taper'), null otherwise.
+  final String? phase;
+
   /// The weight is meant per hand (dumbbells/kettlebells, estimated loads only).
   final bool perHand;
 
@@ -50,6 +53,7 @@ class Prescription {
     this.progression,
     this.breakDays,
     this.phaseAdjusted = false,
+    this.phase,
     this.perHand = false,
     this.fromHistory = false,
     this.setReps = const [],
@@ -150,6 +154,7 @@ class LoadPrescriber {
       progression: p.progression == ProgressionKind.increase ? ProgressionKind.hold : p.progression,
       breakDays: p.breakDays,
       phaseAdjusted: true,
+      phase: phase,
       perHand: p.perHand,
       fromHistory: p.fromHistory,
     );

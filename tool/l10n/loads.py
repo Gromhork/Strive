@@ -1,0 +1,16 @@
+{
+ 'loadSuggestion': ['Suggestion: {load}', 'Vorschlag: {load}'],
+ 'loadApprox': ['≈ {weight} × {reps}', '≈ {weight} × {reps}'],
+ 'loadApproxPerHand': ['≈ {weight} × {reps} per hand', '≈ {weight} × {reps} pro Hand'],
+ 'loadBodyweight': ['Bodyweight × {reps}', 'Körpergewicht × {reps}'],
+ 'loadBodyweightPlus': ['Bodyweight +{weight} × {reps}', 'Körpergewicht +{weight} × {reps}'],
+ 'loadSrcHistory': ['from your last workout', 'aus deinem letzten Training'],
+ 'loadSrcIncrease': ['all reps done last time – more weight', 'letztes Mal alle Wiederholungen geschafft – mehr Gewicht'],
+ 'loadSrcAddReps': ['from your last workout – aim for one more rep', 'aus deinem letzten Training – schaff eine Wiederholung mehr'],
+ 'loadSrcDeload': ['last time was tough – a bit lighter', 'letztes Mal war hart – etwas leichter'],
+ 'loadSrcBreak': ['a bit lighter after your break', 'nach deiner Pause etwas leichter'],
+ 'loadSrcOneRm': ['from your 1RM in the setup', 'aus deinem 1RM im Setup'],
+ 'loadSrcEstimate': ['estimated from body weight – adjust it', 'geschätzt aus Körpergewicht – passe es an'],
+ 'loadPhaseLighter': ['deload week', 'Entlastungswoche'],
+ 'loadTaperLighter': ['taper week', 'Taper-Woche'],
+}
