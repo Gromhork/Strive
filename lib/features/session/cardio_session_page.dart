@@ -235,7 +235,8 @@ class _MetricsPage extends ConsumerWidget {
                 child: Text(
                   showPaceBig ? livePace() : Units.num(u.distOut(dist), 2),
                   style: TextStyle(
-                    fontSize: 88,
+                    // Smaller with a step card so all metric tiles stay visible.
+                    fontSize: s.structured ? 64 : 88,
                     height: 1,
                     fontWeight: FontWeight.w800,
                     color: showPaceBig ? _paceColor(s.paceStatus) : null,
@@ -250,14 +251,14 @@ class _MetricsPage extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: s.structured ? 10 : 16),
         GridView.count(
           crossAxisCount: 3,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
-          childAspectRatio: 1.35,
+          childAspectRatio: s.structured ? 1.6 : 1.35,
           children: [
             _Cell(value: clock(s.elapsed), label: l.duration),
             if (showPaceBig)

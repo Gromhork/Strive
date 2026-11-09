@@ -52,11 +52,14 @@ class Units {
     return '${num(speed, 1)} ${imperial ? 'mph' : 'km/h'}';
   }
 
+  /// Decimal comma for the app language (set by the MaterialApp builder; German → ",").
+  static bool decimalComma = false;
+
   static String num(double v, [int digits = 1]) {
     if (v == v.roundToDouble() && digits > 0 && v.abs() >= 100) return v.round().toString();
-    final s = v.toStringAsFixed(digits);
-    if (!s.contains('.')) return s;
-    return s.replaceFirst(RegExp(r'\.?0+$'), '');
+    var s = v.toStringAsFixed(digits);
+    if (s.contains('.')) s = s.replaceFirst(RegExp(r'\.?0+$'), '');
+    return decimalComma ? s.replaceAll('.', ',') : s;
   }
 }
 
@@ -73,8 +76,8 @@ String clock(int seconds) {
 String humanDuration(int seconds) {
   final h = seconds ~/ 3600;
   final m = (seconds % 3600) ~/ 60;
-  if (h == 0) return '${m}min';
-  return m == 0 ? '${h}h' : '${h}h ${m}min';
+  if (h == 0) return '$m min';
+  return m == 0 ? '$h h' : '$h h $m min';
 }
 
 String compactNumber(num v) {
@@ -110,3 +113,6 @@ int? parseClock(String s) {
   final pad = span < minSpan ? (minSpan - span) / 2 : span * 0.1;
   return ((lo - pad).floorToDouble(), (hi + pad).ceilToDouble());
 }
+
+/// "barbell curl" → "Barbell curl" (exercise names from the database are lower case).
+String capFirst(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);

@@ -68,7 +68,7 @@ void main() {
         final long = w.where((p) => p.intensity == 'long').map(runKm).fold<double>(0, max);
         if (long == 0) continue;
         for (final p in w.where((p) => p.intensity != 'long')) {
-          expect(runKm(p), lessThanOrEqualTo(long + 0.01), reason: '${e.key}: ${p.title} ${runKm(p)} km > long $long km on ${p.date}');
+          expect(runKm(p), lessThanOrEqualTo(long / 1.1 + 0.05), reason: '${e.key}: ${p.title} ${runKm(p)} km > long $long km on ${p.date}');
         }
         for (final p in w.where((p) => p.intensity == 'easy' && p.steps.length == 1)) {
           expect(runKm(p), lessThanOrEqualTo(max(3.0, long * 0.75) + 0.5), reason: '${e.key}: easy ${runKm(p)} vs long $long');

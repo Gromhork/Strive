@@ -117,6 +117,7 @@ class PlanGenerator {
       // weekly volume but stay clearly shorter than the long run.
       final week = <PlannedWorkout>[];
       final easyRuns = <(DateTime, int)>[];
+      (DateTime, int)? longCtx;
       for (final entry in roles.entries) {
         final day = weekStart.add(Duration(days: entry.key - 1));
         if (day.isBefore(dayOnly(start))) continue;
@@ -132,6 +133,7 @@ class PlanGenerator {
               easyRuns.add((day, cap));
               continue;
             }
+            if (r.role == 'long') longCtx = (day, cap);
           }
           week.add(switch (r.sport) {
             Sport.run => _run(day, r.role, phase, wk, longKm, tempoMin, intervalReps, w, cap),
@@ -139,6 +141,17 @@ class PlanGenerator {
             Sport.swim => _swim(day, r.role, phase, swimKm[w], swimPerWeek, w, cap),
             Sport.gym => _gym(day, gymQueue, schedule, phase, w, r.role, cap),
           });
+        }
+      }
+      // The long run must stay the longest run of the week: a tempo / interval
+      // session with warm-up and cool-down can otherwise match a short long run.
+      if (longCtx != null) {
+        final li = week.indexWhere((p) => p.sport == Sport.run && p.intensity == 'long');
+        final others = week.where((p) => p.sport == Sport.run && p.intensity != 'long').fold<double>(0, (x, p) => max(x, p.distanceKm ?? 0));
+        if (li >= 0 && others > 0 && (week[li].distanceKm ?? 0) < others * 1.15) {
+          final target = _r1(others * 1.2);
+          final longer = _run(longCtx.$1, 'long', phase, wk, max(longKm, target), tempoMin, intervalReps, w, longCtx.$2);
+          if ((longer.distanceKm ?? 0) > (week[li].distanceKm ?? 0)) week[li] = longer;
         }
       }
       if (easyRuns.isNotEmpty) {
