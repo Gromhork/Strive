@@ -7067,6 +7067,366 @@ abstract class AppLocalizations {
   /// **'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
   String get wGymDeloadNote2;
 
+  /// No description provided for @glossary.
+  ///
+  /// In en, this message translates to:
+  /// **'Glossary'**
+  String get glossary;
+
+  /// No description provided for @glossaryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short explanations of the terms and abbreviations used in the app.'**
+  String get glossaryHint;
+
+  /// No description provided for @termWhatIs.
+  ///
+  /// In en, this message translates to:
+  /// **'What does {term} mean?'**
+  String termWhatIs(String term);
+
+  /// No description provided for @termRpeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'RPE – Rating of Perceived Exertion'**
+  String get termRpeTitle;
+
+  /// No description provided for @termRpeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'How hard a workout or set felt, on a scale from 1 (very easy) to 10 (maximal). 3–4 = easy, you can chat; 6–7 = hard but controlled; 9–10 = all-out.'**
+  String get termRpeBody;
+
+  /// No description provided for @termRpeTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. When you enter it, the plan adapts better – e.g. easy runs that feel too hard lead to a lighter next week.'**
+  String get termRpeTip;
+
+  /// No description provided for @termRirTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'RIR – Reps in Reserve'**
+  String get termRirTitle;
+
+  /// No description provided for @termRirBody.
+  ///
+  /// In en, this message translates to:
+  /// **'How many more reps you could have done at the end of a set. \"2 in the tank\" means you stop two reps before failure.'**
+  String get termRirBody;
+
+  /// No description provided for @termRirTip.
+  ///
+  /// In en, this message translates to:
+  /// **'The effort chips map to it: Easy ≈ 4+, Just right ≈ 2–3, Hard ≈ 1, Limit = 0. Most sets should end with 1–3 in the tank.'**
+  String get termRirTip;
+
+  /// No description provided for @termE1rmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e1RM – estimated one-rep max'**
+  String get termE1rmTitle;
+
+  /// No description provided for @termE1rmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The weight you could probably lift exactly once, calculated from a set with more reps (e.g. 80 kg × 8 ≈ 101 kg). No need to test a real max.'**
+  String get termE1rmBody;
+
+  /// No description provided for @termE1rmTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Good for comparing progress across different weights and rep counts.'**
+  String get termE1rmTip;
+
+  /// No description provided for @termVdotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'VDOT – running fitness score'**
+  String get termVdotTitle;
+
+  /// No description provided for @termVdotBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A score by coach Jack Daniels derived from your race times. All running paces in your plan (easy, tempo, interval) are calculated from it.'**
+  String get termVdotBody;
+
+  /// No description provided for @termVdotTip.
+  ///
+  /// In en, this message translates to:
+  /// **'+1 VDOT is roughly 1–2 % faster over any distance. It rises with consistent training and is updated when you run faster.'**
+  String get termVdotTip;
+
+  /// No description provided for @termFtpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'FTP – Functional Threshold Power'**
+  String get termFtpTitle;
+
+  /// No description provided for @termFtpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The power (watts) you can hold on the bike for about one hour. Bike zones such as endurance, sweet spot and threshold are percentages of it.'**
+  String get termFtpBody;
+
+  /// No description provided for @termFtpTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Without a power meter the plan uses heart rate and feel instead.'**
+  String get termFtpTip;
+
+  /// No description provided for @termCssTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'CSS – Critical Swim Speed'**
+  String get termCssTitle;
+
+  /// No description provided for @termCssBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your threshold pace in the pool per 100 m, calculated from a 400 m and a 200 m time trial. Swim intervals are set relative to it.'**
+  String get termCssBody;
+
+  /// No description provided for @termCssTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: 400 m in 8:00 and 200 m in 3:40 → CSS ≈ 2:10 /100 m.'**
+  String get termCssTip;
+
+  /// No description provided for @termSupersetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Superset'**
+  String get termSupersetTitle;
+
+  /// No description provided for @termSupersetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Two (or three) exercises done back to back with only a short switch, then the full rest. The app pairs opposing muscles (e.g. press + row), so each recovers while the other works.'**
+  String get termSupersetBody;
+
+  /// No description provided for @termSupersetTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Saves time without losing performance.'**
+  String get termSupersetTip;
+
+  /// No description provided for @termAmrapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AMRAP – as many reps as possible'**
+  String get termAmrapTitle;
+
+  /// No description provided for @termAmrapBody.
+  ///
+  /// In en, this message translates to:
+  /// **'On the last set do as many clean reps as you can – but stop one rep before failure. The app uses the result to correct your weights.'**
+  String get termAmrapBody;
+
+  /// No description provided for @termAmrapTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Only appears when it helps: for new exercises and when you reach the top of the rep range.'**
+  String get termAmrapTip;
+
+  /// No description provided for @termVolumeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get termVolumeTitle;
+
+  /// No description provided for @termVolumeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight × reps of all working sets added up (warm-ups don\'t count). For bodyweight exercises the lifted share of your body weight counts.'**
+  String get termVolumeBody;
+
+  /// No description provided for @termVolumeTip.
+  ///
+  /// In en, this message translates to:
+  /// **'More volume is not automatically better – what matters is progress over weeks.'**
+  String get termVolumeTip;
+
+  /// No description provided for @termPhaseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan phases'**
+  String get termPhaseTitle;
+
+  /// No description provided for @termPhaseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Deload: a lighter week every 3–4 weeks so your body can adapt.'**
+  String get termPhaseBody;
+
+  /// No description provided for @termPhaseTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Deload and taper weeks feel easy on purpose – don\'t make up for them.'**
+  String get termPhaseTip;
+
+  /// No description provided for @termZonesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensity zones'**
+  String get termZonesTitle;
+
+  /// No description provided for @termZonesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Training ranges from very easy to maximal, based on pace, heart rate or power. About 80 % of endurance training should be easy – that\'s what builds your base.'**
+  String get termZonesBody;
+
+  /// No description provided for @termZonesTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a zone in a workout for its exact range.'**
+  String get termZonesTip;
+
+  /// No description provided for @raceSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Find races'**
+  String get raceSearch;
+
+  /// No description provided for @raceSport.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport'**
+  String get raceSport;
+
+  /// No description provided for @raceAnyDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Any distance'**
+  String get raceAnyDistance;
+
+  /// No description provided for @raceRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Region (country or city)'**
+  String get raceRegion;
+
+  /// No description provided for @raceRegionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Germany, Munich – empty = worldwide'**
+  String get raceRegionHint;
+
+  /// No description provided for @raceWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Time window'**
+  String get raceWindow;
+
+  /// No description provided for @raceNextMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} months'**
+  String raceNextMonths(int n);
+
+  /// No description provided for @raceSearchButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Search the web'**
+  String get raceSearchButton;
+
+  /// No description provided for @raceIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Searches the web for upcoming races with AI – or open a race calendar directly.'**
+  String get raceIntro;
+
+  /// No description provided for @raceSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching the web for races…'**
+  String get raceSearching;
+
+  /// No description provided for @raceWebResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Web results (AI search)'**
+  String get raceWebResults;
+
+  /// No description provided for @raceDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Found on the web by AI – no guarantee. Check date and details on the organiser\'s page before you sign up.'**
+  String get raceDisclaimer;
+
+  /// No description provided for @raceOrganiserPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Organiser page'**
+  String get raceOrganiserPage;
+
+  /// No description provided for @raceSetAsGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as goal'**
+  String get raceSetAsGoal;
+
+  /// No description provided for @raceGoalSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Race set as your goal'**
+  String get raceGoalSet;
+
+  /// No description provided for @raceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No races found for these filters. Try a longer time window or a wider region – or browse a race calendar.'**
+  String get raceEmpty;
+
+  /// No description provided for @raceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI web search is not available right now (quota or plan of the AI service). Browse a race calendar instead.'**
+  String get raceUnavailable;
+
+  /// No description provided for @raceError.
+  ///
+  /// In en, this message translates to:
+  /// **'The search failed. Check your connection and try again – or browse a race calendar.'**
+  String get raceError;
+
+  /// No description provided for @raceBadResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The search returned no usable result. Try again – or browse a race calendar.'**
+  String get raceBadResponse;
+
+  /// No description provided for @raceRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get raceRetry;
+
+  /// No description provided for @racePortals.
+  ///
+  /// In en, this message translates to:
+  /// **'Race calendars'**
+  String get racePortals;
+
+  /// No description provided for @racePortalsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens in the browser, filtered where the site supports it.'**
+  String get racePortalsHint;
+
+  /// No description provided for @raceSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get raceSources;
+
+  /// No description provided for @raceGoogleSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Google searches'**
+  String get raceGoogleSuggestions;
+
   /// No description provided for @recalGapsTitle.
   ///
   /// In en, this message translates to:

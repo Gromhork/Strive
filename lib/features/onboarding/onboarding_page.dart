@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/format.dart';
 import '../../core/sport.dart';
@@ -10,6 +9,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../data/default_programs.dart';
 import '../calendar/feasibility_card.dart';
+import '../goals/race_search_page.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/plan_gaps.dart';
@@ -17,6 +17,7 @@ import '../../services/plan_generator.dart';
 import '../../services/schedule_advisor.dart';
 import '../../services/zones.dart';
 import '../../widgets/common.dart';
+import '../../widgets/term_info.dart';
 import '../../widgets/segments.dart';
 
 /// What the setup flow edits.
@@ -66,6 +67,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     super.initState();
     p = ref.read(profileProvider).value ?? UserProfile(name: _accountName(), birthYear: DateTime.now().year - 28);
     a = p.athlete;
+    _eventName.text = a.eventName ?? '';
     _name.text = p.name;
     _imperial = p.imperial;
     _generatePlan = widget.mode != SetupMode.profile;
@@ -143,6 +145,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final sports = _sports;
     a = a.merge({
       'dayPlan': {for (final e in a.dayPlan.entries) e.key: e.value.where(sports.contains).toList()},
+      'eventName': _eventName.text.trim().isEmpty ? null : _eventName.text.trim(),
     });
     var days = [
       ...(p.trainingDays.isEmpty ? const [1, 3, 5] : p.trainingDays),
@@ -312,12 +315,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     ),
   );
 
-  Widget _label(String s, {String? hint}) => Padding(
+  Widget _label(String s, {String? hint, Term? term}) => Padding(
     padding: const EdgeInsets.only(top: 22, bottom: 8),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(s, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Row(
+          children: [Flexible(child: Text(s, style: const TextStyle(fontWeight: FontWeight.w600))), if (term != null) TermInfoButton(term)],
+        ),
         if (hint != null) Text(hint, style: Theme.of(context).textTheme.bodySmall),
       ],
     ),
@@ -1038,7 +1043,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         value: a.indoorTrainer,
         onChanged: (v) => _setA({'indoorTrainer': v}),
       ),
-      _label(l.ftpTitle, hint: l.ftpHint),
+      _label(l.ftpTitle, hint: l.ftpHint, term: Term.ftp),
       _numField(
         'FTP',
         a.ftp,
@@ -1081,7 +1086,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           value: a.canSwim400,
           onChanged: (v) => _setA({'canSwim400': v}),
         ),
-        _label(l.cssTitle, hint: l.cssHint),
+        _label(l.cssTitle, hint: l.cssHint, term: Term.css),
         Row(
           children: [
             Expanded(child: _timeField('400 m', a.swim400Sec, (v) => _setA({'swim400Sec': v}))),
@@ -1341,9 +1346,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         ],
         const SizedBox(height: 12),
         TextButton.icon(
-          icon: const Icon(Icons.search),
-          label: Text(l.searchMarathonDe),
-          onPressed: () => launchUrl(Uri.parse('https://www.marathon.de/laufkalender'), mode: LaunchMode.externalApplication),
+          icon: const Icon(Icons.travel_explore_rounded),
+          label: Text(l.raceSearch),
+          onPressed: () async {
+            // The setup saves the profile itself when finished.
+            final r = await openRaceSearch(context, saveToProfile: false);
+            if (r == null || !mounted) return;
+            _eventName.text = r.name;
+            _setA({'eventDate': r.date, if (r.distance != null && dists.contains(r.distance)) 'eventDistance': r.distance});
+          },
         ),
       ],
     );
@@ -1479,7 +1490,14 @@ class _ZonesPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${l.yourPaceZones} · VDOT ${vdot.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+          Row(
+            children: [
+              Flexible(
+                child: Text('${l.yourPaceZones} · VDOT ${vdot.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+              ),
+              const TermInfoButton(Term.vdot),
+            ],
+          ),
           const SizedBox(height: 6),
           row(l.zoneEasy, '${fmtPace(z.easyFast)}–${fmtPace(z.easySlow)}', AppColors.run),
           row(l.zoneMarathon, fmtPace(z.marathon), AppColors.swim),

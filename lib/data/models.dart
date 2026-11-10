@@ -206,6 +206,8 @@ class AthleteData {
   /// plan is not rule-based, e.g. AI) – lets the recalibration rebuild it to find gaps.
   final DateTime? planStart;
   final int? planLength;
+  /// Name of the target event (e.g. taken over from the race search); optional.
+  final String? eventName;
 
   const AthleteData({
     this.setupMode = 'simple',
@@ -241,6 +243,7 @@ class AthleteData {
     this.targetTimeSec,
     this.planStart,
     this.planLength,
+    this.eventName,
   });
 
   bool get advanced => setupMode == 'advanced';
@@ -285,6 +288,7 @@ class AthleteData {
     targetTimeSec: m['targetTimeSec'],
     planStart: m['planStart'] == null ? null : _date(m['planStart']),
     planLength: _in(m['planLength']),
+    eventName: m['eventName'],
   );
 
   Map<String, dynamic> toMap() => {
@@ -321,6 +325,7 @@ class AthleteData {
     'targetTimeSec': targetTimeSec,
     if (planStart != null) 'planStart': Timestamp.fromDate(planStart!),
     if (planLength != null) 'planLength': planLength,
+    'eventName': eventName,
   };
 
   /// Copy with some fields replaced (keys as in [toMap]); `null` values clear a field.

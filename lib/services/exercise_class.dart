@@ -108,6 +108,18 @@ class LiftProfile {
   return r;
 }
 
+/// Whether the "bodyweight" switch is worth offering for an exercise: bodyweight
+/// exercises (pull-ups, dips, push-ups, core …), anything without loaded equipment
+/// (bands, assisted, unknown / custom exercises) and exercises already in bodyweight
+/// mode ([current], so it can be switched off again). Barbell, dumbbell, machine and
+/// cable exercises don't get it – "bodyweight bench press" makes no sense.
+bool offersBodyweightMode(String exId, String name, {Exercise? info, bool? current}) {
+  if (current == true) return true;
+  if (classifyLift(exId, name, info: info).bodyweight) return true;
+  final eq = info?.equipment ?? _equipmentOfName((info?.name ?? name).toLowerCase());
+  return !_loadedEquipment.contains(eq);
+}
+
 const _loadedEquipment = {
   'barbell',
   'ez barbell',

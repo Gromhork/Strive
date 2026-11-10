@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/format.dart';
 import '../../core/sport.dart';
@@ -9,8 +8,10 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/insights.dart';
+import '../../services/race_search.dart';
 import '../../widgets/common.dart';
 import '../train/exercise_picker.dart';
+import 'race_search_page.dart';
 
 class GoalsPage extends ConsumerWidget {
   const GoalsPage({super.key});
@@ -20,7 +21,12 @@ class GoalsPage extends ConsumerWidget {
     final l = context.l10n;
     final goals = ref.watch(goalsProvider).value ?? const [];
     return Scaffold(
-      appBar: AppBar(title: Text(l.goals)),
+      appBar: AppBar(
+        title: Text(l.goals),
+        actions: [
+          IconButton(tooltip: l.raceSearch, icon: const Icon(Icons.travel_explore_rounded), onPressed: () => openRaceSearch(context)),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showGoalEditor(context, ref),
         icon: const Icon(Icons.add),
@@ -339,9 +345,18 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                 ),
               if (_type == GoalType.event)
                 TextButton.icon(
-                  icon: const Icon(Icons.search),
-                  label: Text(l.searchMarathonDe),
-                  onPressed: () => launchUrl(Uri.parse('https://www.marathon.de/laufkalender'), mode: LaunchMode.externalApplication),
+                  icon: const Icon(Icons.travel_explore_rounded),
+                  label: Text(l.raceSearch),
+                  onPressed: () async {
+                    final r = await openRaceSearch(context);
+                    if (r == null || !mounted) return;
+                    setState(() {
+                      _deadline = r.date;
+                      _title.text = r.name;
+                      _sport = r.sport.sport;
+                      if (eventKm(r.distance) != null) _target.text = Units.num(eventKm(r.distance)!);
+                    });
+                  },
                 ),
               const SizedBox(height: 20),
               FilledButton(

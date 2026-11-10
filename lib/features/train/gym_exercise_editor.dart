@@ -290,7 +290,13 @@ class _ExerciseEditCard extends ConsumerWidget {
                         child: ListTile(leading: const Icon(Icons.swap_horiz_rounded), title: Text(l.replaceExercise)),
                       ),
                       PopupMenuItem(value: 'note', child: ListTile(leading: const Icon(Icons.sticky_note_2_outlined), title: Text(l.note))),
-                      CheckedPopupMenuItem(value: 'bodyweight', checked: _isBw(ref, e), child: Text(l.bodyweight)),
+                      if (offersBodyweightMode(
+                        e.exId,
+                        e.name,
+                        info: ref.watch(exerciseDbProvider).value?.byId(e.exId),
+                        current: _isBw(ref, e),
+                      ))
+                        CheckedPopupMenuItem(value: 'bodyweight', checked: _isBw(ref, e), child: Text(l.bodyweight)),
                       PopupMenuItem(
                         value: 'remove',
                         child: ListTile(
