@@ -3141,10 +3141,12 @@ class PlanGenerator {
     // Proportionally – rounding the steps up (100 m) may still overshoot: shrink a little more then.
     final base = list;
     final t = total(base);
+    var f = capSec / t;
+    if (t > capSec) list = [for (final s in base) scaled(s, f)];
     // (Runs only – the ride / swim builders keep their single proportional step.)
-    for (var f = capSec / t; total(list) > capSec && f > 0.3; f *= 0.97) {
+    while (sport == Sport.run && total(list) > capSec && f > 0.05) {
+      f *= 0.97;
       list = [for (final s in base) scaled(s, f)];
-      if (sport != Sport.run) break;
     }
     return list;
   }
@@ -3381,8 +3383,13 @@ class PlanGenerator {
         if (byShare) {
           final m = ev == 'm' || ev == 'ultra50';
           final share = m && ev == 'm' ? 0.55 : 0.5;
-          final runsPerWeek = scheduleOf(p).values.expand((e) => e).where((s) => s == Sport.run).length;
-          final needKm = max(m ? 0.0 : runTarget / 2, runTarget * (1 - share) / share / max(1, runsPerWeek - 1));
+          // The other runs of the week with the longest long run: the quality runs stay as they are, the
+          // easy runs carry the rest (≤ 50 % share), the longest of them ≥ half the long run (2 ×).
+          final top = longs.reduce((x, y) => (y.distanceKm ?? 0) > (x.distanceKm ?? 0) ? y : x);
+          final wk = plan.where((w) => w.sport == Sport.run && startOfWeek(w.date) == startOfWeek(top.date) && w != top).toList();
+          final q = wk.where((w) => w.intensity == 'tempo' || w.intensity == 'intervals').fold(0.0, (x, w) => x + (w.distanceKm ?? 0));
+          final nEasy = max(1, wk.where((w) => w.intensity == 'easy').length);
+          final needKm = max(m ? 0.0 : runTarget / 2, (runTarget * (1 - share) / share - q) / nEasy);
           shareNeedMin = (needKm * g.pz.easySlow / 60 / 5).ceil() * 5;
         }
         if (byTime) {
