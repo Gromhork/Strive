@@ -4477,6 +4477,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moreDistances => 'More distances…';
 
   @override
+  String get backAgainToExit => 'Press back again to exit';
+
+  @override
   String get musicRpm => 'rpm';
 
   @override
@@ -4590,6 +4593,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get currentLap => 'Current lap';
 
   @override
+  String get lapCount => 'Laps';
+
+  @override
   String get currentSplit => 'Current km';
 
   @override
@@ -4617,7 +4623,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stepLeft => 'Step left';
-
-  @override
-  String get lapCount => 'Laps';
 }

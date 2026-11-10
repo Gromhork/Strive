@@ -8279,6 +8279,12 @@ abstract class AppLocalizations {
   /// **'More distances…'**
   String get moreDistances;
 
+  /// No description provided for @backAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again to exit'**
+  String get backAgainToExit;
+
   /// No description provided for @musicRpm.
   ///
   /// In en, this message translates to:
@@ -8501,6 +8507,12 @@ abstract class AppLocalizations {
   /// **'Current lap'**
   String get currentLap;
 
+  /// No description provided for @lapCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Laps'**
+  String get lapCount;
+
   /// No description provided for @currentSplit.
   ///
   /// In en, this message translates to:
@@ -8554,12 +8566,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Step left'**
   String get stepLeft;
-
-  /// No description provided for @lapCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Laps'**
-  String get lapCount;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

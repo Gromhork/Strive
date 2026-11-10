@@ -1364,6 +1364,7 @@
   "distSwim3800": "Freiwasser 3,8 km",
   "distSwim5000": "Freiwasser 5 km",
   "moreDistances": "Weitere Distanzen…",
+  "backAgainToExit": "Nochmal zurück zum Beenden",
   "musicRpm": "U/min",
   "musicIntroRun": "Musik im Takt deiner Schrittfrequenz (≈ 150–185 Schritte/min) macht das Laufen ökonomischer und gefühlt leichter.",
   "musicRunEasy": "Lockerer Lauf",
@@ -1401,6 +1402,7 @@
   "pausedHint": "Zum Beenden ■ gedrückt halten",
   "lapDone": "Runde {n}: {time} · {dist}",
   "currentLap": "Aktuelle Runde",
+  "lapCount": "Runden",
   "currentSplit": "Aktueller km",
   "bestSplit": "Schnellster km",
   "avgSplit": "Ø km",
@@ -1409,6 +1411,5 @@
   "vcStatus": "Zeit {time}. Distanz {dist}.",
   "targetBand": "Ziel",
   "routeTapHint": "Karte",
-  "stepLeft": "Rest Abschnitt",
-  "lapCount": "Runden"
+  "stepLeft": "Rest Abschnitt"
 }

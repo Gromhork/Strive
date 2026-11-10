@@ -4477,6 +4477,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get moreDistances => 'Weitere Distanzen…';
 
   @override
+  String get backAgainToExit => 'Nochmal zurück zum Beenden';
+
+  @override
   String get musicRpm => 'U/min';
 
   @override
@@ -4590,6 +4593,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get currentLap => 'Aktuelle Runde';
 
   @override
+  String get lapCount => 'Runden';
+
+  @override
   String get currentSplit => 'Aktueller km';
 
   @override
@@ -4617,7 +4623,4 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get stepLeft => 'Rest Abschnitt';
-
-  @override
-  String get lapCount => 'Runden';
 }

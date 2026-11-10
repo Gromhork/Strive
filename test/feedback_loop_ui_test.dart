@@ -295,8 +295,8 @@ void main() {
       await t.pumpAndSettle();
       expect(t.takeException(), isNull);
       expect(find.text(l.planLogRecal), findsOneWidget);
-      expect(find.text(l.planLogReadiness(l.notFitSick)), findsOneWidget);
-      expect(find.text(l.planLogChanged), findsOneWidget); // 'y' no longer exists as skipped
+      // 'y' no longer exists (e.g. its plan was replaced) – the entry is hidden.
+      expect(find.text(l.planLogReadiness(l.notFitSick)), findsNothing);
       await t.tap(find.byKey(const ValueKey('planLogUndo_r')));
       await t.pump();
       expect(repo.saved.single.durationMin, 50);

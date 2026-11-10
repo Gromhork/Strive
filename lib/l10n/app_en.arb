@@ -2767,6 +2767,7 @@
   "distSwim3800": "Open water 3.8 km",
   "distSwim5000": "Open water 5 km",
   "moreDistances": "More distances…",
+  "backAgainToExit": "Press back again to exit",
   "musicRpm": "rpm",
   "musicIntroRun": "Music matched to your step rate (≈ 150–185 steps/min) makes running feel easier and more economical.",
   "musicRunEasy": "Easy run",
@@ -2817,6 +2818,7 @@
     }
   },
   "currentLap": "Current lap",
+  "lapCount": "Laps",
   "currentSplit": "Current km",
   "bestSplit": "Fastest km",
   "avgSplit": "Average km",
@@ -2835,6 +2837,5 @@
   },
   "targetBand": "Target",
   "routeTapHint": "Map",
-  "stepLeft": "Step left",
-  "lapCount": "Laps"
+  "stepLeft": "Step left"
 }

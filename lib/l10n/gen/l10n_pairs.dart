@@ -1321,6 +1321,7 @@ const l10nPairs = <(String, String)>[
   ('Open water 3.8 km', 'Freiwasser 3,8 km'),
   ('Open water 5 km', 'Freiwasser 5 km'),
   ('More distances…', 'Weitere Distanzen…'),
+  ('Press back again to exit', 'Nochmal zurück zum Beenden'),
   ('rpm', 'U/min'),
   ('Music matched to your step rate (≈ 150–185 steps/min) makes running feel easier and more economical.', 'Musik im Takt deiner Schrittfrequenz (≈ 150–185 Schritte/min) macht das Laufen ökonomischer und gefühlt leichter.'),
   ('Easy run', 'Lockerer Lauf'),
@@ -1357,6 +1358,7 @@ const l10nPairs = <(String, String)>[
   ('Hold ■ to finish', 'Zum Beenden ■ gedrückt halten'),
   ('Lap {n}: {time} · {dist}', 'Runde {n}: {time} · {dist}'),
   ('Current lap', 'Aktuelle Runde'),
+  ('Laps', 'Runden'),
   ('Current km', 'Aktueller km'),
   ('Fastest km', 'Schnellster km'),
   ('Average km', 'Ø km'),
@@ -1366,5 +1368,4 @@ const l10nPairs = <(String, String)>[
   ('Target', 'Ziel'),
   ('Map', 'Karte'),
   ('Step left', 'Rest Abschnitt'),
-  ('Laps', 'Runden'),
 ];
