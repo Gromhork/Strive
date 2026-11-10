@@ -732,7 +732,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get bodyPart => 'Körperpartie';
 
   @override
-  String get equipment => 'Equipment';
+  String get equipment => 'Ausrüstung';
 
   @override
   String nResults(int count) {
@@ -943,7 +943,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get planSwimTechniqueDesc => '300 Einschwimmen · 8×50 Technikübungen · 6×100 gleichmäßig · 200 Ausschwimmen';
 
   @override
-  String get performance => 'Performance';
+  String get performance => 'Leistung';
 
   @override
   String get records => 'Rekorde';
@@ -1106,7 +1106,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get goalTypeStrength => 'Kraft';
 
   @override
-  String get goalTypeEvent => 'Event';
+  String get goalTypeEvent => 'Wettkampf';
 
   @override
   String get perWeek => 'pro Woche';
@@ -1118,7 +1118,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get target => 'Zielwert';
 
   @override
-  String get deadlineOptional => 'Deadline (optional)';
+  String get deadlineOptional => 'Stichtag (optional)';
 
   @override
   String get profile => 'Profil';
@@ -1256,7 +1256,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workoutComplete => 'Alle Sätze geschafft – stark!';
 
   @override
-  String get superset => 'Superset';
+  String get superset => 'Supersatz';
 
   @override
   String get linkSuperset => 'Als Supersatz verbinden';
