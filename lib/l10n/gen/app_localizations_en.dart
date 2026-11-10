@@ -2773,7 +2773,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutPhases => 'Phases';
 
   @override
-  String get planDone => 'Plan done';
+  String get planDone => 'Done';
 
   @override
   String get perSport => 'Per sport';
@@ -4792,4 +4792,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goalKindWeeksHint => 'No race – a plan that builds your fitness over the chosen number of weeks, with recovery weeks and without taper.';
+
+  @override
+  String get tabZones => 'Zones';
+
+  @override
+  String get tabPlan => 'Plan';
+
+  @override
+  String get planProjected => 'Projected finish';
+
+  @override
+  String get planPlanned => 'Planned';
+
+  @override
+  String get planDelta => 'vs. plan';
+
+  @override
+  String get planOnTarget => 'Intervals on target';
+
+  @override
+  String get planNow => 'now';
+
+  @override
+  String get planShort => 'Shortened';
+
+  @override
+  String get planNoneDone => 'Finished sections appear here with their actual values.';
+
+  @override
+  String planStepsLeft(int n) {
+    return '$n more after this one';
+  }
+
+  @override
+  String get zoneWaiting => 'Waiting for pace…';
+
+  @override
+  String get zoneTimeIn => 'Time in zone';
+
+  @override
+  String get zoneCurrent => 'Current zone';
 }

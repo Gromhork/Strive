@@ -1478,7 +1478,7 @@
   "noLengthsYet": "Your lengths appear here after the first tap.",
   "keySessionSub": "Important workout of the week – Strive keeps hard days apart.",
   "workoutPhases": "Phases",
-  "planDone": "Plan done",
+  "planDone": "Done",
   "perSport": "Per sport",
   "recoveryTitle": "Recovery & load",
   "load7d": "Load 7 days",
@@ -3006,5 +3006,25 @@
   "canSwim400Sub": "If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.",
   "goalKindRace": "Race",
   "goalKindWeeks": "Plan length only",
-  "goalKindWeeksHint": "No race – a plan that builds your fitness over the chosen number of weeks, with recovery weeks and without taper."
+  "goalKindWeeksHint": "No race – a plan that builds your fitness over the chosen number of weeks, with recovery weeks and without taper.",
+  "tabZones": "Zones",
+  "tabPlan": "Plan",
+  "planProjected": "Projected finish",
+  "planPlanned": "Planned",
+  "planDelta": "vs. plan",
+  "planOnTarget": "Intervals on target",
+  "planNow": "now",
+  "planShort": "Shortened",
+  "planNoneDone": "Finished sections appear here with their actual values.",
+  "planStepsLeft": "{n} more after this one",
+  "@planStepsLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "zoneWaiting": "Waiting for pace…",
+  "zoneTimeIn": "Time in zone",
+  "zoneCurrent": "Current zone"
 }
