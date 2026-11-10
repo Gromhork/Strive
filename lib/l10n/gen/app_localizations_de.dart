@@ -4074,7 +4074,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get fcRiskBodyFinish => 'Das Training lief zuletzt nicht wie geplant – mit konsequentem Training ab jetzt bleibt der Wettkampf machbar.';
+  String get fcRiskBodyFinish => 'Das Training lief zuletzt nicht wie geplant – so ist das Finish gefährdet. Konsequentes Training ab jetzt (oder eine der Optionen) kann es noch drehen.';
 
   @override
   String fcAheadBody(String goal) {
@@ -4983,6 +4983,115 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reauthConfirm => 'Bestätigen';
+
+  @override
+  String feasLongDayDefault(String day, String time) {
+    return 'Die lange Einheit am $day braucht bis zu $time – deutlich mehr als deine angegebene Zeit. Der Plan nutzt sie; trag die Zeit für diesen Tag selbst ein, falls sie nicht passt.';
+  }
+
+  @override
+  String feasLongRunShare(int min) {
+    return 'Deine übrigen Läufe sind zu kurz für den langen Lauf, den dieses Rennen braucht: Er darf höchstens die Hälfte der Woche und doppelt so lang wie dein zweitlängster Lauf sein. Plane für die anderen Läufe etwa $min min ein.';
+  }
+
+  @override
+  String feasTargetConservative(String goal, String now, String pred) {
+    return '$goal ist ein vorsichtiges Ziel: heute ~$now, realistisch am Wettkampftag ~$pred. Deine Renntempo-Einheiten laufen im realistischen Tempo.';
+  }
+
+  @override
+  String wRunContinuous(int min) {
+    return 'Dauerlauf $min min';
+  }
+
+  @override
+  String get wShakeoutRunWalkDesc => 'Lockeres Auslaufen im Lauf-Geh-Rhythmus – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.';
+
+  @override
+  String get wShakeoutEasyDesc => '15 min ganz locker – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.';
+
+  @override
+  String get wMastersStrengthNote => 'Kraft-Tipp: Hänge an diese Einheit 15–20 min Kraft an (Kniebeugen, Ausfallschritte, Wadenheben, Unterarmstütz) – zweimal pro Woche erhält das mit zunehmendem Alter Muskeln, Knochen und Sehnen.';
+
+  @override
+  String wRaceLeg(String leg, String dist) {
+    return '$leg $dist km – dein Renntempo für diesen Teil';
+  }
+
+  @override
+  String get wRaceFinishDesc => 'Ziel ist das Ankommen: noch keine Zielzeit – starte langsamer als es sich richtig anfühlt, halte deinen Rhythmus und genieß das Finish.';
+
+  @override
+  String get wTriOpenWaterNote => 'Wettkampfvorbereitung: Orientierung im Becken üben (alle 6–9 Züge kurz nach vorn schauen); sobald es das Wasser zulässt, einige Einheiten im Freiwasser mit Neoprenanzug – in der Gruppe, nie allein.';
+
+  @override
+  String get stepSwimRaceFinishNote => 'Letztes Drittel im Renntempo – gleichmäßig, Technik halten';
+
+  @override
+  String get wLongSwimRaceDesc => 'Diese Woche schwimmst du das letzte Drittel der langen Einheit im Renntempo: üben, das Tempo zu halten, wenn du schon müde bist.';
+
+  @override
+  String wLongRideRacePace(int reps, int each) {
+    return 'Lange Ausfahrt mit $reps × $each min Renntempo';
+  }
+
+  @override
+  String get wLongRideRacePaceDesc => 'Lange Zone-2-Ausfahrt mit Blöcken in der Leistung, die du im Wettkampf fahren willst: gleichmäßig, aerodynamisch, essen und trinken wie im Rennen (alle 20–30 min).';
+
+  @override
+  String get stepRacePowerNote => 'Renntempo – gleichmäßig, wie im Wettkampf';
+
+  @override
+  String get wRideTempoDescIm => 'Wettkampfspezifisches Tempo bei 75–85 % FTP – die Belastung einer Ironman-Radstrecke: gleichmäßig, aerodynamisch, mit Verpflegung.';
+
+  @override
+  String get wRideTempoDescFondo => 'Wettkampfspezifisches Tempo bei 75–85 % FTP – die Dauerbelastung langer Anstiege und einer schnellen Gruppe: gleichmäßig einteilen, mit Verpflegung.';
+
+  @override
+  String get wRideTempoBaseDesc => 'Tempo bei 76–90 % FTP: aerobe Kraft für lange Belastungen – kontrolliert, eine Stufe unter dem Sweet Spot.';
+
+  @override
+  String get stepThresholdNote2 => 'Schwelle – 91–100 % FTP, kontrolliert';
+
+  @override
+  String wHillReps(int reps, int sec) {
+    return 'Bergläufe $reps × $sec s';
+  }
+
+  @override
+  String get wHillRepsDesc => 'Bergaufläufe an einem gleichmäßigen Anstieg (5–8 %): kräftig, kurze Schritte, aufrecht; locker hinunter traben oder gehen. Baut die Kraft für die Anstiege deines Ultras auf.';
+
+  @override
+  String get stepHillNote => 'Bergauf – hart, aber kontrolliert, nach Gefühl (ohne Tempovorgabe)';
+
+  @override
+  String get stepHillDownNote => 'Locker hinunter traben oder gehen';
+
+  @override
+  String wGymLoadDescNoDeload(int rir) {
+    return 'Beende jeden Arbeitssatz mit etwa $rir Wdh. im Tank. Sätze, Wiederholungsbereich und Gewichtsvorschlag stehen bei jeder Übung.';
+  }
+
+  @override
+  String get wGymRegressionNote => 'Erste Wochen: leichtere Varianten der technisch anspruchsvollen Übungen (Latziehen statt Klimmzügen, Rumänisches Kreuzheben mit Kurzhanteln statt Kreuzheben mit der Langhantel, Reverse Crunches statt hängendem Beinheben) – die vollen Übungen folgen, sobald die Technik sitzt.';
+
+  @override
+  String get recalWhyFatigueRecovery => 'Seit zwei Wochen fühlen sich die Einheiten härter an als geplant: Die nächsten 7 Tage sind eine Erholungswoche (weniger Umfang, keine Intensität). Danach kommen die Qualitätseinheiten mit weniger Wiederholungen zurück.';
+
+  @override
+  String get recalWhyFatigueCheck => 'Auch nach der Erholungswoche noch härter als geplant: Prüfe Schlaf, Krankheit und Stress – und überlege eine langsamere Zielzeit. Die Qualitätseinheiten bleiben, mit weniger Wiederholungen.';
+
+  @override
+  String get recalWhyGoalAtRisk => 'Mit dem Training der letzten Wochen ist das Wettkampfziel schwer erreichbar (lange Läufe oder Wochenumfang weit von dem, was der Wettkampf braucht) – überlege einen späteren Wettkampf oder eine kürzere Distanz.';
+
+  @override
+  String get recalWhyRepeatStage => 'Die Laufen/Gehen-Einheiten waren anstrengend (RPE über 5) oder wurden abgebrochen: Die kommende Woche wiederholt deine aktuelle Stufe, statt aufzusteigen.';
+
+  @override
+  String get recalWhyMoveLong => 'Lange Läufe sind ausgefallen, die übrigen Läufe wurden gemacht: Der nächste lange Lauf rückt auf einen Trainingstag mit mehr Zeit – die lockeren Läufe bleiben, wie sie sind.';
+
+  @override
+  String get fcReasonFatigue => 'Einheiten zuletzt härter als geplant';
 
   @override
   String get summaryPlanDone => 'Plan erfüllt – stark!';

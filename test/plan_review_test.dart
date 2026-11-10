@@ -333,11 +333,26 @@ void main() {
         for (final (i, e) in g.exercises.indexed) {
           final full = t.exercises[i].workSets.length;
           final lower = classifyLift(e.exId, e.name).lower;
-          expect(e.workSets.length, lower ? max(1, full ~/ 2) : full, reason: '${g.title} ${e.name}');
+          // Review 2026-11 (IMPORTANT 9): non-beginners may get one more upper-body set to use the time.
+          if (lower) {
+            expect(e.workSets.length, max(1, full ~/ 2), reason: '${g.title} ${e.name}');
+          } else {
+            expect(e.workSets.length, inInclusiveRange(full, full + (p.level == 'beginner' ? 0 : 1)), reason: '${g.title} ${e.name}');
+          }
         }
       }
-      // Other days keep the full program (no per-day copy).
-      expect(plan.where((w) => w.sport == Sport.gym && !before.contains(w)).every((w) => w.exercises.isEmpty), isTrue);
+      // Other days keep the full program: no per-day copy, or a copy with (non-beginners, time left) one
+      // more set on the upper-body exercises / (beginners) the regressions of the first weeks – never
+      // fewer sets, never more leg sets.
+      for (final w in plan.where((w) => w.sport == Sport.gym && !before.contains(w) && w.exercises.isNotEmpty)) {
+        final t = templates.firstWhere((t) => t.id == w.templateId);
+        for (final (i, e) in w.exercises.indexed) {
+          final full = t.exercises[i].workSets.length;
+          final lower = classifyLift(e.exId, e.name).lower;
+          final extra = lower || p.level == 'beginner' ? 0 : 1;
+          expect(e.workSets.length, inInclusiveRange(full, full + extra), reason: '${w.title} ${e.name}');
+        }
+      }
     }
   });
 

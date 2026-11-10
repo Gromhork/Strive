@@ -70,11 +70,7 @@ TargetSuggestion suggestTargetTime(UserProfile p, String eventKey, DateTime even
   final q = p.copyWith(athlete: p.athlete.merge({'eventDistance': eventKey, 'eventDate': eventDate, 'targetTimeSec': null}));
   final a = q.athlete;
   final weeks = GoalModel.weeksUntil(eventDate, today);
-  final finish =
-      !GoalModel.hasModel(q) ||
-      PlanGenerator.runWalkStartFor(q) != null ||
-      (q.level == 'beginner' && EventSpec.of(eventKey)?.beginnerOk == false);
-  if (finish) return TargetSuggestion(basis: TargetBasis.finishOnly, confidence: TargetConfidence.low, weeks: weeks);
+  if (PlanGenerator.finishOnly(q)) return TargetSuggestion(basis: TargetBasis.finishOnly, confidence: TargetConfidence.low, weeks: weeks);
 
   // ── Fitness now
   final (profileVdot, guessed) = GoalModel.currentVdot(q);

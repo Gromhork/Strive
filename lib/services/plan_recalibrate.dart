@@ -7,9 +7,12 @@ import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'cardio_progression.dart';
 import 'compliance.dart';
+import 'goal_model.dart';
 import 'insights.dart';
 import 'plan_adjuster.dart';
 import 'plan_gaps.dart';
+import 'plan_generator.dart';
+import 'progression_check.dart';
 import 'session_feedback.dart';
 import 'zones.dart';
 
@@ -117,6 +120,8 @@ class Recalibrator {
 
     // ── RPE signals
     var tooHard = 0.0, tooEasy = 0, rated = 0, cutShort = 0, estimated = 0;
+    // Too-hard score of the last 7 days alone (the fatigue must still be there).
+    var tooHardLastWeek = 0.0;
     for (final p in window.where((p) => p.sport != Sport.gym && p.intensity != 'race')) {
       final s = linked[p.id];
       if (s == null) continue;
@@ -130,13 +135,32 @@ class Recalibrator {
         final f = evaluateSession(p, s, profile, hrMax: hrMax);
         if (!f.rated) continue;
         estimated++;
-        if (f.clearlyHarder) tooHard += f.score >= 0.6 ? 1 : 0.5;
+        final h = f.clearlyHarder ? (f.score >= 0.6 ? 1.0 : 0.5) : 0.0;
+        tooHard += h;
+        if (!dayOnly(p.date).isBefore(_add(today, -7))) tooHardLastWeek += h;
         if (f.isQuality && f.clearlyEasier) tooEasy++;
         continue;
       }
       rated++;
-      tooHard += rpeLoad(p.intensity, s.rpe!);
+      final h = rpeLoad(p.intensity, s.rpe!);
+      tooHard += h;
+      if (!dayOnly(p.date).isBefore(_add(today, -7))) tooHardLastWeek += h;
       if (rpeTooEasy(p.intensity, s.rpe!)) tooEasy++;
+    }
+    // The look-back a week ago ([today − 21, today − 7)): was the RPE already high last Monday?
+    var tooHardBefore = 0.0;
+    final prevFrom = _add(today, -lookbackDays - 7), prevTo = _add(today, -7);
+    for (final p in plans) {
+      final d = dayOnly(p.date);
+      if (d.isBefore(prevFrom) || !d.isBefore(prevTo) || p.sport == Sport.gym || p.intensity == 'race') continue;
+      final s = linked[p.id];
+      if (s == null) continue;
+      if (s.rpe == null || (s.source != null && s.avgHr != null)) {
+        final f = evaluateSession(p, s, profile, hrMax: hrMax);
+        if (f.rated && f.clearlyHarder) tooHardBefore += f.score >= 0.6 ? 1 : 0.5;
+        continue;
+      }
+      tooHardBefore += rpeLoad(p.intensity, s.rpe!);
     }
     // ── Compliance – only meaningful with a real sample: ≥ 3 due workouts spread over ≥ 7 days.
     // A plan that started yesterday with one missed workout is no "0 % done" (the missed key
@@ -155,10 +179,32 @@ class Recalibrator {
     var f1 = 1.0, f2 = 1.0; // days 0–6, 7–13
     var r1 = 1.0, r2 = 1.0; // fatigue only
     var swapAll = false, swapFirst = false, shortenLong = false, progress = false;
+    // Quality sessions kept but with fewer repeats (days 0–6, 7–13) – the way back after fatigue.
+    var q1 = 1.0, q2 = 1.0;
     final reasons = <RecalReason>[];
+    // Fatigue (C4): rule 1 swapped every quality session for easy running week after week while
+    // the RPE stayed high (7–11 weeks). Now: the first week as before; two weeks in a row → one
+    // recovery week (≈ 70 %, no intensity), then quality returns at ~75 % of its repeats; still too
+    // hard after the recovery week → keep the reduced quality and ask about sleep, illness and
+    // stress (overreaching, Meeusen 2013) instead of another month of easy running.
+    final recoveryRecently = plans.any(
+      (p) => _recoveryMark(p) && !dayOnly(p.date).isBefore(_add(today, -21)) && dayOnly(p.date).isBefore(today),
+    );
+    final recoveryPlanned = plans.any((p) => _recoveryMark(p) && !dayOnly(p.date).isBefore(today));
     if (tooHard >= 2) {
       reasons.add(RecalReason.rpeHigh);
-      if (tooHard >= 3) {
+      if (recoveryRecently && !recoveryPlanned) {
+        reasons.add(RecalReason.fatigueCheck);
+        r1 = 0.9;
+        q1 = q2 = 0.75;
+      } else if ((tooHardBefore >= 2 && tooHardLastWeek >= 1) || recoveryPlanned) {
+        // (A recovery week already proposed: the same proposal again – no compounding.)
+        reasons.add(RecalReason.fatigueRecovery);
+        r1 = 0.7;
+        r2 = 0.9;
+        swapAll = true;
+        q2 = 0.75;
+      } else if (tooHard >= 3) {
         r1 = 0.8;
         r2 = 0.9;
         swapAll = true;
@@ -169,11 +215,20 @@ class Recalibrator {
       f1 = r1;
       f2 = r2;
     }
+    final recoveryWeek = reasons.contains(RecalReason.fatigueRecovery);
     var easyFirst = false;
+    // Long runs missed while the rest was done (I14): the easy runs are not the problem – they keep
+    // their volume; the next long run moves to a day with more time instead.
+    final restDue = dueList.where((p) => p.intensity != 'long').toList();
+    final restCompletion = restDue.length >= 3 ? weeklyCompletion(restDue, linked, now: now) : null;
+    final longMissed = dueList.where((p) => p.intensity == 'long' && p.sport != Sport.gym && linked[p.id] == null && !p.isDone).length;
+    final onlyLongMissed = longMissed >= 1 && (restCompletion ?? 0) >= 0.9;
     if (completion != null && completion < 0.7) {
       reasons.add(RecalReason.lowCompletion);
       easyFirst = !keysMissed;
-      if (completion < 0.5) {
+      if (onlyLongMissed) {
+        // Nothing to cut: the long run itself follows R1 below.
+      } else if (completion < 0.5) {
         f1 = min(f1, 0.8);
         f2 = min(f2, 0.9);
         // Quality → easy only when the key sessions themselves were missed (re-entry); with the
@@ -215,7 +270,12 @@ class Recalibrator {
     };
     final trends = CardioTrend.of(plans, linkedNow, profile, now: now, days: trendDays, hrMax: hrMax);
     final run = trends[Sport.run], ride = trends[Sport.ride], swim = trends[Sport.swim];
-    if (newVdot == null && run != null) {
+    // C5: training-derived VDOT steps (rule 7) only every ≥ 3 weeks (Daniels: ~1 point per 4–6
+    // weeks), and the total rise since the plan start ≤ [GoalModel.optimistic] × the model's gain
+    // for the weeks trained – the VDOT ran 40.4 → 48.4 in 8 weeks, one point every Monday.
+    final lastStep = a.vdotEstimateAt;
+    final stepDue = lastStep == null || daysBetween(lastStep, today) >= minVdotStepDays;
+    if (newVdot == null && run != null && stepDue) {
       if (run.slowAndHard >= 3) {
         newVdot = oldVdot - 1;
         reasons.add(RecalReason.runTrendSlower);
@@ -228,6 +288,17 @@ class Recalibrator {
         // against the current VDOT's T / I targets count, so the same sessions never lift it twice.
         newVdot = oldVdot + 1;
         reasons.add(RecalReason.runTrendFaster);
+      }
+      if (newVdot != null && newVdot > oldVdot) {
+        final cap = _vdotCap();
+        if (cap != null && newVdot > cap) {
+          if (cap >= oldVdot + 0.3) {
+            newVdot = cap;
+          } else {
+            newVdot = null;
+            reasons.remove(RecalReason.runTrendFaster);
+          }
+        }
       }
       if (newVdot != null) newVdot = double.parse(newVdot.toStringAsFixed(1));
     }
@@ -331,9 +402,15 @@ class Recalibrator {
     var capped = false;
     var gapCount = 0, gapOmitted = 0;
     final fillLongs = <Sport, int>{};
+    // Run/walk stage held (I13): the coming run/walk sessions repeat the stage of a week earlier.
+    final held = _repeatStage(upcoming.where((p) => fills[p.id] == null).toList());
+    if (held.isNotEmpty) reasons.add(RecalReason.repeatStage);
+    // Long runs missed on their day (I14): the next long run moves to a day with more time.
+    final newDates = onlyLongMissed ? _moveLong(upcoming.where((p) => fills[p.id] == null).toList(), linked) : const <String, DateTime>{};
+    if (newDates.isNotEmpty) reasons.add(RecalReason.moveLong);
     for (final p0 in upcoming) {
       final fill = fills[p0.id];
-      var p = p0;
+      var p = held[p0.id] ?? p0;
       final days = daysBetween(today, dayOnly(p.date));
       var downgraded = false, eased = false, shortened = false;
       if (fill != null) {
@@ -368,7 +445,9 @@ class Recalibrator {
       final gap = breaks[p.sport];
       final bf = gap == null ? 1.0 : (days < 7 ? (gap >= 21 ? 0.5 : 0.6) : (days < horizonDays ? 0.7 : 1.0));
       var w = p;
-      RecalKind? kind;
+      RecalKind? kind = held.containsKey(p0.id) ? RecalKind.easier : null;
+      // Quality kept with fewer repeats after a recovery week (C4).
+      final qf = p.phase == 'taper' ? 1.0 : (days < 7 ? q1 : (days < horizonDays ? q2 : 1.0));
       // Fatigue / re-entry: quality → easy (never in the taper – it keeps its intensity).
       if (quality &&
           p.phase != 'taper' &&
@@ -380,12 +459,12 @@ class Recalibrator {
         // ('recalEasy': later reductions know the 0.8 is already in it).
         final easy = w;
         final fe = min(1.0, min(fd, bf) / swapFactor);
-        if (fe < 0.97) w = _scaledTo(w, _amount(w) * fe);
+        if (fe < 0.97) w = _scaledTo(w, max(_amount(w) * fe, min(_amount(w), runFloor(w, profile))));
         if (fill == null) w = _copy(w, auto: _record(easy, fresh: true, reason: 'recalEasy'));
         kind = RecalKind.toEasy;
         if (fill != null) eased = true;
-      } else if (!quality) {
-        final f = min(min(fd, bf), shortenLong && p.intensity == 'long' ? 0.9 : 1.0);
+      } else if (!quality || qf < 1) {
+        final f = quality ? qf : min(min(fd, bf), shortenLong && p.intensity == 'long' ? 0.9 : 1.0);
         final cur = _amount(p);
         var g = 1.0;
         if (fill != null) {
@@ -394,12 +473,16 @@ class Recalibrator {
           // Reductions count from the original volume: they replace an earlier automatic or
           // recalibration step instead of stacking on it (running the assistant twice, or a
           // week later on an overlapping look-back, never compounds).
-          final swapped = p.auto?.reason == 'recalEasy' ? swapFactor : 1.0;
+          final swapped = (p.auto?.reason ?? '').startsWith('recalEasy') ? swapFactor : 1.0;
           g = min(1.0, min(1.0, f / swapped) * _origAmount(p) / cur);
         } else if (progress && days < 7 && !rest && !_autoReducedRecently(p)) {
           // A workout the AutoAdjuster just reduced (e.g. easy run too fast) is not raised.
           g = 1.05;
         }
+        // Floors (C4 / I15): a reduction never takes a run below 25 min and 4 km (beginners
+        // 20 min) – 15-minute returns and 2.7 km "easy runs" are no training.
+        if (g < 1 && !quality) g = max(g, min(cur, runFloor(p, profile)) / cur);
+        var capHit = false;
         // R1 (Frandsen 2025): every long session <= 1.1 × the longest of the 30 days before it
         // (each earlier long session of the horizon counts as done: × 1.1 per step); none in
         // those 30 days → 0.6 × the longest before (return after a break).
@@ -408,10 +491,10 @@ class Recalibrator {
           if (days < horizonDays) longIndex[p.sport] = k + 1;
           // A refill after the horizon: every planned long session before it counts.
           if (fill != null && days >= horizonDays) k = _longsBefore(p, current) + (fillLongs[p.sport] ?? 0);
-          final cap = _longCap(p, k);
+          final cap = _longCapped(p) ? null : _longCap(p, k, linked);
           if (cap != null && cur * g > cap * 1.02) {
             g = cap / cur;
-            capped = true;
+            capHit = true;
             if (fill != null) shortened = true;
           }
         }
@@ -423,6 +506,28 @@ class Recalibrator {
             kind = _amount(scaled) < cur ? RecalKind.easier : RecalKind.harder;
           }
         }
+        // The long-run cap only counts as a reason when it actually shortened the session.
+        if (capHit && kind == RecalKind.easier) capped = true;
+      }
+      // Changes of a proposed recovery week carry the marker the next run recognises it by.
+      if (recoveryWeek && days < 7 && fill == null && kind != null && w.auto != null && !w.auto!.reason.endsWith('Recovery')) {
+        final o = w.auto!;
+        w = _copy(
+          w,
+          auto: AutoAdjustment(
+            sessionId: o.sessionId,
+            reason: '${o.reason}Recovery',
+            at: o.at,
+            durationMin: o.durationMin,
+            distanceKm: o.distanceKm,
+            steps: o.steps,
+          ),
+        );
+      }
+      final moveTo = newDates[p0.id];
+      if (moveTo != null && fill == null) {
+        w = _copy(w, date: DateTime(moveTo.year, moveTo.month, moveTo.day, w.date.hour, w.date.minute));
+        kind ??= RecalKind.moved;
       }
       if (pz != null && w.sport == Sport.run && kind != RecalKind.toEasy) {
         final paced = _withPaces(w, pz, PaceZones(oldVdot));
@@ -468,22 +573,58 @@ class Recalibrator {
         );
         continue;
       }
-      if (kind != null) changes.add(RecalChange(p, kind == RecalKind.paces ? w : _noted(w), kind));
+      if (kind != null) changes.add(RecalChange(p0, kind == RecalKind.paces ? w : _noted(w), kind));
     }
 
     if (capped) reasons.add(RecalReason.longCap);
     if (gapCount > 0) reasons.add(RecalReason.planGaps);
     if (gapOmitted > 0) reasons.add(RecalReason.gapsOmitted);
 
-    // Race times for the profile, so newly generated plans use the new VDOT too.
-    Map<String, int>? raceTimes;
-    if (newVdot != null) {
-      final key = a.eventDistance != null && Vdot.distances.containsKey(a.eventDistance) ? a.eventDistance! : '10k';
-      raceTimes = {...a.raceTimes, key: Vdot.raceTime(newVdot, Vdot.distances[key]!)};
+    // ── Is the race goal still reachable with what was trained (C3)? Re-run the setup's
+    // feasibility check from today on the athlete's actual longest run and weekly volume; a
+    // timing issue the plan start did not have is surfaced (with its options in [feasibility]).
+    // Only after real evidence: ≥ 2 long runs of the last 3 weeks missed or < 75 % done, a return
+    // after a break, or less than half of the training done – one missed long run is no verdict.
+    PlanFeasibility? feasibility;
+    var longsBehind = 0;
+    for (final p in plans) {
+      final d = dayOnly(p.date);
+      if (p.sport != Sport.run || p.intensity != 'long' || d.isBefore(_add(today, -21)) || !d.isBefore(today)) continue;
+      final s = linked[p.id];
+      if ((s == null && !p.isDone) || (s != null && s.distanceM > 0 && s.distanceM < 750 * (p.distanceKm ?? 0))) longsBehind++;
     }
-    // Swim test times that give the new CSS ((t400 − t200) / 2), for the profile.
+    // A run/walk stage held for the second week in a row counts as well.
+    final heldAgain =
+        held.isNotEmpty &&
+        plans.any(
+          (p) =>
+              (p.auto?.reason ?? '').startsWith('recalStage') &&
+              !dayOnly(p.date).isBefore(_add(today, -14)) &&
+              dayOnly(p.date).isBefore(today),
+        );
+    final evidence = longsBehind >= 2 || breaks.isNotEmpty || (completion != null && completion < 0.5) || heldAgain;
+    if (evidence && a.eventDistance != null && a.eventDate != null) {
+      feasibility = _feasibilityNow();
+      if (feasibility != null) reasons.add(RecalReason.goalAtRisk);
+    }
+
+    // The new VDOT for the profile (newly generated plans use it too) – in its own field, never as
+    // a synthetic race time (C5). Race times an older version wrote are moved there (migration).
+    Map<String, int>? raceTimes;
+    final races = Vdot.ofRaces(a);
+    final synthetic = a.vdotEstimate == null ? _syntheticRaceTime() : null;
+    if (synthetic != null) {
+      raceTimes = {...a.raceTimes}..remove(synthetic.$1);
+    }
+    final estimate = newVdot ?? synthetic?.$2;
     final athlete = <String, dynamic>{
+      if (estimate != null) ...{
+        'vdotEstimate': estimate,
+        'vdotEstimateAt': newVdot != null ? now : _add(today, -minVdotStepDays),
+        'vdotEstimateBase': raceTimes != null ? (Vdot.ofRaces(a.merge({'raceTimes': raceTimes})) ?? 0) : (races ?? 0),
+      },
       if (newFtp != null) 'ftp': newFtp,
+      // Swim test times that give the new CSS ((t400 − t200) / 2), for the profile.
       if (newCss != null) ...{'swim200Sec': 2 * newCss - 4, 'swim400Sec': 4 * newCss - 4},
     };
     return Recalibration(
@@ -508,6 +649,7 @@ class Recalibrator {
       ),
       changes: changes,
       raceTimes: raceTimes,
+      feasibility: feasibility,
     );
   }
 
@@ -525,6 +667,62 @@ class Recalibrator {
   static bool rpeTooEasy(String intensity, int rpe) => (intensity == 'tempo' || intensity == 'intervals') && rpe <= 4;
 
   // ───────────────────────────── Thresholds ─────────────────────────────
+
+  /// [PlanGenerator.feasibility] from today with the actual longest run (30 days) and weekly run
+  /// volume (21 days), when it finds a timing issue (too short, long day too short, run/walk by race
+  /// day, swim) the plan start's check did not – null otherwise.
+  PlanFeasibility? _feasibilityNow() {
+    if (!dayOnly(a.eventDate!).isAfter(today)) return null;
+    final runs = sessions.where((s) => s.sport == Sport.run && !s.start.isAfter(now));
+    final longest = runs.where((s) => daysBetween(s.start, today) <= 30).fold(0.0, (x, s) => max(x, s.distanceM / 1000));
+    // Weekly volume: the last 3 weeks' average, not below 80 % of the stated one (a single short
+    // week is no new baseline).
+    final weekly = max(
+      runs.where((s) => daysBetween(s.start, today) <= 21).fold(0.0, (x, s) => x + s.distanceM / 1000) / 3,
+      0.8 * (a.runWeeklyKm ?? 0),
+    );
+    if (longest <= 0) return null;
+    final actual = profile.copyWith(athlete: a.merge({'longestRunKm': double.parse(longest.toStringAsFixed(1)), 'runWeeklyKm': weekly}));
+    final f = PlanGenerator.feasibility(actual, start: today, l: l);
+    const timing = {'tooShort', 'longRunTime', 'runWalk'};
+    final fresh = f.issues.where(timing.contains).toList();
+    if (fresh.isEmpty) return null;
+    DateTime? start = a.planStart;
+    if (start == null) {
+      final phased = plans.where((p) => p.phase != null).map((p) => dayOnly(p.date));
+      if (phased.isNotEmpty) start = phased.reduce((x, y) => x.isBefore(y) ? x : y);
+    }
+    final before = start == null ? const <String>[] : PlanGenerator.feasibility(profile, start: start, l: l).issues;
+    return fresh.any((i) => !before.contains(i)) ? f : null;
+  }
+
+  /// Days between two training-derived VDOT steps (rule 7, C5).
+  static const minVdotStepDays = 21;
+
+  /// Highest training-derived VDOT: the race times' (or level default) VDOT + [GoalModel.optimistic] ×
+  /// the expected gain of the weeks since the plan start (null without a plan start).
+  double? _vdotCap() {
+    final base = Vdot.ofRaces(a) ?? Vdot.defaultFor(profile.level);
+    DateTime? start = a.planStart;
+    if (start == null) {
+      final phased = plans.where((p) => p.phase != null).map((p) => dayOnly(p.date));
+      if (phased.isNotEmpty) start = phased.reduce((x, y) => x.isBefore(y) ? x : y);
+    }
+    if (start == null) return null;
+    final weeks = max(0.0, daysBetween(start, today) / 7);
+    return base + GoalModel.optimistic * GoalModel.gain(profile, weeks);
+  }
+
+  /// A race time an older version of the recalibration wrote for a VDOT step (key = the event
+  /// distance or 10 km, the exact time of a one-decimal VDOT) next to the athlete's own race
+  /// times – (key, VDOT), or null. A time the athlete entered matches by chance only rarely.
+  (String, double)? _syntheticRaceTime() {
+    final key = a.eventDistance != null && Vdot.distances.containsKey(a.eventDistance) ? a.eventDistance! : '10k';
+    final t = a.raceTimes[key];
+    if (t == null || a.raceTimes.length < 2) return null;
+    final v = double.parse(Vdot.fromRace(Vdot.distances[key]!, t).toStringAsFixed(1));
+    return Vdot.raceTime(v, Vdot.distances[key]!) == t ? (key, v) : null;
+  }
 
   /// New VDOT from running best efforts of the last 90 days (5 km and longer), or null.
   double? _newVdot(double current) {
@@ -642,6 +840,12 @@ class Recalibrator {
     return _byKm(p) && (o.distanceKm ?? 0) > 0 ? o.distanceKm! : o.durationMin.toDouble();
   }
 
+  /// Part of a recovery week the recalibration proposed (reason 'recal…Recovery', C4).
+  static bool _recoveryMark(PlannedWorkout p) {
+    final r = p.auto?.reason ?? '';
+    return r.startsWith('recal') && r.endsWith('Recovery');
+  }
+
   /// Reduced by the AutoAdjuster in the last 7 days.
   bool _autoReducedRecently(PlannedWorkout p) {
     final o = p.auto;
@@ -654,7 +858,7 @@ class Recalibrator {
     final o = fresh ? null : p.auto;
     return AutoAdjustment(
       sessionId: '',
-      reason: o?.reason == 'recalEasy' ? 'recalEasy' : reason,
+      reason: (o?.reason ?? '').startsWith('recalEasy') ? 'recalEasy' : reason,
       at: now,
       durationMin: o?.durationMin ?? p.durationMin,
       distanceKm: o == null ? p.distanceKm : o.distanceKm,
@@ -664,7 +868,21 @@ class Recalibrator {
 
   /// R1 cap of the [k]-th long session (0-based) of its sport in the horizon, in the unit of
   /// [_amount], or null without any history of that sport.
-  double? _longCap(PlannedWorkout p, int k) {
+  ///
+  /// Run/walk sessions compare by time (their km include the walking). When the previous planned
+  /// long session (≤ 14 days ago) was done at ≥ 90 %, the generator's own progression is the
+  /// reference (C2): the achieved long session × the plan's step to [p] (its goal-directed build
+  /// grows the long run/walk +10 min a week, the long run up to +25 %) – the 30-day rule cut a
+  /// beginner's planned 12 km to 7.3 km every Monday although every session was done.
+  double? _longCap(PlannedWorkout p, int k, Map<String, Session> linked) {
+    final rw = isRunWalk(p);
+    double unitOf(Session s) {
+      // Sessions without a distance (treadmill without a foot pod) count by time, in
+      // the plan's unit (its own km per minute).
+      final byTime = s.durationSec / 60 * (_amount(p) / max(1, p.durationMin));
+      return !rw && _byKm(p) && s.distanceM > 0 ? s.distanceM / 1000 : byTime;
+    }
+
     double? longest(int fromDays, int toDays) {
       final day = dayOnly(p.date);
       var best = 0.0;
@@ -672,18 +890,144 @@ class Recalibrator {
         if (s.sport != p.sport || s.start.isAfter(now)) continue;
         final ago = daysBetween(dayOnly(s.start), day);
         if (ago < fromDays || ago > toDays) continue;
-        // Sessions without a distance (treadmill without a foot pod) count by time, in
-        // the plan's unit (its own km per minute).
-        final byTime = s.durationSec / 60 * (_amount(p) / max(1, p.durationMin));
-        best = max(best, _byKm(p) && s.distanceM > 0 ? s.distanceM / 1000 : byTime);
+        best = max(best, unitOf(s));
       }
       return best > 0 ? best : null;
     }
 
     final recent = longest(1, 30);
-    if (recent != null) return recent * pow(1.1, k + 1);
-    final before = longest(31, 120);
-    return before == null ? null : before * 0.6 * pow(1.1, k);
+    double? cap;
+    if (recent != null) {
+      cap = recent * pow(1.1, k + 1);
+    } else {
+      final before = longest(31, 120);
+      cap = before == null ? null : before * 0.6 * pow(1.1, k);
+    }
+    // The generator's reference: every long session of the last 30 days was done as planned
+    // (≥ 90 %, none skipped) – then the plan's own growth from the longest of them to [p] holds.
+    final recentLongs =
+        plans
+            .where(
+              (x) =>
+                  x.sport == p.sport &&
+                  x.intensity == 'long' &&
+                  x.id != p.id &&
+                  dayOnly(x.date).isBefore(today) &&
+                  daysBetween(x.date, p.date) <= 30,
+            )
+            .toList();
+    if (cap != null && recentLongs.isNotEmpty) {
+      final byTime = rw || recentLongs.any((x) => isRunWalk(x) || !_byKm(x));
+      double orig(PlannedWorkout x) => byTime ? (x.auto?.durationMin ?? x.durationMin).toDouble() : _origAmount(x);
+      var allDone = true;
+      var doneMax = 0.0, origMax = 0.0;
+      for (final x in recentLongs) {
+        final s = linked[x.id];
+        final planned = byTime ? x.durationMin.toDouble() : (x.distanceKm ?? 0);
+        final done = s == null ? 0.0 : (byTime || s.distanceM <= 0 ? s.durationSec / 60 : s.distanceM / 1000);
+        if (s == null || planned <= 0 || done < 0.9 * planned) {
+          allDone = false;
+          break;
+        }
+        doneMax = max(doneMax, done);
+        origMax = max(origMax, orig(x));
+      }
+      if (allDone && origMax > 0) {
+        final mine = doneMax * orig(p) / origMax; // minutes (by time) or km
+        cap = max(cap, byTime ? mine / max(1, p.durationMin) * _amount(p) : mine);
+      }
+    }
+    return cap;
+  }
+
+  /// A long session the AutoAdjuster capped in the last 14 days after a long run was cut short at a
+  /// high effort ("longCutShort": achieved + 10 %): that is the evidence-based cap – the
+  /// recalibration does not lower it again (C3: the cap kept ratcheting below the last cut).
+  bool _longCapped(PlannedWorkout p) {
+    final o = p.auto;
+    return o != null && o.reason == 'longCutShort' && daysBetween(o.at, now) <= 14;
+  }
+
+  /// Smallest run a reduction leaves, in [p]'s [_amount] unit: 25 min and 4 km for runners above
+  /// beginner level, 20 min for beginners (run/walk by its time); 0 for other sports. A planned
+  /// session already below it is never raised by it.
+  static double runFloor(PlannedWorkout p, UserProfile profile) {
+    if (p.sport != Sport.run || p.durationMin <= 0) return 0;
+    final beginner = profile.level == 'beginner' || isRunWalk(p);
+    final minutes = beginner ? 20.0 : 25.0;
+    if (!_byKm(p)) return minutes;
+    final kmPerMin = p.distanceKm! / p.durationMin;
+    return max(minutes * kmPerMin, beginner ? 0.0 : 4.0);
+  }
+
+  /// Run/walk stage held (I13, §1.10 Couch-to-5K: move up only at RPE ≤ 5 without pain): with
+  /// ≥ 2 run/walk sessions of the last 3 weeks too hard or cut short ([progressionCheck]), every
+  /// upcoming run/walk session of the horizon gets the content of the run/walk session of the same
+  /// kind a week before it (the struggled-with stage is repeated, the ladder shifts by a week).
+  Map<String, PlannedWorkout> _repeatStage(List<PlannedWorkout> upcoming) {
+    final check = progressionCheck(profile, plans: plans, sessions: sessions, now: now);
+    if (check == null || !check.issues.contains(ProgressionIssue.runWalkNotAchieved)) return const {};
+    int runSec(PlannedWorkout x) => x.steps.where((s) => s.isWork && s.zone != 'walk').fold(0, (t, s) => t + (s.durationSec ?? 0));
+    int repSec(PlannedWorkout x) => x.steps.where((s) => s.isWork && s.zone != 'walk').fold(0, (t, s) => max(t, s.durationSec ?? 0));
+    final out = <String, PlannedWorkout>{};
+    for (final p in upcoming.where(isRunWalk)) {
+      final d = dayOnly(p.date);
+      final before =
+          plans
+              .where((x) => x.id != p.id && isRunWalk(x) && x.intensity == p.intensity && x.status != 'skipped')
+              .where((x) => daysBetween(x.date, d) >= 5 && daysBetween(x.date, d) <= 9)
+              .toList()
+            ..sort((x, y) => (daysBetween(x.date, d) - 7).abs().compareTo((daysBetween(y.date, d) - 7).abs()));
+      if (before.isEmpty) continue;
+      final prev = before.first;
+      // Only a step up is held back (the taper's shorter sessions stay).
+      if (repSec(prev) >= repSec(p) && runSec(prev) >= runSec(p)) continue;
+      if (p.phase == 'taper') continue;
+      out[p.id] = _copy(
+        p,
+        title: prev.title,
+        description: prev.description,
+        steps: prev.steps,
+        durationMin: prev.durationMin,
+        distanceKm: prev.distanceKm,
+        auto: _record(p, reason: 'recalStage'),
+      );
+    }
+    return out;
+  }
+
+  /// I14: the next long run (of the next 7 days) moves to another planned day of its week that has
+  /// an easy run of the same sport and more time on it ([PlanGenerator.dayMinutesFor]) – the two
+  /// swap days. Only when ≥ 2 of the last 3 weeks' long runs were missed while the rest was done.
+  /// Long-run id / easy-run id → new day.
+  Map<String, DateTime> _moveLong(List<PlannedWorkout> upcoming, Map<String, Session> linked) {
+    final from = _add(today, -21);
+    final missed =
+        plans
+            .where(
+              (x) => x.intensity == 'long' && x.sport == Sport.run && !dayOnly(x.date).isBefore(from) && dayOnly(x.date).isBefore(today),
+            )
+            .where((x) => linked[x.id] == null && !x.isDone)
+            .length;
+    if (missed < 2) return const {};
+    final long = upcoming.where((p) => p.intensity == 'long' && p.sport == Sport.run && daysBetween(today, p.date) < 7).firstOrNull;
+    if (long == null) return const {};
+    final week = startOfWeek(long.date);
+    bool hardNear(DateTime d) =>
+        plans.any((x) => x.id != long.id && x.status != 'skipped' && isHardPlan(x) && daysBetween(d, x.date).abs() == 1);
+    PlannedWorkout? best;
+    var bestMin = PlanGenerator.dayMinutesFor(profile, long.date.weekday);
+    for (final e in upcoming) {
+      if (e.sport != Sport.run || e.intensity != 'easy' || startOfWeek(e.date) != week || sameDay(e.date, long.date)) continue;
+      if (dayOnly(e.date).isBefore(today) || hardNear(dayOnly(e.date))) continue;
+      final m = PlanGenerator.dayMinutesFor(profile, e.date.weekday);
+      if (m >= min(long.durationMin, bestMin) && (best == null || m > bestMin)) {
+        best = e;
+        bestMin = m;
+      }
+    }
+    if (best == null) return const {};
+    return {long.id: dayOnly(best.date), best.id: dayOnly(long.date)};
   }
 
   // ───────────────────────────── Workout edits ─────────────────────────────
@@ -710,7 +1054,7 @@ class Recalibrator {
       final alt = fit((g) => _copy(AutoAdjuster.scaleWorkout(p, g, profile), description: p.description));
       if ((_amount(alt) - target).abs() < (_amount(w) - target).abs()) w = alt;
     }
-    return w;
+    return retitledRunWalk(w);
   }
 
   /// [p] with volume × [f]: steady / work steps, duration and distance.
@@ -994,6 +1338,25 @@ enum RecalReason {
 
   /// Missing sessions that are not refilled (next to a race, week volume already reached).
   gapsOmitted,
+
+  /// Two weeks harder than intended in a row: one recovery week (C4, §11.4).
+  fatigueRecovery,
+
+  /// Still too hard after the recovery week: check sleep / illness / stress, consider a slower
+  /// target; quality stays at reduced repeats.
+  fatigueCheck,
+
+  /// The race goal no longer fits what was trained ([PlanGenerator.feasibility] re-run on the
+  /// actual long run / weekly volume found a new issue).
+  goalAtRisk,
+
+  /// Run/walk stage held: the coming week repeats the current stage (C25K: progress only at
+  /// RPE ≤ 5).
+  repeatStage,
+
+  /// Long runs missed on their day while the other runs were done: the next one moves to a day
+  /// with more time instead of cutting easy runs.
+  moveLong,
 }
 
 /// What happens to one workout.
@@ -1100,16 +1463,28 @@ class RecalStats {
 }
 
 class Recalibration {
-  const Recalibration({required this.reasons, required this.stats, required this.changes, this.raceTimes, this.athlete = const {}});
+  const Recalibration({
+    required this.reasons,
+    required this.stats,
+    required this.changes,
+    this.raceTimes,
+    this.athlete = const {},
+    this.feasibility,
+  });
   final List<RecalReason> reasons;
   final RecalStats stats;
   final List<RecalChange> changes;
 
-  /// New race times for the profile (VDOT update), or null.
+  /// New race times for the profile, or null: only when a race time an older version synthesized
+  /// for a VDOT step is removed (the VDOT goes to [AthleteData.vdotEstimate] via [athlete]).
   final Map<String, int>? raceTimes;
 
-  /// Other threshold updates for the profile ([AthleteData.merge] keys: ftp, swim times).
+  /// Threshold updates for the profile ([AthleteData.merge] keys: vdotEstimate*, ftp, swim times).
   final Map<String, dynamic> athlete;
+
+  /// The race goal's feasibility re-checked on the actual training ([RecalReason.goalAtRisk]): later
+  /// date / shorter distance options for the sheet. Null when nothing new.
+  final PlanFeasibility? feasibility;
 
   bool get isEmpty => changes.isEmpty && raceTimes == null && athlete.isEmpty;
 
@@ -1132,5 +1507,6 @@ class Recalibration {
     changes: [...changes.where((c) => !skip.contains(c))],
     raceTimes: raceTimes,
     athlete: athlete,
+    feasibility: feasibility,
   );
 }

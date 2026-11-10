@@ -1,0 +1,11 @@
+{
+ 'feasLongDayDefault': ['The long session on {day} needs up to {time} – far more than the time you set. The plan uses it; set that day\'s time yourself if it does not fit.', 'Die lange Einheit am {day} braucht bis zu {time} – deutlich mehr als deine angegebene Zeit. Der Plan nutzt sie; trag die Zeit für diesen Tag selbst ein, falls sie nicht passt.'],
+ 'feasLongRunShare': ['Your other runs are too short for the long run this race needs: it may be at most half of the week and twice your next-longest run. Plan about {min} min for your other runs.', 'Deine übrigen Läufe sind zu kurz für den langen Lauf, den dieses Rennen braucht: Er darf höchstens die Hälfte der Woche und doppelt so lang wie dein zweitlängster Lauf sein. Plane für die anderen Läufe etwa {min} min ein.'],
+ 'feasTargetConservative': ['{goal} is a cautious target: today ~{now}, realistic on race day ~{pred}. Your race-pace sessions use the realistic pace.', '{goal} ist ein vorsichtiges Ziel: heute ~{now}, realistisch am Wettkampftag ~{pred}. Deine Renntempo-Einheiten laufen im realistischen Tempo.'],
+ 'wRunContinuous': ['Continuous run {min} min', 'Dauerlauf {min} min'],
+ 'wShakeoutRunWalkDesc': ['Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.', 'Lockeres Auslaufen im Lauf-Geh-Rhythmus – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.'],
+ 'wShakeoutEasyDesc': ['15 min very easy – just loosen up, nothing more. Lay out your race kit tonight.', '15 min ganz locker – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.'],
+ 'wMastersStrengthNote': ['Tip: add 2 short strength sessions a week (legs, hips, core, 20–30 min) – from 50 on they protect muscles, bones and tendons and make running more economical.', 'Tipp: Ergänze 2 kurze Krafteinheiten pro Woche (Beine, Hüfte, Rumpf, 20–30 min) – ab 50 schützen sie Muskeln, Knochen und Sehnen und machen das Laufen ökonomischer.'],
+ 'wRaceLeg': ['{leg} {dist} km – your race pace for this leg', '{leg} {dist} km – dein Renntempo für diesen Teil'],
+ 'wRaceFinishDesc': ['Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.', 'Ziel ist das Ankommen: noch keine Zielzeit – starte langsamer als es sich richtig anfühlt, halte deinen Rhythmus und genieß das Finish.'],
+}
