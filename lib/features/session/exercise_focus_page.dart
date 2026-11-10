@@ -20,6 +20,7 @@ import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart';
 import '../train/exercise_detail_page.dart';
 import 'gym_session_page.dart';
+import 'music.dart';
 
 /// One exercise per screen (swipe between exercises): demo animation, sets,
 /// big steppers for weight & reps, RPE, warm-up & plate calculator,
@@ -69,18 +70,20 @@ class _ExerciseFocusPageState extends ConsumerState<ExerciseFocusPage> {
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(w.title, style: const TextStyle(fontSize: 16)),
+                Text(w.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16)),
                 StreamBuilder(
                   stream: Stream.periodic(const Duration(seconds: 1)),
                   builder:
                       (_, __) => Text(
                         '${l.exerciseXofY(focus + 1, w.exercises.length)} · ${clock(DateTime.now().difference(w.start).inSeconds)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                 ),
               ],
             ),
-            actions: [ExerciseMenu(index: focus, w: w, n: n)],
+            actions: [MusicButton(plan: () => gymMusicPlan(l, ref.read(activeGymProvider))), ExerciseMenu(index: focus, w: w, n: n)],
             bottom: PreferredSize(preferredSize: const Size.fromHeight(6), child: _ExerciseDots(w: w, onTap: (i) => n.setFocus(i))),
           ),
           body: PageView.builder(

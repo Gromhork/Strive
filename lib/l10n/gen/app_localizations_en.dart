@@ -4475,4 +4475,149 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moreDistances => 'More distances…';
+
+  @override
+  String get musicRpm => 'rpm';
+
+  @override
+  String get musicIntroRun => 'Music matched to your step rate (≈ 150–185 steps/min) makes running feel easier and more economical.';
+
+  @override
+  String get musicRunEasy => 'Easy run';
+
+  @override
+  String get musicRunSteady => 'Long / steady run';
+
+  @override
+  String get musicRunTempo => 'Tempo run';
+
+  @override
+  String get musicRunIntervals => 'Intervals & strides';
+
+  @override
+  String get musicPodcastsRun => 'Great for long easy runs';
+
+  @override
+  String get musicIntroRide => 'Music matched to your cadence (80–100 rpm): one beat per pedal stroke, or double time.';
+
+  @override
+  String get musicRideSafety => 'Outdoors: keep the volume low or use one earbud only – you must still hear the traffic.';
+
+  @override
+  String get musicRideEasy => 'Easy ride';
+
+  @override
+  String get musicRideSteady => 'Endurance & sweet spot';
+
+  @override
+  String get musicRideThreshold => 'Threshold';
+
+  @override
+  String get musicRideIntervals => 'Intervals & sprints';
+
+  @override
+  String get musicPodcastsRide => 'Great for long easy rides';
+
+  @override
+  String get musicPodcastsTrainer => 'Great for long trainer sessions';
+
+  @override
+  String get musicIntroSwim => 'Under water you only hear music with special headphones – start it before you get in.';
+
+  @override
+  String get musicSwimPoolHint => 'Bluetooth does not work under water: you need waterproof bone-conduction headphones with built-in storage (MP3). Download the playlist beforehand.';
+
+  @override
+  String get musicSwimOpenHint => 'Open water: only with bone-conduction headphones and quiet enough to hear boats, your group and the safety crew.';
+
+  @override
+  String get musicPreSwim => 'Pre-swim warm-up & focus';
+
+  @override
+  String get musicSwimList => 'Swim playlist (to download)';
+
+  @override
+  String get musicSwimListSub => 'Steady rhythm for your MP3 headphones';
+
+  @override
+  String get musicPodcastsSwim => 'For long, calm sets (bone conduction)';
+
+  @override
+  String get musicIntroGym => 'Loud, motivating music at 120–140 BPM helps with strength work; circuits higher, warm-up and stretching lower.';
+
+  @override
+  String get musicGymHint => 'Tip: continuous mixes keep the energy up between sets – the rest timer still vibrates when the break is over.';
+
+  @override
+  String get musicGymWarmup => 'Warm-up & mobility';
+
+  @override
+  String get musicGymStrength => 'Strength training';
+
+  @override
+  String get musicGymHeavy => 'Heavy sets';
+
+  @override
+  String get musicGymCircuit => 'Supersets, circuits & HIIT';
+
+  @override
+  String get musicGymCooldown => 'Cool-down & stretching';
+
+  @override
+  String get tabData => 'Data';
+
+  @override
+  String get tabMap => 'Map';
+
+  @override
+  String get tabSplits => 'Splits';
+
+  @override
+  String get tabWorkout => 'Workout';
+
+  @override
+  String get autoPausedHint => 'Resumes as soon as you move';
+
+  @override
+  String get pausedHint => 'Hold ■ to finish';
+
+  @override
+  String lapDone(int n, String time, String dist) {
+    return 'Lap $n: $time · $dist';
+  }
+
+  @override
+  String get currentLap => 'Current lap';
+
+  @override
+  String get currentSplit => 'Current km';
+
+  @override
+  String get bestSplit => 'Fastest km';
+
+  @override
+  String get avgSplit => 'Average km';
+
+  @override
+  String get repeatCue => 'Repeat announcement';
+
+  @override
+  String get cadenceTarget => 'Cadence target';
+
+  @override
+  String vcStatus(String time, String dist) {
+    return 'Time $time. Distance $dist.';
+  }
+
+  @override
+  String get targetBand => 'Target';
+
+  @override
+  String get routeTapHint => 'Map';
+
+  @override
+  String get stepLeft => 'Step left';
+
+  @override
+  String get lapCount => 'Laps';
 }
