@@ -4442,4 +4442,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stepRideTempoNote => 'Tempo – 75–85 % FTP, steady';
+
+  @override
+  String get sprintTri => 'Sprint triathlon';
+
+  @override
+  String get distUltra50 => 'Ultra 50 km';
+
+  @override
+  String get distIronman => 'Ironman (full distance)';
+
+  @override
+  String get distDuSprint => 'Duathlon sprint (5/20/2.5)';
+
+  @override
+  String get distDuStandard => 'Duathlon standard (10/40/5)';
+
+  @override
+  String get distRide100 => 'Cycling 100 km';
+
+  @override
+  String get distRide160 => 'Cycling 160 km';
+
+  @override
+  String get distSwim1500 => 'Open water 1.5 km';
+
+  @override
+  String get distSwim3800 => 'Open water 3.8 km';
+
+  @override
+  String get distSwim5000 => 'Open water 5 km';
+
+  @override
+  String get moreDistances => 'More distances…';
 }

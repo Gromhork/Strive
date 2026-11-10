@@ -2755,5 +2755,16 @@
     }
   },
   "wRideTempoDesc": "Race-specific tempo at 75–85 % FTP – the effort of a 70.3 bike leg: steady, aero, fuelled.",
-  "stepRideTempoNote": "Tempo – 75–85 % FTP, steady"
+  "stepRideTempoNote": "Tempo – 75–85 % FTP, steady",
+  "sprintTri": "Sprint triathlon",
+  "distUltra50": "Ultra 50 km",
+  "distIronman": "Ironman (full distance)",
+  "distDuSprint": "Duathlon sprint (5/20/2.5)",
+  "distDuStandard": "Duathlon standard (10/40/5)",
+  "distRide100": "Cycling 100 km",
+  "distRide160": "Cycling 160 km",
+  "distSwim1500": "Open water 1.5 km",
+  "distSwim3800": "Open water 3.8 km",
+  "distSwim5000": "Open water 5 km",
+  "moreDistances": "More distances…"
 }

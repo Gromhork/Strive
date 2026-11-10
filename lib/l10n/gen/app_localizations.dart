@@ -8212,6 +8212,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tempo – 75–85 % FTP, steady'**
   String get stepRideTempoNote;
+
+  /// No description provided for @sprintTri.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprint triathlon'**
+  String get sprintTri;
+
+  /// No description provided for @distUltra50.
+  ///
+  /// In en, this message translates to:
+  /// **'Ultra 50 km'**
+  String get distUltra50;
+
+  /// No description provided for @distIronman.
+  ///
+  /// In en, this message translates to:
+  /// **'Ironman (full distance)'**
+  String get distIronman;
+
+  /// No description provided for @distDuSprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Duathlon sprint (5/20/2.5)'**
+  String get distDuSprint;
+
+  /// No description provided for @distDuStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Duathlon standard (10/40/5)'**
+  String get distDuStandard;
+
+  /// No description provided for @distRide100.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycling 100 km'**
+  String get distRide100;
+
+  /// No description provided for @distRide160.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycling 160 km'**
+  String get distRide160;
+
+  /// No description provided for @distSwim1500.
+  ///
+  /// In en, this message translates to:
+  /// **'Open water 1.5 km'**
+  String get distSwim1500;
+
+  /// No description provided for @distSwim3800.
+  ///
+  /// In en, this message translates to:
+  /// **'Open water 3.8 km'**
+  String get distSwim3800;
+
+  /// No description provided for @distSwim5000.
+  ///
+  /// In en, this message translates to:
+  /// **'Open water 5 km'**
+  String get distSwim5000;
+
+  /// No description provided for @moreDistances.
+  ///
+  /// In en, this message translates to:
+  /// **'More distances…'**
+  String get moreDistances;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
