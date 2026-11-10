@@ -1268,8 +1268,8 @@ Running plans:
   pace inside E – the adaptation layer compares sessions against these numbers (§11.2), so a rounded "20' / 3.5 km" (5:43/km
   for an E zone of 5:48–6:41) made "too fast" fire on an athlete who ran the plan.
 - **Day budget**: no day exceeds its minutes (strides and walk breaks included).
-- **Long-run share**: ≤ 50 % of the actual week's run volume (marathon 55 %, two-run weeks 60 %) and ≤ 2 × the next-longest
-  run (weeks with ≤ 4 runs, not marathon / ultra); easy runs grow first. Feasibility issues `longRunShare` (the other runs
+- **Long-run share** (weeks with ≥ 3 runs; 2-run weeks keep the volume curve's 55 %): ≤ 50 % of the actual week's run
+  volume (marathon 55 %) and ≤ 2 × the next-longest run (weeks with ≤ 4 runs, not marathon / ultra); easy runs grow first. Feasibility issues `longRunShare` (the other runs
   need ≥ X min) and `longDayDefault` (the event's long-day default exceeds the time the athlete set: "long day needs ≥ X").
   Trade-off: a 3 × 60 min half-marathon beginner peaks at ~12 km instead of 15.5 km and sees the warning.
 - **Weekly ceiling includes the long run** (1.5 × stated, level ceiling); event volume grows evenly to the peak instead of
