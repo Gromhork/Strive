@@ -28,8 +28,11 @@ class GoalModel {
   /// Most weeks a plan aligns to an event (a longer lead time is not planned yet).
   static const maxEventWeeks = 52;
 
-  /// The race-specific part of a long plan; earlier weeks are a base "pre-plan" block.
-  static const specificWeeks = 30;
+  /// The race-specific part of a long plan; earlier weeks are a base "pre-plan" block (general
+  /// endurance, lower long-run cap and volume ceiling). 20 weeks: the length of amateur marathon
+  /// plans (Pfitzinger / Higdon 16–20 weeks) – a 30-week block repeated the race-specific long
+  /// run ~20 times (coach review 3).
+  static const specificWeeks = 20;
 
   /// Factor of the expected gain a high responder may reach.
   static const optimistic = 1.6;

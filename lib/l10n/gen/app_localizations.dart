@@ -8128,6 +8128,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reps left in the tank after each set (RIR). The rating per exercise stays.'**
   String get logRirSettingSub;
+
+  /// No description provided for @wRaceGoalStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal {goal} – start at {pace}'**
+  String wRaceGoalStart(String goal, String pace);
+
+  /// No description provided for @wProgressionRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression run'**
+  String get wProgressionRun;
+
+  /// No description provided for @wProgressionRunDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Start easy, run the last part at a steady marathon-pace effort – aerobic strength without a hard interval day.'**
+  String get wProgressionRunDesc;
+
+  /// No description provided for @stepProgressionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Steady – marathon-pace effort, still controlled'**
+  String get stepProgressionNote;
+
+  /// No description provided for @wLongRunProgression.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression long run'**
+  String get wLongRunProgression;
+
+  /// No description provided for @wLongRunProgressionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy long run, the last part at a steady marathon-pace effort – fatigue resistance without a race-pace session.'**
+  String get wLongRunProgressionDesc;
+
+  /// No description provided for @wLongRunShortDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Shorter long run this week: a lighter week between the longest runs – the body absorbs the load before the next step.'**
+  String get wLongRunShortDesc;
+
+  /// No description provided for @wGoalPaceSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal pace {reps} × {dist} km'**
+  String wGoalPaceSet(int reps, String dist);
+
+  /// No description provided for @wGoalPaceSetDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats at your goal race pace with short jog breaks – the race-specific session: rhythm, pace judgement, confidence.'**
+  String get wGoalPaceSetDesc;
+
+  /// No description provided for @stepGoalPaceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal race pace – even and controlled'**
+  String get stepGoalPaceNote;
+
+  /// No description provided for @wCruiseKm.
+  ///
+  /// In en, this message translates to:
+  /// **'Cruise intervals {reps} × {dist} km'**
+  String wCruiseKm(int reps, String dist);
+
+  /// No description provided for @wRideTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo {reps} × {min} min'**
+  String wRideTempo(int reps, int min);
+
+  /// No description provided for @wRideTempoDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Race-specific tempo at 75–85 % FTP – the effort of a 70.3 bike leg: steady, aero, fuelled.'**
+  String get wRideTempoDesc;
+
+  /// No description provided for @stepRideTempoNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo – 75–85 % FTP, steady'**
+  String get stepRideTempoNote;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

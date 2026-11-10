@@ -31,7 +31,8 @@ import 'zones.dart';
 ///    – "RPE ≥ target + 2 twice → repeat the week" (§7.9), keep intensity otherwise.
 /// 2. Completion < 70 % of the due minutes: next 7 days −10 % (no progression after
 ///    missed training); < 50 %: −20 % / −10 % and the first quality session per sport
-///    becomes easy (re-entry). Needs ≥ 3 due workouts.
+///    becomes easy (re-entry) – only when the key sessions were missed; with them done the easy
+///    volume comes down first. Needs ≥ 3 due workouts over ≥ 7 days of plan history.
 /// 3. ≥ 2 sessions cut short: long sessions of the next 14 days −10 %.
 /// 4. Too easy (≥ 2 quality sessions at RPE ≤ 4), no fatigue, completion ≥ 90 %: easy and
 ///    long sessions of loading weeks in the next 7 days +5 % (inside the 5–10 %/week
@@ -97,6 +98,9 @@ class Recalibrator {
   static const horizonDays = 14;
   static const trendDays = 42;
 
+  /// Plan history (days since the first due workout in the look-back) completion needs.
+  static const minHistoryDays = 7;
+
   /// Time share of a quality session that its easy replacement keeps ([_toEasy]).
   static const swapFactor = 0.8;
 
@@ -134,31 +138,48 @@ class Recalibrator {
       tooHard += rpeLoad(p.intensity, s.rpe!);
       if (rpeTooEasy(p.intensity, s.rpe!)) tooEasy++;
     }
-    // ── Compliance (only meaningful with a few due workouts)
-    final due = window.where((p) => p.durationMin > 0).length;
-    final completion = due >= 3 ? weeklyCompletion(window, linked, now: now) : null;
+    // ── Compliance – only meaningful with a real sample: ≥ 3 due workouts spread over ≥ 7 days.
+    // A plan that started yesterday with one missed workout is no "0 % done" (the missed key
+    // session is moved inside its week instead, rule 5).
+    final dueList = window.where((p) => p.durationMin > 0 && p.intensity != 'race').toList();
+    final history =
+        dueList.isEmpty ? 0 : today.difference(dueList.map((p) => dayOnly(p.date)).reduce((x, y) => x.isBefore(y) ? x : y)).inDays;
+    final completion = dueList.length >= 3 && history >= minHistoryDays ? weeklyCompletion(dueList, linked, now: now) : null;
+    // Key sessions (quality / long) of the look-back that were done: chronic partial adherence
+    // (easy runs skipped, key sessions done) cuts easy volume, not the key sessions (B9).
+    final keyDue = dueList.where((p) => p.sport != Sport.gym && isHardPlan(p)).toList();
+    final keysDone = keyDue.where((p) => p.status != 'skipped' && (linked[p.id] != null || p.isDone)).length;
+    final keysMissed = keyDue.isEmpty || keysDone < 0.75 * keyDue.length;
 
-    // ── Decide the load factors
+    // ── Decide the load factors: fatigue (RPE) and compliance separately – a long session
+    // whose key sessions were all done only follows the fatigue factors.
     var f1 = 1.0, f2 = 1.0; // days 0–6, 7–13
+    var r1 = 1.0, r2 = 1.0; // fatigue only
     var swapAll = false, swapFirst = false, shortenLong = false, progress = false;
     final reasons = <RecalReason>[];
     if (tooHard >= 2) {
       reasons.add(RecalReason.rpeHigh);
       if (tooHard >= 3) {
-        f1 = min(f1, 0.8);
-        f2 = min(f2, 0.9);
+        r1 = 0.8;
+        r2 = 0.9;
         swapAll = true;
       } else {
-        f1 = min(f1, 0.9);
+        r1 = 0.9;
         swapFirst = true;
       }
+      f1 = r1;
+      f2 = r2;
     }
+    var easyFirst = false;
     if (completion != null && completion < 0.7) {
       reasons.add(RecalReason.lowCompletion);
+      easyFirst = !keysMissed;
       if (completion < 0.5) {
         f1 = min(f1, 0.8);
         f2 = min(f2, 0.9);
-        swapFirst = true;
+        // Quality → easy only when the key sessions themselves were missed (re-entry); with the
+        // key sessions done the easy volume comes down first.
+        if (keysMissed) swapFirst = true;
       } else {
         f1 = min(f1, 0.9);
       }
@@ -200,6 +221,12 @@ class Recalibrator {
         newVdot = oldVdot - 1;
         reasons.add(RecalReason.runTrendSlower);
       } else if (run.easyAndOnTarget >= 3 && run.harder == 0 && (run.efficiencyChange ?? 0) >= 0) {
+        newVdot = oldVdot + 1;
+        reasons.add(RecalReason.runTrendFaster);
+      } else if (_fasterAtEffort(run) >= 3 && run.harder == 0 && (run.efficiencyChange ?? 0) >= 0) {
+        // ≥ 3 quality runs ≥ 3 % faster than their targets at the intended effort (not harder) –
+        // the forecast already calls that "ahead"; the paces follow (B10). Only sessions run
+        // against the current VDOT's T / I targets count, so the same sessions never lift it twice.
         newVdot = oldVdot + 1;
         reasons.add(RecalReason.runTrendFaster);
       }
@@ -248,7 +275,7 @@ class Recalibrator {
     final moved = <String>{};
     // Re-entry after mostly missed training (< 50 %, e.g. illness): missed key sessions
     // are not made up – stacking them onto the return week contradicts the re-entry.
-    final reentry = (completion != null && completion < 0.5) || breaks.isNotEmpty;
+    final reentry = (completion != null && completion < 0.5 && keysMissed) || breaks.isNotEmpty;
     final adjust = [for (final c in proposeWeekAdjustment(plans, now)) reentry && c.isMove ? PlanChange.skip(c.plan) : c];
     for (final c in adjust) {
       moved.add(c.plan.id);
@@ -333,7 +360,8 @@ class Recalibrator {
         }
       }
       // Load factors: days 0–6, 7–13; refills after the 14-day horizon keep the plan's volume.
-      final fd = days < 7 ? f1 : (days < horizonDays ? f2 : 1.0);
+      final keepLong = easyFirst && p.intensity == 'long';
+      final fd = days < 7 ? (keepLong ? r1 : f1) : (days < horizonDays ? (keepLong ? r2 : f2) : 1.0);
       final quality = p.intensity == 'tempo' || p.intensity == 'intervals';
       final rest = p.phase == 'recovery' || p.phase == 'taper';
       // R4: restart at 50–70 % of the pre-break volume (50 % after >= 3 weeks off), 70 % in
@@ -398,7 +426,7 @@ class Recalibrator {
         }
       }
       if (pz != null && w.sport == Sport.run && kind != RecalKind.toEasy) {
-        final paced = _withPaces(w, pz);
+        final paced = _withPaces(w, pz, PaceZones(oldVdot));
         if (paced != null) {
           w = paced;
           kind ??= RecalKind.paces;
@@ -526,6 +554,19 @@ class Recalibrator {
     return double.parse(min(best, current + 2).toStringAsFixed(1));
   }
 
+  /// Quality runs with T / I targets (set for the current VDOT – [CardioTrend] gets only those)
+  /// that were ≥ 3 % faster than planned without feeling harder than intended.
+  static int _fasterAtEffort(CardioTrend run) =>
+      run.feedback
+          .where(
+            (f) =>
+                f.isQuality &&
+                f.aboveTarget &&
+                (f.internalScore ?? 0) < SessionFeedback.threshold &&
+                f.plan.steps.any((s) => s.isWork && (s.zone == 'T' || s.zone == 'I') && s.paceMin != null),
+          )
+          .length;
+
   /// Whether [p]'s work targets were set for the current VDOT / FTP / CSS (true when it has
   /// none to compare: easy / long runs, technique swims, plans without paces or power).
   static bool _targetsCurrent(PlannedWorkout? p, double vdot, int? ftp, int css) {
@@ -573,6 +614,10 @@ class Recalibrator {
       if (sport == Sport.gym) continue;
       final due = window.where((p) => p.sport == sport && p.durationMin > 0 && p.intensity != 'race').toList();
       if (due.length < 2) continue;
+      // A plan that just started is no return from a break: its first due workout must lie
+      // ≥ [minHistoryDays] back (the generator already starts from the stated volume).
+      final first = due.map((p) => dayOnly(p.date)).reduce((x, y) => x.isBefore(y) ? x : y);
+      if (today.difference(first).inDays < minHistoryDays) continue;
       final mine = sessions.where((x) => x.sport == sport && !x.start.isAfter(now)).toList();
       if (mine.isEmpty) continue;
       final last = mine.map((x) => x.start).reduce((x, y) => x.isAfter(y) ? x : y);
@@ -787,11 +832,15 @@ class Recalibrator {
   }
 
   /// Run steps that already show a pace get the targets of the new VDOT (null = no change).
-  PlannedWorkout? _withPaces(PlannedWorkout p, PaceZones pz) {
+  /// Race-pace steps (zone M at a goal pace other than the old VDOT's marathon pace – HM / 10 km /
+  /// 5 km goal-pace sets, marathon target pace) keep the goal: a VDOT step doesn't move the race goal.
+  PlannedWorkout? _withPaces(PlannedWorkout p, PaceZones pz, PaceZones old) {
     var changed = false;
+    final (oldFast, oldSlow) = old.range('M');
+    bool racePace(WorkoutStep s) => s.zone == 'M' && ((s.paceMin! + s.paceMax!) / 2 - (oldFast + oldSlow) / 2).abs() > 2;
     final steps = [
       for (final s in p.steps)
-        if (s.paceMin != null && s.zone != 'walk')
+        if (s.paceMin != null && s.paceMax != null && s.zone != 'walk' && !racePace(s))
           () {
             final (fast, slow) = pz.range(s.zone);
             if (fast == s.paceMin && slow == s.paceMax) return s;
@@ -979,13 +1028,21 @@ class RecalChange {
   /// carries an [AutoAdjustment] record (reason 'recal') with the generator's original;
   /// a quality → easy swap records the easy replacement instead (undo restores volume only –
   /// the quality session's steps under an easy title would be stale).
+  ///
+  /// Fields [PlannedWorkout.toMap] leaves out when they are at their default (isKey false, no
+  /// steps / phase / auto record) are written explicitly when [after] dropped them – a key session
+  /// turned easy would otherwise keep `isKey: true` in Firestore and still count as key.
   Map<String, dynamic> get update {
     final b = before.toMap(), a = after.toMap();
     return {
       for (final k in a.keys)
         if (!_eq(a[k], b[k])) k: a[k],
+      for (final k in b.keys)
+        if (!a.containsKey(k) && _defaults.containsKey(k)) k: _defaults[k],
     };
   }
+
+  static const _defaults = <String, Object?>{'isKey': false, 'steps': <Object>[], 'phase': null, 'auto': null};
 
   static bool _eq(Object? x, Object? y) => x.toString() == y.toString();
 }

@@ -34,8 +34,10 @@ import 'zones.dart';
 /// * Goal feasibility (§1.8): [feasibility] says when the event goal is not realistic –
 ///   incl. the target time (§1.12, [GoalModel]): race-pace work in the peak phase uses the
 ///   target pace only when it is realistic, all other paces the current VDOT.
-/// * With an event the plan runs to race day (≤ 52 weeks; more than 30 weeks away: a base
-///   "pre-plan" block before the race-specific 30 weeks).
+/// * With an event the plan runs to race day (≤ 52 weeks; more than 20 weeks away: a base
+///   "pre-plan" block before the race-specific 20 weeks). Coach review 3: long run ≤ 40 % of the
+///   week before the last 12 weeks and varied on its plateau, quality sessions progress per
+///   stage, pyramidal base, race-pace taper and race-day pacing, triathlon intensity rotation.
 /// * Every session fits the time the athlete has on that day; recovery / taper weeks
 ///   also shrink that time, so time-limited sessions deload too.
 /// * Race day is placed on the event date with a shake-out run the day before.
@@ -151,6 +153,20 @@ class PlanGenerator {
   /// Target-time check of this plan ([GoalModel.check]); decides the race-pace work.
   TargetCheck? _target;
 
+  // Context of the week being generated (set in [generate] before its sessions are built).
+  /// Long run of this week: 0 long easy, 1 progression run, 2 shorter week.
+  int _longVariant = 0;
+
+  /// Progression stage 0 → 2 of the quality sessions over the loading weeks of the phase.
+  int _stage = 0;
+
+  /// Quality runs this week, loading weeks so far, race week of the taper.
+  int _qRuns = 0, _loadWeek = 0;
+  bool _taperLast = false;
+
+  /// Week index → disciplines with a quality session (triathlon rotation, [_roles]).
+  final _lastQuality = <Sport, int>{};
+
   /// Longest long run / long ride the time on its day allows (km / min), see [feasibility].
   double _longRunLimitKm = 0;
   int _longRideLimitMin = 0;
@@ -167,6 +183,7 @@ class PlanGenerator {
     _rwAtRace = null;
     _longRunLimitKm = 0;
     _longRideLimitMin = 0;
+    _lastQuality.clear();
     final total = weeksToEvent ?? weeks ?? a.planWeeks;
     final schedule = _weekSchedule();
     // Couch-to-5K has no recovery weeks: while a pure runner is still on run/walk (one
@@ -183,13 +200,17 @@ class PlanGenerator {
     final runPerWeek = all.where((s) => s == Sport.run).length;
     final ridePerWeek = all.where((s) => s == Sport.ride).length;
     final swimPerWeek = all.where((s) => s == Sport.swim).length;
+    // Base pre-plan of a far-away event (> [GoalModel.specificWeeks]): general endurance – the
+    // race-specific long runs belong to the specific block; before it the long run stays at
+    // ~70 % of their cap (marathon ~24.5 km, HM ~15 km) and the volume at ≤ 85 % of the ceiling.
+    final prePlanWeeks = weeksToEvent != null ? max(0, total - GoalModel.specificWeeks) : 0;
     // Knee / hip / ankle: ~10 % less running (impact), the cross-training ride makes up for it.
     final runKm = [
-      for (final v in _curve(total, phases, _runStartKm(runPerWeek), _runCeilingKm(runPerWeek), growth: _runGrowth))
+      for (final v in _curve(total, phases, _runStartKm(runPerWeek), _runCeilingKm(runPerWeek), growth: _runGrowth, preWeeks: prePlanWeeks))
         hf.lowImpactRun ? v * 0.9 : v,
     ];
-    final rideH = _curve(total, phases, _rideStartH(ridePerWeek), _rideCeilingH(ridePerWeek));
-    final swimKm = _curve(total, phases, _swimStartKm(swimPerWeek), _swimCeilingKm(swimPerWeek));
+    final rideH = _curve(total, phases, _rideStartH(ridePerWeek), _rideCeilingH(ridePerWeek), preWeeks: prePlanWeeks);
+    final swimKm = _curve(total, phases, _swimStartKm(swimPerWeek), _swimCeilingKm(swimPerWeek), preWeeks: prePlanWeeks);
     // Long-run share: 1 run/week → the whole volume, 2 → ~55 %, otherwise 27–32 % (Daniels).
     double baseShare(double wk) => runPerWeek <= 1 ? 1.0 : (runPerWeek == 2 ? 0.55 : (wk < 40 ? 0.32 : 0.27));
     // Half / full marathon: the long run must approach race-specific length (HM ~16–21 km,
@@ -201,20 +222,24 @@ class PlanGenerator {
     // Continuous in the weekly km: above 50 (HM) / 70 km (marathon) the share falls from 40 / 42 %
     // towards 32 / 33 % only as fast as the long run stays at 20 / 29.4 km – a step in the share
     // made the long run drop by 3–6 km when the week grew past the threshold.
-    double longShare(double wk) => switch (a.eventDistance) {
-      'hm' when runPerWeek >= 3 => max(baseShare(wk), max(max(0.32, min(0.40, 20 / wk)), min(0.5, 15 / wk))),
-      'm' when runPerWeek >= 3 => max(baseShare(wk), max(max(0.33, min(0.42, 29.4 / wk)), min(0.55, 30 / wk))),
-      _ => baseShare(wk),
-    };
+    // 70.3: the long run should reach ~16 km / 100 min (feasibility) with only 2–3 runs a week.
+    // Outside the last 12 weeks the share stays ≤ 40 % (coach review 3): a 55 % long run in a flat
+    // 53 km week for 30 weeks is monotonous and concentrates the load in one session.
+    double longShare(double wk, int w) {
+      final s = switch (a.eventDistance) {
+        'hm' when runPerWeek >= 3 => max(baseShare(wk), max(max(0.32, min(0.40, 20 / wk)), min(0.5, 15 / wk))),
+        'm' when runPerWeek >= 3 => max(baseShare(wk), max(max(0.33, min(0.42, 29.4 / wk)), min(0.55, 30 / wk))),
+        '70.3' when runPerWeek >= 3 => max(baseShare(wk), min(0.45, 16 / wk)),
+        _ => baseShare(wk),
+      };
+      return runPerWeek >= 3 && w < total - 12 ? min(s, max(baseShare(wk), 0.40)) : s;
+    }
+
     final longMaxKm = switch (a.eventDistance) {
       'hm' => 21.0,
       'm' => 35.0,
       _ => double.infinity,
     };
-    // Base pre-plan of a far-away event (> 30 weeks): the race-specific long runs belong to the
-    // specific block; before it the long run stays at ~70 % of their cap (marathon ~24.5 km,
-    // HM ~15 km) instead of repeating 29 km runs for half a year.
-    final prePlanWeeks = weeksToEvent != null ? max(0, total - GoalModel.specificWeeks) : 0;
     var longestRun = a.longestRunKm ?? max(3.0, runKm.first * baseShare(runKm.first));
     var tempoMin = beginner ? 12 : (level == 'advanced' ? 20 : 15);
     var intervalReps = beginner ? 4 : (level == 'advanced' ? 6 : 5);
@@ -223,6 +248,8 @@ class PlanGenerator {
     // 30 min continuous running is reached; then continuous runs take over.
     var runWalkStage = runWalkStartFor(profile);
     var lastLongKm = 0.0; // actual long run of the last loading week
+    var plateauKm = 0.0; // longest planned long run so far (variation once it stops growing)
+    var plateau = 0; // loading weeks on the plateau
     var loadWeeks = 0; // loading weeks so far (progression of quality sessions)
     var block = 0; // loading weeks since the last recovery week (strength RIR wave)
     var bricks = 0; // brick sessions so far (run off the bike grows with each)
@@ -254,9 +281,31 @@ class PlanGenerator {
       // Long run respects the 30-day max rule (R1) and 25–30 % of weekly km.
       final wk = runKm[w];
       final r1Cap = longestRun * (rest ? 0.75 : _longCap);
-      var longKm = min(min(wk * longShare(wk), w < prePlanWeeks ? longMaxKm * 0.7 : longMaxKm), r1Cap);
+      var longKm = min(min(wk * longShare(wk, w), w < prePlanWeeks ? longMaxKm * 0.7 : longMaxKm), r1Cap);
       if (rest && lastLongKm > 0) longKm = min(longKm, lastLongKm * 0.8);
       if (!rest && !runWalk) longestRun = max(longestRun, longKm);
+      // Long-run variation (coach review 3): once the long run stops growing (≥ 12 km, base /
+      // build), the weeks rotate long easy → progression run (build; last part at M effort) →
+      // a shorter week (~80 %) instead of repeating the same distance (Pfitzinger / Hansons
+      // alternate long, medium-long and marathon-pace long runs). Peak: race-pace long runs.
+      _longVariant = 0;
+      if (!rest && !runWalk && phase != 'peak' && longKm >= 12 && plateauKm > 0 && longKm <= plateauKm + 0.25) {
+        plateau++;
+        if (plateau % 3 == 2) {
+          _longVariant = 2;
+          longKm = _r1(longKm * 0.8);
+        } else if (plateau % 3 == 1 && phase == 'build' && !beginner && !hf.noHardRunning) {
+          _longVariant = 1;
+        }
+      }
+      if (!rest && !runWalk && _longVariant != 2) plateauKm = max(plateauKm, longKm);
+      // Quality progression (B3): stage 0 → 1 → 2 over the loading weeks of the current phase.
+      final phaseWeeks = phases.where((p) => p == phase).length;
+      final phaseIdx = phases.take(w).where((p) => p == phase).length;
+      _stage = phaseWeeks <= 1 ? 1 : min(2, phaseIdx * 3 ~/ phaseWeeks);
+      _taperLast = phase == 'taper' && w == total - 1;
+      _qRuns = roles.values.expand((x) => x).where((r) => r.sport == Sport.run && r.role.startsWith('q')).length;
+      _loadWeek = loadWeeks;
 
       // Pass 1: everything except easy runs. Pass 2: easy runs share the remaining
       // weekly volume but stay clearly shorter than the long run.
@@ -368,13 +417,14 @@ class PlanGenerator {
       }
       out.addAll(week);
       final longRun = week.where((p) => p.sport == Sport.run && p.intensity == 'long').firstOrNull;
-      if (!rest && longRun != null) lastLongKm = longRun.distanceKm ?? lastLongKm;
+      if (!rest && longRun != null && _longVariant != 2) lastLongKm = longRun.distanceKm ?? lastLongKm;
       if (phase == 'recovery') block = 0;
       if (!rest) {
         loadWeeks++;
         block++;
         if (runWalk) runWalkStage = runWalkStage + 1;
-        tempoMin = min(tempoMin + (a.difficulty == 'easy' ? 2 : 4), 30);
+        // Up to 40 min of T in cruise intervals (Daniels); continuous tempo stays ≤ 30 min.
+        tempoMin = min(tempoMin + (a.difficulty == 'easy' ? 2 : 4), 40);
         if (w.isOdd) intervalReps = min(intervalReps + 1, level == 'advanced' ? 8 : 6);
       }
     }
@@ -451,26 +501,56 @@ class PlanGenerator {
 
   /// Day of each sport's long session (run / ride): the sport on the long day gets it,
   /// the other one its latest still free day (masters: not next to the first one).
-  static Map<Sport, int> longSessionDays(UserProfile p) => _longSessionDays(scheduleOf(p), longDayOf(p), (p.age ?? 30) >= 50);
+  static Map<Sport, int> longSessionDays(UserProfile p) =>
+      _longSessionDays(scheduleOf(p), longDayOf(p), (p.age ?? 30) >= 50, minutes: _explicitMinutes(p));
 
-  static Map<Sport, int> _longSessionDays(Map<int, List<Sport>> schedule, int? longDay, bool masters) {
+  /// Time the athlete set for [weekday] (else the global session time) – no long-day defaults,
+  /// so it can decide which day is the long day ([dayMinutesFor] depends on that).
+  static int Function(int) _explicitMinutes(UserProfile p) => (d) => p.athlete.dayMinutes[d] ?? p.athlete.sessionMinutes;
+
+  /// The long-session day among [days]: the athlete's choice, else the day with the most time set
+  /// (70.3 with Sat 240 / Sun 120 min: the long ride goes on Saturday – coach review 3), else the
+  /// last day.
+  static int _longDayFrom(UserProfile p, List<int> days) {
+    if (p.longDay != null && days.contains(p.longDay)) return p.longDay!;
+    final m = _explicitMinutes(p);
+    var best = days.last;
+    for (final d in days.reversed) {
+      if (m(d) > m(best)) best = d;
+    }
+    return best;
+  }
+
+  /// The second long session (other sport) goes on the free day with the most time (ties: the
+  /// latest; masters: not next to the first one when possible).
+  static Map<Sport, int> _longSessionDays(Map<int, List<Sport>> schedule, int? longDay, bool masters, {int Function(int)? minutes}) {
     final days = schedule.keys.toList()..sort();
     final out = <Sport, int>{};
     if (days.isEmpty) return out;
     final ld0 = longDay ?? days.last;
+    final mins = minutes ?? (int _) => 0;
     int dist(int x, int y) => min((x - y).abs(), 7 - (x - y).abs());
     bool onLongDay(Sport s) => schedule[ld0]?.contains(s) ?? false;
+    int most(List<int> c) => c.reduce((x, y) => mins(y) >= mins(x) ? y : x);
     for (final sport in [Sport.run, Sport.ride]..sort((x, y) => (onLongDay(y) ? 1 : 0).compareTo(onLongDay(x) ? 1 : 0))) {
       final sDays = days.where((d) => schedule[d]!.contains(sport)).toList();
       if (sDays.isEmpty) continue;
       final taken = out.values.toSet();
-      int latestFree() => sDays.lastWhere((d) => !taken.contains(d), orElse: () => sDays.last);
+      final free = sDays.where((d) => !taken.contains(d)).toList();
+      // Apart (masters) only where the sport keeps a day for its quality session that is not next
+      // to a long session – else the long sessions follow each other (B7).
+      final apart =
+          free
+              .where(
+                (d) =>
+                    taken.every((t) => dist(t, d) > 1) &&
+                    (sDays.length < 2 || sDays.any((e) => e != d && !taken.contains(e) && [...taken, d].every((t) => dist(t, e) > 1))),
+              )
+              .toList();
       out[sport] =
           sDays.contains(ld0) && !taken.contains(ld0)
               ? ld0
-              : (masters
-                  ? sDays.lastWhere((d) => !taken.contains(d) && taken.every((t) => dist(t, d) > 1), orElse: latestFree)
-                  : latestFree());
+              : (free.isEmpty ? sDays.last : (masters && apart.isNotEmpty ? most(apart) : most(free)));
     }
     return out;
   }
@@ -498,8 +578,7 @@ class PlanGenerator {
     final plan = scheduleOf(p);
     final endurance = plan.entries.where((e) => e.value.any((s) => s != Sport.gym)).map((e) => e.key).toList()..sort();
     if (endurance.isEmpty) return null;
-    if (p.longDay != null && endurance.contains(p.longDay)) return p.longDay;
-    return endurance.last;
+    return _longDayFrom(p, endurance);
   }
 
   // ───────────────────────────── Structure ─────────────────────────────
@@ -600,7 +679,7 @@ class PlanGenerator {
   /// Default weekday → sport mapping from training days and focus.
   static Map<int, List<Sport>> deriveSchedule(UserProfile profile) {
     var days = (profile.trainingDays.isEmpty ? [1, 3, 5] : [...profile.trainingDays])..sort();
-    final longDay = profile.longDay != null && days.contains(profile.longDay) ? profile.longDay! : days.last;
+    final longDay = _longDayFrom(profile, days);
     final res = <int, List<Sport>>{};
     days = _spreadDays(days, maxTrainingDays(profile), longDay);
     final gym = extraGymDays(profile, days.length);
@@ -721,7 +800,10 @@ class PlanGenerator {
 
   /// Weekly volume: grow by g toward the ceiling, recovery weeks at a fraction of the
   /// last loading week, taper with a progressive cut.
-  List<double> _curve(int total, List<String> phases, double startV, double ceiling, {double? growth}) {
+  ///
+  /// The base pre-plan of a far-away event ([preWeeks]) stays at ≤ 85 % of the ceiling, so the
+  /// volume still rises in the race-specific block instead of sitting flat for 30 weeks.
+  List<double> _curve(int total, List<String> phases, double startV, double ceiling, {double? growth, int preWeeks = 0}) {
     final out = <double>[];
     var last = startV;
     for (var i = 0; i < total; i++) {
@@ -729,7 +811,8 @@ class PlanGenerator {
       if (p == 'recovery' || p == 'taper') {
         out.add(last * _restFactor(phases, i));
       } else {
-        if (i > 0) last = min(ceiling, last * (1 + (growth ?? _growth)));
+        final c = i < preWeeks ? max(startV, ceiling * 0.85) : ceiling;
+        if (i > 0) last = min(c, last * (1 + (growth ?? _growth)));
         out.add(last);
       }
     }
@@ -901,6 +984,15 @@ class PlanGenerator {
     bool spaced(int d, Sport sport, Map<int, Sport> k, {bool half = false}) {
       if (k.containsKey(d)) return false;
       final p1 = k.containsKey(prev(d)), n1 = k.containsKey(next(d));
+      bool qd(int x) => k.containsKey(x) && !longDays.contains(x);
+      // A CSS set (non-weight-bearing, half a key session) may sit next to long Z2 sessions – also
+      // right before a Saturday + Sunday long block – but never in a chain with a quality session
+      // (B7). Masters: only next to one long session (below).
+      if (half && !_masters) {
+        if (qd(prev(d)) && (n1 || k.containsKey(prev(prev(d))))) return false;
+        if (qd(next(d)) && (p1 || k.containsKey(next(next(d))))) return false;
+        return true;
+      }
       if ((p1 && n1) || (p1 && k.containsKey(prev(prev(d)))) || (n1 && k.containsKey(next(next(d))))) return false;
       // Masters: a CSS set only next to a long (Z2) session, never next to a quality one.
       if (half) return !_masters || (!(p1 && !longDays.contains(prev(d))) && !(n1 && !longDays.contains(next(d))));
@@ -913,17 +1005,34 @@ class PlanGenerator {
     // Preferred long day, else the latest free day. Two long sessions of different sports
     // may follow each other (long ride Saturday, long run Sunday – both easy); masters keep
     // them apart when the week allows it. Shared with [dayMinutesFor] ([longSessionDays]).
-    final longs = _longSessionDays(schedule, longDay, _masters);
-    longDays.addAll(longs.values);
-    for (final e in longs.entries) {
-      roles[e.value]!.firstWhere((x) => x.sport == e.key).role = 'long';
-      key[e.value] = e.key;
+    var longs = <Sport, int>{};
+    void setLongs(Map<Sport, int> m) {
+      longs = m;
+      longDays
+        ..clear()
+        ..addAll(m.values);
+      key.clear();
+      for (final d in days) {
+        for (final s in roles[d]!) {
+          s.role = 'easy';
+        }
+      }
+      for (final e in m.entries) {
+        roles[e.value]!.firstWhere((x) => x.sport == e.key).role = 'long';
+        key[e.value] = e.key;
+      }
     }
+
+    setLongs(_longSessionDays(schedule, longDay, _masters, minutes: _explicitMinutes(profile)));
 
     final endurance = schedule.values.expand((v) => v).where((s) => s != Sport.gym).toList();
     final multi = endurance.toSet().length >= 2;
     final n = endurance.length;
     final budget = multi ? (n <= 4 ? 2.0 : (n <= 7 ? 3.0 : 4.0)) : double.infinity;
+
+    // Weeks since the discipline last had a quality session (triathlon rotation, B7).
+    final multiBuild = multi && (phase == 'build' || phase == 'peak');
+    int waited(Sport s) => min(4, week - (_lastQuality[s] ?? week - 4));
 
     // Quality days per sport when the sports are filled in [order].
     Map<Sport, List<int>> place(List<Sport> order) {
@@ -986,18 +1095,44 @@ class PlanGenerator {
         !multi
             ? [Sport.run, Sport.ride, Sport.swim]
             : (phase == 'base' || phase == 'recovery' ? [Sport.ride, Sport.swim, Sport.run] : [Sport.ride, Sport.run, Sport.swim]);
-    var picks = place(preferred);
     int count(Map<Sport, List<int>> m) => m.values.fold(0, (x, v) => x + v.length);
-    if (multi) {
-      for (final o in [
-        for (final a in preferred)
-          for (final b in preferred)
-            for (final c in preferred)
-              if (a != b && b != c && a != c) [a, b, c],
-      ]) {
-        final alt = place(o);
-        if (count(alt) > count(picks)) picks = alt;
+    // Build / peak (B7): among the orders that fit the most quality sessions, the one that gives
+    // intensity to the disciplines that waited longest – a week with long sessions on Saturday
+    // and Sunday leaves room for one full quality session, which then rotates bike → run week by
+    // week (each discipline ≥ 1 quality session per 2 weeks) instead of always going to the bike.
+    // A discipline that went without intensity last week outweighs an extra session of another.
+    final rotate = multiBuild;
+    int stale(Map<Sport, List<int>> m) => m.entries.where((e) => e.value.isNotEmpty).fold(0, (x, e) => x + waited(e.key));
+    int value(Map<Sport, List<int>> m) =>
+        count(m) * 2 + (rotate ? 3 * m.entries.where((e) => e.value.isNotEmpty && waited(e.key) >= 2).length : 0);
+    Map<Sport, List<int>> choose() {
+      var picks = place(preferred);
+      if (multi) {
+        for (final o in [
+          for (final a in preferred)
+            for (final b in preferred)
+              for (final c in preferred)
+                if (a != b && b != c && a != c) [a, b, c],
+        ]) {
+          final alt = place(o);
+          if (value(alt) > value(picks) || (rotate && value(alt) == value(picks) && stale(alt) > stale(picks))) picks = alt;
+        }
       }
+      return picks;
+    }
+
+    var picks = choose();
+    // Masters keep the two long sessions apart – unless that leaves no room for any quality
+    // session in a build / peak week (e.g. a 5-day sprint week): then they may follow each other.
+    if (_masters && rotate && count(picks) == 0) {
+      final together = _longSessionDays(schedule, longDay, false, minutes: _explicitMinutes(profile));
+      if (together.toString() != longs.toString()) {
+        setLongs(together);
+        picks = choose();
+      }
+    }
+    for (final e in picks.entries) {
+      if (e.value.isNotEmpty) _lastQuality[e.key] = week;
     }
     for (final e in picks.entries) {
       for (final (i, d) in e.value.indexed) {
@@ -1081,35 +1216,26 @@ class PlanGenerator {
       final km = max(4.0, _r1(min(longKm, maxMin * 60 / _longPace)));
       isKey = true;
       intensity = 'long';
-      // Marathon / HM peak: last 25 % at goal pace (M).
+      // Marathon / HM peak: the goal-pace segment at the end grows per stage (B3) – HM
+      // 3 → 5 → 8 km at HM pace (between M and T), marathon 6 → 10 → 13 km at marathon pace;
+      // at most 40 / 45 % of the run.
       if (phase == 'peak' && (dist == 'm' || dist == 'hm') && !beginner) {
-        final mpKm = _r1(km * 0.25);
-        // Half marathon: the goal-pace segment runs at HM pace (between M and T), not at
-        // marathon pace.
         final hm = dist == 'hm';
-        final work = hm ? _runStep('work', 'M', km: mpKm, note: l.stepHmpNote) : _mpStep(mpKm);
-        final hmPace = hm ? _goalPace() : null;
-        steps = [
-          _runStep('steady', 'E', km: km - mpKm, note: l.stepEasyNote),
-          hmPace == null
-              ? work
-              : WorkoutStep(
-                kind: 'work',
-                distanceM: work.distanceM,
-                zone: 'M',
-                paceMin: hmPace - 3,
-                paceMax: hmPace + 3,
-                hrMin: hz.zone(3).$1,
-                hrMax: hz.zone(4).$2,
-                note: work.note,
-              ),
-        ];
+        final seg = hm ? const [3.0, 5.0, 8.0][_stage] : const [6.0, 10.0, 13.0][_stage];
+        final mpKm = max(1.0, _r1(min(seg, km * (hm ? 0.4 : 0.45))));
+        steps = [_runStep('steady', 'E', km: km - mpKm, note: l.stepEasyNote), _racePaceStep(mpKm)];
         title = l.wLongRunMp;
         desc = hm ? l.wLongRunHmpDesc : l.wLongRunMpDesc2;
+      } else if (_longVariant == 1 && km >= 12) {
+        // Progression long run: the last ~25 % (≤ 8 km) at a steady marathon-pace effort.
+        final pKm = _r1(min(km * 0.25, 8));
+        steps = [_runStep('steady', 'E', km: km - pKm, note: l.stepEasyNote), _runStep('work', 'M', km: pKm, note: l.stepProgressionNote)];
+        title = l.wLongRunProgression;
+        desc = l.wLongRunProgressionDesc;
       } else {
         steps = [_runStep('steady', 'E', km: km, note: l.stepEasyNote)];
         title = l.planLongRun;
-        desc = l.wLongRunDesc;
+        desc = _longVariant == 2 ? l.wLongRunShortDesc : l.wLongRunDesc;
       }
       return _plan(day, Sport.run, title, desc, intensity, steps, phase, isKey);
     }
@@ -1120,9 +1246,58 @@ class PlanGenerator {
     // VO2max reps load joints and heart the most: threshold work instead with limitations.
     final useIntervals = (phase == 'build' || phase == 'peak') && level != 'beginner' && !hf.noHardRunning;
     final shortRace = dist == '5k' || dist == '10k' || dist == null;
-    if (phase == 'base' || phase == 'recovery' || phase == 'taper' || beginner) {
+    final runningRace = dist == '5k' || dist == '10k' || dist == 'hm' || dist == 'm';
+    var goalSet = false; // repeats at goal race pace (title follows the shortened workout)
+    if (phase == 'taper' && runningRace && !beginner) {
+      // Taper (B5): the race-specific session stays with ~60 % of its peak volume – intensity is
+      // what keeps the adaptations while the volume drops (Bosquet 2007; Mujika & Padilla 2003).
+      // 5 km 4 × 800 m · 10 km 3 × 1 km · HM 3 × 2 km · marathon 2 × 3 km at goal pace; race
+      // week one repeat less (two repeats: shorter ones).
+      var (n, rep, rec) = switch (dist) {
+        '5k' => (4, 0.8, 120),
+        '10k' => (3, 1.0, 120),
+        'hm' => (3, 2.0, 90),
+        _ => (2, 3.0, 120),
+      };
+      if (_taperLast) {
+        if (n > 2) {
+          n--;
+        } else {
+          rep = max(1.0, _r1(rep * 2 / 3));
+        }
+      }
+      // Small taper weeks: ≤ 20 % of the week's km at goal pace (the long run stays the longest).
+      final cap = max(2.0, min(weekKm * 0.2, longKm * 0.5));
+      while (n * rep > cap + 1e-9 && rep > 1.0) {
+        rep = max(1.0, rep - 1);
+      }
+      while (n * rep > cap + 1e-9 && n > 2) {
+        n--;
+      }
+      steps = _goalPaceSet(wu, cd, n, rep, rec);
+      goalSet = true;
+      title = '';
+      desc = l.wGoalPaceSetDesc;
+      intensity = shortRace ? 'intervals' : 'tempo';
+    } else if (phase == 'base' && second && !beginner) {
+      // Base, second quality run (B4): a progression run – aerobic strength at M effort, not a
+      // second VO2max stimulus (pyramidal base: Z1 > Z2 > Z3).
+      // About the size of an easy run (≤ 20 % of the week, ≤ 70 % of the long run); the M part
+      // 15–25 min, ≤ 40 % of the run.
+      final total = max(6.0, min(longKm * 0.7, weekKm * 0.2));
+      final mKm = max(1.0, _r1(min(tempoMin.clamp(15, 25) * 60 / pz.marathon, total * 0.4)));
+      steps = [
+        _runStep('warmup', 'E', km: max(2.0, _r1(total - mKm - 1)), note: l.stepEasyNote),
+        _runStep('work', 'M', km: mKm, note: l.stepProgressionNote),
+        _runStep('cooldown', 'E', km: 1),
+      ];
+      title = l.wProgressionRun;
+      desc = l.wProgressionRunDesc;
+      intensity = 'tempo';
+    } else if (phase == 'base' || phase == 'recovery' || phase == 'taper' || beginner) {
       if (phase == 'base' && !second && level != 'beginner' && week.isOdd) {
-        // Tempo appears in base for non-beginners (pyramidal distribution).
+        // Tempo appears in base for non-beginners (pyramidal distribution); the I-pace fartlek
+        // only every other week.
         final t = min(tempoMin, 20);
         steps = [wu, _runStep('work', 'T', sec: t * 60, note: l.stepTempoNote), cd];
         title = l.planRunTempo;
@@ -1141,14 +1316,31 @@ class PlanGenerator {
         desc = l.wFartlekDesc;
         intensity = 'tempo';
       }
+    } else if (phase == 'peak' && (dist == '5k' || dist == '10k') && !second && !hf.capIntensity) {
+      // 5 / 10 km peak (B6): one goal-pace set a week, longer repeats per stage – 10 km
+      // 5 × 1 km → 4 × 1.5 km → 3 × 2 km, 5 km 6 × 800 m → 5 × 1 km → 3 × 1.6 km; ≤ 15 % of the
+      // weekly km (≤ 8 km), at least 2 repeats.
+      final sets = dist == '5k' ? const [(6, 0.8, 120), (5, 1.0, 120), (3, 1.6, 150)] : const [(5, 1.0, 90), (4, 1.5, 120), (3, 2.0, 150)];
+      final (n0, rep, rec) = sets[_stage];
+      final cap = max(3.0, min(weekKm * 0.15, 8.0));
+      steps = _goalPaceSet(wu, cd, max(2, min(n0, (cap / rep + 1e-9).floor())), rep, rec);
+      goalSet = true;
+      title = '';
+      desc = l.wGoalPaceSetDesc;
+      intensity = 'intervals';
     } else if (phase == 'peak' && dist == 'm' && second) {
-      final mp = _r1(min(weekKm * 0.2, 14));
+      // Marathon-pace run, growing over the peak (B3): 70 → 85 → 100 % of min(20 % weekly km, 14 km).
+      final mp = max(4.0, _r1(min(weekKm * 0.2, 14) * const [0.7, 0.85, 1.0][_stage]));
       steps = [wu, _mpStep(mp), cd];
       title = l.wMpRun;
       desc = l.wMpRunDesc;
       intensity = 'tempo';
-    } else if (useIntervals && (second ? !shortRace : shortRace)) {
-      // VO2max intervals (I), volume ≤ min(8 % weekly km, 10 km).
+    } else if (useIntervals &&
+        (second ? (!shortRace || phase == 'peak') : shortRace && !(phase == 'build' && _qRuns == 1 && _loadWeek.isOdd))) {
+      // VO2max intervals (I), volume ≤ min(8 % weekly km, 10 km). A 5 / 10 km plan with one
+      // quality run a week alternates intervals and threshold in the build phase.
+      // Once the cap binds, the repeats get longer per stage (800 → 1000 → 1200 m) instead of
+      // staying at the same session for weeks (B3).
       // Short sessions: when fewer than 3 long repeats fit the time, use shorter repeats
       // (600 / 400 m, more of them) instead of 2 × 800 m.
       List<WorkoutStep> build(double repM, int reps) {
@@ -1165,32 +1357,39 @@ class PlanGenerator {
         ];
       }
 
-      final repM = level == 'advanced' ? 1000.0 : 800.0;
-      steps = build(repM, intervalReps);
+      final baseRep = level == 'advanced' ? 1000.0 : 800.0;
+      final binds = intervalReps > (min(weekKm * 0.08, 10) * 1000 / baseRep).floor();
+      final repM = binds ? min(1200.0, baseRep + 200.0 * _stage) : baseRep;
+      steps = build(repM, max(3, (intervalReps * baseRep / repM).round()));
       for (final shorter in [600.0, 400.0]) {
-        if (_fitToTime(steps, capMin * 60, Sport.run).where((s) => s.isWork).length >= 3) break;
-        steps = build(shorter, (intervalReps * repM / shorter).round());
+        if (shorter >= repM || _fitToTime(steps, capMin * 60, Sport.run).where((s) => s.isWork).length >= 3) break;
+        steps = build(shorter, (intervalReps * baseRep / shorter).round());
       }
-      title = l.wIntervals(steps.where((s) => s.isWork).length, (repM).round());
+      title = '';
       desc = l.wIntervalsDesc;
       intensity = 'intervals';
     } else {
-      // Threshold: cruise intervals once tempo ≥ 20 min (T ≤ 10 % weekly km).
-      final tKm = min(weekKm * 0.10, tempoMin * 60 / pz.threshold);
-      if (tempoMin >= 20 && tKm >= 4.5) {
-        final reps = max(3, (tKm / 1.6).floor());
+      // Threshold: cruise intervals once tempo ≥ 20 min (T ≤ 10 % weekly km). When the 10 % cap
+      // binds, the structure progresses per stage instead of the volume (B3): 1.6 km repeats →
+      // 2.4 km → 3.2 km (or one continuous tempo when fewer than 2 fit).
+      final byTime = tempoMin * 60 / pz.threshold;
+      final tKm = min(weekKm * 0.10, byTime);
+      final repKm = weekKm * 0.10 <= byTime ? const [1.6, 2.4, 3.2][_stage] : 1.6;
+      final cruise = tempoMin >= 20 && tKm >= 4.5 && (tKm / repKm + 1e-9).floor() >= 2;
+      if (cruise) {
+        final reps = repKm == 1.6 ? max(3, (tKm / 1.6).floor()) : (tKm / repKm + 1e-9).floor();
         steps = [wu];
         for (var i = 0; i < reps; i++) {
-          steps.add(_runStep('work', 'T', km: 1.6, note: l.stepTempoNote));
-          if (i < reps - 1) steps.add(_runStep('recovery', 'REC', sec: 60));
+          steps.add(_runStep('work', 'T', km: repKm, note: l.stepTempoNote));
+          if (i < reps - 1) steps.add(_runStep('recovery', 'REC', sec: repKm <= 1.6 ? 60 : (repKm <= 2.4 ? 90 : 120)));
         }
         steps.add(cd);
-        title = l.wCruise(reps);
+        title = '';
         desc = l.wCruiseDesc;
       } else {
         // Continuous tempo: also ≤ 10 % of the weekly km (Daniels §1.4), at least the classic
-        // 20 min – 30 min at T was 13–23 % of a 28–40 km week.
-        final sec = min(tempoMin * 60, max(20 * 60, (tKm * pz.threshold / 60).round() * 60));
+        // 20 min, at most 30 min – 30 min at T was 13–23 % of a 28–40 km week.
+        final sec = min(min(tempoMin, 30) * 60, max(20 * 60, (tKm * pz.threshold / 60).round() * 60));
         steps = [wu, _runStep('work', 'T', sec: sec, note: l.stepTempoNote), cd];
         title = l.planRunTempo;
         desc = l.wTempoDesc;
@@ -1200,17 +1399,59 @@ class PlanGenerator {
     steps = _fitToTime(steps, capMin * 60, Sport.run);
     // Titles with a repeat count must match the (possibly shortened) workout.
     final reps = steps.where((s) => s.isWork).length;
-    if (intensity == 'intervals') title = l.wIntervals(reps, (steps.firstWhere((s) => s.isWork).distanceM ?? 800).round());
-    if (desc == l.wCruiseDesc) title = l.wCruise(reps);
+    final firstWork = steps.where((s) => s.isWork).firstOrNull;
+    if (goalSet) {
+      title = l.wGoalPaceSet(reps, _km((firstWork?.distanceM ?? 1000) / 1000));
+    } else if (intensity == 'intervals') {
+      title = l.wIntervals(reps, (firstWork?.distanceM ?? 800).round());
+    }
+    if (desc == l.wCruiseDesc) {
+      final km = (firstWork?.distanceM ?? 1600) / 1000;
+      title = (km - 1.6).abs() < 0.05 ? l.wCruise(reps) : l.wCruiseKm(reps, _km(km));
+    }
     return _plan(day, Sport.run, title, desc, intensity, steps, phase, isKey);
   }
 
-  /// Easy run of [km] (capped by the time available); some get strides (base/build).
+  /// [v] km for a title: whole numbers without decimals, else one decimal (German comma).
+  String _km(double v) {
+    final s = (v - v.roundToDouble()).abs() < 0.05 ? '${v.round()}' : v.toStringAsFixed(1);
+    return l.localeName.startsWith('de') ? s.replaceAll('.', ',') : s;
+  }
+
+  /// Warm-up, [n] × [repKm] at goal race pace with [recSec] jog breaks, cool-down.
+  List<WorkoutStep> _goalPaceSet(WorkoutStep wu, WorkoutStep cd, int n, double repKm, int recSec) => [
+    wu,
+    for (var i = 0; i < n; i++) ...[_racePaceStep(repKm), if (i < n - 1) _runStep('recovery', 'REC', sec: recSec)],
+    cd,
+  ];
+
+  /// Work step at the goal race pace of the running event ([_goalPace], zone 'M' – the race-pace
+  /// convention [GoalForecast.retarget] follows): marathon ±5 s/km ([_mpStep]), others ±3 s/km
+  /// with the HR range of the race (HM zone 3–4, 5 / 10 km zone 4–5).
+  WorkoutStep _racePaceStep(double km) {
+    final dist = a.eventDistance;
+    if (dist == 'm') return _mpStep(km);
+    final hm = dist == 'hm';
+    final pace = beginner && a.raceTimes.isEmpty ? null : _goalPace();
+    return WorkoutStep(
+      kind: 'work',
+      distanceM: (km * 1000).roundToDouble(),
+      zone: 'M',
+      paceMin: pace == null ? null : pace - 3,
+      paceMax: pace == null ? null : pace + 3,
+      hrMin: hz.zone(hm ? 3 : 4).$1,
+      hrMax: hz.zone(hm ? 4 : 5).$2,
+      note: hm ? l.stepHmpNote : l.stepGoalPaceNote,
+    );
+  }
+
+  /// Easy run of [km] (capped by the time available); some get strides (base / build / peak –
+  /// neuromuscular speed is kept up to the taper, B6).
   PlannedWorkout _easyRun(DateTime day, String phase, double km, int week, int capMin) {
     final k = max(3.0, _r1(min(km, capMin * 60 / pz.easySlow)));
     final steps = [_runStep('steady', 'E', km: k, note: l.stepEasyNote)];
     String title, desc;
-    if ((phase == 'base' || phase == 'build') && !beginner && !hf.noHardRunning && day.weekday.isEven) {
+    if ((phase == 'base' || phase == 'build' || phase == 'peak') && !beginner && !hf.noHardRunning && day.weekday.isEven) {
       for (var i = 0; i < 4 + min(4, week ~/ 2); i++) {
         steps.add(_runStep('work', 'R', sec: 20, note: l.stepStrideNote));
         steps.add(_runStep('recovery', 'walk', sec: 60));
@@ -1337,7 +1578,22 @@ class PlanGenerator {
       // < 5 bike hours: pyramidal – one sweet-spot / threshold and one VO2 session, also
       // in the base phase (§3.3). Beginners: no VO2max reps (threshold work instead).
       final vo2 = !beginner && (role == 'q2' || (phase == 'peak' && perWeek < 3));
-      if (vo2 && (phase != 'base' || weekH < 5) && !hf.capIntensity) {
+      if (phase == 'peak' && a.eventDistance == '70.3' && !rest) {
+        // 70.3 peak: race-specific tempo at 75–85 % FTP (the bike leg's ~2.5 h effort) instead of
+        // VO2max reps – 2 × 25 → 2 × 30 → 3 × 25 min over the peak (coach review 3).
+        final (reps, each) = const [(2, 25), (2, 30), (3, 25)][_stage];
+        steps = [wu];
+        for (var i = 0; i < reps; i++) {
+          steps.add(_rideStep('work', 'Z3', each * 60, note: l.stepRideTempoNote));
+          if (i < reps - 1) steps.add(_rideStep('recovery', 'Z1', 300));
+        }
+        steps.add(cd);
+        steps = _fitToTime(steps, capMin * 60, Sport.ride);
+        final first = steps.firstWhere((s) => s.isWork);
+        title = l.wRideTempo(steps.where((s) => s.isWork).length, (first.durationSec! / 60).round());
+        desc = l.wRideTempoDesc;
+        intensity = 'tempo';
+      } else if (vo2 && (phase != 'base' || weekH < 5) && !hf.capIntensity) {
         final reps = rest ? 3 : 4 + min(2, loadWeek ~/ 3);
         final dur = phase == 'peak' ? 240 : 180;
         steps = [wu];
@@ -1390,7 +1646,8 @@ class PlanGenerator {
 
   WorkoutStep _swimStep(String kind, String zone, double m, {String note = ''}) {
     final (fast, slow) = sz.range(zone);
-    final noPace = beginner && a.swim400Sec == null;
+    // Drills are about technique, not speed: no pace target (coach review 3).
+    final noPace = (beginner && a.swim400Sec == null) || zone == 'DR';
     return WorkoutStep(kind: kind, distanceM: m, zone: zone, paceMin: noPace ? null : fast, paceMax: noPace ? null : slow, note: note);
   }
 
@@ -1655,7 +1912,11 @@ class PlanGenerator {
     final km = meters == null ? null : meters / 1000;
     final vdot = Vdot.of(a);
     final goal = a.targetTimeSec ?? (!tri && meters != null && vdot != null ? Vdot.raceTime(vdot, meters) : null);
-    final pace = goal != null && km != null && !tri ? (goal / km).round() : null;
+    // Race pace (A4): the realistic race-day pace ([_goalPace]) – an ambitious / unrealistic
+    // target would send the athlete out 2–3 % too fast, the classic way to lose a race.
+    final realistic = !tri && km != null ? _goalPace() : null;
+    final pace = realistic ?? (goal != null && km != null && !tri ? (goal / km).round() : null);
+    final behind = _target != null && _target!.status != TargetStatus.ok && realistic != null;
     final steps =
         tri || km == null
             ? <WorkoutStep>[]
@@ -1684,12 +1945,16 @@ class PlanGenerator {
         title: l.wRace(_eventName()),
         description: [
           if (tri && legs != null) legs,
-          goal == null ? l.wRaceDesc : l.wRaceGoalDesc(clock(goal)),
+          if (behind) ...[
+            l.wRaceGoalStart(clock(goal!), '${clock(realistic)}/km'),
+            l.wRaceDesc,
+          ] else
+            goal == null ? l.wRaceDesc : l.wRaceGoalDesc(clock(goal)),
           // Still on run/walk in race week: race with the same rhythm (Galloway-style
           // walk breaks from the start), never "run until it breaks".
           if (_rwAtRace != null) l.wRaceRunWalk(_raceRunMin(_rwAtRace!)),
         ].join('\n'),
-        durationMin: ((goal ?? _expectedRaceSec(meters, tri)) / 60).round(),
+        durationMin: ((behind ? _target!.realisticSec : (goal ?? _expectedRaceSec(meters, tri))) / 60).round(),
         // A triathlon is stored as a swim (it starts with one), so it carries no single
         // distance – "Swim 51.5 km" would be wrong; the legs are in the description.
         distanceKm: tri ? null : km,
@@ -1821,7 +2086,9 @@ class PlanGenerator {
   // ───────────────────────────── Feasibility ─────────────────────────────
 
   /// Long run the race needs before the taper (~70–80 % of the distance; 10 km: 8 km).
-  static const _longRunTargetKm = {'10k': 8.0, 'hm': 15.0, 'm': 28.0};
+  /// 70.3: ~16 km or 100 min (whichever is shorter at the long-run pace) – the half marathon off
+  /// the bike needs a long run of ~75 % of its distance (coach review 3).
+  static const _longRunTargetKm = {'10k': 8.0, 'hm': 15.0, 'm': 28.0, '70.3': 16.0};
 
   /// Long ride the race needs (min): 70.3 ≥ 3 h, olympic ≥ 90 min (bike leg ~80 min).
   static const _longRideTargetMin = {'sprint': 60, 'olympic': 90, '70.3': 180};
@@ -1940,7 +2207,7 @@ class PlanGenerator {
     if (issues.isNotEmpty) return PlanFeasibility(issues: issues);
     final plan = g.generate(start: start);
     if (g._rwAtRace != null) issues.add('runWalk');
-    final runTarget = _longRunTargetKm[ev];
+    final runTarget = ev == '70.3' ? min(16.0, g._r1(100 * 60 / g._longPace)) : _longRunTargetKm[ev];
     double? runLimit;
     if (runs && runTarget != null && g._rwAtRace == null) {
       final longRun = plan.where((w) => w.sport == Sport.run && w.intensity == 'long').fold(0.0, (x, w) => max(x, w.distanceKm ?? 0));
