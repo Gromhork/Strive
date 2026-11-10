@@ -240,7 +240,11 @@ class _CardioSessionPageState extends ConsumerState<CardioSessionPage> {
               ],
             ),
           ),
-          if (_locked) Positioned.fill(child: _LockOverlay(onUnlock: () => setState(() => _locked = false))),
+          if (_locked)
+            Positioned.fill(
+              // Outside the Scaffold: needs its own Material for text styles.
+              child: Material(type: MaterialType.transparency, child: _LockOverlay(onUnlock: () => setState(() => _locked = false))),
+            ),
         ],
       ),
     );
@@ -1445,7 +1449,7 @@ class _CurrentSplit extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              stat(clock(max(0, s.splitElapsed)), l.currentSplit),
+              stat(clock(max(0, s.splitElapsed)), l.duration),
               stat(best == null ? '–' : fmt(best), l.bestSplit),
               stat(avg == null ? '–' : fmt(avg), l.avgSplit),
             ],
@@ -1695,7 +1699,13 @@ class _LockOverlay extends StatelessWidget {
             children: [
               const Icon(Icons.lock_rounded, color: Colors.white),
               const SizedBox(width: 10),
-              Text(context.l10n.holdToUnlock, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              Flexible(
+                child: Text(
+                  context.l10n.holdToUnlock,
+                  maxLines: 2,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                ),
+              ),
             ],
           ),
         ),

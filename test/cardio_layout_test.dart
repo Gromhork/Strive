@@ -210,6 +210,14 @@ void main() {
     expect(find.text('Current pace (/km)'), findsOneWidget);
   });
 
+  testWidgets('lock button shows the hold-to-unlock overlay without layout errors', (tester) async {
+    await _pump(tester, _state(Sport.ride), 'de');
+    await tester.tap(find.byTooltip('Bildschirm sperren'));
+    await tester.pump();
+    expect(find.text('Gedrückt halten zum Entsperren'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('auto-pause banner explains how it resumes', (tester) async {
     await _pump(tester, _state(Sport.run, paused: true, autoPaused: true), 'en');
     expect(find.textContaining('Resumes as soon as you move'), findsOneWidget);
