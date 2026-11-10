@@ -4893,4 +4893,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String targetSuggestRange(String time, String fast, String slow) {
     return 'Suggested $time (range $fast – $slow)';
   }
+
+  @override
+  String feasLongDayDefault(String day, String time) {
+    return 'The long session on $day needs up to $time – far more than the time you set. The plan uses it; set that day\'s time yourself if it does not fit.';
+  }
+
+  @override
+  String feasLongRunShare(int min) {
+    return 'Your other runs are too short for the long run this race needs: it may be at most half of the week and twice your next-longest run. Plan about $min min for your other runs.';
+  }
+
+  @override
+  String feasTargetConservative(String goal, String now, String pred) {
+    return '$goal is a cautious target: today ~$now, realistic on race day ~$pred. Your race-pace sessions use the realistic pace.';
+  }
+
+  @override
+  String wRunContinuous(int min) {
+    return 'Continuous run $min min';
+  }
+
+  @override
+  String get wShakeoutRunWalkDesc => 'Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.';
+
+  @override
+  String get wMastersStrengthNote => 'Tip: add 2 short strength sessions a week (legs, hips, core, 20–30 min) – from 50 on they protect muscles, bones and tendons and make running more economical.';
+
+  @override
+  String wRaceLeg(String leg, String dist) {
+    return '$leg $dist km – your race pace for this leg';
+  }
+
+  @override
+  String get wRaceFinishDesc => 'Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.';
+
+  @override
+  String get wShakeoutEasyDesc => '15 min very easy – just loosen up, nothing more. Lay out your race kit tonight.';
 }

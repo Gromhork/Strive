@@ -3071,5 +3071,61 @@
         "type": "String"
       }
     }
-  }
+  },
+  "feasLongDayDefault": "The long session on {day} needs up to {time} – far more than the time you set. The plan uses it; set that day's time yourself if it does not fit.",
+  "@feasLongDayDefault": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "feasLongRunShare": "Your other runs are too short for the long run this race needs: it may be at most half of the week and twice your next-longest run. Plan about {min} min for your other runs.",
+  "@feasLongRunShare": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "feasTargetConservative": "{goal} is a cautious target: today ~{now}, realistic on race day ~{pred}. Your race-pace sessions use the realistic pace.",
+  "@feasTargetConservative": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "now": {
+        "type": "String"
+      },
+      "pred": {
+        "type": "String"
+      }
+    }
+  },
+  "wRunContinuous": "Continuous run {min} min",
+  "@wRunContinuous": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "wShakeoutRunWalkDesc": "Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.",
+  "wMastersStrengthNote": "Tip: add 2 short strength sessions a week (legs, hips, core, 20–30 min) – from 50 on they protect muscles, bones and tendons and make running more economical.",
+  "wRaceLeg": "{leg} {dist} km – your race pace for this leg",
+  "@wRaceLeg": {
+    "placeholders": {
+      "leg": {
+        "type": "String"
+      },
+      "dist": {
+        "type": "String"
+      }
+    }
+  },
+  "wRaceFinishDesc": "Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.",
+  "wShakeoutEasyDesc": "15 min very easy – just loosen up, nothing more. Lay out your race kit tonight."
 }

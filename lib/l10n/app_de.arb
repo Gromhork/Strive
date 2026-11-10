@@ -1489,5 +1489,14 @@
   "targetSuggestBasisEfforts": "Auf Basis deiner letzten Läufe",
   "targetSuggestBasisLevel": "Grobe Schätzung nach deinem Level – eine Wettkampfzeit macht sie genauer",
   "targetSuggestFinish": "Ziel: ankommen – für diesen Wettkampf noch keine Zielzeit",
-  "targetSuggestRange": "Vorschlag {time} (Spanne {fast} – {slow})"
+  "targetSuggestRange": "Vorschlag {time} (Spanne {fast} – {slow})",
+  "feasLongDayDefault": "Die lange Einheit am {day} braucht bis zu {time} – deutlich mehr als deine angegebene Zeit. Der Plan nutzt sie; trag die Zeit für diesen Tag selbst ein, falls sie nicht passt.",
+  "feasLongRunShare": "Deine übrigen Läufe sind zu kurz für den langen Lauf, den dieses Rennen braucht: Er darf höchstens die Hälfte der Woche und doppelt so lang wie dein zweitlängster Lauf sein. Plane für die anderen Läufe etwa {min} min ein.",
+  "feasTargetConservative": "{goal} ist ein vorsichtiges Ziel: heute ~{now}, realistisch am Wettkampftag ~{pred}. Deine Renntempo-Einheiten laufen im realistischen Tempo.",
+  "wRunContinuous": "Dauerlauf {min} min",
+  "wShakeoutRunWalkDesc": "Lockeres Auslaufen im Lauf-Geh-Rhythmus – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.",
+  "wMastersStrengthNote": "Tipp: Ergänze 2 kurze Krafteinheiten pro Woche (Beine, Hüfte, Rumpf, 20–30 min) – ab 50 schützen sie Muskeln, Knochen und Sehnen und machen das Laufen ökonomischer.",
+  "wRaceLeg": "{leg} {dist} km – dein Renntempo für diesen Teil",
+  "wRaceFinishDesc": "Ziel ist das Ankommen: noch keine Zielzeit – starte langsamer als es sich richtig anfühlt, halte deinen Rhythmus und genieß das Finish.",
+  "wShakeoutEasyDesc": "15 min ganz locker – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit."
 }

@@ -156,7 +156,9 @@ void main() {
       // 1:45 HM ≈ 3:40 marathon now: 3:38 is realistic in 18 weeks, 3:05 is not.
       final ok = GoalModel.check(p(3 * 3600 + 38 * 60), start: start)!;
       expect(ok.status, TargetStatus.ok);
-      final okPace = (ok.targetSec / 42.195).round();
+      // Goal pace = the more ambitious of target and realistic time (plan review IMPORTANT 2: race-pace
+      // work is never slower than the realistic pace).
+      final okPace = (ok.ambitionSec / 42.195).round();
       final steps = racePace(gen(p(ok.targetSec)));
       expect(steps, isNotEmpty);
       for (final s in steps) {
@@ -177,11 +179,13 @@ void main() {
 
     test('half marathon: peak long-run goal segment at target pace when realistic', () {
       final p = runner(ev: 'hm', weeks: 14, times: const {'10k': 2700}, target: 6000);
-      expect(GoalModel.check(p, start: start)!.status, TargetStatus.ok);
+      final check = GoalModel.check(p, start: start)!;
+      expect(check.status, TargetStatus.ok);
       final steps = racePace(gen(p));
       expect(steps, isNotEmpty);
       for (final s in steps) {
-        expect((s.paceMin! + s.paceMax!) / 2, closeTo(6000 / 21.0975, 1));
+        // The more ambitious of target and realistic time (plan review IMPORTANT 2).
+        expect((s.paceMin! + s.paceMax!) / 2, closeTo(check.ambitionSec / 21.0975, 1));
       }
     });
   });

@@ -9034,6 +9034,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suggested {time} (range {fast} – {slow})'**
   String targetSuggestRange(String time, String fast, String slow);
+
+  /// No description provided for @feasLongDayDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'The long session on {day} needs up to {time} – far more than the time you set. The plan uses it; set that day\'s time yourself if it does not fit.'**
+  String feasLongDayDefault(String day, String time);
+
+  /// No description provided for @feasLongRunShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Your other runs are too short for the long run this race needs: it may be at most half of the week and twice your next-longest run. Plan about {min} min for your other runs.'**
+  String feasLongRunShare(int min);
+
+  /// No description provided for @feasTargetConservative.
+  ///
+  /// In en, this message translates to:
+  /// **'{goal} is a cautious target: today ~{now}, realistic on race day ~{pred}. Your race-pace sessions use the realistic pace.'**
+  String feasTargetConservative(String goal, String now, String pred);
+
+  /// No description provided for @wRunContinuous.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous run {min} min'**
+  String wRunContinuous(int min);
+
+  /// No description provided for @wShakeoutRunWalkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.'**
+  String get wShakeoutRunWalkDesc;
+
+  /// No description provided for @wMastersStrengthNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: add 2 short strength sessions a week (legs, hips, core, 20–30 min) – from 50 on they protect muscles, bones and tendons and make running more economical.'**
+  String get wMastersStrengthNote;
+
+  /// No description provided for @wRaceLeg.
+  ///
+  /// In en, this message translates to:
+  /// **'{leg} {dist} km – your race pace for this leg'**
+  String wRaceLeg(String leg, String dist);
+
+  /// No description provided for @wRaceFinishDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.'**
+  String get wRaceFinishDesc;
+
+  /// No description provided for @wShakeoutEasyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'15 min very easy – just loosen up, nothing more. Lay out your race kit tonight.'**
+  String get wShakeoutEasyDesc;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

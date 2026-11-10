@@ -55,7 +55,8 @@ void main() {
       final regular = plan.where((w) => w.sport == Sport.run && w.intensity == 'easy' && w.steps.first.zone == 'walk').toList();
       final titles = regular.map((w) => w.title).toSet();
       expect(titles, isNot(contains(l.wRunWalk(10, 1))));
-      expect(titles, contains(l.wRunWalk(1, 30)));
+      // The 30 min block without walk breaks is titled as a continuous run (plan review, MINOR).
+      expect(titles, contains(l.wRunContinuous(30)));
     });
 
     test('feasibility warns at creation: too short, a later date that works, 10 km, run/walk finish', () {

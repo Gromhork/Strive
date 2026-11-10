@@ -4893,4 +4893,41 @@ class AppLocalizationsDe extends AppLocalizations {
   String targetSuggestRange(String time, String fast, String slow) {
     return 'Vorschlag $time (Spanne $fast – $slow)';
   }
+
+  @override
+  String feasLongDayDefault(String day, String time) {
+    return 'Die lange Einheit am $day braucht bis zu $time – deutlich mehr als deine angegebene Zeit. Der Plan nutzt sie; trag die Zeit für diesen Tag selbst ein, falls sie nicht passt.';
+  }
+
+  @override
+  String feasLongRunShare(int min) {
+    return 'Deine übrigen Läufe sind zu kurz für den langen Lauf, den dieses Rennen braucht: Er darf höchstens die Hälfte der Woche und doppelt so lang wie dein zweitlängster Lauf sein. Plane für die anderen Läufe etwa $min min ein.';
+  }
+
+  @override
+  String feasTargetConservative(String goal, String now, String pred) {
+    return '$goal ist ein vorsichtiges Ziel: heute ~$now, realistisch am Wettkampftag ~$pred. Deine Renntempo-Einheiten laufen im realistischen Tempo.';
+  }
+
+  @override
+  String wRunContinuous(int min) {
+    return 'Dauerlauf $min min';
+  }
+
+  @override
+  String get wShakeoutRunWalkDesc => 'Lockeres Auslaufen im Lauf-Geh-Rhythmus – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.';
+
+  @override
+  String get wMastersStrengthNote => 'Tipp: Ergänze 2 kurze Krafteinheiten pro Woche (Beine, Hüfte, Rumpf, 20–30 min) – ab 50 schützen sie Muskeln, Knochen und Sehnen und machen das Laufen ökonomischer.';
+
+  @override
+  String wRaceLeg(String leg, String dist) {
+    return '$leg $dist km – dein Renntempo für diesen Teil';
+  }
+
+  @override
+  String get wRaceFinishDesc => 'Ziel ist das Ankommen: noch keine Zielzeit – starte langsamer als es sich richtig anfühlt, halte deinen Rhythmus und genieß das Finish.';
+
+  @override
+  String get wShakeoutEasyDesc => '15 min ganz locker – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.';
 }
