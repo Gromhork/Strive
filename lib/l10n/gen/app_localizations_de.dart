@@ -4785,6 +4785,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get canSwim400Sub => 'Falls nicht, beginnt der Plan mit Technik und baut bis 400 m am Stück auf – dann legt ein Schwimmtest deine Tempi fest.';
 
   @override
+  String get goalKindRace => 'Wettkampf';
+
+  @override
+  String get goalKindWeeks => 'Nur Planlänge';
+
+  @override
+  String get goalKindWeeksHint => 'Kein Wettkampf – ein Plan, der deine Form über die gewählten Wochen aufbaut, mit Entlastungswochen und ohne Tapering.';
+
+  @override
   String get tabZones => 'Zonen';
 
   @override

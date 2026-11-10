@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:strive/core/event_sport_x.dart';
 import 'package:strive/core/format.dart';
 import 'package:strive/core/sport.dart';
 import 'package:strive/core/theme.dart';
@@ -266,5 +267,32 @@ void main() {
     await _tap(tester, find.text(l.limitKnee));
     await _finish(tester);
     expect(repo.savedProfile!.athlete.limitations, ['knee']);
+  });
+
+  testWidgets('Android back goes one setup step back instead of closing the plan settings', (tester) async {
+    final profile = UserProfile(name: 'Anna', onboarded: true, level: 'intermediate', focus: TrainingFocus.run, trainingDays: const [1, 3, 5]);
+    await _pump(tester, profile: profile, mode: SetupMode.plan);
+    final first = find.byType(PageView);
+    expect(first, findsOneWidget);
+    await _next(tester);
+    final page1 = tester.widget<PageView>(find.byType(PageView)).controller!.page;
+    expect(page1, 1);
+    // System back: one step back, the page stays open.
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(OnboardingPage), findsOneWidget);
+    expect(tester.widget<PageView>(find.byType(PageView)).controller!.page, 0);
+    // On the first step back leaves the plan settings.
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(OnboardingPage), findsNothing);
+  });
+
+  testWidgets('a race of another sport is cleared when the focus changes', (tester) async {
+    expect(eventFitsFocus('70.3', TrainingFocus.run), isFalse);
+    expect(eventFitsFocus('hm', TrainingFocus.run), isTrue);
+    expect(eventFitsFocus('70.3', TrainingFocus.triathlon), isTrue);
+    expect(eventFitsFocus('ride100', TrainingFocus.triathlon), isFalse);
+    expect(eventFitsFocus(null, TrainingFocus.ride), isTrue);
   });
 }

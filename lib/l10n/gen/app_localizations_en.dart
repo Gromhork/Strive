@@ -4785,6 +4785,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get canSwim400Sub => 'If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.';
 
   @override
+  String get goalKindRace => 'Race';
+
+  @override
+  String get goalKindWeeks => 'Plan length only';
+
+  @override
+  String get goalKindWeeksHint => 'No race – a plan that builds your fitness over the chosen number of weeks, with recovery weeks and without taper.';
+
+  @override
   String get tabZones => 'Zones';
 
   @override
