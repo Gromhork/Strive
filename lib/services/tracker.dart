@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -50,7 +51,15 @@ class CardioState {
   final DateTime? runningSince; // null = paused
   final double distanceM;
   final double elevationM;
+
+  /// GPS route. While recording this is a read-only *live view* of the tracker's
+  /// append-only list (no copy per fix), so it keeps growing after this state was
+  /// emitted; [pointCount] is the length at emission. Take a snapshot where a fixed list
+  /// is needed.
   final List<LatLng> points;
+
+  /// Number of route points when this state was emitted (changes with every new fix).
+  final int pointCount;
   final List<int> splits; // seconds per km
   final bool indoor; // treadmill / trainer / pool (no GPS)
   final int laps;
@@ -84,7 +93,7 @@ class CardioState {
   // Moving time per live pace (sec/km rounded to 5 s → seconds) – time in pace zones.
   final Map<int, int> paceTime;
 
-  const CardioState({
+  CardioState({
     required this.sport,
     required this.title,
     this.planId,
@@ -94,6 +103,7 @@ class CardioState {
     this.distanceM = 0,
     this.elevationM = 0,
     this.points = const [],
+    int? pointCount,
     this.splits = const [],
     this.indoor = false,
     this.laps = 0,
@@ -119,7 +129,7 @@ class CardioState {
     this.lapStartDist = 0,
     this.stepResults = const [],
     this.paceTime = const {},
-  });
+  }) : pointCount = pointCount ?? points.length;
 
   bool get paused => runningSince == null;
   int get elapsed => accumulatedSec + (runningSince == null ? 0 : DateTime.now().difference(runningSince!).inSeconds);
@@ -319,6 +329,7 @@ class CardioState {
     distanceM: distanceM ?? this.distanceM,
     elevationM: elevationM ?? this.elevationM,
     points: points ?? this.points,
+    pointCount: points?.length ?? this.points.length,
     splits: splits ?? this.splits,
     indoor: indoor,
     laps: laps ?? this.laps,
@@ -371,6 +382,10 @@ class TrackerNotifier extends Notifier<CardioState?> {
   Units _u = const Units(false);
   String _lang = 'de';
 
+  /// Append-only GPS route of the current recording; states expose a read-only view of it
+  /// (a fix appends one point instead of copying the whole route – O(1), not O(n)).
+  List<LatLng> _route = [];
+
   @override
   CardioState? build() {
     ref.onDispose(_stopAll);
@@ -401,25 +416,60 @@ class TrackerNotifier extends Notifier<CardioState?> {
     _u = ref.read(profileOrDefaultProvider).units;
     final voiceOn = ref.read(prefsProvider).getBool(voicePrefKey(sport)) ?? voiceDefault(sport);
     _voice = VoiceCoach(lang)..enabled = voiceOn;
+    _route = [];
     state = CardioState(
       sport: sport,
       title: title,
       planId: planId,
       start: DateTime.now(),
       runningSince: DateTime.now(),
+      points: UnmodifiableListView(_route),
       indoor: indoor,
       poolLengthM: poolLengthM,
       steps: steps,
       voice: voiceOn,
     );
-    WakelockPlus.enable();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
-    if (!indoor) _listen(title);
+    _run(title, indoor);
     if (l != null) {
       final s = state!;
       _voice?.say(s.structured ? '${l.vcGo} ${stepSpeech(l, s.steps, 0, _u, sport, lang)}' : l.vcGo);
     }
     return null;
+  }
+
+  void _run(String title, bool indoor) {
+    _ticker?.cancel();
+    _sub?.cancel();
+    WakelockPlus.enable();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    if (!indoor) _listen(title);
+  }
+
+  /// Continues a recording restored from storage after the app was killed. Time keeps
+  /// running from the stored timestamps (a running recording counts the time the app was
+  /// gone; a paused one stays paused); route, laps, splits and step progress are kept. GPS
+  /// distance while the app was dead is lost – tracking resumes from the next fix.
+  /// Returns 'service' / 'permission' when GPS cannot be used (the recording is restored
+  /// anyway; the GPS chip shows the error).
+  Future<String?> restore(CardioState saved, {AppLocalizations? l, String lang = 'de'}) async {
+    _stopAll();
+    _last = null;
+    _lastAlt = null;
+    _samples.clear();
+    _stillSince = -1;
+    _splitStartSec = saved.splits.fold(0, (a, b) => a + b);
+    _l = l;
+    _lang = lang;
+    _u = ref.read(profileOrDefaultProvider).units;
+    _voice = VoiceCoach(lang)..enabled = saved.voice;
+    _route = List.of(saved.points);
+    state = saved.copyWith(points: UnmodifiableListView(_route));
+    String? err;
+    if (!saved.indoor) err = await _ensurePermission();
+    if (state == null) return err;
+    _run(saved.title, saved.indoor || err != null);
+    if (err != null) state = state?.copyWith(gpsError: err);
+    return err;
   }
 
   Future<String?> _ensurePermission() async {
@@ -603,14 +653,8 @@ class TrackerNotifier extends Notifier<CardioState?> {
         if (speech != null) _voice?.say(speech);
       }
     }
-    state = s.copyWith(
-      distanceM: dist,
-      elevationM: elev,
-      points: [...s.points, LatLng(p.latitude, p.longitude)],
-      splits: splits,
-      accuracy: p.accuracy,
-      clearError: true,
-    );
+    _route.add(LatLng(p.latitude, p.longitude));
+    state = s.copyWith(distanceM: dist, elevationM: elev, splits: splits, accuracy: p.accuracy, clearError: true);
     _checkStep();
   }
 

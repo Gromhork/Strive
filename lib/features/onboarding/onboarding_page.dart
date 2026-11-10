@@ -87,6 +87,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     _generatePlan = widget.mode != SetupMode.profile;
   }
 
+  @override
+  void dispose() {
+    _pager.dispose();
+    _name.dispose();
+    _eventName.dispose();
+    super.dispose();
+  }
+
   /// Display name of the signed-in account (empty without Firebase, e.g. in tests).
   static String _accountName() {
     try {

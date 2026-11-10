@@ -9034,6 +9034,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suggested {time} (range {fast} – {slow})'**
   String targetSuggestRange(String time, String fast, String slow);
+
+  /// No description provided for @restoreWorkoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue workout?'**
+  String get restoreWorkoutTitle;
+
+  /// No description provided for @restoreWorkoutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} – started {day} at {time}. The app was closed while it was running; continue where you left off or discard it.'**
+  String restoreWorkoutBody(String title, String day, String time);
+
+  /// No description provided for @restoreWorkoutResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get restoreWorkoutResume;
+
+  /// No description provided for @restoreSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your workout?'**
+  String get restoreSummaryTitle;
+
+  /// No description provided for @restoreSummaryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} ({day}, {time}) was finished but not saved yet.'**
+  String restoreSummaryBody(String title, String day, String time);
+
+  /// No description provided for @restoreSummaryOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open summary'**
+  String get restoreSummaryOpen;
+
+  /// No description provided for @restoreToday.
+  ///
+  /// In en, this message translates to:
+  /// **'today'**
+  String get restoreToday;
+
+  /// No description provided for @restoreYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'yesterday'**
+  String get restoreYesterday;
+
+  /// No description provided for @workoutRunsInBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Your workout keeps running in the background.'**
+  String get workoutRunsInBackground;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -3071,5 +3071,40 @@
         "type": "String"
       }
     }
-  }
+  },
+  "restoreWorkoutTitle": "Continue workout?",
+  "restoreWorkoutBody": "{title} – started {day} at {time}. The app was closed while it was running; continue where you left off or discard it.",
+  "@restoreWorkoutBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreWorkoutResume": "Continue",
+  "restoreSummaryTitle": "Save your workout?",
+  "restoreSummaryBody": "{title} ({day}, {time}) was finished but not saved yet.",
+  "@restoreSummaryBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreSummaryOpen": "Open summary",
+  "restoreToday": "today",
+  "restoreYesterday": "yesterday",
+  "workoutRunsInBackground": "Your workout keeps running in the background."
 }

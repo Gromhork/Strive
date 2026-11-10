@@ -98,6 +98,20 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     WakelockPlus.enable();
   }
 
+  /// Continues a workout restored from storage after the app was killed. A rest that is
+  /// still running keeps its end time; an expired one is cleared.
+  void restore(ActiveGym g) {
+    _restTimer?.cancel();
+    final left = g.restEnd?.difference(DateTime.now());
+    if (left == null || left.isNegative) {
+      state = g.copyWith(clearRest: true);
+    } else {
+      state = g;
+      _restTimer = Timer(left, _restDone);
+    }
+    WakelockPlus.enable();
+  }
+
   void _touch() => state = state?.copyWith();
 
   void rename(String t) => state = state?.copyWith(title: t);

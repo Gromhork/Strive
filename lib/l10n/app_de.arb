@@ -1489,5 +1489,14 @@
   "targetSuggestBasisEfforts": "Auf Basis deiner letzten Läufe",
   "targetSuggestBasisLevel": "Grobe Schätzung nach deinem Level – eine Wettkampfzeit macht sie genauer",
   "targetSuggestFinish": "Ziel: ankommen – für diesen Wettkampf noch keine Zielzeit",
-  "targetSuggestRange": "Vorschlag {time} (Spanne {fast} – {slow})"
+  "targetSuggestRange": "Vorschlag {time} (Spanne {fast} – {slow})",
+  "restoreWorkoutTitle": "Einheit fortsetzen?",
+  "restoreWorkoutBody": "{title} – gestartet {day} um {time}. Die App wurde während der Einheit beendet; mach dort weiter, wo du aufgehört hast, oder verwirf sie.",
+  "restoreWorkoutResume": "Fortsetzen",
+  "restoreSummaryTitle": "Einheit speichern?",
+  "restoreSummaryBody": "{title} ({day}, {time}) wurde beendet, aber noch nicht gespeichert.",
+  "restoreSummaryOpen": "Zusammenfassung öffnen",
+  "restoreToday": "heute",
+  "restoreYesterday": "gestern",
+  "workoutRunsInBackground": "Deine Einheit läuft im Hintergrund weiter."
 }
