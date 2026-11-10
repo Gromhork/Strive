@@ -170,9 +170,11 @@ void main() {
         final races = plan.where((w) => w.intensity == 'race').toList();
         expect(races, hasLength(1));
         expect(dayOnly(races.single.date), dayOnly(p.athlete.eventDate!));
+        // Multisport races are stored as a ride (their longest leg, the legs are the steps) – a
+        // triathlon used to be a "swim" (plan review IMPORTANT 16).
         expect(races.single.sport, switch (d.sport) {
-          EventSport.triathlon || EventSport.swim => Sport.swim,
-          EventSport.ride => Sport.ride,
+          EventSport.swim => Sport.swim,
+          EventSport.ride || EventSport.triathlon || EventSport.duathlon => Sport.ride,
           _ => Sport.run,
         });
         expect(races.single.durationMin, greaterThan(10));

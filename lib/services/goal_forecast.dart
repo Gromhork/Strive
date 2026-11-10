@@ -321,7 +321,8 @@ class GoalForecast {
 
     // Run/walk beginners without a measured effort: finish goal, no time (C6). The level default
     // (VDOT 33) predicts a 1:54 half marathon for someone who cannot run 30 min yet.
-    final finishOnly = effort == null && a.raceTimes.isEmpty && PlanGenerator.runWalkStartFor(p) != null;
+    // Same rule as the generator's race session and outlook ([PlanGenerator.finishOnly]).
+    final finishOnly = effort == null && a.raceTimes.isEmpty && PlanGenerator.finishOnly(p);
     final model = GoalModel.hasModel(p) && !finishOnly;
     int? at(double v, double g) => model ? GoalModel.timeAt(p, v, g) : null;
     final nowSec = at(vdot, 0);
@@ -536,7 +537,8 @@ class GoalForecast {
       var changed = false;
       final steps = [
         for (final s in x.steps)
-          if (s.isWork && s.zone == 'M' && s.paceMin != null)
+          // Race-pace sets are zone M; the race's own step is I / T / M by distance.
+          if (s.isWork && (s.zone == 'M' || race) && s.paceMin != null)
             () {
               changed = true;
               final half = race ? 3 : ((s.paceMax! - s.paceMin!) ~/ 2).clamp(3, 5);

@@ -4979,6 +4979,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reauthConfirm => 'Confirm';
 
   @override
+  String feasLongDayDefault(String day, String time) {
+    return 'The long session on $day needs up to $time – far more than the time you set. The plan uses it; set that day\'s time yourself if it does not fit.';
+  }
+
+  @override
+  String feasLongRunShare(int min) {
+    return 'Your other runs are too short for the long run this race needs: it may be at most half of the week and twice your next-longest run. Plan about $min min for your other runs.';
+  }
+
+  @override
+  String feasTargetConservative(String goal, String now, String pred) {
+    return '$goal is a cautious target: today ~$now, realistic on race day ~$pred. Your race-pace sessions use the realistic pace.';
+  }
+
+  @override
+  String wRunContinuous(int min) {
+    return 'Continuous run $min min';
+  }
+
+  @override
+  String get wShakeoutRunWalkDesc => 'Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.';
+
+  @override
+  String get wShakeoutEasyDesc => '15 min very easy – just loosen up, nothing more. Lay out your race kit tonight.';
+
+  @override
+  String get wMastersStrengthNote => 'Strength tip: add 15–20 min of strength after this session (squats, lunges, calf raises, a plank) – twice a week it keeps muscle, bones and tendons strong as you get older.';
+
+  @override
+  String wRaceLeg(String leg, String dist) {
+    return '$leg $dist km – your race pace for this leg';
+  }
+
+  @override
+  String get wRaceFinishDesc => 'Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.';
+
+  @override
   String get wTriOpenWaterNote => 'Race preparation: practise sighting in the pool (look forward every 6–9 strokes); once the water allows, swim some sessions in open water in your wetsuit – in a group, never alone.';
 
   @override
@@ -5031,9 +5068,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wGymRegressionNote => 'First weeks: easier variants of the technically demanding lifts (lat pulldown instead of pull-ups, dumbbell Romanian deadlift instead of the barbell deadlift, reverse crunches instead of hanging leg raises) – the full lifts follow once the technique is solid.';
-
-  @override
-  String get wMastersStrengthNote => 'Strength tip: add 15–20 min of strength after this session (squats, lunges, calf raises, a plank) – twice a week it keeps muscle, bones and tendons strong as you get older.';
 
   @override
   String get recalWhyFatigueRecovery => 'Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.';

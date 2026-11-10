@@ -587,10 +587,11 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
     if (races.isNotEmpty && !sameDay(races.first.date, raceDay)) r.add(_inv1, c, null, 'race on ${races.first.date} instead of $raceDay');
     final after = plan.where((w) => dayOnly(w.date).isAfter(raceDay)).length;
     if (after > 0) r.add(_inv1, c, null, '$after workouts after race day');
+    // Multisport races are stored as a ride with the legs as steps (plan review IMPORTANT 16).
     final want = switch (spec!.sport) {
-      EventSport.run || EventSport.duathlon => Sport.run,
-      EventSport.ride => Sport.ride,
-      EventSport.swim || EventSport.triathlon => Sport.swim,
+      EventSport.run => Sport.run,
+      EventSport.ride || EventSport.duathlon || EventSport.triathlon => Sport.ride,
+      EventSport.swim => Sport.swim,
     };
     if (races.isNotEmpty && races.first.sport != want) {
       r.add(_inv1, c, null, 'race stored as ${races.first.sport.name}, expected ${want.name}');

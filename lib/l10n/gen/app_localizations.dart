@@ -9191,6 +9191,60 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get reauthConfirm;
 
+  /// No description provided for @feasLongDayDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'The long session on {day} needs up to {time} – far more than the time you set. The plan uses it; set that day\'s time yourself if it does not fit.'**
+  String feasLongDayDefault(String day, String time);
+
+  /// No description provided for @feasLongRunShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Your other runs are too short for the long run this race needs: it may be at most half of the week and twice your next-longest run. Plan about {min} min for your other runs.'**
+  String feasLongRunShare(int min);
+
+  /// No description provided for @feasTargetConservative.
+  ///
+  /// In en, this message translates to:
+  /// **'{goal} is a cautious target: today ~{now}, realistic on race day ~{pred}. Your race-pace sessions use the realistic pace.'**
+  String feasTargetConservative(String goal, String now, String pred);
+
+  /// No description provided for @wRunContinuous.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous run {min} min'**
+  String wRunContinuous(int min);
+
+  /// No description provided for @wShakeoutRunWalkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.'**
+  String get wShakeoutRunWalkDesc;
+
+  /// No description provided for @wShakeoutEasyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'15 min very easy – just loosen up, nothing more. Lay out your race kit tonight.'**
+  String get wShakeoutEasyDesc;
+
+  /// No description provided for @wMastersStrengthNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength tip: add 15–20 min of strength after this session (squats, lunges, calf raises, a plank) – twice a week it keeps muscle, bones and tendons strong as you get older.'**
+  String get wMastersStrengthNote;
+
+  /// No description provided for @wRaceLeg.
+  ///
+  /// In en, this message translates to:
+  /// **'{leg} {dist} km – your race pace for this leg'**
+  String wRaceLeg(String leg, String dist);
+
+  /// No description provided for @wRaceFinishDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.'**
+  String get wRaceFinishDesc;
+
   /// No description provided for @wTriOpenWaterNote.
   ///
   /// In en, this message translates to:
@@ -9286,12 +9340,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'First weeks: easier variants of the technically demanding lifts (lat pulldown instead of pull-ups, dumbbell Romanian deadlift instead of the barbell deadlift, reverse crunches instead of hanging leg raises) – the full lifts follow once the technique is solid.'**
   String get wGymRegressionNote;
-
-  /// No description provided for @wMastersStrengthNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Strength tip: add 15–20 min of strength after this session (squats, lunges, calf raises, a plank) – twice a week it keeps muscle, bones and tendons strong as you get older.'**
-  String get wMastersStrengthNote;
 
   /// No description provided for @recalWhyFatigueRecovery.
   ///

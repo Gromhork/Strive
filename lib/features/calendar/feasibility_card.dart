@@ -56,7 +56,10 @@ class FeasibilityCard extends StatelessWidget {
     'longRideTime' => l.feasLongRideTime(f.longRideMin ?? 0, f.longRideTargetMin ?? 0),
     'targetAmbitious' => l.feasTargetAmbitious(clock(f.target!.targetSec), clock(f.target!.currentSec), clock(f.target!.realisticSec)),
     'targetUnrealistic' => l.feasTargetUnrealistic(clock(f.target!.targetSec), clock(f.target!.currentSec), clock(f.target!.realisticSec)),
-    _ => l.feasTooShort(f.weeks ?? 0),
+    // New issues (review 2026-11: long-day default, long-run share, conservative target) carry their own text.
+    _ =>
+      f.extraIssueText(l, issue, dayName: (d) => DateFormat.EEEE(l.localeName).format(DateTime(2024, 1, d))) ??
+          l.feasTooShort(f.weeks ?? 0),
   };
 
   @override

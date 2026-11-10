@@ -4979,6 +4979,43 @@ class AppLocalizationsDe extends AppLocalizations {
   String get reauthConfirm => 'Bestätigen';
 
   @override
+  String feasLongDayDefault(String day, String time) {
+    return 'Die lange Einheit am $day braucht bis zu $time – deutlich mehr als deine angegebene Zeit. Der Plan nutzt sie; trag die Zeit für diesen Tag selbst ein, falls sie nicht passt.';
+  }
+
+  @override
+  String feasLongRunShare(int min) {
+    return 'Deine übrigen Läufe sind zu kurz für den langen Lauf, den dieses Rennen braucht: Er darf höchstens die Hälfte der Woche und doppelt so lang wie dein zweitlängster Lauf sein. Plane für die anderen Läufe etwa $min min ein.';
+  }
+
+  @override
+  String feasTargetConservative(String goal, String now, String pred) {
+    return '$goal ist ein vorsichtiges Ziel: heute ~$now, realistisch am Wettkampftag ~$pred. Deine Renntempo-Einheiten laufen im realistischen Tempo.';
+  }
+
+  @override
+  String wRunContinuous(int min) {
+    return 'Dauerlauf $min min';
+  }
+
+  @override
+  String get wShakeoutRunWalkDesc => 'Lockeres Auslaufen im Lauf-Geh-Rhythmus – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.';
+
+  @override
+  String get wShakeoutEasyDesc => '15 min ganz locker – nur lockern, mehr nicht. Lege heute Abend deine Wettkampfsachen bereit.';
+
+  @override
+  String get wMastersStrengthNote => 'Kraft-Tipp: Hänge an diese Einheit 15–20 min Kraft an (Kniebeugen, Ausfallschritte, Wadenheben, Unterarmstütz) – zweimal pro Woche erhält das mit zunehmendem Alter Muskeln, Knochen und Sehnen.';
+
+  @override
+  String wRaceLeg(String leg, String dist) {
+    return '$leg $dist km – dein Renntempo für diesen Teil';
+  }
+
+  @override
+  String get wRaceFinishDesc => 'Ziel ist das Ankommen: noch keine Zielzeit – starte langsamer als es sich richtig anfühlt, halte deinen Rhythmus und genieß das Finish.';
+
+  @override
   String get wTriOpenWaterNote => 'Wettkampfvorbereitung: Orientierung im Becken üben (alle 6–9 Züge kurz nach vorn schauen); sobald es das Wasser zulässt, einige Einheiten im Freiwasser mit Neoprenanzug – in der Gruppe, nie allein.';
 
   @override
@@ -5031,9 +5068,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wGymRegressionNote => 'Erste Wochen: leichtere Varianten der technisch anspruchsvollen Übungen (Latziehen statt Klimmzügen, Rumänisches Kreuzheben mit Kurzhanteln statt Kreuzheben mit der Langhantel, Reverse Crunches statt hängendem Beinheben) – die vollen Übungen folgen, sobald die Technik sitzt.';
-
-  @override
-  String get wMastersStrengthNote => 'Kraft-Tipp: Hänge an diese Einheit 15–20 min Kraft an (Kniebeugen, Ausfallschritte, Wadenheben, Unterarmstütz) – zweimal pro Woche erhält das mit zunehmendem Alter Muskeln, Knochen und Sehnen.';
 
   @override
   String get recalWhyFatigueRecovery => 'Seit zwei Wochen fühlen sich die Einheiten härter an als geplant: Die nächsten 7 Tage sind eine Erholungswoche (weniger Umfang, keine Intensität). Danach kommen die Qualitätseinheiten mit weniger Wiederholungen zurück.';

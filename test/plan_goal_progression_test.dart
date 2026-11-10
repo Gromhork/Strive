@@ -55,7 +55,8 @@ void main() {
       final regular = plan.where((w) => w.sport == Sport.run && w.intensity == 'easy' && w.steps.first.zone == 'walk').toList();
       final titles = regular.map((w) => w.title).toSet();
       expect(titles, isNot(contains(l.wRunWalk(10, 1))));
-      expect(titles, contains(l.wRunWalk(1, 30)));
+      // The 30 min block without walk breaks is titled as a continuous run (plan review, MINOR).
+      expect(titles, contains(l.wRunContinuous(30)));
     });
 
     test('feasibility warns at creation: too short, a later date that works, 10 km, run/walk finish', () {
@@ -66,11 +67,15 @@ void main() {
       expect(f.shorterDistance, '10k');
       expect(f.runWalkFinish, isTrue);
       final later = p.copyWith(athlete: p.athlete.merge({'eventDate': f.laterDate}));
-      expect(PlanGenerator.feasibility(later, start: start, l: l).issues, isNot(contains('tooShort')));
-      // By then: ~15 km or 2 h on the feet (walk breaks included) – the slow runner's HM long run.
+      final fl = PlanGenerator.feasibility(later, start: start, l: l);
+      expect(fl.issues, isNot(contains('tooShort')));
+      // Plan review C9: the long run stays ≤ 50 % of the week and ≤ 2 × the next-longest run. With
+      // 3 × 60 min that is ~12 km (before: 15 km = 56 % next to 60' runs) – the check now says the other
+      // runs are too short instead of silently planning a lopsided week.
       final lp = gen(later);
-      expect(longestKm(lp) >= 14.5 || longestMin(lp) >= 115, isTrue, reason: '${longestKm(lp)} km / ${longestMin(lp)} min');
-      expect(longestKm(lp), greaterThanOrEqualTo(13));
+      expect(longestKm(lp), greaterThanOrEqualTo(12), reason: '${longestKm(lp)} km / ${longestMin(lp)} min');
+      expect(fl.issues, contains('longRunShare'));
+      expect(fl.otherRunNeedMin, greaterThan(60));
     });
   });
 
