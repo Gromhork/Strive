@@ -8,9 +8,11 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/goal_forecast.dart';
 import '../../services/plan_recalibrate.dart';
 import '../../services/zones.dart' show fmtPace;
 import '../../widgets/common.dart';
+import '../goals/goal_forecast_widgets.dart';
 
 /// "Re-plan & recalibrate": computes the proposal for the next two weeks and shows it as
 /// a preview; nothing changes until the athlete confirms with "Apply".
@@ -24,6 +26,13 @@ Future<void> showRecalibration(BuildContext context, WidgetRef ref) {
         sessions: ref.read(sessionListProvider),
         now: DateTime.now(),
       ).run();
+  // Goal forecast (Zielprognose): where the athlete stands on the way to the event goal.
+  final forecast = GoalForecast.of(
+    profile,
+    plans: ref.read(planListProvider),
+    sessions: ref.read(sessionListProvider),
+    now: DateTime.now(),
+  );
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -31,6 +40,11 @@ Future<void> showRecalibration(BuildContext context, WidgetRef ref) {
     builder:
         (sheet) => RecalibrationSheet(
           result: r,
+          forecast: forecast == null || forecast.early ? null : forecast,
+          onAdjustTarget: (sec) {
+            applyTargetTime(context, ref, sec);
+            Navigator.pop(sheet);
+          },
           onApply: () {
             final repo = ref.read(repoProvider)!;
             // Only planned workouts of the coming days are in [updates] – done ones stay untouched.
@@ -49,9 +63,13 @@ Future<void> showRecalibration(BuildContext context, WidgetRef ref) {
 
 /// Preview of a [Recalibration]: why, and what gets easier / harder / moved.
 class RecalibrationSheet extends StatelessWidget {
-  const RecalibrationSheet({super.key, required this.result, required this.onApply});
+  const RecalibrationSheet({super.key, required this.result, required this.onApply, this.forecast, this.onAdjustTarget});
   final Recalibration result;
   final VoidCallback onApply;
+
+  /// Goal forecast shown above the findings (null: no event goal / too early).
+  final GoalForecast? forecast;
+  final ValueChanged<int>? onAdjustTarget;
 
   static String _reason(AppLocalizations l, RecalReason r, RecalStats s) => switch (r) {
     RecalReason.rpeHigh => l.recalWhyRpeHigh,
@@ -108,6 +126,7 @@ class RecalibrationSheet extends StatelessWidget {
                   Text(l.recalTitle, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   Text(l.recalIntro, style: theme.textTheme.bodySmall),
+                  if (forecast != null) ...[const SizedBox(height: 12), ForecastSummary(forecast!, onAdjustTarget: onAdjustTarget)],
                   const SizedBox(height: 16),
                   Text(l.recalFindings, style: const TextStyle(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 6),

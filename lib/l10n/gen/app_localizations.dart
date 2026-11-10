@@ -7066,6 +7066,372 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
   String get wGymDeloadNote2;
+
+  /// No description provided for @feasTitleTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target time check'**
+  String get feasTitleTarget;
+
+  /// No description provided for @feasTargetAmbitious.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambitious: {goal} needs more than the usual progress in the time left (today ~{now}, expected by race day ~{pred}). Possible with very consistent training.'**
+  String feasTargetAmbitious(String goal, String now, String pred);
+
+  /// No description provided for @feasTargetUnrealistic.
+  ///
+  /// In en, this message translates to:
+  /// **'{goal} is unlikely by race day: today you are at ~{now}, realistic by race day is ~{pred}.'**
+  String feasTargetUnrealistic(String goal, String now, String pred);
+
+  /// No description provided for @feasTargetOkLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Target {goal} is realistic: today ~{now}, expected on race day ~{pred}.'**
+  String feasTargetOkLine(String goal, String now, String pred);
+
+  /// No description provided for @feasTargetLater.
+  ///
+  /// In en, this message translates to:
+  /// **'{goal} becomes realistic with a race on or after {date}'**
+  String feasTargetLater(String goal, String date);
+
+  /// No description provided for @feasTargetSuggest.
+  ///
+  /// In en, this message translates to:
+  /// **'a target of {goal}'**
+  String feasTargetSuggest(String goal);
+
+  /// No description provided for @feasEstimated.
+  ///
+  /// In en, this message translates to:
+  /// **'Rough estimate – enter a race time in the plan settings for a precise check.'**
+  String get feasEstimated;
+
+  /// No description provided for @adjustTargetTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Set target to {goal}'**
+  String adjustTargetTo(String goal);
+
+  /// No description provided for @targetAdjusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Target time set to {goal}'**
+  String targetAdjusted(String goal);
+
+  /// No description provided for @planToEventPre.
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks} weeks to race day: {n} weeks of base building first, then the {x}-week race plan.'**
+  String planToEventPre(int weeks, int n, int x);
+
+  /// No description provided for @planKeepsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed workouts are kept – only upcoming planned workouts are replaced.'**
+  String get planKeepsDone;
+
+  /// No description provided for @planEventTooFar.
+  ///
+  /// In en, this message translates to:
+  /// **'Your event is more than 52 weeks away – the plan uses the length below for now.'**
+  String get planEventTooFar;
+
+  /// No description provided for @planUntilRace.
+  ///
+  /// In en, this message translates to:
+  /// **'The plan runs until race day ({weeks} weeks).'**
+  String planUntilRace(int weeks);
+
+  /// No description provided for @alignPlanToEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Align training plan to this event'**
+  String get alignPlanToEvent;
+
+  /// No description provided for @alignPlanToEventSub.
+  ///
+  /// In en, this message translates to:
+  /// **'The plan runs until race day; completed workouts are kept.'**
+  String get alignPlanToEventSub;
+
+  /// No description provided for @alignNeedsDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a race distance to align the plan.'**
+  String get alignNeedsDistance;
+
+  /// No description provided for @planAligned.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan aligned: {weeks} weeks to race day'**
+  String planAligned(int weeks);
+
+  /// No description provided for @goalStatusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Where I stand'**
+  String get goalStatusTitle;
+
+  /// No description provided for @goalCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks} wk {days} d'**
+  String goalCountdown(int weeks, int days);
+
+  /// No description provided for @goalCountdownDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days'**
+  String goalCountdownDays(int days);
+
+  /// No description provided for @goalToRace.
+  ///
+  /// In en, this message translates to:
+  /// **'to race day'**
+  String get goalToRace;
+
+  /// No description provided for @goalForecast.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast'**
+  String get goalForecast;
+
+  /// No description provided for @goalTargetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get goalTargetLabel;
+
+  /// No description provided for @goalToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get goalToday;
+
+  /// No description provided for @goalFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get goalFinish;
+
+  /// No description provided for @fcAhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Ahead of plan'**
+  String get fcAhead;
+
+  /// No description provided for @fcOnTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'On track'**
+  String get fcOnTrack;
+
+  /// No description provided for @fcSlightlyBehind.
+  ///
+  /// In en, this message translates to:
+  /// **'Slightly behind'**
+  String get fcSlightlyBehind;
+
+  /// No description provided for @fcAtRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal at risk'**
+  String get fcAtRisk;
+
+  /// No description provided for @fcEarly.
+  ///
+  /// In en, this message translates to:
+  /// **'Too early to tell'**
+  String get fcEarly;
+
+  /// No description provided for @fcEarlySub.
+  ///
+  /// In en, this message translates to:
+  /// **'After your first workouts the forecast uses your training data.'**
+  String get fcEarlySub;
+
+  /// No description provided for @fcRiskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goal is at risk'**
+  String get fcRiskTitle;
+
+  /// No description provided for @fcRiskBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent training did not go as planned. Forecast for race day: ~{pred} instead of {goal}.'**
+  String fcRiskBody(String pred, String goal);
+
+  /// No description provided for @fcRiskBodyFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent training did not go as planned – consistent training now keeps the race comfortable.'**
+  String get fcRiskBodyFinish;
+
+  /// No description provided for @fcAheadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You are faster than planned – {goal} looks realistic.'**
+  String fcAheadBody(String goal);
+
+  /// No description provided for @fcReasonMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct} % of the planned training done'**
+  String fcReasonMissed(int pct);
+
+  /// No description provided for @fcReasonSlower.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality runs slower than planned'**
+  String get fcReasonSlower;
+
+  /// No description provided for @fcReasonFaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality runs faster than planned'**
+  String get fcReasonFaster;
+
+  /// No description provided for @fcReasonLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Long runs shorter than planned'**
+  String get fcReasonLongRun;
+
+  /// No description provided for @fcReasonBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Training break – fitness drops after ~10 days without running'**
+  String get fcReasonBreak;
+
+  /// No description provided for @fcRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Range {fast} – {slow}'**
+  String fcRange(String fast, String slow);
+
+  /// No description provided for @fcConfLow.
+  ///
+  /// In en, this message translates to:
+  /// **'rough estimate'**
+  String get fcConfLow;
+
+  /// No description provided for @fcConfMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'from your sessions'**
+  String get fcConfMedium;
+
+  /// No description provided for @fcConfHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'from a race effort'**
+  String get fcConfHigh;
+
+  /// No description provided for @fcInRecal.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal forecast'**
+  String get fcInRecal;
+
+  /// No description provided for @goalPhaseBaseShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Base'**
+  String get goalPhaseBaseShort;
+
+  /// No description provided for @goalPhaseBuildShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get goalPhaseBuildShort;
+
+  /// No description provided for @goalPhasePeakShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak'**
+  String get goalPhasePeakShort;
+
+  /// No description provided for @goalPhaseTaperShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Taper'**
+  String get goalPhaseTaperShort;
+
+  /// No description provided for @goalCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan completion'**
+  String get goalCompletion;
+
+  /// No description provided for @goalLongestRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest run (6 weeks)'**
+  String get goalLongestRun;
+
+  /// No description provided for @goalLongRunNeed.
+  ///
+  /// In en, this message translates to:
+  /// **'needed before the taper: {km} km'**
+  String goalLongRunNeed(int km);
+
+  /// No description provided for @goalFitnessTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Fitness trend (VDOT)'**
+  String get goalFitnessTrend;
+
+  /// No description provided for @goalTrendPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get goalTrendPlanned;
+
+  /// No description provided for @goalTrendActual.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sessions'**
+  String get goalTrendActual;
+
+  /// No description provided for @goalTrendEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The trend appears after a few tempo or interval runs.'**
+  String get goalTrendEmpty;
+
+  /// No description provided for @goalPhaseOutlook.
+  ///
+  /// In en, this message translates to:
+  /// **'Phases & expected fitness'**
+  String get goalPhaseOutlook;
+
+  /// No description provided for @goalPhaseNow.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get goalPhaseNow;
+
+  /// No description provided for @goalWeeksN.
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks} wk'**
+  String goalWeeksN(int weeks);
+
+  /// No description provided for @goalEditPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan settings'**
+  String get goalEditPlan;
+
+  /// No description provided for @goalModelNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast: Daniels VDOT from your race times, race efforts and tempo runs; expected progress ~1 VDOT per 4–6 weeks of consistent training (faster for beginners). Training paces stay on your current fitness.'**
+  String get goalModelNote;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

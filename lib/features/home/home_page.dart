@@ -17,6 +17,7 @@ import '../../widgets/common.dart';
 import '../profile/health_connect_page.dart';
 import '../shell/health_sync.dart';
 import 'adjust_week.dart';
+import 'goal_status_card.dart';
 import 'weather_page.dart';
 import 'week_page.dart';
 import '../profile/profile_page.dart';
@@ -47,6 +48,7 @@ class HomePage extends ConsumerWidget {
           AdjustWeekBanner(),
           _TodayCard(),
           SizedBox(height: 12),
+          GoalStatusCard(),
           _ComingUp(),
           SizedBox(height: 12),
           IntrinsicHeight(

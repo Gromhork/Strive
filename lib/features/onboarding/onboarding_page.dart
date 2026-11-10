@@ -12,6 +12,7 @@ import '../../data/default_programs.dart';
 import '../calendar/feasibility_card.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/goal_model.dart';
 import '../../services/plan_generator.dart';
 import '../../services/schedule_advisor.dart';
 import '../../services/zones.dart';
@@ -1325,7 +1326,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             ],
           ),
         ],
-        if (_advanced && a.eventDistance != null) ...[
+        if (a.eventDistance != null) ...[
           _label(l.targetTime, hint: l.targetTimeHint),
           _timeField(l.targetTime, a.targetTimeSec, (v) => _setA({'targetTimeSec': v}), hint: 'h:mm:ss'),
           if (Vdot.of(a) != null && Vdot.distances[a.eventDistance] != null)
@@ -1363,8 +1364,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   };
 
   Widget _plan(AppLocalizations l) {
-    final weeksToEvent =
-        a.eventDate == null ? null : (startOfWeek(a.eventDate!).difference(startOfWeek(DateTime.now())).inDays / 7).floor() + 1;
+    final weeksToEvent = a.eventDate == null ? null : GoalModel.weeksUntil(a.eventDate!, DateTime.now());
+    final pre = weeksToEvent == null ? 0 : weeksToEvent - GoalModel.specificWeeks;
     final rec = _recommendedRange;
     final options = [(4, l.plan4w), (8, l.plan8w), (12, l.plan12w), (16, l.plan16w), (20, l.plan20w)];
     return Column(
@@ -1397,7 +1398,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           onTap: () => _setA({'difficulty': 'challenging'}),
         ),
         _label(l.planLength),
-        if (weeksToEvent != null && weeksToEvent >= 2 && weeksToEvent <= 30)
+        if (weeksToEvent != null && weeksToEvent >= 2 && weeksToEvent <= GoalModel.maxEventWeeks)
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
@@ -1407,7 +1408,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    weeksToEvent < rec.$1 ? l.planToEventShort(weeksToEvent, rec.$1) : l.planToEvent(weeksToEvent),
+                    [
+                      pre > 0
+                          ? l.planToEventPre(weeksToEvent, pre, GoalModel.specificWeeks)
+                          : (weeksToEvent < rec.$1 ? l.planToEventShort(weeksToEvent, rec.$1) : l.planToEvent(weeksToEvent)),
+                      if (widget.edit) l.planKeepsDone,
+                    ].join('\n'),
                     style: const TextStyle(fontSize: 13),
                   ),
                 ),
@@ -1415,6 +1421,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             ),
           )
         else ...[
+          if (weeksToEvent != null && weeksToEvent > GoalModel.maxEventWeeks) ...[
+            Text(l.planEventTooFar, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 8),
+          ],
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -1435,7 +1445,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         // plan is generated anyway.
         if (a.eventDate != null && a.eventDistance != null) ...[
           const SizedBox(height: 12),
-          FeasibilityCard(_feasibility.of(_advanced ? _profile : _quickProfile, DateTime.now(), l), planAnyway: _generatePlan),
+          FeasibilityCard(
+            _feasibility.of(_advanced ? _profile : _quickProfile, DateTime.now(), l),
+            planAnyway: _generatePlan,
+            showTargetOk: true,
+            onAdjustTarget: (sec) => _setA({'targetTimeSec': sec}),
+          ),
         ],
         const Divider(height: 32),
         SwitchListTile(

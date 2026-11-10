@@ -7,6 +7,7 @@ import '../data/default_programs.dart';
 import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'exercise_class.dart';
+import 'goal_model.dart';
 import 'health_limits.dart';
 import 'zones.dart';
 
@@ -30,7 +31,11 @@ import 'zones.dart';
 ///   days for beginners (H1), one hard budget across sports (H2), no two key runs / rides
 ///   within 48 h (H3).
 /// * Triathlon: bricks (run off the bike) from the build phase (§6.3); 70.3 ≥ 2 swims.
-/// * Goal feasibility (§1.8): [feasibility] says when the event goal is not realistic.
+/// * Goal feasibility (§1.8): [feasibility] says when the event goal is not realistic –
+///   incl. the target time (§1.12, [GoalModel]): race-pace work in the peak phase uses the
+///   target pace only when it is realistic, all other paces the current VDOT.
+/// * With an event the plan runs to race day (≤ 52 weeks; more than 30 weeks away: a base
+///   "pre-plan" block before the race-specific 30 weeks).
 /// * Every session fits the time the athlete has on that day; recovery / taper weeks
 ///   also shrink that time, so time-limited sessions deload too.
 /// * Race day is placed on the event date with a shake-out run the day before.
@@ -107,8 +112,8 @@ class PlanGenerator {
   int? get weeksToEvent {
     final d = a.eventDate;
     if (d == null) return null;
-    final w = (startOfWeek(d).difference(startOfWeek(_start)).inDays / 7).floor() + 1;
-    return w >= 2 && w <= 30 ? w : null;
+    final w = GoalModel.weeksUntil(d, _start);
+    return w >= 2 && w <= GoalModel.maxEventWeeks ? w : null;
   }
 
   /// Couch-to-5K style run/walk progression (index into the run/walk table of
@@ -143,6 +148,9 @@ class PlanGenerator {
   /// Run/walk stage still planned in race week (null: continuous running by then).
   int? _rwAtRace;
 
+  /// Target-time check of this plan ([GoalModel.check]); decides the race-pace work.
+  TargetCheck? _target;
+
   /// Longest long run / long ride the time on its day allows (km / min), see [feasibility].
   double _longRunLimitKm = 0;
   int _longRideLimitMin = 0;
@@ -155,6 +163,7 @@ class PlanGenerator {
 
   List<PlannedWorkout> generate({required DateTime start, int? weeks}) {
     _start = start;
+    _target = GoalModel.check(profile, start: start);
     _rwAtRace = null;
     _longRunLimitKm = 0;
     _longRideLimitMin = 0;
@@ -669,15 +678,20 @@ class PlanGenerator {
 
   /// Phases of the plan; no recovery week in the first [noRecoveryBefore] weeks (run/walk).
   List<String> _phases(int total, {int noRecoveryBefore = 0}) {
+    // An event more than [GoalModel.specificWeeks] away: the weeks before the race-specific
+    // plan are a base "pre-plan" block (easy volume, strides, recovery weeks) – build and peak
+    // keep their usual length instead of stretching over a whole year.
+    final pre = weeksToEvent != null ? max(0, total - GoalModel.specificWeeks) : 0;
+    final spec = total - pre;
     // Short plans keep most weeks for loading: the taper is at most a third of the plan
     // (a 5-week 70.3 plan gets 1 taper week, not 3 out of 5).
-    final taper = weeksToEvent != null ? min(_taperWeeks, min(max(0, total - 2), max(1, total ~/ 3))) : 0;
-    final body = total - taper;
+    final taper = weeksToEvent != null ? min(_taperWeeks, min(max(0, spec - 2), max(1, spec ~/ 3))) : 0;
+    final body = spec - taper;
     final base = max(1, (body * (beginner ? 0.5 : 0.42)).round());
     final peak = weeksToEvent != null ? max(1, (body * 0.18).round()) : 0;
     final build = max(0, body - base - peak);
     final out = <String>[
-      ...List.filled(base, 'base'),
+      ...List.filled(pre + base, 'base'),
       ...List.filled(build, 'build'),
       ...List.filled(peak, 'peak'),
       ...List.filled(taper, 'taper'),
@@ -1066,7 +1080,7 @@ class PlanGenerator {
         // Half marathon: the goal-pace segment runs at HM pace (between M and T), not at
         // marathon pace.
         final hm = dist == 'hm';
-        final work = _runStep('work', 'M', km: mpKm, note: hm ? l.stepHmpNote : l.stepMpNote);
+        final work = hm ? _runStep('work', 'M', km: mpKm, note: l.stepHmpNote) : _mpStep(mpKm);
         final hmPace = hm ? _goalPace() : null;
         steps = [
           _runStep('steady', 'E', km: km - mpKm, note: l.stepEasyNote),
@@ -1122,7 +1136,7 @@ class PlanGenerator {
       }
     } else if (phase == 'peak' && dist == 'm' && second) {
       final mp = _r1(min(weekKm * 0.2, 14));
-      steps = [wu, _runStep('work', 'M', km: mp, note: l.stepMpNote), cd];
+      steps = [wu, _mpStep(mp), cd];
       title = l.wMpRun;
       desc = l.wMpRunDesc;
       intensity = 'tempo';
@@ -1555,13 +1569,37 @@ class PlanGenerator {
     return defaultTemplates(() => '', de: de).firstWhere((t) => t.key == key).name;
   }
 
-  /// Goal race pace (s/km) of the running event: target time, else predicted from VDOT.
+  /// Goal race pace (s/km) of the running event for race-specific work (peak phase): the
+  /// target time when it is realistic in the weeks available ([GoalModel.check] ok); an
+  /// ambitious / unrealistic target gives way to the realistic race-day time – goal-pace work
+  /// far beyond the athlete's fitness is a classic mistake (Daniels). Without a target: the
+  /// time predicted from the current VDOT. All other paces stay on the current VDOT.
   int? _goalPace() {
     final meters = Vdot.distances[a.eventDistance];
     final vdot = Vdot.of(a);
     if (meters == null) return null;
-    final goal = a.targetTimeSec ?? (vdot == null ? null : Vdot.raceTime(vdot, meters));
+    final t = _target;
+    final goal =
+        t != null ? (t.status == TargetStatus.ok ? t.targetSec : t.realisticSec) : (vdot == null ? null : Vdot.raceTime(vdot, meters));
     return goal == null ? null : (goal / (meters / 1000)).round();
+  }
+
+  /// Marathon-pace work step: at goal pace (±5 s/km) when a target time is set, else the
+  /// Daniels M zone of the current VDOT.
+  WorkoutStep _mpStep(double km) {
+    final step = _runStep('work', 'M', km: km, note: l.stepMpNote);
+    final pace = _target == null || a.eventDistance != 'm' ? null : _goalPace();
+    if (pace == null || step.paceMin == null) return step;
+    return WorkoutStep(
+      kind: 'work',
+      distanceM: step.distanceM,
+      zone: 'M',
+      paceMin: pace - 5,
+      paceMax: pace + 5,
+      hrMin: step.hrMin,
+      hrMax: step.hrMax,
+      note: step.note,
+    );
   }
 
   // ───────────────────────────── Race ─────────────────────────────
@@ -1778,6 +1816,47 @@ class PlanGenerator {
   /// Long ride the race needs (min): 70.3 ≥ 3 h, olympic ≥ 90 min (bike leg ~80 min).
   static const _longRideTargetMin = {'sprint': 60, 'olympic': 90, '70.3': 180};
 
+  /// Long run (km) the event needs before the taper (null: no requirement).
+  static double? longRunTargetFor(String? event) => _longRunTargetKm[event];
+
+  /// The phases of a plan for [p] that starts at [start] and runs to race day, each with the
+  /// fitness it is expected to reach by its end ([GoalModel.gain]; recovery weeks belong to the
+  /// phase around them). Empty without an event in range. The expected values are a guide the
+  /// goal forecast compares the athlete with – the plan's paces stay on the current fitness.
+  static List<PhaseOutlook> outlook(UserProfile p, {required DateTime start}) {
+    final g = PlanGenerator(lookupAppLocalizations(const Locale('en')), p, const [], () => '').._start = start;
+    final total = g.weeksToEvent;
+    if (total == null || p.athlete.eventDistance == null) return const [];
+    final raw = g._phases(total);
+    final phases = [...raw];
+    for (var i = 0; i < phases.length; i++) {
+      if (phases[i] != 'recovery') continue;
+      phases[i] = i > 0 ? phases[i - 1] : (raw.firstWhere((x) => x != 'recovery', orElse: () => 'base'));
+    }
+    final (vdot, _) = GoalModel.currentVdot(p);
+    final model = GoalModel.hasModel(p);
+    final out = <PhaseOutlook>[];
+    for (var i = 0; i < phases.length;) {
+      var j = i;
+      while (j + 1 < phases.length && phases[j + 1] == phases[i]) {
+        j++;
+      }
+      // Training weeks completed by the end of the phase (race week adds none).
+      final gain = GoalModel.gain(p, min(j + 1, total - 1).toDouble());
+      out.add(
+        PhaseOutlook(
+          phase: phases[i],
+          firstWeek: i,
+          weeks: j - i + 1,
+          expectedVdot: vdot + gain,
+          predictedSec: model ? GoalModel.timeAt(p, vdot, gain) : null,
+        ),
+      );
+      i = j + 1;
+    }
+    return out;
+  }
+
   static const _shorterGoals = {
     'm': ['hm', '10k', '5k'],
     'hm': ['10k', '5k'],
@@ -1800,7 +1879,16 @@ class PlanGenerator {
     final weeks = (PlanGenerator(loc, p, const [], () => '').._start = from).weeksToEvent;
     if (ev == null || weeks == null) return const PlanFeasibility();
     final c = _check(loc, p, from);
-    if (c.ok) return c;
+    // Target time (§1.12): required vs. achievable VDOT gain – not for goals that are out of
+    // reach anyway (entry requirements).
+    final notAllowed = c.issues.contains('beginnerMarathon') || c.issues.contains('runWalkLong');
+    final t = notAllowed ? null : GoalModel.check(p, start: from);
+    final targetIssue = switch (t?.status) {
+      TargetStatus.ambitious => 'targetAmbitious',
+      TargetStatus.unrealistic => 'targetUnrealistic',
+      _ => null,
+    };
+    if (c.ok) return PlanFeasibility(issues: [if (targetIssue != null) targetIssue], weeks: weeks, target: t);
     bool timing(PlanFeasibility f) => f.issues.contains('tooShort') || f.issues.contains('runWalk');
     DateTime? later;
     if (timing(c) && !c.issues.contains('beginnerMarathon') && !c.issues.contains('runWalkLong')) {
@@ -1818,7 +1906,8 @@ class PlanGenerator {
       }
     }
     return PlanFeasibility(
-      issues: c.issues,
+      issues: [...c.issues, if (targetIssue != null) targetIssue],
+      target: t,
       weeks: weeks,
       laterDate: later,
       shorterDistance: shorter,
@@ -1884,13 +1973,21 @@ class PlanFeasibility {
     this.longRunTargetKm,
     this.longRideMin,
     this.longRideTargetMin,
+    this.target,
   });
 
   /// Why the goal is not realistic, most important first: `beginnerMarathon`,
   /// `runWalkLong` (HM / marathon while still on run/walk), `runWalk` (still on run/walk
   /// in race week), `tooShort` (too few weeks to build the long session), `longRunTime` /
-  /// `longRideTime` (the time on the long day caps the long session).
+  /// `longRideTime` (the time on the long day caps the long session), `targetAmbitious` /
+  /// `targetUnrealistic` (the target time needs more fitness than the weeks can give).
   final List<String> issues;
+
+  /// Target-time check (null without a target time).
+  final TargetCheck? target;
+
+  /// Only the target time is the problem – the event itself is fine.
+  bool get onlyTarget => issues.isNotEmpty && issues.every((i) => i.startsWith('target'));
   bool get ok => issues.isEmpty;
   String? get reason => issues.firstOrNull;
 
@@ -1911,6 +2008,21 @@ class PlanFeasibility {
   final double? longRunTargetKm;
   final int? longRideMin;
   final int? longRideTargetMin;
+}
+
+/// One phase of [PlanGenerator.outlook].
+class PhaseOutlook {
+  const PhaseOutlook({required this.phase, required this.firstWeek, required this.weeks, required this.expectedVdot, this.predictedSec});
+
+  /// base | build | peak | taper.
+  final String phase;
+
+  /// Index of its first week in the plan (0 = the plan's first week) and its length.
+  final int firstWeek, weeks;
+
+  /// Running fitness expected by the end of the phase, and the race time it predicts.
+  final double expectedVdot;
+  final int? predictedSec;
 }
 
 class _Slot {

@@ -1,0 +1,338 @@
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/format.dart';
+import '../../core/theme.dart';
+import '../../data/models.dart';
+import '../../l10n/gen/app_localizations.dart';
+import '../../providers.dart';
+import '../../services/goal_forecast.dart';
+import '../calendar/feasibility_card.dart' show eventDistanceName;
+
+/// Goal forecast of the signed-in athlete (null without an upcoming event).
+final goalForecastProvider = Provider<GoalForecast?>(
+  (ref) => GoalForecast.of(
+    ref.watch(profileOrDefaultProvider),
+    plans: ref.watch(planListProvider),
+    sessions: ref.watch(sessionListProvider),
+    now: DateTime.now(),
+  ),
+);
+
+/// Sets a new target time: profile + the race-pace work of the upcoming peak weeks and the race.
+void applyTargetTime(BuildContext context, WidgetRef ref, int sec) {
+  final repo = ref.read(repoProvider);
+  if (repo == null) return;
+  final p = ref.read(profileOrDefaultProvider);
+  final updates = GoalForecast.retarget(p, ref.read(planListProvider), sec, now: DateTime.now());
+  if (updates.isNotEmpty) repo.updateMany(plans: updates);
+  repo.saveProfile(p.copyWith(athlete: p.athlete.merge({'targetTimeSec': sec})));
+  ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(context.l10n.targetAdjusted(clock(sec)))));
+}
+
+/// Colour, icon and label of a forecast status.
+(Color, IconData, String) forecastStyle(AppLocalizations l, GoalForecast f) {
+  if (f.early) return (AppColors.brand, Icons.hourglass_top_rounded, l.fcEarly);
+  return switch (f.status) {
+    ForecastStatus.ahead => (AppColors.success, Icons.rocket_launch_rounded, l.fcAhead),
+    ForecastStatus.onTrack => (AppColors.success, Icons.check_circle_rounded, l.fcOnTrack),
+    ForecastStatus.slightlyBehind => (AppColors.warning, Icons.trending_down_rounded, l.fcSlightlyBehind),
+    ForecastStatus.atRisk => (AppColors.danger, Icons.warning_amber_rounded, l.fcAtRisk),
+  };
+}
+
+String forecastReasonText(AppLocalizations l, GoalForecast f, ForecastReason r) => switch (r) {
+  ForecastReason.missedTraining => l.fcReasonMissed(((f.adherence ?? 0) * 100).round()),
+  ForecastReason.slowerThanPlanned => l.fcReasonSlower,
+  ForecastReason.fasterThanPlanned => l.fcReasonFaster,
+  ForecastReason.longRunBehind => l.fcReasonLongRun,
+  ForecastReason.trainingBreak => l.fcReasonBreak,
+};
+
+String phaseShort(AppLocalizations l, String phase) => switch (phase) {
+  'build' => l.goalPhaseBuildShort,
+  'peak' => l.goalPhasePeakShort,
+  'taper' => l.goalPhaseTaperShort,
+  _ => l.goalPhaseBaseShort,
+};
+
+Color phaseColor(String phase) => switch (phase) {
+  'build' => AppColors.ride,
+  'peak' => AppColors.gym,
+  'taper' => AppColors.run,
+  _ => AppColors.swim,
+};
+
+/// "+1:23" / "−0:45" (forecast minus target).
+String deltaText(int sec) => '${sec > 0 ? '+' : (sec < 0 ? '−' : '±')}${clock(sec.abs())}';
+
+String countdownText(AppLocalizations l, int daysLeft) =>
+    daysLeft < 14 ? l.goalCountdownDays(daysLeft) : l.goalCountdown(daysLeft ~/ 7, daysLeft % 7);
+
+String eventLabel(AppLocalizations l, String event) => eventDistanceName(l, event);
+
+/// Weeks of the plan by phase, from the stored planned workouts: each week takes the phase of
+/// most of its workouts (recovery weeks belong to the phase around them).
+List<(String, int)> phaseSegments(List<PlannedWorkout> plans, DateTime planStart, DateTime race) {
+  final first = startOfWeek(planStart);
+  final n = ((startOfWeek(race).difference(first).inHours / 24).round() ~/ 7) + 1;
+  final weeks = List<String?>.filled(max(1, n), null);
+  final counts = List.generate(weeks.length, (_) => <String, int>{});
+  for (final p in plans) {
+    final ph = p.phase;
+    if (ph == null || ph == 'recovery' || p.date.isBefore(first) || dayOnly(p.date).isAfter(race)) continue;
+    final i = (startOfWeek(p.date).difference(first).inHours / 24).round() ~/ 7;
+    if (i < 0 || i >= weeks.length) continue;
+    counts[i].update(ph, (v) => v + 1, ifAbsent: () => 1);
+  }
+  for (var i = 0; i < weeks.length; i++) {
+    if (counts[i].isNotEmpty) weeks[i] = (counts[i].entries.toList()..sort((a, b) => b.value.compareTo(a.value))).first.key;
+  }
+  // Weeks without phased workouts (recovery only, or gaps) take the previous phase.
+  for (var i = 0; i < weeks.length; i++) {
+    weeks[i] ??= i > 0 ? weeks[i - 1] : (weeks.firstWhere((w) => w != null, orElse: () => 'base'));
+  }
+  final out = <(String, int)>[];
+  for (final w in weeks) {
+    if (out.isNotEmpty && out.last.$1 == w) {
+      out[out.length - 1] = (w!, out.last.$2 + 1);
+    } else {
+      out.add((w!, 1));
+    }
+  }
+  return out;
+}
+
+/// Base → build → peak → taper bar with a marker at [position] (0…1).
+class PhaseTimeline extends StatelessWidget {
+  const PhaseTimeline({super.key, required this.segments, required this.position, this.height = 10, this.labels = true});
+  final List<(String, int)> segments;
+  final double position;
+  final double height;
+  final bool labels;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    final total = segments.fold<int>(0, (x, s) => x + s.$2);
+    if (total == 0) return const SizedBox.shrink();
+    return LayoutBuilder(
+      builder: (context, c) {
+        final x = (position.clamp(0.0, 1.0) * c.maxWidth).clamp(5.0, max(5.0, c.maxWidth - 5));
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: height + 8,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 4,
+                    height: height,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(height),
+                      child: Row(
+                        children: [
+                          for (final (i, s) in segments.indexed)
+                            Expanded(
+                              flex: s.$2,
+                              child: Container(
+                                margin: EdgeInsets.only(right: i == segments.length - 1 ? 0 : 2),
+                                color: phaseColor(s.$1).withValues(alpha: 0.85),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: x - 5,
+                    top: 0,
+                    child: Container(
+                      key: const ValueKey('timelineMarker'),
+                      width: 10,
+                      height: height + 8,
+                      decoration: BoxDecoration(
+                        color: scheme.onSurface,
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: scheme.surface, width: 2),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (labels) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  for (final s in segments)
+                    Expanded(
+                      flex: s.$2,
+                      child: Text(
+                        s.$2 * 6 >= total || segments.length <= 4 ? phaseShort(l, s.$1) : '',
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        softWrap: false,
+                        style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Small coloured status pill.
+class ForecastChip extends StatelessWidget {
+  const ForecastChip(this.f, {super.key});
+  final GoalForecast f;
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, icon, label) = forecastStyle(context.l10n, f);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(10)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Forecast vs. target as two values with the delta (or "finish" without a target).
+class ForecastTimes extends StatelessWidget {
+  const ForecastTimes(this.f, {super.key, this.large = false});
+  final GoalForecast f;
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final theme = Theme.of(context);
+    final (color, _, _) = forecastStyle(l, f);
+    final valueStyle = (large ? theme.textTheme.headlineSmall : theme.textTheme.titleLarge)?.copyWith(
+      fontWeight: FontWeight.w800,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    Widget cell(String label, String value, {Color? c, String? sub}) => Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value, maxLines: 1, style: valueStyle?.copyWith(color: c)),
+          ),
+          if (sub != null)
+            Text(
+              sub,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(color: c ?? theme.colorScheme.outline),
+            ),
+        ],
+      ),
+    );
+    final race = f.raceDaySec;
+    final target = f.targetSec;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        cell(
+          l.goalForecast,
+          race == null ? '–' : '~${clock(race)}',
+          c: f.early ? null : color,
+          sub: f.nowSec == null ? null : '${l.goalToday} ~${clock(f.nowSec!)}',
+        ),
+        const SizedBox(width: 12),
+        cell(
+          l.goalTargetLabel,
+          target == null ? l.goalFinish : clock(target),
+          sub: target == null || race == null || f.early ? null : deltaText(race - target),
+          c: null,
+        ),
+      ],
+    );
+  }
+}
+
+/// Compact forecast box (recalibration sheet): status, times, reasons, adjust-target action.
+class ForecastSummary extends StatelessWidget {
+  const ForecastSummary(this.f, {super.key, this.onAdjustTarget});
+  final GoalForecast f;
+  final ValueChanged<int>? onAdjustTarget;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final (color, _, _) = forecastStyle(l, f);
+    return Container(
+      key: const ValueKey('forecastSummary'),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${l.fcInRecal} · ${eventLabel(l, f.event)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ForecastChip(f),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ForecastTimes(f),
+          for (final r in f.reasons) ...[
+            const SizedBox(height: 4),
+            Text('• ${forecastReasonText(l, f, r)}', style: const TextStyle(fontSize: 12)),
+          ],
+          if (f.suggestedSec != null && onAdjustTarget != null && !f.early && f.status != ForecastStatus.onTrack) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.tonalIcon(
+                key: const ValueKey('forecastAdjust'),
+                style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
+                onPressed: () => onAdjustTarget!(f.suggestedSec!),
+                icon: const Icon(Icons.flag_rounded, size: 18),
+                label: Text(l.adjustTargetTo(clock(f.suggestedSec!))),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

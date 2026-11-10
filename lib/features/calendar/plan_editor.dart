@@ -9,6 +9,7 @@ import '../../core/sport.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/coach_service.dart';
+import '../../services/goal_model.dart';
 import '../../services/plan_generator.dart';
 import '../../widgets/common.dart';
 import '../session/start_helpers.dart';
@@ -355,7 +356,17 @@ class _PlanGenerator extends ConsumerStatefulWidget {
 }
 
 class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
-  late int _weeks = ref.read(profileOrDefaultProvider).athlete.planWeeks.clamp(1, 24);
+  /// Plan length: the weeks to race day when an event is set (the local generator always plans
+  /// to race day then), else the length from the plan settings.
+  late int _weeks = (_eventWeeks(ref.read(profileOrDefaultProvider)) ?? ref.read(profileOrDefaultProvider).athlete.planWeeks).clamp(1, 24);
+
+  static int? _eventWeeks(UserProfile p) {
+    final d = p.athlete.eventDate;
+    if (d == null) return null;
+    final w = GoalModel.weeksUntil(d, DateTime.now());
+    return w >= 2 && w <= GoalModel.maxEventWeeks ? w : null;
+  }
+
   bool _ai = false;
   bool _replace = true;
   bool _busy = false;
@@ -446,17 +457,40 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
               ),
               if (!_ai && p.athlete.eventDate != null && p.athlete.eventDistance != null) ...[
                 const SizedBox(height: 12),
-                FeasibilityCard(_feasibility.of(p, DateTime.now(), l), planAnyway: true),
+                FeasibilityCard(
+                  _feasibility.of(p, DateTime.now(), l),
+                  planAnyway: true,
+                  showTargetOk: true,
+                  onAdjustTarget: (sec) {
+                    ref.read(repoProvider)!.saveProfile(p.copyWith(athlete: p.athlete.merge({'targetTimeSec': sec})));
+                    toast(context, l.targetAdjusted(clock(sec)));
+                  },
+                ),
               ],
               const SizedBox(height: 16),
-              LabeledSlider(
-                label: l.weeks,
-                value: _weeks.toDouble(),
-                min: 1,
-                max: 24,
-                divisions: 23,
-                onChanged: (v) => setState(() => _weeks = v.round()),
-              ),
+              if (!_ai && _eventWeeks(p) != null)
+                Container(
+                  key: const ValueKey('planUntilRace'),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.event_available_rounded, color: AppColors.brand),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text('\n', style: const TextStyle(fontSize: 13))),
+                    ],
+                  ),
+                )
+              else
+                LabeledSlider(
+                  label: l.weeks,
+                  value: _weeks.toDouble(),
+                  min: 1,
+                  max: 24,
+                  divisions: 23,
+                  onChanged: (v) => setState(() => _weeks = v.round()),
+                ),
+              const SizedBox(height: 8),
               Segments<bool>(
                 segments: [Seg(false, label: l.planLocal, icon: Icons.rule), Seg(true, label: l.planAi, icon: Icons.auto_awesome)],
                 value: _ai,
