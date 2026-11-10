@@ -63,6 +63,11 @@ class CardioState {
   final int lastLengthAt;
   final List<StepMark> lengthMarks;
   final int? bestPace; // fastest live pace (sec/km) – shown as max speed on rides
+  // Manual laps (lap button, not pool): finished lap times / distances and the start of the current lap.
+  final List<int> lapSecs;
+  final List<double> lapDists;
+  final int lapStartSec;
+  final double lapStartDist;
 
   const CardioState({
     required this.sport,
@@ -93,6 +98,10 @@ class CardioState {
     this.lastLengthAt = 0,
     this.lengthMarks = const [],
     this.bestPace,
+    this.lapSecs = const [],
+    this.lapDists = const [],
+    this.lapStartSec = 0,
+    this.lapStartDist = 0,
   });
 
   bool get paused => runningSince == null;
@@ -156,6 +165,13 @@ class CardioState {
     if (currentPace == null) return null;
     return sport == Sport.swim ? (currentPace! / 10).round() : currentPace;
   }
+
+  /// Current manual lap: time and distance since the last lap press (or the start).
+  int get lapElapsed => elapsed - lapStartSec;
+  double get lapDistance => effectiveDistance - lapStartDist;
+
+  /// Seconds into the current km split (splits are recorded every full km).
+  int get splitElapsed => elapsed - splits.fold<int>(0, (a, b) => a + b);
 
   /// Estimated seconds left in the whole structured workout.
   int get workoutLeftSec =>
@@ -253,6 +269,10 @@ class CardioState {
     int? lastLengthAt,
     List<StepMark>? lengthMarks,
     int? bestPace,
+    List<int>? lapSecs,
+    List<double>? lapDists,
+    int? lapStartSec,
+    double? lapStartDist,
   }) => CardioState(
     sport: sport,
     title: title,
@@ -282,6 +302,10 @@ class CardioState {
     lastLengthAt: lastLengthAt ?? this.lastLengthAt,
     lengthMarks: lengthMarks ?? this.lengthMarks,
     bestPace: bestPace ?? this.bestPace,
+    lapSecs: lapSecs ?? this.lapSecs,
+    lapDists: lapDists ?? this.lapDists,
+    lapStartSec: lapStartSec ?? this.lapStartSec,
+    lapStartDist: lapStartDist ?? this.lapStartDist,
   );
 }
 
@@ -585,8 +609,42 @@ class TrackerNotifier extends Notifier<CardioState?> {
       return;
     }
     HapticFeedback.mediumImpact();
-    state = s.copyWith(laps: s.laps + 1);
+    final now = s.elapsed;
+    var next = s.copyWith(
+      laps: s.laps + 1,
+      lapSecs: [...s.lapSecs, now - s.lapStartSec],
+      lapDists: [...s.lapDists, s.effectiveDistance - s.lapStartDist],
+      lapStartSec: now,
+      lapStartDist: s.effectiveDistance,
+    );
+    // Open steps ("until lap button") end with a lap press, like on a sports watch.
+    final st = next.step;
+    if (st != null && st.distanceM == null && st.durationSec == null) {
+      final adv = next.advanceStep();
+      state = adv;
+      _announceStep(next, adv);
+      return;
+    }
+    state = next;
     _checkStep();
+  }
+
+  /// Voice: repeats the current step (structured) or time + distance.
+  void speakStatus() {
+    final s = state;
+    final l = _l;
+    if (s == null || l == null) return;
+    final st = s.step;
+    if (st != null) {
+      _voice?.say(stepSpeech(l, s.steps, s.stepIndex, _u, s.sport, _lang), force: true);
+      return;
+    }
+    final de = _lang == 'de';
+    final dist =
+        s.sport == Sport.swim
+            ? '${s.effectiveDistance.round()} ${de ? 'Meter' : 'meters'}'
+            : '${spokenNum(_u.distOut(s.effectiveDistance), _lang, 2)} ${_u.imperial ? (de ? 'Meilen' : 'miles') : (de ? 'Kilometer' : 'kilometers')}';
+    _voice?.say(l.vcStatus(spokenDuration(s.elapsed, _lang), dist), force: true);
   }
 
   void undoLap() {
