@@ -189,16 +189,19 @@ class _RecalibrationSheetState extends State<RecalibrationSheet> {
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
               child: Row(
                 children: [
-                  Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel))),
-                  if (!r.isEmpty) ...[
-                    const SizedBox(width: 12),
+                  // Cancel takes its natural width, the main action the rest; labels scale
+                  // down instead of wrapping ("Abbreche-n") or being cut off.
+                  if (r.isEmpty)
+                    Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel)))
+                  else ...[
+                    TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel)),
+                    const SizedBox(width: 8),
                     Expanded(
-                      flex: 2,
                       child: FilledButton.icon(
                         key: const ValueKey('recalApply'),
                         onPressed: chosen.isEmpty ? null : () => widget.onApply(chosen),
                         icon: const Icon(Icons.check_rounded),
-                        label: Text(n > 0 ? l.recalApply(n) : l.apply, overflow: TextOverflow.ellipsis),
+                        label: FittedBox(fit: BoxFit.scaleDown, child: Text(n > 0 ? l.recalApply(n) : l.apply, maxLines: 1)),
                       ),
                     ),
                   ],

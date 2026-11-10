@@ -2167,7 +2167,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get zInterval => 'Intervall';
 
   @override
-  String get zStride => 'Sprint';
+  String get zStride => 'Schnell';
 
   @override
   String get zJog => 'Erholung';
