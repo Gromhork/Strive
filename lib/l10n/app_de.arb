@@ -870,7 +870,7 @@
   "noLengthsYet": "Deine Bahnen erscheinen hier nach dem ersten Tippen.",
   "keySessionSub": "Wichtige Einheit der Woche – Strive hält harte Tage auseinander.",
   "workoutPhases": "Phasen",
-  "planDone": "Plan erledigt",
+  "planDone": "Erledigt",
   "perSport": "Pro Sportart",
   "recoveryTitle": "Erholung & Belastung",
   "load7d": "Belastung 7 Tage",
@@ -1455,5 +1455,18 @@
   "feasMoveLongDay": "Lege die lange Einheit auf {day} ({time} verfügbar)",
   "timeLongDayHint2": "An deinem Tag für lange Einheiten (★) plant Strive für dieses Ziel {time} ein, außer du legst den Tag selbst fest.",
   "abilityTitle": "Dein aktueller Stand",
-  "canSwim400Sub": "Falls nicht, beginnt der Plan mit Technik und baut bis 400 m am Stück auf – dann legt ein Schwimmtest deine Tempi fest."
+  "canSwim400Sub": "Falls nicht, beginnt der Plan mit Technik und baut bis 400 m am Stück auf – dann legt ein Schwimmtest deine Tempi fest.",
+  "tabZones": "Zonen",
+  "tabPlan": "Soll/Ist",
+  "planProjected": "Voraussichtl. Ende",
+  "planPlanned": "Geplant",
+  "planDelta": "ggü. Plan",
+  "planOnTarget": "Intervalle im Ziel",
+  "planNow": "läuft",
+  "planShort": "Verkürzt",
+  "planNoneDone": "Abgeschlossene Abschnitte erscheinen hier mit ihren Ist-Werten.",
+  "planStepsLeft": "danach noch {n}",
+  "zoneWaiting": "Warte auf Tempo…",
+  "zoneTimeIn": "Zeit in Zone",
+  "zoneCurrent": "Aktuelle Zone"
 }

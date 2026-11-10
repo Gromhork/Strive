@@ -2773,7 +2773,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workoutPhases => 'Phasen';
 
   @override
-  String get planDone => 'Plan erledigt';
+  String get planDone => 'Erledigt';
 
   @override
   String get perSport => 'Pro Sportart';
@@ -4783,4 +4783,45 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get canSwim400Sub => 'Falls nicht, beginnt der Plan mit Technik und baut bis 400 m am Stück auf – dann legt ein Schwimmtest deine Tempi fest.';
+
+  @override
+  String get tabZones => 'Zonen';
+
+  @override
+  String get tabPlan => 'Soll/Ist';
+
+  @override
+  String get planProjected => 'Voraussichtl. Ende';
+
+  @override
+  String get planPlanned => 'Geplant';
+
+  @override
+  String get planDelta => 'ggü. Plan';
+
+  @override
+  String get planOnTarget => 'Intervalle im Ziel';
+
+  @override
+  String get planNow => 'läuft';
+
+  @override
+  String get planShort => 'Verkürzt';
+
+  @override
+  String get planNoneDone => 'Abgeschlossene Abschnitte erscheinen hier mit ihren Ist-Werten.';
+
+  @override
+  String planStepsLeft(int n) {
+    return 'danach noch $n';
+  }
+
+  @override
+  String get zoneWaiting => 'Warte auf Tempo…';
+
+  @override
+  String get zoneTimeIn => 'Zeit in Zone';
+
+  @override
+  String get zoneCurrent => 'Aktuelle Zone';
 }

@@ -5318,7 +5318,7 @@ abstract class AppLocalizations {
   /// No description provided for @planDone.
   ///
   /// In en, this message translates to:
-  /// **'Plan done'**
+  /// **'Done'**
   String get planDone;
 
   /// No description provided for @perSport.
@@ -8830,6 +8830,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.'**
   String get canSwim400Sub;
+
+  /// No description provided for @tabZones.
+  ///
+  /// In en, this message translates to:
+  /// **'Zones'**
+  String get tabZones;
+
+  /// No description provided for @tabPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get tabPlan;
+
+  /// No description provided for @planProjected.
+  ///
+  /// In en, this message translates to:
+  /// **'Projected finish'**
+  String get planProjected;
+
+  /// No description provided for @planPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get planPlanned;
+
+  /// No description provided for @planDelta.
+  ///
+  /// In en, this message translates to:
+  /// **'vs. plan'**
+  String get planDelta;
+
+  /// No description provided for @planOnTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals on target'**
+  String get planOnTarget;
+
+  /// No description provided for @planNow.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get planNow;
+
+  /// No description provided for @planShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortened'**
+  String get planShort;
+
+  /// No description provided for @planNoneDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished sections appear here with their actual values.'**
+  String get planNoneDone;
+
+  /// No description provided for @planStepsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} more after this one'**
+  String planStepsLeft(int n);
+
+  /// No description provided for @zoneWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for pace…'**
+  String get zoneWaiting;
+
+  /// No description provided for @zoneTimeIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Time in zone'**
+  String get zoneTimeIn;
+
+  /// No description provided for @zoneCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current zone'**
+  String get zoneCurrent;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
