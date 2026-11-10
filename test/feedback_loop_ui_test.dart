@@ -158,6 +158,9 @@ void main() {
       await t.pump();
       expect(find.text(l.summaryEffortPrefilled), findsNothing);
       await t.scrollUntilVisible(find.text(l.saveWorkout), 100, scrollable: find.byType(Scrollable).first);
+      // scrollUntilVisible stops as soon as the button's top edge enters the view.
+      await t.ensureVisible(find.text(l.saveWorkout));
+      await t.pumpAndSettle();
       await t.tap(find.text(l.saveWorkout));
       await t.pumpAndSettle();
       expect(repo.savedSessions.single.rpe, 9);
