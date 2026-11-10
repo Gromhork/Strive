@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/event_distances.dart';
+import '../../core/event_sport_x.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
@@ -14,8 +16,8 @@ import '../../services/plan_gaps.dart';
 import '../../services/plan_generator.dart';
 import '../calendar/feasibility_card.dart';
 import '../calendar/replace_plan_dialog.dart';
-import '../../services/race_search.dart';
 import '../../widgets/common.dart';
+import '../../widgets/event_distance_picker.dart';
 import '../train/exercise_picker.dart';
 import 'race_search_page.dart';
 
@@ -212,7 +214,48 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   int? _initialTarget() {
     final a = ref.read(profileOrDefaultProvider).athlete;
     final km = widget.existing?.eventKm ?? widget.existing?.target;
-    return km != null && eventKeyForKm(km) == a.eventDistance ? a.targetTimeSec : null;
+    return km != null && eventKeyForKm(km, prefer: a.eventDistance) == a.eventDistance ? a.targetTimeSec : null;
+  }
+
+  /// Race distance picked from the chips (kept while the km field matches it).
+  late String? _eventKey = _initialKey();
+
+  String? _initialKey() {
+    final ex = widget.existing;
+    if (ex == null || ex.type != GoalType.event) return null;
+    return eventKeyForKm(ex.eventKm ?? ex.target, prefer: ref.read(profileOrDefaultProvider).athlete.eventDistance);
+  }
+
+  /// Race sports whose distances are offered as chips: the goal's sport, or the focus.
+  List<EventSport> get _eventSports {
+    final focus = EventSportX.fromFocus(ref.read(profileOrDefaultProvider).focus);
+    return [
+      switch (_sport) {
+        Sport.ride => EventSport.ride,
+        Sport.swim => EventSport.swim,
+        Sport.run => focus == EventSport.triathlon || focus == EventSport.duathlon ? focus : EventSport.run,
+        _ => focus,
+      },
+    ];
+  }
+
+  /// Event distance key of the current input.
+  String? get _key {
+    final km = parseNum(_target.text) ?? 0;
+    final picked = eventDistanceOf(_eventKey);
+    if (picked != null && (km - picked.km).abs() <= picked.km * 0.03) return picked.key;
+    return eventKeyForKm(km, sport: _eventSports.first);
+  }
+
+  void _pickDistance(String? key) {
+    final d = eventDistanceOf(key);
+    setState(() {
+      _eventKey = d?.key;
+      if (d != null) {
+        _target.text = Units.num(d.km, 2);
+        _sport = d.sport.sport;
+      }
+    });
   }
 
   @override
@@ -229,7 +272,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
 
   /// The profile with this event as the plan's goal (null when it cannot be aligned).
   UserProfile? _alignedProfile() {
-    final key = eventKeyForKm(parseNum(_target.text) ?? 0);
+    final key = _key;
     if (_type != GoalType.event || !_align || _deadline == null || key == null) return null;
     final p = ref.read(profileOrDefaultProvider);
     return p.copyWith(athlete: p.athlete.merge({'eventDate': _deadline, 'eventDistance': key, 'targetTimeSec': _targetSec}));
@@ -312,7 +355,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
     ref.watch(templateListProvider);
     ref.watch(planListProvider);
     final aligned = _alignedProfile();
-    final eventKey = eventKeyForKm(parseNum(_target.text) ?? 0);
+    final eventKey = _key;
     final types = {
       GoalType.frequency: (l.goalTypeFrequency, Icons.repeat_rounded),
       GoalType.distance: (l.goalTypeDistance, Icons.straighten),
@@ -400,6 +443,10 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                     }
                   },
                 ),
+              if (_type == GoalType.event) ...[
+                EventDistanceChips(sports: _eventSports, selected: eventKey, onChanged: _pickDistance),
+                const SizedBox(height: 12),
+              ],
               TextField(
                 controller: _target,
                 onChanged: (_) => setState(() {}),
@@ -430,13 +477,19 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                   icon: const Icon(Icons.travel_explore_rounded),
                   label: Text(l.raceSearch),
                   onPressed: () async {
-                    final r = await openRaceSearch(context);
+                    // Prefilled with this goal's distance / sport.
+                    final cur = eventDistanceOf(eventKey);
+                    final r = await openRaceSearch(context, sport: cur?.sport ?? _eventSports.first, distance: cur?.key);
                     if (r == null || !mounted) return;
+                    final d = eventDistanceOf(r.distance);
                     setState(() {
                       _deadline = r.date;
                       _title.text = r.name;
                       _sport = r.sport.sport;
-                      if (eventKm(r.distance) != null) _target.text = Units.num(eventKm(r.distance)!);
+                      if (d != null) {
+                        _eventKey = d.key;
+                        _target.text = Units.num(d.km, 2);
+                      }
                     });
                   },
                 ),
@@ -492,12 +545,13 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   }
 }
 
-/// Event distance key of a race distance in km (5 / 10 km, HM, marathon, triathlon distances),
-/// null for other distances.
-String? eventKeyForKm(double km) {
-  const keys = {'5k': 5.0, '10k': 10.0, 'hm': 21.0975, 'm': 42.195, 'sprint': 25.75, 'olympic': 51.5, '70.3': 113.0};
-  for (final e in keys.entries) {
-    if ((km - e.value).abs() <= e.value * 0.03) return e.key;
-  }
-  return null;
+/// Event distance key ([eventDistances]) of a race distance in km (± 3 %), null for other
+/// distances. Several distances can share a length (5 km run / 5 km open water): [prefer]
+/// wins, then a distance of [sport], then the catalogue order.
+String? eventKeyForKm(double km, {String? prefer, EventSport? sport}) {
+  final hits = [
+    for (final d in eventDistances)
+      if (km > 0 && (km - d.km).abs() <= d.km * 0.03) d,
+  ];
+  return (hits.where((d) => d.key == prefer).firstOrNull ?? hits.where((d) => d.sport == sport).firstOrNull ?? hits.firstOrNull)?.key;
 }

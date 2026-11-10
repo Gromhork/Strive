@@ -7214,7 +7214,7 @@ abstract class AppLocalizations {
   /// No description provided for @raceRegionHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. Germany, Munich – empty = worldwide'**
+  /// **'e.g. Germany, Munich, 80331 – empty = anywhere'**
   String get raceRegionHint;
 
   /// No description provided for @raceWindow.
@@ -7232,19 +7232,19 @@ abstract class AppLocalizations {
   /// No description provided for @raceSearchButton.
   ///
   /// In en, this message translates to:
-  /// **'Search the web'**
+  /// **'Search'**
   String get raceSearchButton;
 
   /// No description provided for @raceIntro.
   ///
   /// In en, this message translates to:
-  /// **'Searches the web for upcoming races with AI – or open a race calendar directly.'**
+  /// **'Searches public race calendars (German running and triathlon calendars, RunSignup for the USA) – or open a race calendar directly.'**
   String get raceIntro;
 
   /// No description provided for @raceSearching.
   ///
   /// In en, this message translates to:
-  /// **'Searching the web for races…'**
+  /// **'Searching race calendars…'**
   String get raceSearching;
 
   /// No description provided for @raceWebResults.
@@ -7256,13 +7256,13 @@ abstract class AppLocalizations {
   /// No description provided for @raceDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'Found on the web by AI – no guarantee. Check date and details on the organiser\'s page before you sign up.'**
+  /// **'From public race calendars – no guarantee. Check date and details with the organiser before you sign up.'**
   String get raceDisclaimer;
 
   /// No description provided for @raceOrganiserPage.
   ///
   /// In en, this message translates to:
-  /// **'Organiser page'**
+  /// **'Details'**
   String get raceOrganiserPage;
 
   /// No description provided for @raceSetAsGoal.
@@ -8278,6 +8278,330 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More distances…'**
   String get moreDistances;
+
+  /// No description provided for @backAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again to exit'**
+  String get backAgainToExit;
+
+  /// No description provided for @musicRpm.
+  ///
+  /// In en, this message translates to:
+  /// **'rpm'**
+  String get musicRpm;
+
+  /// No description provided for @musicIntroRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Music matched to your step rate (≈ 150–185 steps/min) makes running feel easier and more economical.'**
+  String get musicIntroRun;
+
+  /// No description provided for @musicRunEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy run'**
+  String get musicRunEasy;
+
+  /// No description provided for @musicRunSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'Long / steady run'**
+  String get musicRunSteady;
+
+  /// No description provided for @musicRunTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo run'**
+  String get musicRunTempo;
+
+  /// No description provided for @musicRunIntervals.
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals & strides'**
+  String get musicRunIntervals;
+
+  /// No description provided for @musicPodcastsRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Great for long easy runs'**
+  String get musicPodcastsRun;
+
+  /// No description provided for @musicIntroRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Music matched to your cadence (80–100 rpm): one beat per pedal stroke, or double time.'**
+  String get musicIntroRide;
+
+  /// No description provided for @musicRideSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoors: keep the volume low or use one earbud only – you must still hear the traffic.'**
+  String get musicRideSafety;
+
+  /// No description provided for @musicRideEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy ride'**
+  String get musicRideEasy;
+
+  /// No description provided for @musicRideSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance & sweet spot'**
+  String get musicRideSteady;
+
+  /// No description provided for @musicRideThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get musicRideThreshold;
+
+  /// No description provided for @musicRideIntervals.
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals & sprints'**
+  String get musicRideIntervals;
+
+  /// No description provided for @musicPodcastsRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Great for long easy rides'**
+  String get musicPodcastsRide;
+
+  /// No description provided for @musicPodcastsTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Great for long trainer sessions'**
+  String get musicPodcastsTrainer;
+
+  /// No description provided for @musicIntroSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'Under water you only hear music with special headphones – start it before you get in.'**
+  String get musicIntroSwim;
+
+  /// No description provided for @musicSwimPoolHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth does not work under water: you need waterproof bone-conduction headphones with built-in storage (MP3). Download the playlist beforehand.'**
+  String get musicSwimPoolHint;
+
+  /// No description provided for @musicSwimOpenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open water: only with bone-conduction headphones and quiet enough to hear boats, your group and the safety crew.'**
+  String get musicSwimOpenHint;
+
+  /// No description provided for @musicPreSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-swim warm-up & focus'**
+  String get musicPreSwim;
+
+  /// No description provided for @musicSwimList.
+  ///
+  /// In en, this message translates to:
+  /// **'Swim playlist (to download)'**
+  String get musicSwimList;
+
+  /// No description provided for @musicSwimListSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Steady rhythm for your MP3 headphones'**
+  String get musicSwimListSub;
+
+  /// No description provided for @musicPodcastsSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'For long, calm sets (bone conduction)'**
+  String get musicPodcastsSwim;
+
+  /// No description provided for @musicIntroGym.
+  ///
+  /// In en, this message translates to:
+  /// **'Loud, motivating music at 120–140 BPM helps with strength work; circuits higher, warm-up and stretching lower.'**
+  String get musicIntroGym;
+
+  /// No description provided for @musicGymHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: continuous mixes keep the energy up between sets – the rest timer still vibrates when the break is over.'**
+  String get musicGymHint;
+
+  /// No description provided for @musicGymWarmup.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up & mobility'**
+  String get musicGymWarmup;
+
+  /// No description provided for @musicGymStrength.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength training'**
+  String get musicGymStrength;
+
+  /// No description provided for @musicGymHeavy.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy sets'**
+  String get musicGymHeavy;
+
+  /// No description provided for @musicGymCircuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Supersets, circuits & HIIT'**
+  String get musicGymCircuit;
+
+  /// No description provided for @musicGymCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool-down & stretching'**
+  String get musicGymCooldown;
+
+  /// No description provided for @tabData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get tabData;
+
+  /// No description provided for @tabMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get tabMap;
+
+  /// No description provided for @tabSplits.
+  ///
+  /// In en, this message translates to:
+  /// **'Splits'**
+  String get tabSplits;
+
+  /// No description provided for @tabWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get tabWorkout;
+
+  /// No description provided for @autoPausedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Resumes as soon as you move'**
+  String get autoPausedHint;
+
+  /// No description provided for @pausedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold ■ to finish'**
+  String get pausedHint;
+
+  /// No description provided for @lapDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap {n}: {time} · {dist}'**
+  String lapDone(int n, String time, String dist);
+
+  /// No description provided for @currentLap.
+  ///
+  /// In en, this message translates to:
+  /// **'Current lap'**
+  String get currentLap;
+
+  /// No description provided for @lapCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Laps'**
+  String get lapCount;
+
+  /// No description provided for @currentSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Current km'**
+  String get currentSplit;
+
+  /// No description provided for @bestSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest km'**
+  String get bestSplit;
+
+  /// No description provided for @avgSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Average km'**
+  String get avgSplit;
+
+  /// No description provided for @repeatCue.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat announcement'**
+  String get repeatCue;
+
+  /// No description provided for @cadenceTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Cadence target'**
+  String get cadenceTarget;
+
+  /// No description provided for @vcStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Time {time}. Distance {dist}.'**
+  String vcStatus(String time, String dist);
+
+  /// No description provided for @targetBand.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get targetBand;
+
+  /// No description provided for @routeTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get routeTapHint;
+
+  /// No description provided for @stepLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Step left'**
+  String get stepLeft;
+
+  /// No description provided for @raceRadius.
+  ///
+  /// In en, this message translates to:
+  /// **'Radius'**
+  String get raceRadius;
+
+  /// No description provided for @raceResultsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Races found: {n}'**
+  String raceResultsCount(int n);
+
+  /// No description provided for @raceSourceOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Source: {name}'**
+  String raceSourceOf(String name);
+
+  /// No description provided for @raceDataFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Data: {names}'**
+  String raceDataFrom(String names);
+
+  /// No description provided for @raceSourcesFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reachable right now: {names}'**
+  String raceSourcesFailed(String names);
+
+  /// No description provided for @raceNoSource.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no direct search for this sport and region yet (connected: German running and triathlon calendars, RunSignup for the USA). Browse a race calendar below.'**
+  String get raceNoSource;
 
   /// No description provided for @wShakeoutRide.
   ///

@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/event_distances.dart';
+import '../../core/event_sport_x.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
@@ -22,6 +24,7 @@ import '../../services/plan_generator.dart';
 import '../../services/schedule_advisor.dart';
 import '../../services/zones.dart';
 import '../../widgets/common.dart';
+import '../../widgets/event_distance_picker.dart';
 import '../../widgets/term_info.dart';
 import '../../widgets/segments.dart';
 
@@ -1310,34 +1313,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     );
   }
 
-  static double? _eventKm(String? d) => switch (d) {
-    '5k' => 5,
-    '10k' => 10,
-    'hm' => 21.1,
-    'm' => 42.2,
-    'sprint' => 25.75,
-    'olympic' => 51.5,
-    '70.3' => 113,
-    _ => null,
-  };
+  static double? _eventKm(String? d) => eventDistanceOf(d)?.km;
 
-  String _distanceLabel(AppLocalizations l, String? d) => switch (d) {
-    '5k' => '5 km',
-    '10k' => '10 km',
-    'hm' => l.halfMarathon,
-    'm' => l.marathon,
-    'sprint' => 'Sprint-Triathlon',
-    'olympic' => l.olympicTri,
-    '70.3' => l.middleDistance,
-    _ => l.goalTypeEvent,
-  };
+  String _distanceLabel(AppLocalizations l, String? d) => eventDistanceOf(d) == null ? l.goalTypeEvent : eventDistanceLabel(l, d!);
 
   Widget _event(AppLocalizations l) {
     final df = DateFormat.yMMMd(context.localeName);
-    final dists = [
-      if (_sports.contains(Sport.run)) ...['5k', '10k', 'hm', 'm'],
-      if (p.focus == TrainingFocus.triathlon) ...['sprint', 'olympic', '70.3'],
-    ];
+    final sport = EventSportX.fromFocus(p.focus);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1357,21 +1339,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             if (d != null) _setA({'eventDate': d});
           },
         ),
-        if (dists.isNotEmpty) ...[
-          _label(l.eventDistance),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final d in dists)
-                ChoiceChip(
-                  label: Text(_distanceLabel(l, d)),
-                  selected: a.eventDistance == d,
-                  onSelected: (v) => _setA({'eventDistance': v ? d : null}),
-                ),
-            ],
-          ),
-        ],
+        _label(l.eventDistance),
+        EventDistanceChips(sports: [sport], selected: a.eventDistance, onChanged: (k) => _setA({'eventDistance': k})),
         if (a.eventDistance != null) ...[
           _label(l.targetTime, hint: l.targetTimeHint),
           _timeField(l.targetTime, a.targetTimeSec, (v) => _setA({'targetTimeSec': v}), hint: 'h:mm:ss'),
@@ -1390,10 +1359,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           label: Text(l.raceSearch),
           onPressed: () async {
             // The setup saves the profile itself when finished.
-            final r = await openRaceSearch(context, saveToProfile: false);
+            final ev = eventDistanceOf(a.eventDistance);
+            final r = await openRaceSearch(context, saveToProfile: false, sport: ev?.sport ?? sport, distance: ev?.key);
             if (r == null || !mounted) return;
             _eventName.text = r.name;
-            _setA({'eventDate': r.date, if (r.distance != null && dists.contains(r.distance)) 'eventDistance': r.distance});
+            _setA({'eventDate': r.date, if (eventDistanceOf(r.distance) != null) 'eventDistance': r.distance});
           },
         ),
       ],

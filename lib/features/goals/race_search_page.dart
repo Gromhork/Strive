@@ -3,48 +3,60 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/event_distances.dart';
+import '../../core/event_sport_x.dart';
 import '../../core/format.dart';
-import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../providers.dart';
 import '../../services/race_search.dart';
 import '../../widgets/common.dart';
-import '../calendar/feasibility_card.dart';
+import '../../widgets/event_distance_picker.dart';
 
 /// Race search service of the session (keeps the result cache while the app runs).
-final raceSearchServiceProvider = Provider<RaceSearchService>((ref) => RaceSearchService(geminiGroundedSearch));
+final raceSearchServiceProvider = Provider<RaceSearchService>((ref) {
+  final s = RaceSearchService();
+  ref.onDispose(s.close);
+  return s;
+});
 
 /// Race taken over as goal ([RaceSearchPage] pops with it).
 class RaceSelection {
   const RaceSelection({required this.name, required this.date, required this.sport, this.distance, required this.url});
   final String name;
   final DateTime date;
-  final RaceSport sport;
+  final EventSport sport;
 
   /// App event distance key, null when the race's distance is not one of the app's.
   final String? distance;
   final Uri url;
 }
 
-/// Opens the race search; returns the race chosen as goal (or null).
-Future<RaceSelection?> openRaceSearch(BuildContext context, {bool saveToProfile = true}) =>
-    Navigator.push<RaceSelection>(context, MaterialPageRoute(builder: (_) => RaceSearchPage(saveToProfile: saveToProfile)));
+/// Opens the race search, prefilled with [sport] / [distance] (default: the profile's event
+/// and focus); returns the race chosen as goal (or null).
+Future<RaceSelection?> openRaceSearch(BuildContext context, {bool saveToProfile = true, EventSport? sport, String? distance}) =>
+    Navigator.push<RaceSelection>(
+      context,
+      MaterialPageRoute(builder: (_) => RaceSearchPage(saveToProfile: saveToProfile, sport: sport, distance: distance)),
+    );
 
-/// Search for upcoming races (AI web search + race calendar links). "Set as goal" stores
-/// the event in the profile (unless [saveToProfile] is false, e.g. inside the plan setup
-/// that saves the profile itself) and pops with a [RaceSelection].
+/// Search for upcoming races in public race calendars, plus calendar links. "Set as goal"
+/// stores the event in the profile (unless [saveToProfile] is false, e.g. inside the plan
+/// setup that saves the profile itself) and pops with a [RaceSelection].
 class RaceSearchPage extends ConsumerStatefulWidget {
-  const RaceSearchPage({super.key, this.saveToProfile = true});
+  const RaceSearchPage({super.key, this.saveToProfile = true, this.sport, this.distance});
   final bool saveToProfile;
+  final EventSport? sport;
+  final String? distance;
 
   @override
   ConsumerState<RaceSearchPage> createState() => _RaceSearchPageState();
 }
 
 class _RaceSearchPageState extends ConsumerState<RaceSearchPage> {
-  late RaceSport _sport;
+  late EventSport _sport;
   String? _distance;
   final _region = TextEditingController();
+  int _radius = 50;
   int _months = 6;
   bool _init = false;
 
@@ -59,14 +71,9 @@ class _RaceSearchPageState extends ConsumerState<RaceSearchPage> {
     if (_init) return;
     _init = true;
     final p = ref.read(profileOrDefaultProvider);
-    _sport = RaceSportX.fromFocus(p.focus);
-    final ev = p.athlete.eventDistance;
-    if (ev != null && !_sport.distances.contains(ev)) {
-      // A triathlon event while the focus is e.g. run: follow the event.
-      if (RaceSport.triathlon.distances.contains(ev)) _sport = RaceSport.triathlon;
-      if (RaceSport.run.distances.contains(ev)) _sport = RaceSport.run;
-    }
-    _distance = _sport.distances.contains(ev) ? ev : null;
+    final ev = eventDistanceOf(widget.distance ?? p.athlete.eventDistance);
+    _sport = widget.sport ?? ev?.sport ?? EventSportX.fromFocus(p.focus);
+    _distance = ev?.sport == _sport ? ev!.key : null;
     final loc = Localizations.localeOf(context);
     _region.text = defaultRegion(loc.languageCode, loc.countryCode);
   }
@@ -81,9 +88,13 @@ class _RaceSearchPageState extends ConsumerState<RaceSearchPage> {
     sport: _sport,
     distance: _distance,
     region: _region.text,
+    radiusKm: _radius,
     months: _months,
     lang: Localizations.localeOf(context).languageCode,
   );
+
+  /// A city or postcode (not empty, not a country): the radius applies.
+  bool get _isPlace => _region.text.trim().isNotEmpty && countryCodeOf(_region.text) == null;
 
   /// Filters changed: show a cached result for them, otherwise go back to the start state.
   void _filtersChanged() {
@@ -111,13 +122,7 @@ class _RaceSearchPageState extends ConsumerState<RaceSearchPage> {
         _result = r;
         _loading = false;
       });
-    } on RaceSearchException catch (e) {
-      if (!mounted || token != _token) return;
-      setState(() {
-        _failure = e.failure;
-        _loading = false;
-      });
-    } catch (_) {
+    } catch (e) {
       if (!mounted || token != _token) return;
       setState(() {
         _failure = RaceSearchFailure.failed;
@@ -136,7 +141,7 @@ class _RaceSearchPageState extends ConsumerState<RaceSearchPage> {
           athlete: p.athlete.merge({
             'eventDate': sel.date,
             'eventName': sel.name,
-            // Unknown distance (e.g. a cycling event): keep the stored one.
+            // Unknown distance: keep the stored one.
             if (sel.distance != null) 'eventDistance': sel.distance,
           }),
         ),
@@ -150,13 +155,6 @@ class _RaceSearchPageState extends ConsumerState<RaceSearchPage> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final theme = Theme.of(context);
-    final sports = {
-      RaceSport.run: (l.sportRun, Sport.run.icon),
-      RaceSport.triathlon: (l.focusTriathlon, TrainingFocus.triathlon.icon),
-      RaceSport.duathlon: (l.focusDuathlon, TrainingFocus.duathlon.icon),
-      RaceSport.cycling: (l.sportRide, Sport.ride.icon),
-      RaceSport.swim: (l.sportSwim, Sport.swim.icon),
-    };
     final portals = racePortals(_query, today: dayOnly(DateTime.now()));
     return Scaffold(
       appBar: AppBar(title: Text(l.raceSearch)),
@@ -165,40 +163,32 @@ class _RaceSearchPageState extends ConsumerState<RaceSearchPage> {
         children: [
           _label(context, l.raceSport),
           _chipRow([
-            for (final s in sports.entries)
+            for (final s in EventSport.values)
               ChoiceChip(
-                avatar: Icon(s.value.$2, size: 16),
-                label: Text(s.value.$1),
-                selected: _sport == s.key,
+                avatar: Icon(s.icon, size: 16),
+                label: Text(s.label(l)),
+                selected: _sport == s,
                 onSelected: (_) {
-                  _sport = s.key;
-                  if (!_sport.distances.contains(_distance)) _distance = null;
+                  _sport = s;
+                  if (eventDistanceOf(_distance)?.sport != s) _distance = null;
                   _filtersChanged();
                 },
               ),
           ]),
-          if (_sport.distances.isNotEmpty) ...[
-            _label(context, l.eventDistance),
-            _chipRow([
-              ChoiceChip(
-                label: Text(l.raceAnyDistance),
-                selected: _distance == null,
-                onSelected: (_) {
-                  _distance = null;
-                  _filtersChanged();
-                },
-              ),
-              for (final d in _sport.distances)
-                ChoiceChip(
-                  label: Text(eventDistanceName(l, d)),
-                  selected: _distance == d,
-                  onSelected: (_) {
-                    _distance = d;
-                    _filtersChanged();
-                  },
-                ),
-            ]),
-          ],
+          _label(context, l.eventDistance),
+          EventDistanceChips(
+            sports: [_sport],
+            selected: _distance,
+            anyLabel: l.raceAnyDistance,
+            scroll: true,
+            onChanged: (k) {
+              _distance = k;
+              // A distance of another sport from "More distances…" switches the sport.
+              final s = eventDistanceOf(k)?.sport;
+              if (s != null) _sport = s;
+              _filtersChanged();
+            },
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _region,
@@ -207,6 +197,20 @@ class _RaceSearchPageState extends ConsumerState<RaceSearchPage> {
             onSubmitted: (_) => _search(),
             decoration: InputDecoration(labelText: l.raceRegion, hintText: l.raceRegionHint, prefixIcon: const Icon(Icons.place_outlined)),
           ),
+          if (_isPlace) ...[
+            _label(context, l.raceRadius),
+            _chipRow([
+              for (final r in const [25, 50, 100])
+                ChoiceChip(
+                  label: Text('$r km'),
+                  selected: _radius == r,
+                  onSelected: (_) {
+                    _radius = r;
+                    _filtersChanged();
+                  },
+                ),
+            ]),
+          ],
           _label(context, l.raceWindow),
           _chipRow([
             for (final m in const [3, 6, 12])
@@ -220,11 +224,7 @@ class _RaceSearchPageState extends ConsumerState<RaceSearchPage> {
               ),
           ]),
           const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: _loading ? null : _search,
-            icon: const Icon(Icons.travel_explore_rounded),
-            label: Text(l.raceSearchButton),
-          ),
+          FilledButton.icon(onPressed: _loading ? null : _search, icon: const Icon(Icons.search_rounded), label: Text(l.raceSearchButton)),
           const SizedBox(height: 16),
           ..._resultArea(context),
           const SizedBox(height: 24),
@@ -266,69 +266,35 @@ class _RaceSearchPageState extends ConsumerState<RaceSearchPage> {
     }
     if (_failure != null) {
       return [
-        _Notice(
-          icon: _failure == RaceSearchFailure.unavailable ? Icons.cloud_off_rounded : Icons.error_outline_rounded,
-          color: AppColors.warning,
-          text: switch (_failure!) {
-            RaceSearchFailure.unavailable => l.raceUnavailable,
-            RaceSearchFailure.failed => l.raceError,
-            RaceSearchFailure.badResponse => l.raceBadResponse,
-          },
+        _Notice(icon: Icons.error_outline_rounded, color: AppColors.warning, text: l.raceError),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(onPressed: _search, icon: const Icon(Icons.refresh_rounded), label: Text(l.raceRetry)),
         ),
-        if (_failure != RaceSearchFailure.unavailable)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(onPressed: _search, icon: const Icon(Icons.refresh_rounded), label: Text(l.raceRetry)),
-          ),
       ];
     }
     final r = _result;
     if (r == null) return [Text(l.raceIntro, style: theme.textTheme.bodyMedium)];
-    if (r.races.isEmpty) return [_Notice(icon: Icons.search_off_rounded, color: AppColors.brand, text: l.raceEmpty)];
+    if (r.noSource) return [_Notice(icon: Icons.travel_explore_rounded, color: AppColors.brand, text: l.raceNoSource)];
+    final failed = [
+      if (r.failed.isNotEmpty) ...[
+        _Notice(icon: Icons.cloud_off_rounded, color: AppColors.warning, text: l.raceSourcesFailed(r.failed.join(', '))),
+        const SizedBox(height: 8),
+      ],
+    ];
+    if (r.races.isEmpty) return [...failed, _Notice(icon: Icons.search_off_rounded, color: AppColors.brand, text: l.raceEmpty)];
     return [
-      Text(l.raceWebResults, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+      Text(l.raceResultsCount(r.races.length), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
       const SizedBox(height: 6),
-      _Notice(icon: Icons.info_outline_rounded, color: AppColors.warning, text: l.raceDisclaimer),
+      _Notice(icon: Icons.info_outline_rounded, color: AppColors.brand, text: l.raceDisclaimer),
       const SizedBox(height: 8),
+      ...failed,
       for (final race in r.races)
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: _RaceCard(race: race, onOpen: () => _open(race.url), onTake: () => _take(race)),
         ),
-      if (r.queries.isNotEmpty) ...[
-        const SizedBox(height: 4),
-        Text(l.raceGoogleSuggestions, style: theme.textTheme.labelMedium),
-        const SizedBox(height: 4),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            for (final q in r.queries.take(4))
-              ActionChip(
-                avatar: const Icon(Icons.search_rounded, size: 16),
-                label: Text(q, maxLines: 1, overflow: TextOverflow.ellipsis),
-                onPressed: () => _open(Uri.https('www.google.com', '/search', {'q': q})),
-              ),
-          ],
-        ),
-      ],
-      if (r.sources.isNotEmpty) ...[
-        const SizedBox(height: 8),
-        Text(l.raceSources, style: theme.textTheme.labelMedium),
-        for (final s in r.sources.take(6))
-          InkWell(
-            onTap: () => _open(Uri.parse(s.uri)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 3),
-              child: Text(
-                s.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(decoration: TextDecoration.underline),
-              ),
-            ),
-          ),
-      ],
+      Text(l.raceDataFrom(r.sources.join(', ')), style: theme.textTheme.bodySmall),
     ];
   }
 
@@ -384,16 +350,19 @@ class _RaceCard extends StatelessWidget {
     final l = context.l10n;
     final theme = Theme.of(context);
     final small = theme.textTheme.bodySmall;
+    final df = DateFormat.yMMMEd(context.localeName);
+    final date = race.endDate == null ? df.format(race.date) : '${df.format(race.date)} – ${df.format(race.endDate!)}';
+    final distances = [for (final k in race.distanceKeys) eventDistanceLabel(l, k), ...race.distances];
     return SectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(race.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
           const SizedBox(height: 6),
-          _line(Icons.event_rounded, DateFormat.yMMMEd(context.localeName).format(race.date), small),
+          _line(Icons.event_rounded, date, small),
           if (race.place.isNotEmpty) _line(Icons.place_outlined, race.place, small),
-          if (race.distances.isNotEmpty) _line(Icons.straighten_rounded, race.distances.join(' · '), small),
-          _line(Icons.link_rounded, race.url.host, small),
+          if (distances.isNotEmpty) _line(Icons.straighten_rounded, distances.join(' · '), small),
+          _line(Icons.link_rounded, l.raceSourceOf(race.source), small),
           const SizedBox(height: 6),
           Wrap(
             spacing: 8,

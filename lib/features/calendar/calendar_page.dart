@@ -481,7 +481,7 @@ class PlanCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.title, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(glueTitle(p.title), style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
                     Text(
                       [
                         '${p.durationMin} min',
@@ -525,7 +525,7 @@ class _SessionChip extends ConsumerWidget {
                 Icon(s.sport.icon, color: s.sport.color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(s.title, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  child: Text(glueTitle(s.title), style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
                 ),
                 Text(
                   s.sport == Sport.gym
