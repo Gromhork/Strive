@@ -73,6 +73,7 @@ String forecastReasonText(AppLocalizations l, GoalForecast f, ForecastReason r) 
   ForecastReason.fasterThanPlanned => l.fcReasonFaster,
   ForecastReason.longRunBehind => l.fcReasonLongRun,
   ForecastReason.trainingBreak => l.fcReasonBreak,
+  ForecastReason.fatigue => l.fcReasonFatigue,
 };
 
 String phaseShort(AppLocalizations l, String phase) => switch (phase) {

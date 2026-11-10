@@ -1249,7 +1249,7 @@
   "fcEarlySub": "Nach deinen ersten Einheiten nutzt die Prognose deine Trainingsdaten.",
   "fcRiskTitle": "Dein Ziel ist gefährdet",
   "fcRiskBody": "Das Training lief zuletzt nicht wie geplant. Prognose für den Wettkampftag: ~{pred} statt {goal}.",
-  "fcRiskBodyFinish": "Das Training lief zuletzt nicht wie geplant – mit konsequentem Training ab jetzt bleibt der Wettkampf machbar.",
+  "fcRiskBodyFinish": "Das Training lief zuletzt nicht wie geplant – so ist das Finish gefährdet. Konsequentes Training ab jetzt (oder eine der Optionen) kann es noch drehen.",
   "fcAheadBody": "Du bist schneller als geplant – {goal} sieht realistisch aus.",
   "fcReasonMissed": "{pct} % des geplanten Trainings erledigt",
   "fcReasonSlower": "Schlüsselläufe langsamer als geplant",
@@ -1489,5 +1489,11 @@
   "targetSuggestBasisEfforts": "Auf Basis deiner letzten Läufe",
   "targetSuggestBasisLevel": "Grobe Schätzung nach deinem Level – eine Wettkampfzeit macht sie genauer",
   "targetSuggestFinish": "Ziel: ankommen – für diesen Wettkampf noch keine Zielzeit",
-  "targetSuggestRange": "Vorschlag {time} (Spanne {fast} – {slow})"
+  "targetSuggestRange": "Vorschlag {time} (Spanne {fast} – {slow})",
+  "recalWhyFatigueRecovery": "Seit zwei Wochen fühlen sich die Einheiten härter an als geplant: Die nächsten 7 Tage sind eine Erholungswoche (weniger Umfang, keine Intensität). Danach kommen die Qualitätseinheiten mit weniger Wiederholungen zurück.",
+  "recalWhyFatigueCheck": "Auch nach der Erholungswoche noch härter als geplant: Prüfe Schlaf, Krankheit und Stress – und überlege eine langsamere Zielzeit. Die Qualitätseinheiten bleiben, mit weniger Wiederholungen.",
+  "recalWhyGoalAtRisk": "Mit dem Training der letzten Wochen ist das Wettkampfziel schwer erreichbar (lange Läufe oder Wochenumfang weit von dem, was der Wettkampf braucht) – überlege einen späteren Wettkampf oder eine kürzere Distanz.",
+  "recalWhyRepeatStage": "Die Laufen/Gehen-Einheiten waren anstrengend (RPE über 5) oder wurden abgebrochen: Die kommende Woche wiederholt deine aktuelle Stufe, statt aufzusteigen.",
+  "recalWhyMoveLong": "Lange Läufe sind ausgefallen, die übrigen Läufe wurden gemacht: Der nächste lange Lauf rückt auf einen Trainingstag mit mehr Zeit – die lockeren Läufe bleiben, wie sie sind.",
+  "fcReasonFatigue": "Einheiten zuletzt härter als geplant"
 }

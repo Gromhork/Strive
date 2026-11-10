@@ -4074,7 +4074,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fcRiskBodyFinish => 'Recent training did not go as planned – consistent training now keeps the race comfortable.';
+  String get fcRiskBodyFinish => 'Recent training did not go as planned – at this rate the finish is at risk. Consistent training from now on (or one of the options) can still turn it around.';
 
   @override
   String fcAheadBody(String goal) {
@@ -4893,4 +4893,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String targetSuggestRange(String time, String fast, String slow) {
     return 'Suggested $time (range $fast – $slow)';
   }
+
+  @override
+  String get recalWhyFatigueRecovery => 'Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.';
+
+  @override
+  String get recalWhyFatigueCheck => 'Still harder than intended after the recovery week: check sleep, illness and stress – and consider a slower target time. Quality stays, with fewer repeats.';
+
+  @override
+  String get recalWhyGoalAtRisk => 'With the training of the last weeks the race goal is hard to reach (long runs or weekly volume far from what the race needs) – consider a later race or a shorter distance.';
+
+  @override
+  String get recalWhyRepeatStage => 'The run/walk sessions felt hard (RPE above 5) or were cut short: the coming week repeats your current stage instead of moving up.';
+
+  @override
+  String get recalWhyMoveLong => 'Long runs were missed while the other runs were done: the next long run moves to a training day with more time – the easy runs stay as they are.';
+
+  @override
+  String get fcReasonFatigue => 'Sessions felt harder than intended recently';
 }

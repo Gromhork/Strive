@@ -127,8 +127,10 @@ void main() {
           continue;
         }
         final ratio = c == null ? 1.0 : amount(c.after) / amount(w);
-        // Before: −20 % (days 1–7) / −10 % (days 8–14); now R4 50–70 %.
-        expect(ratio, closeTo(days < 7 ? 0.6 : 0.7, 0.04), reason: '${w.title} day $days');
+        // Before: −20 % (days 1–7) / −10 % (days 8–14); now R4 50–70 %, but never below the run floor
+        // (25 min / 4 km – review C4 / I15: 15-minute returns are no training).
+        final floor = min(1.0, Recalibrator.runFloor(w, p) / amount(w));
+        expect(ratio, closeTo(max(days < 7 ? 0.6 : 0.7, floor), 0.04), reason: '${w.title} day $days');
         expect(ratio, greaterThanOrEqualTo(0.45), reason: '${w.title} day $days');
       }
       // R1: every long run ≤ 1.1 × the longest of its 30 days before (× 1.1 per earlier one).
@@ -159,7 +161,9 @@ void main() {
       expect(r.reasons, contains(RecalReason.longCap));
       for (final c in r.changes.where((c) => c.kind == RecalKind.easier && c.before.sport == Sport.run)) {
         final days = dayOnly(c.before.date).difference(dayOnly(at5)).inDays;
-        if (days < 7 && c.before.intensity != 'long') expect(amount(c.after) / amount(c.before), closeTo(0.5, 0.06));
+        // 50 %, but never below the run floor (25 min / 4 km).
+        final floor = min(1.0, Recalibrator.runFloor(c.before, p) / amount(c.before));
+        if (days < 7 && c.before.intensity != 'long') expect(amount(c.after) / amount(c.before), closeTo(max(0.5, floor), 0.06));
       }
     });
 

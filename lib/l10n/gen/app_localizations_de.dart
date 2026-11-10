@@ -4074,7 +4074,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get fcRiskBodyFinish => 'Das Training lief zuletzt nicht wie geplant – mit konsequentem Training ab jetzt bleibt der Wettkampf machbar.';
+  String get fcRiskBodyFinish => 'Das Training lief zuletzt nicht wie geplant – so ist das Finish gefährdet. Konsequentes Training ab jetzt (oder eine der Optionen) kann es noch drehen.';
 
   @override
   String fcAheadBody(String goal) {
@@ -4893,4 +4893,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String targetSuggestRange(String time, String fast, String slow) {
     return 'Vorschlag $time (Spanne $fast – $slow)';
   }
+
+  @override
+  String get recalWhyFatigueRecovery => 'Seit zwei Wochen fühlen sich die Einheiten härter an als geplant: Die nächsten 7 Tage sind eine Erholungswoche (weniger Umfang, keine Intensität). Danach kommen die Qualitätseinheiten mit weniger Wiederholungen zurück.';
+
+  @override
+  String get recalWhyFatigueCheck => 'Auch nach der Erholungswoche noch härter als geplant: Prüfe Schlaf, Krankheit und Stress – und überlege eine langsamere Zielzeit. Die Qualitätseinheiten bleiben, mit weniger Wiederholungen.';
+
+  @override
+  String get recalWhyGoalAtRisk => 'Mit dem Training der letzten Wochen ist das Wettkampfziel schwer erreichbar (lange Läufe oder Wochenumfang weit von dem, was der Wettkampf braucht) – überlege einen späteren Wettkampf oder eine kürzere Distanz.';
+
+  @override
+  String get recalWhyRepeatStage => 'Die Laufen/Gehen-Einheiten waren anstrengend (RPE über 5) oder wurden abgebrochen: Die kommende Woche wiederholt deine aktuelle Stufe, statt aufzusteigen.';
+
+  @override
+  String get recalWhyMoveLong => 'Lange Läufe sind ausgefallen, die übrigen Läufe wurden gemacht: Der nächste lange Lauf rückt auf einen Trainingstag mit mehr Zeit – die lockeren Läufe bleiben, wie sie sind.';
+
+  @override
+  String get fcReasonFatigue => 'Einheiten zuletzt härter als geplant';
 }

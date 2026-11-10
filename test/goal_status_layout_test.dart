@@ -54,7 +54,9 @@ void main() {
                 .round(),
         distanceM: (w.distanceKm ?? 0) * 1000,
         planId: w.id,
-        rpe: rpe,
+        // Easy and long runs at an easy RPE: easy runs at the quality RPE are fatigue, and the forecast
+        // (review C4) never says "ahead" then.
+        rpe: w.intensity == 'tempo' || w.intensity == 'intervals' || rpe > 6 ? rpe : 3,
       ),
   ];
 
@@ -140,7 +142,8 @@ void main() {
                 scale: scale,
               );
               expect(find.byKey(const ValueKey('goalRiskNotice')), f.alert ? findsOneWidget : findsNothing);
-              if (f.alert) {
+              // A risk from missed training (adherence floor, review C3) offers no faster/slower target.
+              if (f.alert && f.suggestedSec != null) {
                 await tester.ensureVisible(find.byKey(const ValueKey('riskAdjust')));
                 await tester.pump();
                 await tester.tap(find.byKey(const ValueKey('riskAdjust')));

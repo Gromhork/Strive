@@ -465,7 +465,9 @@ void main() {
     final r = Recalibrator(l, p, plans: plans, sessions: sessions, now: now, fillGaps: false).run();
     expect(r.reasons, contains(RecalReason.runTrendFaster)); // before: no VDOT change
     expect(r.stats.newVdot, closeTo(r.stats.oldVdot + 1, 0.05));
-    p = p.copyWith(athlete: p.athlete.merge({'raceTimes': r.raceTimes}));
+    // C5: the new VDOT is the profile's vdotEstimate (no synthetic race time).
+    expect(r.raceTimes, isNull);
+    p = p.copyWith(athlete: p.athlete.merge(r.athlete));
     final again = Recalibrator(l, p, plans: plans, sessions: sessions, now: now, fillGaps: false).run();
     expect(again.stats.newVdot, isNull);
   });

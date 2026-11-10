@@ -231,6 +231,15 @@ SessionFeedback evaluateSession(PlannedWorkout p, Session s, UserProfile profile
     if (target != null) {
       final actual = s.sport == Sport.swim ? s.durationSec / (s.distanceM / 100) : s.durationSec / (s.distanceM / 1000);
       delta = (target - actual) / target;
+      // Easy / long runs: running exactly the plan's own numbers (its duration over its distance)
+      // is on plan, even where the rounded duration implies a pace a little off the steps'
+      // mid-zone estimate (review I10: "easyTooFast" for an athlete who ran the plan, or 3 %
+      // slower). Quality runs keep their step targets.
+      final km = p.distanceKm ?? 0;
+      if (p.sport == Sport.run && !quality && km > 0 && p.durationMin > 0) {
+        final implied = p.durationMin * 60 / km;
+        if (((actual - implied) / implied).abs() <= tol) delta = 0;
+      }
       // Hills slow the pace at the same effort (no grade-adjusted pace without a profile).
       final gain = s.distanceM > 0 ? s.elevationM / (s.distanceM / 1000) : 0;
       var w = intervals ? 0.4 : 1.0;

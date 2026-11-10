@@ -6,6 +6,8 @@ import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/models.dart';
 import 'health_limits.dart';
+import 'plan_recalibrate.dart' show Recalibrator;
+import 'progression_check.dart';
 import 'session_feedback.dart';
 import 'zones.dart';
 
@@ -162,6 +164,8 @@ class AutoAdjuster {
     final origAmount =
         orig == null ? _amount(p) : (_byKm(p) && (orig.distanceKm ?? 0) > 0 ? orig.distanceKm! : orig.durationMin.toDouble());
     final rest = p.phase == 'taper' || p.phase == 'recovery';
+    // A session of a recovery week the recalibration proposed (C4) is cut already: not again.
+    if (factor < 1 && orig != null && orig.reason.startsWith('recal') && orig.reason.endsWith('Recovery')) return null;
     var f = factor.clamp(maxCut, bump);
     if (rest) f = min(f, 1.0);
     // All automatic steps together: −15 … +10 % of the original. A step never turns into
@@ -170,6 +174,8 @@ class AutoAdjuster {
     final cur = _amount(p);
     final lo = maxCut * origAmount / cur, hi = maxGain * origAmount / cur;
     f = f < 1 ? (lo >= 1 ? 1.0 : max(f, lo)) : (hi <= 1 ? 1.0 : min(f, hi));
+    // Never below the run floor (25 min / 4 km, beginners 20 min – [Recalibrator.runFloor]).
+    if (f < 1) f = max(f, min(cur, Recalibrator.runFloor(p, profile)) / cur);
     if ((f - 1).abs() < 0.02) return null;
     final after = scaleWorkout(p, f, profile);
     if (after.durationMin == p.durationMin && after.distanceKm == p.distanceKm) return null;
@@ -186,11 +192,13 @@ class AutoAdjuster {
 
   /// [p] with its continuous / work parts × [f]; duration and distance follow the steps.
   static PlannedWorkout scaleWorkout(PlannedWorkout p, double f, UserProfile profile) {
+    final runWalk = isRunWalk(p);
     WorkoutStep s(WorkoutStep x) {
       if (x.kind != 'steady' && x.kind != 'work') return x;
       int? sec;
       if (x.durationSec != null) {
-        final unit = x.durationSec! >= 600 ? 60 : 15;
+        // Run/walk: whole minutes, so the "N × M min" title still fits.
+        final unit = x.durationSec! >= 600 || runWalk ? 60 : 15;
         sec = max(unit, (x.durationSec! * f / unit).round() * unit);
       }
       double? m;
@@ -222,7 +230,7 @@ class AutoAdjuster {
       final allDistance = p.steps.isNotEmpty && p.steps.every((v) => v.distanceM != null);
       km = double.parse((p.distanceKm! * (allDistance && d0 > 0 ? d1 / d0 : g)).toStringAsFixed(1));
     }
-    return _copy(p, steps: steps, durationMin: max(10, (p.durationMin * g).round()), distanceKm: km);
+    return retitledRunWalk(_copy(p, steps: steps, durationMin: max(10, (p.durationMin * g).round()), distanceKm: km));
   }
 
   /// Interval sets (≥ 3 identical work steps in one block) change by whole repeats – a
@@ -250,7 +258,10 @@ class AutoAdjuster {
       ...steps.skip(work.last + 1),
     ];
     final g = estimateStepsSec(out, sport, profile) / max(1, estimateStepsSec(steps, sport, profile));
-    if ((g - f).abs() > 0.06 || (f < 1) != (g < 1)) return null;
+    // Run/walk (walk warm-up): always whole repeats – a 45 s "minute" under a "12 × 1 min" title
+    // matches neither the C25K stage nor the title (I13).
+    final runWalk = sport == Sport.run && steps.first.zone == 'walk';
+    if (!runWalk && ((g - f).abs() > 0.06 || (f < 1) != (g < 1))) return null;
     return out;
   }
 

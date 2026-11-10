@@ -7592,7 +7592,7 @@ abstract class AppLocalizations {
   /// No description provided for @fcRiskBodyFinish.
   ///
   /// In en, this message translates to:
-  /// **'Recent training did not go as planned – consistent training now keeps the race comfortable.'**
+  /// **'Recent training did not go as planned – at this rate the finish is at risk. Consistent training from now on (or one of the options) can still turn it around.'**
   String get fcRiskBodyFinish;
 
   /// No description provided for @fcAheadBody.
@@ -9034,6 +9034,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suggested {time} (range {fast} – {slow})'**
   String targetSuggestRange(String time, String fast, String slow);
+
+  /// No description provided for @recalWhyFatigueRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.'**
+  String get recalWhyFatigueRecovery;
+
+  /// No description provided for @recalWhyFatigueCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Still harder than intended after the recovery week: check sleep, illness and stress – and consider a slower target time. Quality stays, with fewer repeats.'**
+  String get recalWhyFatigueCheck;
+
+  /// No description provided for @recalWhyGoalAtRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'With the training of the last weeks the race goal is hard to reach (long runs or weekly volume far from what the race needs) – consider a later race or a shorter distance.'**
+  String get recalWhyGoalAtRisk;
+
+  /// No description provided for @recalWhyRepeatStage.
+  ///
+  /// In en, this message translates to:
+  /// **'The run/walk sessions felt hard (RPE above 5) or were cut short: the coming week repeats your current stage instead of moving up.'**
+  String get recalWhyRepeatStage;
+
+  /// No description provided for @recalWhyMoveLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Long runs were missed while the other runs were done: the next long run moves to a training day with more time – the easy runs stay as they are.'**
+  String get recalWhyMoveLong;
+
+  /// No description provided for @fcReasonFatigue.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions felt harder than intended recently'**
+  String get fcReasonFatigue;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

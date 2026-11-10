@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,7 @@ import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/l10n/relocalize.dart';
+import 'package:strive/services/goal_model.dart';
 import 'package:strive/services/plan_generator.dart';
 import 'package:strive/services/plan_recalibrate.dart';
 import 'package:strive/services/zones.dart';
@@ -97,7 +99,8 @@ void main() {
       );
       // Volume changes keep the generator's original (undo, reference of later steps).
       if (c.kind == RecalKind.easier || c.kind == RecalKind.harder) {
-        expect(c.after.auto?.reason, 'recal');
+        // 'recal', or 'recalRecovery' inside a proposed recovery week (C4: its marker).
+        expect(c.after.auto?.reason, anyOf('recal', 'recalRecovery'));
         expect(c.after.auto!.durationMin, c.before.auto?.durationMin ?? c.before.durationMin);
       }
       for (final s in c.after.steps) {
@@ -233,7 +236,10 @@ void main() {
     // (session evaluation trend, §12) – that is this week's step up, volume and intensity
     // never rise together.
     expect(r.reasons, [RecalReason.rpeLowHold, RecalReason.runTrendFaster]);
-    expect(r.stats.newVdot, closeTo(r.stats.oldVdot + 1, 0.05));
+    // Two weeks into the plan the step is capped at 1.6 × the model's gain of those weeks (C5:
+    // +1 point every Monday ran a VDOT 40 → 48 in 8 weeks).
+    final cap = Vdot.of(p.athlete)! + GoalModel.optimistic * GoalModel.gain(p, 2);
+    expect(r.stats.newVdot, closeTo(min(r.stats.oldVdot + 1, cap), 0.06));
     expectSafe(r, plans);
     expect(r.changes.where((c) => c.kind == RecalKind.harder), isEmpty);
     expect(r.changes.where((c) => c.kind == RecalKind.paces), isNotEmpty);
@@ -267,7 +273,7 @@ void main() {
     }
   });
 
-  test('faster best effort: pace targets follow the new VDOT (max +2), race times saved', () {
+  test('faster best effort: pace targets follow the new VDOT (max +2), saved as the VDOT estimate', () {
     final p = profile();
     final (plans, sessions) = history(p);
     // A 5 km in 21:00 (VDOT ~47 vs ~41 from the 50:00 10 km).
@@ -284,8 +290,10 @@ void main() {
     final old = Vdot.of(p.athlete)!;
     expect(r.reasons, contains(RecalReason.fasterRuns));
     expect(r.stats.newVdot, closeTo(old + 2, 0.11));
-    expect(r.raceTimes, isNotNull);
-    expect(Vdot.fromRace(10000, r.raceTimes!['10k']!), closeTo(old + 2, 0.2));
+    // C5: the new VDOT goes to its own field – no synthetic race time in the profile.
+    expect(r.raceTimes, isNull);
+    expect(r.athlete['vdotEstimate'], closeTo(old + 2, 0.11));
+    expect(Vdot.of(p.athlete.merge(r.athlete)), closeTo(old + 2, 0.11));
     expectSafe(r, plans);
     final paced = r.changes.where((c) => c.before.sport == Sport.run && c.after.steps.any((s) => s.paceMin != null)).toList();
     expect(paced, isNotEmpty);

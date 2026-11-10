@@ -210,6 +210,14 @@ class AthleteData {
   /// Name of the target event (e.g. taken over from the race search); optional.
   final String? eventName;
 
+  /// Running fitness (VDOT) derived from training by "Plan überprüfen" (Recalibrator), when it was
+  /// set, and the race-time VDOT it was derived from ([vdotEstimateBase], 0 = none): it replaces the
+  /// race times' VDOT until the athlete enters different race times. Never written into [raceTimes]
+  /// (review C5: synthetic marathon times showed up as best times).
+  final double? vdotEstimate;
+  final DateTime? vdotEstimateAt;
+  final double? vdotEstimateBase;
+
   const AthleteData({
     this.setupMode = 'simple',
     this.difficulty = 'balanced',
@@ -245,6 +253,9 @@ class AthleteData {
     this.planStart,
     this.planLength,
     this.eventName,
+    this.vdotEstimate,
+    this.vdotEstimateAt,
+    this.vdotEstimateBase,
   });
 
   bool get advanced => setupMode == 'advanced';
@@ -290,6 +301,9 @@ class AthleteData {
     planStart: m['planStart'] == null ? null : _date(m['planStart']),
     planLength: _in(m['planLength']),
     eventName: m['eventName'],
+    vdotEstimate: _dn(m['vdotEstimate']),
+    vdotEstimateAt: m['vdotEstimateAt'] == null ? null : _date(m['vdotEstimateAt']),
+    vdotEstimateBase: _dn(m['vdotEstimateBase']),
   );
 
   Map<String, dynamic> toMap() => {
@@ -327,6 +341,9 @@ class AthleteData {
     if (planStart != null) 'planStart': Timestamp.fromDate(planStart!),
     if (planLength != null) 'planLength': planLength,
     'eventName': eventName,
+    if (vdotEstimate != null) 'vdotEstimate': vdotEstimate,
+    if (vdotEstimateAt != null) 'vdotEstimateAt': Timestamp.fromDate(vdotEstimateAt!),
+    if (vdotEstimateBase != null) 'vdotEstimateBase': vdotEstimateBase,
   };
 
   /// Copy with some fields replaced (keys as in [toMap]); `null` values clear a field.
@@ -335,6 +352,7 @@ class AthleteData {
     // eventDate is stored as Timestamp; keep DateTime inputs working.
     final c = {...changes};
     if (c['eventDate'] is DateTime) c['eventDate'] = Timestamp.fromDate(c['eventDate']);
+    if (c['vdotEstimateAt'] is DateTime) c['vdotEstimateAt'] = Timestamp.fromDate(c['vdotEstimateAt']);
     if (c['dayPlan'] is Map<int, List<Sport>>) {
       c['dayPlan'] = {for (final e in (c['dayPlan'] as Map<int, List<Sport>>).entries) '${e.key}': e.value.map((s) => s.name).toList()};
     }
