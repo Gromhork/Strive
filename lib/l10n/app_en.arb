@@ -2256,5 +2256,29 @@
   },
   "feasRunWalkFinish": "Finish with run/walk – race day in your plan shows the rhythm",
   "feasPlanAnyway": "The plan is created anyway and builds up as far as is safely possible.",
-  "wGymDeloadNote2": "Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger."
+  "wGymDeloadNote2": "Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.",
+  "recalGapsTitle": "Gaps in the plan",
+  "recalWhyGaps": "Sessions the plan expects are missing ({n}) – refills are proposed below.",
+  "@recalWhyGaps": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recalWhyGapsOmitted": "Some missing sessions are not refilled: they would sit next to a race or the week already has its planned volume.",
+  "recalAdded": "Added",
+  "recalGapMissing": "The planned session on {day} is missing – added back.",
+  "@recalGapMissing": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "recalGapEmptyWeek": "This week has no sessions – the planned one is added back.",
+  "recalGapEnded": "The plan ended earlier – continued here.",
+  "recalGapDowngraded": "Easy instead of hard: the day next to it is already hard.",
+  "recalGapEased": "Easy, because the plan is lighter right now.",
+  "recalGapShortened": "Shorter, so the week and the long run stay within safe limits."
 }

@@ -7066,6 +7066,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
   String get wGymDeloadNote2;
+
+  /// No description provided for @recalGapsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gaps in the plan'**
+  String get recalGapsTitle;
+
+  /// No description provided for @recalWhyGaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions the plan expects are missing ({n}) – refills are proposed below.'**
+  String recalWhyGaps(int n);
+
+  /// No description provided for @recalWhyGapsOmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Some missing sessions are not refilled: they would sit next to a race or the week already has its planned volume.'**
+  String get recalWhyGapsOmitted;
+
+  /// No description provided for @recalAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get recalAdded;
+
+  /// No description provided for @recalGapMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The planned session on {day} is missing – added back.'**
+  String recalGapMissing(String day);
+
+  /// No description provided for @recalGapEmptyWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week has no sessions – the planned one is added back.'**
+  String get recalGapEmptyWeek;
+
+  /// No description provided for @recalGapEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'The plan ended earlier – continued here.'**
+  String get recalGapEnded;
+
+  /// No description provided for @recalGapDowngraded.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy instead of hard: the day next to it is already hard.'**
+  String get recalGapDowngraded;
+
+  /// No description provided for @recalGapEased.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy, because the plan is lighter right now.'**
+  String get recalGapEased;
+
+  /// No description provided for @recalGapShortened.
+  ///
+  /// In en, this message translates to:
+  /// **'Shorter, so the week and the long run stay within safe limits.'**
+  String get recalGapShortened;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -62,7 +62,8 @@ void main() {
   }
 
   Recalibration recal(UserProfile p, List<PlannedWorkout> plans, List<Session> sessions, {DateTime? at}) =>
-      Recalibrator(l, p, plans: plans, sessions: sessions, now: at ?? now).run();
+      // Gap refills have their own tests (plan_gaps_test.dart); the 6-week plan ends inside the horizon.
+      Recalibrator(l, p, plans: plans, sessions: sessions, now: at ?? now, fillGaps: false).run();
 
   bool quality(PlannedWorkout w) => w.intensity == 'tempo' || w.intensity == 'intervals';
   bool inDays(PlannedWorkout w, int from, int to) {

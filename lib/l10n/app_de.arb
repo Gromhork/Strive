@@ -1161,5 +1161,15 @@
   "feasShorter": "Eine kürzere Distanz: {dist}",
   "feasRunWalkFinish": "Mit Lauf-Geh-Strategie ins Ziel – der Wettkampftag im Plan zeigt den Rhythmus",
   "feasPlanAnyway": "Der Plan wird trotzdem erstellt und baut so weit auf, wie es sicher möglich ist.",
-  "wGymDeloadNote2": "Entlastungswoche: Die Gewichte sind ca. 10 % leichter eingetragen, jede Übung behält etwa die Hälfte ihrer Arbeitssätze. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück."
+  "wGymDeloadNote2": "Entlastungswoche: Die Gewichte sind ca. 10 % leichter eingetragen, jede Übung behält etwa die Hälfte ihrer Arbeitssätze. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.",
+  "recalGapsTitle": "Lücken im Plan",
+  "recalWhyGaps": "Im Plan fehlen Einheiten ({n}) – Vorschläge zum Auffüllen siehe unten.",
+  "recalWhyGapsOmitted": "Einige fehlende Einheiten werden nicht aufgefüllt: Sie lägen neben einem Wettkampf oder die Woche hat ihren geplanten Umfang schon.",
+  "recalAdded": "Neu",
+  "recalGapMissing": "Am {day} fehlt die geplante Einheit – wieder eingefügt.",
+  "recalGapEmptyWeek": "Diese Woche ist leer – die geplante Einheit wird wieder eingefügt.",
+  "recalGapEnded": "Der Plan endete vorher – hier fortgesetzt.",
+  "recalGapDowngraded": "Locker statt hart: Der Nachbartag ist schon hart.",
+  "recalGapEased": "Locker, weil der Plan gerade entlastet.",
+  "recalGapShortened": "Kürzer, damit Woche und langer Lauf im sicheren Rahmen bleiben."
 }

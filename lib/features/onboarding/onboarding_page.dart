@@ -12,6 +12,7 @@ import '../../data/default_programs.dart';
 import '../calendar/feasibility_card.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/plan_gaps.dart';
 import '../../services/plan_generator.dart';
 import '../../services/schedule_advisor.dart';
 import '../../services/zones.dart';
@@ -218,6 +219,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       repo.deletePlansFrom(existing, dayOnly(now));
       final plan = PlanGenerator(l, profile, templates, repo.newId).generate(start: now, weeks: a.planWeeks);
       repo.savePlans(plan);
+      repo.saveProfile(withPlanMeta(profile, now, a.planWeeks));
     }
     if (widget.edit && mounted) Navigator.pop(context);
   }
