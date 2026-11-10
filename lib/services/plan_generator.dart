@@ -198,9 +198,12 @@ class PlanGenerator {
     // [_run] still apply.
     // At low amateur volumes the race-specific long run (HM ~15 km, marathon ~28–32 km)
     // needs up to half of the weekly km (Higdon / Hanson novice plans: 45–60 %).
+    // Continuous in the weekly km: above 50 (HM) / 70 km (marathon) the share falls from 40 / 42 %
+    // towards 32 / 33 % only as fast as the long run stays at 20 / 29.4 km – a step in the share
+    // made the long run drop by 3–6 km when the week grew past the threshold.
     double longShare(double wk) => switch (a.eventDistance) {
-      'hm' when runPerWeek >= 3 => max(baseShare(wk), max(wk < 50 ? 0.40 : 0.32, min(0.5, 15 / wk))),
-      'm' when runPerWeek >= 3 => max(baseShare(wk), max(wk < 70 ? 0.42 : 0.33, min(0.55, 30 / wk))),
+      'hm' when runPerWeek >= 3 => max(baseShare(wk), max(max(0.32, min(0.40, 20 / wk)), min(0.5, 15 / wk))),
+      'm' when runPerWeek >= 3 => max(baseShare(wk), max(max(0.33, min(0.42, 29.4 / wk)), min(0.55, 30 / wk))),
       _ => baseShare(wk),
     };
     final longMaxKm = switch (a.eventDistance) {
@@ -208,6 +211,10 @@ class PlanGenerator {
       'm' => 35.0,
       _ => double.infinity,
     };
+    // Base pre-plan of a far-away event (> 30 weeks): the race-specific long runs belong to the
+    // specific block; before it the long run stays at ~70 % of their cap (marathon ~24.5 km,
+    // HM ~15 km) instead of repeating 29 km runs for half a year.
+    final prePlanWeeks = weeksToEvent != null ? max(0, total - GoalModel.specificWeeks) : 0;
     var longestRun = a.longestRunKm ?? max(3.0, runKm.first * baseShare(runKm.first));
     var tempoMin = beginner ? 12 : (level == 'advanced' ? 20 : 15);
     var intervalReps = beginner ? 4 : (level == 'advanced' ? 6 : 5);
@@ -247,7 +254,7 @@ class PlanGenerator {
       // Long run respects the 30-day max rule (R1) and 25–30 % of weekly km.
       final wk = runKm[w];
       final r1Cap = longestRun * (rest ? 0.75 : _longCap);
-      var longKm = min(min(wk * longShare(wk), longMaxKm), r1Cap);
+      var longKm = min(min(wk * longShare(wk), w < prePlanWeeks ? longMaxKm * 0.7 : longMaxKm), r1Cap);
       if (rest && lastLongKm > 0) longKm = min(longKm, lastLongKm * 0.8);
       if (!rest && !runWalk) longestRun = max(longestRun, longKm);
 
@@ -1181,7 +1188,10 @@ class PlanGenerator {
         title = l.wCruise(reps);
         desc = l.wCruiseDesc;
       } else {
-        steps = [wu, _runStep('work', 'T', sec: tempoMin * 60, note: l.stepTempoNote), cd];
+        // Continuous tempo: also ≤ 10 % of the weekly km (Daniels §1.4), at least the classic
+        // 20 min – 30 min at T was 13–23 % of a 28–40 km week.
+        final sec = min(tempoMin * 60, max(20 * 60, (tKm * pz.threshold / 60).round() * 60));
+        steps = [wu, _runStep('work', 'T', sec: sec, note: l.stepTempoNote), cd];
         title = l.planRunTempo;
         desc = l.wTempoDesc;
       }

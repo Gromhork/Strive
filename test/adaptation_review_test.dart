@@ -497,7 +497,8 @@ void main() {
             final longest = sessions
                 .where((s) => s.sport == Sport.run && s.start.isAfter(from))
                 .fold<double>(0, (x, s) => max(x, s.distanceM / 1000));
-            if (longest > 0) expect(w.distanceKm!, lessThanOrEqualTo(longest * 1.1 + 0.15), reason: 'long run day $i');
+            // The recalibration leaves deviations ≤ 2 % alone (rounding of the steps).
+            if (longest > 0) expect(w.distanceKm!, lessThanOrEqualTo(longest * 1.1 * 1.02 + 0.15), reason: 'long run day $i');
           }
           // First week back: easy runs a bit too fast (fires the AutoAdjuster on top of the
           // recalibration).
