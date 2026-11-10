@@ -49,7 +49,14 @@ void main() {
 
   GymExercise ex(String id, int sets, {Effort? effort}) =>
       GymExercise(exId: id, name: id, effort: effort, sets: [for (var i = 0; i < sets; i++) GymSet(weight: 50, reps: 8)]);
-  final gymPlan = PlannedWorkout(id: 'g', date: today, sport: Sport.gym, title: 'Ganzkörper', durationMin: 60, exercises: [ex('a', 4), ex('b', 3), ex('c', 3)]);
+  final gymPlan = PlannedWorkout(
+    id: 'g',
+    date: today,
+    sport: Sport.gym,
+    title: 'Ganzkörper',
+    durationMin: 60,
+    exercises: [ex('a', 4), ex('b', 3), ex('c', 3)],
+  );
 
   ReadinessAdvisor advisor(UserProfile p, List<PlannedWorkout> plans) => ReadinessAdvisor(l, p, plans: plans, sessions: const [], now: now);
 

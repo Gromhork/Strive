@@ -138,19 +138,32 @@ void main() {
       expect(rw, 7);
     });
 
-    test('senior 10 km in 12 weeks: too short, later date and 5 km offered', () {
-      final f = PlanGenerator.feasibility(senior10k, start: start, l: l);
-      expect(f.issues, ['tooShort']);
+    // fix/plan-goal-progression: the goal-directed build (long run/walk on the long day, then long runs
+    // with walk breaks) now reaches the 8 km long run of a 10 km in 12 weeks; 8 weeks stay too short.
+    test('senior 10 km: 12 weeks reach the long run, 8 weeks too short with later date and 5 km offered', () {
+      expect(PlanGenerator.feasibility(senior10k, start: start, l: l).issues, isEmpty);
+      final short = senior10k.copyWith(athlete: senior10k.athlete.merge({'eventDate': race(8)}));
+      final f = PlanGenerator.feasibility(short, start: start, l: l);
+      expect(f.issues, contains('tooShort'));
       expect(f.laterDate, isNotNull);
-      expect(f.laterDate!.isAfter(senior10k.athlete.eventDate!), isTrue);
+      expect(f.laterDate!.isAfter(short.athlete.eventDate!), isTrue);
       expect(f.shorterDistance, '5k');
     });
 
-    test('HM / marathon while on run/walk is not allowed', () {
-      final p = beginner5k.copyWith(athlete: beginner5k.athlete.merge({'eventDistance': 'hm', 'eventDate': race(20)}));
-      final f = PlanGenerator.feasibility(p, start: start, l: l);
-      expect(f.reason, 'runWalkLong');
+    // fix/plan-goal-progression: an HM on run/walk is no longer ruled out – it is built towards and
+    // warned about when the weeks do not suffice; the marathon stays out of reach.
+    test('marathon while on run/walk is not allowed; HM is built and warned about', () {
+      final m = beginner5k.copyWith(athlete: beginner5k.athlete.merge({'eventDistance': 'm', 'eventDate': race(20)}));
+      final fm = PlanGenerator.feasibility(m, start: start, l: l);
+      expect(fm.issues, contains('runWalkLong'));
+      expect(fm.shorterDistance, isNotNull);
+      final hm = beginner5k.copyWith(athlete: beginner5k.athlete.merge({'eventDistance': 'hm', 'eventDate': race(12)}));
+      final f = PlanGenerator.feasibility(hm, start: start, l: l);
+      expect(f.issues, isNot(contains('runWalkLong')));
+      expect(f.issues, contains('tooShort'));
+      expect(f.laterDate, isNotNull);
       expect(f.shorterDistance, isNotNull);
+      expect(f.runWalkFinish, isTrue);
     });
 
     test('realistic goals pass', () {

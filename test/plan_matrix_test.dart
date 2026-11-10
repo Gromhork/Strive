@@ -11,7 +11,9 @@ import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/services/event_spec.dart';
+import 'package:strive/services/goal_model.dart';
 import 'package:strive/services/plan_generator.dart';
+import 'package:strive/services/target_suggestion.dart';
 import 'package:strive/services/zones.dart';
 
 /// Training-science audit of the plan generator over a matrix of athletes (docs/training-science.md).
@@ -116,7 +118,14 @@ const _inv1 = '1 race day',
     _inv11b = '11b long run longest',
     _inv11c = '11c distance vs steps',
     _inv12a = '12a sane values',
-    _inv12b = '12b weekly sport coverage';
+    _inv12b = '12b weekly sport coverage',
+    _inv13a = '13a long growth monotonic',
+    _inv13b = '13b long growth safety cap',
+    _inv13c = '13c run/walk stages advance',
+    _inv13d = '13d HM long run <= 5 km',
+    _inv13e = '13e target suggestion',
+    _inv13f = '13f goal reached or warned',
+    _inv13g = '13g no taper without event';
 
 const _invariants = [
   _inv1,
@@ -141,6 +150,13 @@ const _invariants = [
   _inv11c,
   _inv12a,
   _inv12b,
+  _inv13a,
+  _inv13b,
+  _inv13c,
+  _inv13d,
+  _inv13e,
+  _inv13f,
+  _inv13g,
 ];
 
 // ───────────────────────────── Matrix ─────────────────────────────
@@ -311,7 +327,8 @@ List<_Case> _plainCases() {
           goals: const ['endurance'],
           athlete: AthleteData(
             difficulty: difficulty,
-            planWeeks: 12,
+            // Plan length without an event: every length the setup offers (PlanGenerator.supportedWeeks).
+            planWeeks: PlanGenerator.supportedWeeks[i % PlanGenerator.supportedWeeks.length],
             sessionMinutes: _sessionMinutes(b),
             dayMinutes: _dayMinutes(b),
             limitations: limits,
@@ -329,11 +346,78 @@ List<_Case> _plainCases() {
               limits.isEmpty ? 'healthy' : limits.join('+'),
               difficulty.substring(0, 3),
               '${age}y',
+              '${PlanGenerator.supportedWeeks[i % PlanGenerator.supportedWeeks.length]}w',
             ].join('/'),
             p,
           ),
         );
         i++;
+      }
+    }
+  }
+  return out;
+}
+
+/// Ability dimension (fix/plan-goal-progression, user report "HM in 12 weeks, cannot run 30 min →
+/// long runs max ~5 km"): every distance × weeks to race (short / medium / long) × what the athlete can
+/// do today – run: cannot run 30 min / can, 0 km / ~10 km / ~25 km a week (beginner, beginner,
+/// novice-like beginner, intermediate); swim: cannot / can swim 400 m; bike: no FTP / FTP. Only the
+/// dimensions the distance uses vary.
+List<_Case> _abilityCases() {
+  final out = <_Case>[];
+  for (final d in eventDistances) {
+    final spec = EventSpec.of(d.key)!;
+    final sports = _focusFor(d.sport, false).sports;
+    final runs = sports.contains(Sport.run), swims = sports.contains(Sport.swim), rides = sports.contains(Sport.ride);
+    final runAbility =
+        runs
+            ? const [
+              ('noRun30', 'beginner', false, 0.0),
+              ('km0', 'beginner', true, 0.0),
+              ('km10', 'beginner', true, 10.0),
+              ('km25', 'intermediate', true, 25.0),
+            ]
+            : const [('-', 'beginner', true, 0.0), ('-', 'intermediate', true, 0.0)];
+    for (final (runLabel, level, can30, km) in runAbility) {
+      for (final swim400 in swims ? const [false, true] : const [true]) {
+        for (final ftp in rides ? const [false, true] : const [false]) {
+          final (wMin, wMax) = spec.weeksFor(level);
+          for (final (wl, weeks) in [('short', max(4, (wMin * 0.6).round())), ('medium', wMin), ('long', wMax + 4)]) {
+            final focus = _focusFor(d.sport, false);
+            final p = UserProfile(
+              level: level,
+              focus: focus,
+              birthYear: DateTime.now().year - 35,
+              experience: level == 'beginner' ? const <Sport>{} : {...focus.sports},
+              trainingDays: const [2, 4, 6, 7],
+              athlete: AthleteData(
+                sessionMinutes: 60,
+                dayMinutes: const {6: 240, 7: 150},
+                canRun30: can30,
+                canSwim400: swim400,
+                runWeeklyKm: km > 0 ? km : null,
+                raceTimes: level == 'intermediate' ? const {'10k': 55 * 60} : const {},
+                ftp: ftp ? (level == 'beginner' ? 150 : 210) : null,
+                eventDistance: d.key,
+                eventDate: _raceDate(weeks),
+              ),
+            );
+            out.add(
+              _Case(
+                [
+                  d.key,
+                  'ability',
+                  level.substring(0, 3),
+                  if (runs) runLabel,
+                  if (swims) swim400 ? 'swim400' : 'noSwim400',
+                  if (rides) ftp ? 'ftp' : 'noFtp',
+                  '${weeks}w$wl',
+                ].join('/'),
+                p,
+              ),
+            );
+          }
+        }
       }
     }
   }
@@ -429,6 +513,18 @@ const kKnownResiduals = {
   '4b taper cut|swim1500/beg/M/5d/heart/12wfar/bal/68y/noSwim400',
   '4b taper cut|swim5000/int/L/3d/healthy/20wfar/bal/68y/swimTest',
   '6a long session flat|5k/int/M/3d/hybrid/back/12wfar/eas/68y',
+  // fix/plan-goal-progression (new matrix rows, reviewed):
+  // * 24-week general-fitness plan, EASY, 55 y: the long run sits at its share of the volume ceiling
+  //   (start × 1.35 without a goal) – flat by design, like the 5 km row above.
+  '6a long session flat|plain/run/int/L/3d/healthy/eas/55y/24w',
+  // * Beginner duathlon standard from run/walk: the first peak week adds the run before the bike
+  //   (+1.3 km, the race's order) in the week the long run steps +1 km – 16.5 km vs 16.3 km allowed.
+  '2 volume progression|du_standard/ability/beg/noRun30/noFtp/18wlong',
+  '2 volume progression|du_standard/ability/beg/noRun30/ftp/18wlong',
+  '2 volume progression|du_standard/ability/beg/km0/noFtp/18wlong',
+  '2 volume progression|du_standard/ability/beg/km0/ftp/18wlong',
+  '2 volume progression|du_standard/ability/beg/km10/noFtp/18wlong',
+  '2 volume progression|du_standard/ability/beg/km10/ftp/18wlong',
 };
 
 class _Report {
@@ -854,6 +950,99 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
       if (!wk.ws.any((w) => w.sport == s)) r.add(_inv12b, c, wk.idx, 'no ${s.name} session (${wk.phase})');
     }
   }
+
+  // ── 13. Goal-directed progression (fix/plan-goal-progression) ──
+  PlanFeasibility? feas;
+  PlanFeasibility f() => feas ??= PlanGenerator.feasibility(p, start: _start, l: l);
+  bool warned() => f().issues.any((i) => !i.startsWith('target'));
+  if (c.endurance.contains(Sport.run)) {
+    // Long run per loading week (a long run/walk counts with its running km): within a loading block
+    // it never shrinks (except the planned shorter week of the plateau rotation), and it never grows
+    // beyond the safety cap over the longest run so far – +10 % (R1), or the goal step +1.5 km
+    // ≤ +25 % (+0.5 km for the 0.5 km rounding); a long run/walk grows ≤ 10 min (+5 rounding).
+    double? prevKm;
+    int? prevMin;
+    var maxKm = 0.0;
+    var maxMin = 0;
+    for (final wk in weeks.take(pl.raceWeek ?? weeks.length)) {
+      final lr = wk.long(Sport.run);
+      if (!wk.loading) {
+        prevKm = null;
+        prevMin = null;
+        if (lr != null) {
+          maxKm = max(maxKm, lr.distanceKm ?? 0);
+          maxMin = max(maxMin, lr.durationMin);
+        }
+        continue;
+      }
+      if (lr == null) continue;
+      final km = lr.distanceKm ?? 0;
+      final rw = _isRunWalk(lr);
+      final shorter = lr.description.contains(l.wLongRunShortDesc);
+      if (prevKm != null && !shorter && km < prevKm * 0.97 - 0.05 && !(rw && lr.durationMin >= prevMin!)) {
+        r.add(_inv13a, c, wk.idx, 'long run ${_r(km)} km after ${_r(prevKm)} km in the same loading block');
+      }
+      if (maxKm > 0) {
+        if (rw) {
+          if (lr.durationMin > maxMin + 15) r.add(_inv13b, c, wk.idx, 'long run/walk ${lr.durationMin} min after $maxMin min');
+        } else {
+          final allowed = max(maxKm * 1.10, min(maxKm + 1.5, maxKm * 1.25)) + 0.5;
+          if (km > allowed) r.add(_inv13b, c, wk.idx, 'long run ${_r(km)} km > ${_r(allowed)} km allowed after ${_r(maxKm)} km');
+        }
+      }
+      if (!shorter) {
+        prevKm = km;
+        prevMin = lr.durationMin;
+      }
+      maxKm = max(maxKm, km);
+      maxMin = max(maxMin, lr.durationMin);
+    }
+    // Run/walk stages advance: the longest run block of the regular run/walk sessions never drops from
+    // one loading week to the next (8 × 1 min → … → 30 min); still on run/walk before the taper → the
+    // feasibility check warns.
+    var lastRun = 0;
+    _Week? lastRw;
+    for (final wk in weeks.take(pl.raceWeek ?? weeks.length).where((w) => w.loading)) {
+      final rws = wk.ws.where((w) => _isRunWalk(w) && w.intensity != 'long');
+      if (rws.isEmpty) continue;
+      final run = rws.map((w) => w.steps.where((s) => s.kind == 'work').fold(0, (x, s) => max(x, s.durationSec ?? 0))).reduce(max);
+      if (run < lastRun) r.add(_inv13c, c, wk.idx, 'run/walk block ${run ~/ 60} min after ${lastRun ~/ 60} min');
+      lastRun = run;
+      lastRw = wk;
+    }
+    if (ev != null && lastRw != null && pl.raceWeek != null && lastRw.idx >= pl.firstTaper - 1 && pl.firstTaper > 0 && !warned()) {
+      r.add(_inv13c, c, lastRw.idx, 'still on run/walk right before the taper – feasibility silent');
+    }
+  }
+  if (ev == 'hm') {
+    final longest = plan.where((w) => w.sport == Sport.run && w.intensity == 'long').fold(0.0, (x, w) => max(x, w.distanceKm ?? 0));
+    if (longest <= 5 && !warned()) r.add(_inv13d, c, null, 'HM with a longest long run of ${_r(longest)} km – feasibility silent');
+  }
+  // A suggested target time is never flagged by the target check (the feasibility card's).
+  if (ev != null && a.eventDate != null) {
+    final s = suggestTargetTime(p, ev, a.eventDate!, now: _start);
+    if (!s.finishOnly) {
+      final q = p.copyWith(athlete: p.athlete.merge({'targetTimeSec': s.sec}));
+      final t = GoalModel.check(q, start: _start);
+      if (t != null && t.status != TargetStatus.ok) r.add(_inv13e, c, null, 'suggested ${clock(s.sec!)} is ${t.status.name}');
+      if (s.fastSec != null && s.slowSec != null && !(s.fastSec! <= s.sec! + 60 && s.sec! <= s.slowSec! + 60)) {
+        r.add(_inv13e, c, null, 'range ${clock(s.fastSec!)}–${clock(s.slowSec!)} does not contain ${clock(s.sec!)}');
+      }
+    }
+  }
+  // Ability cases: a "too short" warning offers a later date – and that date really is long enough.
+  if (c.label.contains('/ability/') && ev != null && f().issues.contains('tooShort') && f().laterDate != null) {
+    final later = p.copyWith(athlete: p.athlete.merge({'eventDate': f().laterDate}));
+    final f2 = PlanGenerator.feasibility(later, start: _start, l: l);
+    if (f2.issues.contains('tooShort') || f2.issues.contains('runWalk')) {
+      r.add(_inv13f, c, null, 'later date ${dayOnly(f().laterDate!)} still ${f2.issues}');
+    }
+  }
+  // Plans without an event: repeating loading blocks with recovery weeks – no peak, no taper, no race.
+  if (ev == null) {
+    final bad = plan.where((w) => w.phase == 'taper' || w.phase == 'peak' || w.intensity == 'race').firstOrNull;
+    if (bad != null) r.add(_inv13g, c, _weekIdx(bad.date), '"${bad.title}" ${bad.phase} in a plan without an event');
+  }
 }
 
 // ───────────────────────────── Samples ─────────────────────────────
@@ -891,17 +1080,17 @@ void main() {
 
   test('plan matrix: training-science invariants over event and non-event plans', () {
     final sw = Stopwatch()..start();
-    final cases = [..._eventCases(), ..._plainCases()];
+    final cases = [..._eventCases(), ..._plainCases(), ..._abilityCases()];
     final report = _Report();
     for (final c in cases) {
-      final plan = PlanGenerator(l, c.p, templates, id).generate(start: _start, weeks: c.event == null ? 12 : null);
+      final plan = PlanGenerator(l, c.p, templates, id).generate(start: _start, weeks: c.event == null ? c.a.planWeeks : null);
       _check(_Plan(c, plan, l.wShakeout), report, l);
     }
     print(report.summary());
     print('${cases.length} plans checked in ${sw.elapsed.inSeconds} s');
     final total = report.v.values.fold(0, (x, v) => x + v.length);
     expect(total, 0, reason: 'invariant violations – see the table above');
-  }, timeout: const Timeout(Duration(minutes: 5)));
+  }, timeout: const Timeout(Duration(minutes: 15)));
 
   test('sample plans (set PLAN_SAMPLES=1 to print)', () {
     UserProfile p(
@@ -913,6 +1102,7 @@ void main() {
       int minutes,
       Map<int, int> dayMin, {
       bool swim400 = true,
+      bool run30 = true,
     }) => UserProfile(
       level: level,
       focus: f,
@@ -923,6 +1113,7 @@ void main() {
         sessionMinutes: minutes,
         dayMinutes: dayMin,
         canSwim400: swim400,
+        canRun30: run30,
         raceTimes: level == 'beginner' ? const {} : (level == 'advanced' ? const {'10k': 42 * 60} : const {'10k': 52 * 60}),
         ftp: level == 'beginner' ? null : 220,
         eventDistance: ev,
@@ -930,6 +1121,28 @@ void main() {
       ),
     );
     final samples = {
+      // fix/plan-goal-progression: the user report and its class (cannot run 30 min / swim 400 m).
+      'HM beginner, cannot run 30 min, 12 wk': p(
+        TrainingFocus.run,
+        'beginner',
+        'hm',
+        12,
+        const [2, 4, 6],
+        60,
+        const {6: 150},
+        run30: false,
+      ),
+      '10k beginner, cannot run 30 min, 8 wk': p(TrainingFocus.run, 'beginner', '10k', 8, const [2, 4, 6], 60, const {}, run30: false),
+      'olympic beginner, cannot swim 400 m, 16 wk': p(
+        TrainingFocus.triathlon,
+        'beginner',
+        'olympic',
+        16,
+        const [1, 3, 5, 6, 7],
+        60,
+        const {},
+        swim400: false,
+      ),
       '70.3 intermediate 16 wk': p(
         TrainingFocus.triathlon,
         'intermediate',

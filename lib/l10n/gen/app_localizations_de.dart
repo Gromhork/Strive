@@ -3688,7 +3688,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get feasBeginnerMarathon => 'Ein Marathon ist kein Einsteigerziel: Baue erst über 5 km, 10 km und Halbmarathon auf.';
 
   @override
-  String get feasRunWalkLong => 'Solange du keine 30 min am Stück läufst, ist ein (Halb-)Marathon zu weit – starte mit 5 km.';
+  String get feasRunWalkLong => 'Solange du nicht 30 min am Stück laufen kannst, ist ein Marathon zu weit – baue erst über 5 km, 10 km und einen Halbmarathon auf.';
 
   @override
   String get feasRunWalk => 'Am Wettkampftag bist du noch im Lauf-Geh-Programm – durchgehendes Laufen braucht länger.';
@@ -4833,4 +4833,64 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get zoneCurrent => 'Aktuelle Zone';
+
+  @override
+  String get wLongRunWalkDesc => 'Langer Lauf/Geh-Wechsel: derselbe Rhythmus wie in deinen anderen Läufen, mehr Wiederholungen – Zeit auf den Beinen für den Wettkampf. Plaudertempo, zügig gehen. Wächst etwa 10 min pro Woche.';
+
+  @override
+  String get wWalkBreaksNote => 'Nach je 10 min Laufen 1 min gehen (Galloway) – die Pausen schonen Beine und Gelenke. Lass sie weg, sobald es sich leicht anfühlt.';
+
+  @override
+  String wSwimContinuous(int meters) {
+    return 'Am Stück schwimmen $meters m';
+  }
+
+  @override
+  String get wSwimContinuousDesc => 'Den Hauptteil am Stück in lockerem, gleichmäßigem Tempo schwimmen – er wächst etwa 100 m pro Woche bis zu der Strecke, die dein Wettkampf ohne Pause verlangt.';
+
+  @override
+  String get progTitle => 'Dein Aufbau hinkt hinterher';
+
+  @override
+  String progLongShort(int pct) {
+    return 'Deine langen Einheiten der letzten 3 Wochen erreichten nur $pct % des Plans.';
+  }
+
+  @override
+  String get progLongMissed => 'Mehrere lange Einheiten – die Schlüsseleinheiten deines Aufbaus – sind ausgefallen.';
+
+  @override
+  String get progRunWalkNotAchieved => 'Die Lauf/Geh-Stufen wurden gekürzt oder fühlten sich schwer an (RPE ≥ 7) – geh erst weiter, wenn eine Stufe leicht fällt.';
+
+  @override
+  String get progHighEffort => 'Deine langen Einheiten fühlten sich sehr schwer an (RPE ≥ 8) – sie sollten locker sein.';
+
+  @override
+  String get progOptRepeatWeek => 'Diese Woche wiederholen, bevor der nächste Schritt kommt';
+
+  @override
+  String get progOptLaterRace => 'Einen späteren Wettkampf wählen';
+
+  @override
+  String get progOptShorter => 'Auf eine kürzere Distanz wechseln';
+
+  @override
+  String get progOptRunWalkRace => 'Den Wettkampf mit Lauf/Geh-Wechsel planen';
+
+  @override
+  String get targetSuggestBasisRace => 'Auf Basis deiner Wettkampfzeiten';
+
+  @override
+  String get targetSuggestBasisEfforts => 'Auf Basis deiner letzten Läufe';
+
+  @override
+  String get targetSuggestBasisLevel => 'Grobe Schätzung nach deinem Level – eine Wettkampfzeit macht sie genauer';
+
+  @override
+  String get targetSuggestFinish => 'Ziel: ankommen – für diesen Wettkampf noch keine Zielzeit';
+
+  @override
+  String targetSuggestRange(String time, String fast, String slow) {
+    return 'Vorschlag $time (Spanne $fast – $slow)';
+  }
 }

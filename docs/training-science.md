@@ -221,9 +221,11 @@ If the time to race day is shorter than the minimum: show a warning and offer a 
 the "new plan" sheet and the calendar header show a short warning with options when the goal is not realistic:
 
 ```text
-not allowed  : BEGINNER + marathon; still on run/walk (cannot run 30 min) + HM / marathon
+not allowed  : BEGINNER + marathon; still on run/walk (cannot run 30 min) + marathon / ultra / Ironman
+               (HM on run/walk: built goal-directed, §1.10b, and checked like every other goal)
 runWalk      : run/walk stages still planned in race week (one stage per week, §1.10)
-tooShort     : the plan's longest long run stays below 10k 8 km · HM 15 km · marathon 28 km (~70–80 % of the distance),
+tooShort     : the plan's longest long run stays below 10k 8 km · HM 15 km (or 2 h on the feet, §1.10b) · marathon 28 km
+               (~70–80 % of the distance) – also while still on run/walk by race day,
                or the long ride below 90 % of olympic 90 min · 70.3 180 min, because there are too few weeks;
                70.3 also needs a long run of ~16 km or 100 min (whichever is shorter at the long-run pace)
 longRunTime / longRideTime : the time on the long day (not the weeks) caps the long session below those minimums
@@ -340,6 +342,33 @@ when the forecast is *at risk* – with "set target to …" (also moves the upco
 forecast. The detail page adds completion, longest run vs. what the race needs, the VDOT trend vs. the plan line and the
 phase outlook.
 
+**Beginner progression check** (fix/plan-goal-progression, `progressionCheck`, lib/services/progression_check.dart,
+carried as `GoalForecast.progression`) [P]: for beginners, plans with run/walk and swim novices, over the last 21 days:
+
+```text
+long sessions  : achieved share = Σ min(done, planned) / Σ planned (distance; run/walk and plans without a distance by
+                 duration), weighted by planned minutes; missed = no linked session
+behind         : ≥ 2 planned long sessions and (share < 0.8 or ≥ 2 missed)
+run/walk       : ≥ 2 run/walk sessions done < 80 % of the planned time or at RPE ≥ 7 (C25K: progress only at RPE ≤ 5)
+high effort    : ≥ 2 long / run/walk sessions at RPE ≥ 8
+forecast       : behind → status ≥ slightly behind; long sessions behind → reason longRunBehind, and at risk with ≤ 8 weeks
+                 left or share < 0.6 (the existing weekly at-risk notice of the home card)
+options        : repeat the week · a later race · a shorter distance · race with run/walk (short races, HM: Galloway)
+```
+
+**Target-time suggestion** (`suggestTargetTime`, lib/services/target_suggestion.dart): VDOT from race times (high /
+medium confidence), else the best 5 km+ effort of the last 90 days (never above the level default the target check
+uses), else the level default (low); race day = `GoalModel.timeAt(VDOT, gain(weeks − 1))` – exactly the check's
+*realistic* time, rounded on the slow side, so a suggestion is never flagged; marathon from ≤ 10 km below advanced:
+the slower of VDOT and Riegel 1.08; triathlon from the legs (FTP / CSS). Finish only (no time): ultra, cycling, open
+water, run/walk starters, beginner marathon / Ironman, multisport without data. Range ± 2 / 1.5 / 3.5 VDOT + 0.04 /
+week.
+
+**Plan length without an event** (`PlanGenerator.supportedWeeks` = 4, 6, 8, 10, 12, 16, 20, 24;
+`recommendedWeeks(p)`: beginners 8–12 (8), others 8–16 (12), with an event the table §14; `phasesFor(p, start:,
+weeks:)` for a preview): base ~42–50 % then build, a recovery week after every 2–4 loading weeks (§1.9), no peak, no
+taper, no race – verified for every supported length in the plan matrix (invariant 13g).
+
 ### 1.9 Deload / recovery weeks [P] (no RCT on cycle length)
 
 ```text
@@ -397,6 +426,53 @@ Triathlon volume ceilings (R5) per discipline, novice / intermediate / advanced:
 run km sprint 12/20/30 · olympic 18/28/40 · 70.3 25/35/50; bike hours 2.5/3.5/4.5 · 3.5/4.5/6 · 5/6.5/8;
 swim km 3/5/7 · 4/6/8 · 5/7/9. Sessions per discipline with one session a day: 3 days 1/1/1, 4 days swim 1 · bike 2 · run 1,
 5 days 1/2/2, 6 days 2/2/2, 7 days 2/3/2 (2 days: bike + run, or swim + bike if the athlete cannot swim 400 m).
+
+### 1.10b Goal-directed build for limited current ability [M/P] (fix/plan-goal-progression)
+
+User report: "cannot run 30 min, half marathon in 12 weeks → the longest sessions are just over 30 min, long runs
+≤ 5 km". Root cause: (1) run/walk athletes got three identical run/walk sessions a week for 11 weeks – no long session
+at all, the HM plan never left run/walk; the feasibility card only said "start with 5 km"; (2) athletes who can run
+30 min started the long run at ~4–5 km and grew it by +10 % (R1) of that tiny base – 5 → 9.5 km in 12 weeks; (3) the
+swim-novice ladder ended at 400 m and nothing grew afterwards. The principle now: *as far as is safely possible
+towards the goal*, and a clear warning when that is not far enough.
+
+```text
+goal long run   : EventSpec.goalLongKm – 10k 9 km · HM 16 km (Higdon / Galloway novice plans 8–10 / 16–18 km) · else
+                  longRunKm; slow runners: longRunMin at the long-run pace when shorter (HM 120 min ≈ 15 km at 8:00/km)
+behind          : the long run cannot reach it at +10 %/week (R1) in the loading weeks before the taper, or run/walk start
+run/walk + goal : NHS Couch-to-5K pace (9 stages: skip 10 × 1 min and 3 × 5 min, which repeat the run time before them)
+                  when 11 stages + the long-run build do not fit; each stage still needs RPE ≤ 5 without pain [44]
+long run/walk   : on the long day the stage's rhythm repeated (continuous stages: 10 min run / 1 min walk), main set
+                  +10 min per loading week (gentle: +5), running ≤ 2 × the longest regular session's (gentle 1.5 ×),
+                  never shorter than last loading week's; no recovery weeks while on run/walk (C25K), taper as usual
+                  – Galloway run-walk-run [91]; walk breaks keep finish times with less fatigue (Hottenrott 2016 [92])
+after run/walk  : R1 reference = the running km of the last long run/walk; long runs keep a 1 min walk break every
+                  10 min (description says: drop them once easy); easy runs start at the 30 min run, +10 %/week;
+                  race day shows "run 10 min / walk 1 min"
+goal step       : behind → longest + min(1.5 km, 10 min at the long-run pace), ≤ +25 % (gentle: 1 km, ≤ +15 %), never in
+                  the first plan week, never beyond the goal; recovery weeks (80 %) stay. Higdon novice HM adds ~1.5 km a
+                  week [93]; Nielsen 2014 [10]: < 30 %/week not clearly riskier; Pfitzinger [94]: ≤ ~10 min more per
+                  week on the long run; ACSM [95]: progress duration before intensity
+volume          : behind (not gentle) → run km grow 10 %/week (R2 CHALLENGING rate) up to max(ceiling, goal / 0.5); the
+                  goal's long run may take ≤ 50 % of a 3+-run week (2 runs 60 %)
+gentle          : EASY, knee / hip / ankle, age ≥ 65, BMI ≥ 30 novices – they also keep the slower volume growth
+monotonic       : within a loading block the long run never shrinks (plateau's planned shorter week excepted)
+cold start (R1) : longest recent run ≤ 50 % of the stated weekly km (one run a week in the plan ≠ a 25 km run)
+long ride       : too slow for the race's long ride → ≥ +10 min per loading week (Friel [86]), ≤ the long day minus the
+                  brick, never below last loading week's
+swim novice     : see §4.5
+```
+
+Before → after (Mon-start plan 2026-11-09, 3 run days, 60 min, Saturday 150 min):
+
+| Case | Before | After |
+|---|---|---|
+| HM 12 wk, cannot run 30 min | 11 weeks of 3 × the same 30 min run/walk, longest 3.2 km / 35 min; "HM not allowed" | long run/walk 40 → 75 min (7.7 km running), long run 9 km with walk breaks; warns: too short, race on 2027-03-07 or 10 km, or finish with run/walk |
+| HM 12 wk, can run 30 min | long run 5 → 9.5 km | 5 → 13 km (+1–1.5 km/week, recovery weeks); warns too short, later date one week later |
+| 10 km 8 wk, cannot run 30 min | longest 2.6 km / 30 min | long run/walk 40 → 65 min (6.4 km); warns run/walk on race day + too short, later date, run/walk finish |
+| olympic 16 wk, cannot swim 400 m | continuous swim stuck at 400 m, warning | ladder (6 stages) → CSS test → continuous swim 500 → 800 m, no warning |
+
+The ongoing check is in §1.12 (progression check). The UI suggests a target time with `suggestTargetTime` (§1.12).
 
 ### 1.11 Workout library and scaling [P]
 
@@ -828,6 +904,12 @@ paddle use, keep breathing bilateral, and progress main-set volume no faster tha
 Order: (1) breathing and exhaling underwater; (2) body position, horizontal with head neutral; (3) rotation and
 bilateral breathing every 3; (4) catch and pull (high elbow); (5) kick from the hips with a small amplitude. Use fins and a pull buoy as
 aids. For BEGINNER, don't use pace targets for the first 4–6 weeks: give reps by distance and rest by breaths/RPE.
+
+**Goal-directed swim novices** (fix/plan-goal-progression) [P]: a triathlon whose continuous swim (sprint 400 m,
+olympic / 70.3 800 m, Ironman 1000 m) cannot be reached in the weeks before the taper (8 ladder stages + CSS test +
+100 m a week after it) runs the ladder at 6 stages (skips 50 m × 10 and the second 200 m × 4). After the CSS test one easy
+swim a week is a *continuous swim*: 500 m, then +100 m per loading week (≈ +15–20 %, little impact load, H8) up to the
+race's distance (recovery / taper ~70 %, race week ~50 %).
 
 ---
 
@@ -1400,3 +1482,9 @@ Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
 88. Jeukendrup A. A step towards personalized sports nutrition: carbohydrate intake during exercise. *Sports Med.* 2014;44(Suppl 1):S25–S33. doi:10.1007/s40279-014-0148-z [M]
 89. Thomas DT, Erdman KA, Burke LM. American College of Sports Medicine joint position statement: nutrition and athletic performance. *Med Sci Sports Exerc.* 2016;48(3):543–568. doi:10.1249/MSS.0000000000000852 [S]
 90. Stöggl T, Sperlich B. Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training. *Front Physiol.* 2014;5:33. doi:10.3389/fphys.2014.00033 [M]
+91. Galloway J. *Galloway's Book on Running.* 2nd ed. Bolinas: Shelter Publications; 2002 – and *Half Marathon: You Can Do It* (run-walk-run method, walk breaks from the start, long run/walks as time on feet).
+92. Hottenrott K, Ludyga S, Schulze S, Gronwald T, Jäger FS. Does a run/walk strategy decrease cardiovascular stress and fatigue in running? *J Sci Med Sport.* 2016;19(1):64–68 (similar marathon times, less muscle pain and fatigue with run/walk).
+93. Higdon H. Half Marathon Novice 1 / 10K Novice training programs (12 / 8 weeks; long run +1 mile a week to 10 mi / 6 mi). halhigdon.com.
+94. Pfitzinger P, Latter P. *Faster Road Racing: 5K to Half Marathon.* Champaign: Human Kinetics; 2015 (long-run progression, cut-back weeks, taper).
+95. American College of Sports Medicine; Garber CE et al. Quantity and quality of exercise for developing and maintaining cardiorespiratory, musculoskeletal, and neuromotor fitness. *Med Sci Sports Exerc.* 2011;43(7):1334–1359 (progress duration before intensity, gradual progression for the untrained).
+96. NHS. Couch to 5K: week by week (9-week run/walk programme, 3 sessions a week). nhs.uk (see also [44]).

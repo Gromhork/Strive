@@ -20,6 +20,7 @@ class EventSpec {
     this.beginnerOk = true,
     this.longRunKm,
     this.longRunMin,
+    this.longRunGoalKm,
     this.longRunCapKm = 21,
     this.longRunCapMin = 150,
     this.runKm = const [],
@@ -54,6 +55,13 @@ class EventSpec {
   /// when that is shorter (slow runners are on their feet long enough sooner).
   final double? longRunKm;
   final int? longRunMin;
+
+  /// Long run a goal-directed build aims at by the peak when the athlete starts far below it
+  /// (beginners, run/walk, low weekly km): 10 km 9 km, HM 16 km (Higdon / Galloway novice plans:
+  /// 8–10 / 16–18 km) – else [longRunKm]. Slow runners: [longRunMin] at the long-run pace when
+  /// that is shorter (time on feet).
+  final double? longRunGoalKm;
+  double? get goalLongKm => longRunGoalKm ?? longRunKm;
 
   /// Longest long run the plan builds to (km) and the most time one run may take (min).
   final double longRunCapKm;
@@ -115,6 +123,7 @@ class EventSpec {
       weeks: (8, 12),
       taper: 1,
       longRunKm: 8,
+      longRunGoalKm: 9,
       longRunCapKm: 18,
       runKm: [25, 40, 60],
       shorter: ['5k'],
@@ -126,10 +135,15 @@ class EventSpec {
       weeksBeginner: (12, 14),
       taper: 2,
       longRunKm: 15,
+      // Slow runners: ~2 h time on feet is the HM long run (Galloway) – 15 km at 8:00 /km.
+      longRunMin: 120,
+      longRunGoalKm: 16,
       longRunCapKm: 21,
       runKm: [30, 50, 70],
       longDayMin: 150,
       shorter: ['10k', '5k'],
+      // Galloway run/walk finishes are common at the HM (Hottenrott 2016: similar times, less fatigue).
+      runWalkFinish: true,
     ),
     'm': EventSpec(
       'm',

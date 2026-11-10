@@ -7,6 +7,7 @@ import 'compliance.dart';
 import 'goal_model.dart';
 import 'insights.dart';
 import 'plan_generator.dart';
+import 'progression_check.dart';
 import 'zones.dart';
 
 /// Where the athlete stands on the way to the event goal.
@@ -40,6 +41,11 @@ enum ForecastConfidence { low, medium, high }
 ///   predicted time). Without a target (finish goal): completion < 50 % or the long run far
 ///   behind with ≤ 6 weeks left → at risk; completion < 70 % or long run behind → slightly
 ///   behind. Before 2 done sessions of the plan the status is only [early].
+/// * **Beginner progression** ([progressionCheck]: run/walk, growing long session, swim novice
+///   ladder, last 3 weeks, carried in [progression]): behind → status at least slightly behind;
+///   long sessions behind → reason [ForecastReason.longRunBehind], and with ≤ 8 weeks left or
+///   < 60 % achieved → at risk. Run/walk and effort issues add no reason (the UI reads
+///   [ProgressionCheck.issues]).
 class GoalForecast {
   const GoalForecast({
     required this.event,
@@ -66,6 +72,7 @@ class GoalForecast {
     this.planStart,
     this.suggestedSec,
     this.doneSessions = 0,
+    this.progression,
   });
 
   final String event;
@@ -101,6 +108,9 @@ class GoalForecast {
   /// Target time to suggest: the predicted one when behind, a faster one when ahead.
   final int? suggestedSec;
   final int doneSessions;
+
+  /// Beginner progression check (null when it does not apply – see [progressionCheck]).
+  final ProgressionCheck? progression;
 
   int get weeksLeft => daysLeft ~/ 7;
   bool get atRisk => !early && status == ForecastStatus.atRisk;
@@ -310,6 +320,15 @@ class GoalForecast {
     }
     if (longBehind && weeksLeft <= 6 && status.index < ForecastStatus.slightlyBehind.index) status = ForecastStatus.slightlyBehind;
 
+    // ── Beginner progression (run/walk, long session, swim ladder)
+    final progression = progressionCheck(p, plans: plans, sessions: sessions, now: now);
+    if (progression != null && progression.behind) {
+      if (progression.longBehind && !reasons.contains(ForecastReason.longRunBehind)) reasons.add(ForecastReason.longRunBehind);
+      final share = progression.longAchievedShare ?? 1;
+      final floor = progression.longBehind && (weeksLeft <= 8 || share < 0.6) ? ForecastStatus.atRisk : ForecastStatus.slightlyBehind;
+      if (status.index < floor.index) status = floor;
+    }
+
     // Expected line: from the plan start (baseline) to race day.
     final planned = <(DateTime, double)>[];
     if (planStart != null) {
@@ -344,6 +363,7 @@ class GoalForecast {
       planStart: planStart,
       suggestedSec: suggested,
       doneSessions: doneSessions,
+      progression: progression,
     );
   }
 
