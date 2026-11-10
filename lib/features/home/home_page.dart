@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,8 @@ import '../../providers.dart';
 import '../../services/compliance.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
+import '../../widgets/term_info.dart';
+import '../../widgets/plan_amount.dart';
 import '../profile/health_connect_page.dart';
 import '../shell/health_sync.dart';
 import 'adjust_week.dart';
@@ -26,6 +29,7 @@ import '../profile/profile_page.dart';
 import '../calendar/plan_editor.dart';
 import '../calendar/planned_workout_page.dart';
 import '../session/step_list.dart';
+import '../goals/goal_forecast_widgets.dart';
 import '../goals/goals_page.dart';
 import '../onboarding/onboarding_page.dart';
 import '../session/start_helpers.dart';
@@ -51,10 +55,12 @@ class HomePage extends ConsumerWidget {
           SizedBox(height: 12),
           AdjustWeekBanner(),
           AutoAdjustedBanner(),
+          GuestBanner(),
           TodayCard(),
           SizedBox(height: 12),
           GoalStatusCard(),
-          _ComingUp(),
+          _EventLine(),
+          ComingUpCard(),
           SizedBox(height: 12),
           IntrinsicHeight(
             child: Row(
@@ -101,6 +107,59 @@ class _Greeting extends ConsumerWidget {
   }
 }
 
+// ───────────────────────────── Guest account ─────────────────────────────
+
+/// Whether the signed-in account is a guest (anonymous) – false without Firebase (tests).
+final isGuestProvider = Provider<bool>((ref) {
+  try {
+    ref.watch(authProvider);
+    return FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
+  } catch (_) {
+    return false;
+  }
+});
+
+/// After 3 sessions a guest is asked to secure the data (link e-mail or Google); dismissed,
+/// it comes back after a week.
+class GuestBanner extends ConsumerStatefulWidget {
+  const GuestBanner({super.key});
+  static const prefsKey = 'guestBannerSnoozed';
+  static const minSessions = 3;
+  @override
+  ConsumerState<GuestBanner> createState() => _GuestBannerState();
+}
+
+class _GuestBannerState extends ConsumerState<GuestBanner> {
+  bool _hidden = false;
+
+  bool _snoozed() {
+    try {
+      final ms = ref.read(prefsProvider).getInt(GuestBanner.prefsKey);
+      return ms != null && DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ms)).inDays < 7; // time span
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hidden || !ref.watch(isGuestProvider) || ref.watch(sessionListProvider).length < GuestBanner.minSessions || _snoozed()) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: SecureGuestCard(
+        onDismiss: () {
+          setState(() => _hidden = true);
+          try {
+            ref.read(prefsProvider).setInt(GuestBanner.prefsKey, DateTime.now().millisecondsSinceEpoch);
+          } catch (_) {}
+        },
+      ),
+    );
+  }
+}
+
 // ───────────────────────────── Today ─────────────────────────────
 
 class TodayCard extends ConsumerStatefulWidget {
@@ -120,7 +179,10 @@ class _TodayCardState extends ConsumerState<TodayCard> {
     final today = dayOnly(DateTime.now());
     final all = ref.watch(planListProvider);
     final allToday = all.where((p) => sameDay(p.date, today)).toList();
-    final plans = allToday.where((p) => filter == null || p.sport == filter).toList();
+    // Open workouts first, then done ones; skipped ("Entfällt") last – never a skipped
+    // workout with a play button in front.
+    int rank(PlannedWorkout p) => p.status == 'skipped' ? 2 : (p.isDone ? 1 : 0);
+    final plans = allToday.where((p) => filter == null || p.sport == filter).toList()..sort((a, b) => rank(a).compareTo(rank(b)));
     // Today's workouts of other sports are not hidden silently.
     final hidden = allToday.length - plans.length;
     final doneToday = ref.watch(sessionListProvider).where((s) => sameDay(s.start, today)).toList();
@@ -212,6 +274,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
     }
 
     final p = plans[_i];
+    final skipped = p.status == 'skipped';
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Container(
@@ -242,7 +305,14 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                   children: [
                     Row(
                       children: [
-                        Text(l.todaysWorkout, style: Theme.of(context).textTheme.labelMedium),
+                        Flexible(
+                          child: Text(
+                            l.todaysWorkout,
+                            style: Theme.of(context).textTheme.labelMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         if (plans.length > 1) Text('  ${_i + 1}/${plans.length}', style: Theme.of(context).textTheme.labelSmall),
                         if (hidden > 0)
                           Flexible(
@@ -267,9 +337,8 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                               Text(glueTitle(p.title), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, height: 1.2)),
                               Text(
                                 [
-                                  '${p.durationMin} min',
-                                  if (p.distanceKm != null && p.distanceKm! > 0)
-                                    ref.watch(profileOrDefaultProvider).units.dist(p.distanceKm! * 1000, digits: 1),
+                                  if (skipped) l.recalDropped,
+                                  planAmountText(p, ref.watch(profileOrDefaultProvider), templates: ref.watch(templateListProvider)),
                                   intensityLabel(l, p.intensity),
                                 ].join(' · '),
                                 style: Theme.of(context).textTheme.bodySmall,
@@ -299,19 +368,23 @@ class _TodayCardState extends ConsumerState<TodayCard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton.filled(
+                  key: const ValueKey('todayStart'),
                   style: IconButton.styleFrom(
-                    backgroundColor: p.isDone ? AppColors.success : p.sport.color,
+                    backgroundColor:
+                        p.isDone ? AppColors.success : (skipped ? Theme.of(context).colorScheme.surfaceContainerHighest : p.sport.color),
                     foregroundColor: Colors.black87,
                   ),
-                  tooltip: l.start,
+                  tooltip: skipped ? l.recalDropped : l.start,
                   onPressed:
-                      p.isDone
+                      skipped
+                          ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id)))
+                          : p.isDone
                           ? (p.sessionId == null
                               ? null
                               : () =>
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: p.sessionId!))))
                           : () => startPlanned(context, ref, p),
-                  icon: Icon(p.isDone ? Icons.check_rounded : Icons.play_arrow_rounded),
+                  icon: Icon(p.isDone ? Icons.check_rounded : (skipped ? Icons.block_rounded : Icons.play_arrow_rounded)),
                 ),
                 IconButton(
                   tooltip: l.edit,
@@ -341,8 +414,31 @@ class _TodayCardState extends ConsumerState<TodayCard> {
 
 // ───────────────────────────── Coming up ─────────────────────────────
 
-class _ComingUp extends ConsumerWidget {
-  const _ComingUp();
+/// Long words of gym program names and their abbreviation for the week strip.
+const _gymAbbrev = {
+  'Ganzkörper': 'GK',
+  'Full Body': 'FB',
+  'Fullbody': 'FB',
+  'Oberkörper': 'OK',
+  'Unterkörper': 'UK',
+  'Upper Body': 'Upper',
+  'Lower Body': 'Lower',
+};
+
+/// Compact label for the week strip: the kind of endurance session ("Locker", "Lang"),
+/// gym programs abbreviated ("Ganzkörper A" → "GK A").
+String shortPlanLabel(AppLocalizations l, PlannedWorkout p) {
+  if (p.sport != Sport.gym && p.intensity.isNotEmpty && p.intensity != 'moderate') return intensityLabel(l, p.intensity);
+  var t = p.title;
+  for (final e in _gymAbbrev.entries) {
+    t = t.replaceAll(RegExp(e.key, caseSensitive: false), e.value);
+  }
+  return t;
+}
+
+/// "Demnächst": the next six days.
+class ComingUpCard extends ConsumerWidget {
+  const ComingUpCard({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
@@ -365,7 +461,11 @@ class _ComingUp extends ConsumerWidget {
             Builder(
               builder: (_) {
                 final d = addDays(today, i);
-                final dayPlans = plans.where((p) => sameDay(p.date, d) && (filter == null || p.sport == filter)).toList();
+                final allDay = plans.where((p) => sameDay(p.date, d)).toList();
+                final dayPlans = allDay.where((p) => filter == null || p.sport == filter).toList();
+                // Workouts of other sports are hidden by the filter – not a rest day.
+                final hiddenDay = dayPlans.isEmpty && allDay.isNotEmpty;
+                final dim = Theme.of(context).colorScheme.outline;
                 return Expanded(
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
@@ -385,24 +485,34 @@ class _ComingUp extends ConsumerWidget {
                           Text(fmt.format(d), style: Theme.of(context).textTheme.labelSmall),
                           Text('${d.day}', style: const TextStyle(fontWeight: FontWeight.w700)),
                           const SizedBox(height: 6),
-                          SizedBox(height: 40, child: Center(child: _DayBadges(plans: dayPlans))),
+                          SizedBox(
+                            height: 40,
+                            child: Center(
+                              child:
+                                  hiddenDay
+                                      ? Text('–', style: TextStyle(fontSize: 18, color: dim, fontWeight: FontWeight.w700))
+                                      : _DayBadges(plans: dayPlans),
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Container(
-                            height: 28,
-                            padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 1),
                             child: Text(
                               // Six days share the row: a short label (the kind of session; gym:
-                              // the program name) – long titles like "Lockerer Lauf + Steigerungen"
-                              // were cut off. The full title is one tap away.
-                              dayPlans.isEmpty
+                              // "GK A") – long titles were cut off. The full title is one tap away.
+                              hiddenDay
+                                  ? l.hiddenShort
+                                  : dayPlans.isEmpty
                                   ? l.rest
-                                  : (dayPlans.length == 1 ? _shortLabel(l, dayPlans.first) : l.nWorkouts(dayPlans.length)),
+                                  : (dayPlans.length == 1 ? shortPlanLabel(l, dayPlans.first) : l.nWorkouts(dayPlans.length)),
+                              key: ValueKey('stripLabel$i'),
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 9,
-                                height: 1.2,
+                                fontSize: 11,
+                                height: 1.15,
+                                color: hiddenDay || dayPlans.isEmpty ? dim : null,
                                 fontWeight: dayPlans.length > 1 ? FontWeight.w700 : FontWeight.w400,
                               ),
                             ),
@@ -419,14 +529,10 @@ class _ComingUp extends ConsumerWidget {
     );
   }
 
-  /// Compact label for the week strip.
-  static String _shortLabel(AppLocalizations l, PlannedWorkout p) =>
-      p.sport == Sport.gym || p.intensity.isEmpty || p.intensity == 'moderate' ? p.title : intensityLabel(l, p.intensity);
-
   /// Bottom sheet listing all workouts of a day with several sessions.
   void _showDay(BuildContext context, WidgetRef ref, DateTime d, List<PlannedWorkout> list) {
     final l = context.l10n;
-    final u = ref.read(profileOrDefaultProvider).units;
+    final profile = ref.read(profileOrDefaultProvider);
     showModalBottomSheet(
       context: context,
       builder:
@@ -452,8 +558,7 @@ class _ComingUp extends ConsumerWidget {
                         subtitle: Text(
                           [
                             l.sessionN(i + 1),
-                            '${p.durationMin} min',
-                            if (p.distanceKm != null && p.distanceKm! > 0) u.dist(p.distanceKm! * 1000, digits: 1),
+                            planAmountText(p, profile, templates: ref.read(templateListProvider)),
                             if (p.isKey) '★',
                           ].join(' · '),
                         ),
@@ -556,6 +661,12 @@ class _WeekCard extends ConsumerWidget {
     }
     final totalSec = done.fold<int>(0, (a, s) => a + s.durationSec);
     final completion = weeklyCompletion(planned, ref.watch(planSessionsProvider));
+    final focus = ref.watch(profileOrDefaultProvider).focus.sports;
+    final quickSports = [
+      for (final s in Sport.values)
+        if (sports.contains(s) || focus.contains(s)) s,
+    ];
+    if (quickSports.isEmpty) quickSports.addAll(Sport.values);
     return SectionCard(
       padding: const EdgeInsets.all(14),
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeekPage())),
@@ -607,12 +718,13 @@ class _WeekCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Text(clock(totalSec), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text(humanDuration(totalSec), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
           Text(l.trainedThisWeek, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 12),
           Row(
             children: [
-              for (final s in Sport.values)
+              // Quick start for the sports of this week's plan / the focus – no bike without a ride.
+              for (final s in quickSports)
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -671,7 +783,8 @@ class _RecoveryCard extends ConsumerWidget {
                     Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: color)),
                     const Spacer(),
                     if (r.readiness != Readiness.building)
-                      Text('ACWR ${r.ratio.toStringAsFixed(2)}', style: Theme.of(context).textTheme.labelSmall),
+                      Text('ACWR ${Units.fixed(r.ratio, 2)}', style: Theme.of(context).textTheme.labelSmall),
+                    if (r.readiness != Readiness.building) const TermInfoButton(Term.acwr, size: 14),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -817,12 +930,26 @@ class _WeightCardState extends ConsumerState<_WeightCard> {
 
 // ───────────────────────────── Goals ─────────────────────────────
 
+/// The next race as one line under today's workout – when the big goal-status card (with the
+/// forecast) isn't shown, e.g. for a triathlon or before the plan is aligned.
+class _EventLine extends ConsumerWidget {
+  const _EventLine();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(goalForecastProvider) != null) return const SizedBox.shrink();
+    return EventGoalLine(onTap: (_) => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())));
+  }
+}
+
 class _GoalsPreview extends ConsumerWidget {
   const _GoalsPreview();
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final goals = ref.watch(goalsProvider).value ?? const [];
+    // The next race is already shown at the top (status card / event line).
+    final event = activeEventGoal(ref.watch(goalsProvider).value ?? const [], ref.watch(todayProvider));
+    final goals = (ref.watch(goalsProvider).value ?? const <Goal>[]).where((g) => g.id != event?.id).toList();
+    if (goals.isEmpty && event != null) return const SizedBox.shrink();
     return SectionCard(
       title: l.goals,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())),

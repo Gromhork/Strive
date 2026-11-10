@@ -52,7 +52,7 @@
   "bodyFat": "Body fat",
   "muscleMass": "Muscle mass",
   "muscle": "Muscle",
-  "fitnessLevel": "Experience level",
+  "fitnessLevel": "Experience",
   "fitnessLevelSub": "Be honest – the plan adapts as you improve.",
   "beginner": "Beginner",
   "beginnerDesc": "New or returning after a long break",
@@ -142,7 +142,7 @@
   "weightLogHint": "Log your weight with + / – to see your trend",
   "goals": "Goals",
   "noGoalsYet": "No goals yet – set one to stay motivated.",
-  "levelN": "Level {level}",
+  "levelN": "XP level {level}",
   "@levelN": {
     "placeholders": {
       "level": {
@@ -900,9 +900,9 @@
   "difficultyTitle": "Difficulty",
   "difficultyHint": "Compared to what you do now.",
   "diffEasy": "Easy",
-  "diffEasySub": "+5 % volume/week, recovery every 3rd week, mostly easy sessions.",
+  "diffEasySub": "+5 % volume/week, a deload week every 3rd week, mostly easy sessions.",
   "diffBalanced": "Balanced",
-  "diffBalancedSub": "+8 % volume/week, recovery every 4th week, ~80/20 easy/hard.",
+  "diffBalancedSub": "+8 % volume/week, a deload week every 4th week, ~80/20 easy/hard.",
   "diffChallenging": "Challenging",
   "diffChallengingSub": "+10 % volume/week, more key workouts – for experienced athletes.",
   "planLength": "Plan length",
@@ -1194,7 +1194,7 @@
   "planSettings": "Plan settings",
   "editPlanSettings": "Edit plan settings",
   "editPlanSettingsSub": "Sports, week, times, sport data, goal – then a new plan",
-  "editProfileSub": "Name, body data, level, health",
+  "editProfileSub": "Name, body data, experience, health",
   "timeTitle": "Time per training day",
   "timeHint": "The most time you have on a training day – including warm-up and cool-down. Every session is planned to fit.",
   "timeLongDayHint": "On your long-session day (★) Strive plans up to 2 h unless you set that day yourself.",
@@ -1477,7 +1477,7 @@
   "poolTapHint": "Tap LENGTH each time you touch the wall.",
   "noLengthsYet": "Your lengths appear here after the first tap.",
   "keySessionSub": "Important workout of the week – Strive keeps hard days apart.",
-  "workoutPhases": "Phases",
+  "workoutPhases": "Sequence",
   "planDone": "Done",
   "perSport": "Per sport",
   "recoveryTitle": "Recovery & load",
@@ -1777,7 +1777,7 @@
   },
   "adjustWeekTitle": "Adjust week",
   "adjustWeekIntro": "Key workouts move to a free day this week – never right next to another key workout. Easy workouts don't need to be made up: piling up volume does more harm than good.",
-  "adjustReplaces": "replaces {title}",
+  "adjustReplaces": "Replaces {title}",
   "@adjustReplaces": {
     "placeholders": {
       "title": {
@@ -1785,9 +1785,9 @@
       }
     }
   },
-  "adjustDropped": "dropped – no need to make it up",
-  "adjustNoRoom": "dropped – no free day this week without a key workout next to it",
-  "adjustProtected": "dropped – recovery/taper week stays easy",
+  "adjustDropped": "Dropped – no need to make it up",
+  "adjustNoRoom": "Dropped – no free day this week without a key session next to it",
+  "adjustProtected": "Dropped – deload/taper week stays easy",
   "adjustDone": "Week adjusted",
   "notNow": "Not now",
   "wTriLegs": "Swim {swim} km · Bike {bike} km · Run {run} km",
@@ -1885,7 +1885,7 @@
   "healthGymHeartNote": "Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.",
   "recalNote": "Adjusted to your recent training (effort and completed sessions).",
   "recalButton": "Review plan",
-  "recalTitle": "Adapt plan to your training",
+  "recalTitle": "Review plan",
   "recalIntro": "Your next two weeks, adapted to the last two: effort (RPE), completed and missed sessions, new best efforts. Completed workouts stay as they are.",
   "recalFindings": "What we see",
   "recalChanges": "Proposed changes",
@@ -2242,7 +2242,7 @@
   "termRpeTip": "Optional. When you enter it, the plan adapts better – e.g. easy runs that feel too hard lead to a lighter next week.",
   "termRirTitle": "RIR – Reps in Reserve",
   "termRirBody": "How many more reps you could have done at the end of a set. \"2 in the tank\" means you stop two reps before failure.",
-  "termRirTip": "The effort chips map to it: Easy ≈ 4+, Just right ≈ 2–3, Hard ≈ 1, Limit = 0. Most sets should end with 1–3 in the tank.",
+  "termRirTip": "The rating chips map to it: Easy ≈ 4+, Just right ≈ 2–3, Hard ≈ 1, Limit = 0. Most sets should end with 1–3 in the tank.",
   "termE1rmTitle": "e1RM – estimated one-rep max",
   "termE1rmBody": "The weight you could probably lift exactly once, calculated from a set with more reps (e.g. 80 kg × 8 ≈ 101 kg). No need to test a real max.",
   "termE1rmTip": "Good for comparing progress across different weights and rep counts.",
@@ -2516,7 +2516,7 @@
   },
   "fcConfLow": "rough estimate",
   "fcConfMedium": "from your sessions",
-  "fcConfHigh": "from a race effort",
+  "fcConfHigh": "from a race result",
   "fcInRecal": "Goal forecast",
   "goalPhaseBaseShort": "Base",
   "goalPhaseBuildShort": "Build",
@@ -2656,7 +2656,7 @@
   "planLogUndone": "Undone",
   "planLogChanged": "Changed since – no undo",
   "planLogNew": "new",
-  "planLogDropped": "dropped",
+  "planLogDropped": "Dropped",
   "planLogUndoDone": "Change undone",
   "notFitButton": "Not feeling 100%?",
   "notFitIntro": "Tell the plan how you feel – it suggests a safe change. Nothing changes until you apply it.",
@@ -3054,11 +3054,11 @@
   "progOptLaterRace": "Choose a later race",
   "progOptShorter": "Switch to a shorter distance",
   "progOptRunWalkRace": "Plan the race with run/walk",
-  "targetSuggestBasisRace": "Based on your race times",
-  "targetSuggestBasisEfforts": "Based on your recent runs",
+  "targetSuggestBasisRace": "from your race times",
+  "targetSuggestBasisEfforts": "from your recent runs",
   "targetSuggestBasisLevel": "Rough estimate from your level – a race time makes it precise",
   "targetSuggestFinish": "Goal: finish – no target time for this race yet",
-  "targetSuggestRange": "Suggested {time} (range {fast} – {slow})",
+  "targetSuggestRange": "Realistic: {time} ({fast}–{slow})",
   "@targetSuggestRange": {
     "placeholders": {
       "time": {
@@ -3298,6 +3298,236 @@
   "@programPreviewSets": {
     "placeholders": {
       "sets": {
+        "type": "int"
+      }
+    }
+  },
+  "raceToday": "race day",
+  "phaseWeekOf": "{phase} (week {n}/{total})",
+  "@phaseWeekOf": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "raceType": "Race type",
+  "alignChangesFocus": "Your training focus becomes {focus} so the plan fits this race.",
+  "@alignChangesFocus": {
+    "placeholders": {
+      "focus": {
+        "type": "String"
+      }
+    }
+  },
+  "goalNeedsExercise": "Choose an exercise.",
+  "goalNeedsDate": "Choose the race date.",
+  "goalNeedsDistance": "Choose a distance or enter the km.",
+  "goalNeedsTarget": "Enter a target above 0.",
+  "deleteGoalTitle": "Delete goal?",
+  "goalDeleted": "“{title}” deleted",
+  "@goalDeleted": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "eventSubFor": "Add a race (e.g. {examples}) and get a countdown. Optional.",
+  "@eventSubFor": {
+    "placeholders": {
+      "examples": {
+        "type": "String"
+      }
+    }
+  },
+  "recreatePlan": "Recreate plan",
+  "summaryTitle": "Check & create",
+  "summarySub": "Your plan is rebuilt with these settings.",
+  "summaryChanges": "What changes:",
+  "summaryNoChanges": "Nothing – the plan is recreated with the same settings.",
+  "summaryWeek": "Training week",
+  "summaryRace": "Race",
+  "noRace": "no race",
+  "planWeeksN": "{weeks, plural, =1{1 week} other{{weeks} weeks}}",
+  "@planWeeksN": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "hiddenShort": "filtered",
+  "secureGuestTitle": "Secure your data",
+  "secureGuestBody": "You train as a guest – link an e-mail or Google so your workouts and plan aren’t lost.",
+  "secureGuestButton": "Link e-mail or Google",
+  "guestLogoutTitle": "Sign out as a guest?",
+  "guestLogoutBody": "Signing out as a guest deletes all data on this device.",
+  "guestLogoutAnyway": "Sign out anyway",
+  "guestSecureFirst": "Secure first",
+  "experienceIs": "Experience: {value}",
+  "@experienceIs": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "planGone": "This workout no longer exists.",
+  "logAsDone": "Log as done",
+  "planMoved": "{title} moved to {date}",
+  "@planMoved": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "planLogMoved": "Workout moved",
+  "planLogCreated": "Plan created – starts {date}",
+  "@planLogCreated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "legendDone": "done",
+  "legendPlanned": "planned",
+  "legendOnTarget": "as planned",
+  "legendPartly": "partly",
+  "legendOff": "far off",
+  "legendMissed": "missed",
+  "replacesDayWorkout": "replaces {day} workout",
+  "@replacesDayWorkout": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "painWhere": "Where does it hurt?",
+  "painFoot": "Foot / ankle",
+  "painArm": "Arm / hand",
+  "painNeck": "Neck",
+  "yes": "Yes",
+  "no": "No",
+  "countAsReplacement": "Count as a replacement for {title} ({day})?",
+  "@countAsReplacement": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "countAsReplacementSub": "You started it from a workout of another day. Yes ticks that workout off; no keeps it open.",
+  "replacementDone": "{title} counts as done",
+  "@replacementDone": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "plannedLine": "Planned: {title} · {amount}",
+  "@plannedLine": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "fulfilledPct": "{share} done",
+  "@fulfilledPct": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "coachRpeHigh": "{title} at RPE {n} – a bit easier next week?",
+  "@coachRpeHigh": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "coachAsPlanned": "Done as planned – well done.",
+  "coachShorter": "Shorter than planned – no problem, don’t make it up.",
+  "coachLonger": "Longer than planned – keep your next easy session really easy.",
+  "maxRepsN": "{reps, plural, =1{1 rep} other{{reps} reps}}",
+  "@maxRepsN": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "predictionBasis": "Based on {dist} in {time} ({source})",
+  "@predictionBasis": {
+    "placeholders": {
+      "dist": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "predictionFromProfile": "profile",
+  "predictionFromRun": "run on {date}",
+  "@predictionFromRun": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "recalSubtitle": "Suggestions for the next 2 weeks",
+  "termKeyTitle": "Key session",
+  "termKeyBody": "The one or two sessions of a week that move your fitness forward most – e.g. intervals, a tempo run or the long run. The other sessions are easy and help you recover for them.",
+  "termKeyTip": "Missed one? “Adjust week” moves it to a free day – never right next to another key session.",
+  "termLoadWeekTitle": "Loading week",
+  "termLoadWeekBody": "A normal training week in which volume or intensity rises a little. Two to four loading weeks are followed by a deload week.",
+  "termLoadWeekTip": "Feeling tired at the end of a loading week is normal – the deload week turns it into fitness.",
+  "termDeloadTitle": "Deload week",
+  "termDeloadBody": "Every 3–5 weeks a lighter week (about 60–70 % of the volume, little intensity). Your body adapts to the training in this time.",
+  "termDeloadTip": "Don’t make up the missing volume – the week is meant to feel easy.",
+  "termStridesTitle": "Strides",
+  "termStridesBody": "Short accelerations of 15–30 s up to a fast but relaxed pace, with full recovery in between. They improve running economy and technique without tiring you.",
+  "termStridesTip": "Stay relaxed: shoulders loose, quick steps – it is not a sprint.",
+  "termFartlekTitle": "Fartlek",
+  "termFartlekBody": "“Speed play”: faster and easier sections alternate by feel or by time, without fixed distances. A playful way to bring speed into a run.",
+  "termFartlekTip": "Use landmarks: faster to the next lamp post, easy to the next corner.",
+  "termAcwrTitle": "ACWR – acute:chronic workload ratio",
+  "termAcwrBody": "Your load of the last 7 days (acute, ATL) compared with your average week of the last 28 days (chronic, CTL). Between 0.8 and 1.3 you build fitness at a low injury risk; above 1.5 the risk rises clearly.",
+  "termAcwrTip": "A high value? Plan an easy day instead of adding more.",
+  "daysLeftInline": "{days} days left",
+  "@daysLeftInline": {
+    "placeholders": {
+      "days": {
         "type": "int"
       }
     }

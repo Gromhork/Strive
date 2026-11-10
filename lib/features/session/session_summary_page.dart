@@ -214,7 +214,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                 children: [
                   _cell(StatTile(label: l.duration, value: clock(s.durationSec), icon: Icons.timer_outlined)),
                   if (s.sport == Sport.gym) ...[
-                    _cell(StatTile(label: l.volume, value: u.weight(s.volume, digits: 0), icon: Sport.gym.icon, color: AppColors.gym)),
+                    _cell(StatTile(label: l.volume, value: u.volume(s.volume), icon: Sport.gym.icon, color: AppColors.gym)),
                     _cell(StatTile(label: l.sets, value: '${s.setsDone}', icon: Icons.check_circle_outline)),
                     _cell(StatTile(label: l.exercises, value: '${s.exercises.length}', icon: Icons.list)),
                   ] else ...[
@@ -273,10 +273,12 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                       Text('+$xp XP', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.brand)),
                       const Spacer(),
                       if (levelUp)
-                        Chip(
-                          avatar: const Icon(Icons.arrow_upward_rounded, size: 16),
-                          label: Text(l.levelN(after.level.level)),
-                          backgroundColor: AppColors.brand.withValues(alpha: 0.2),
+                        Flexible(
+                          child: Chip(
+                            avatar: const Icon(Icons.arrow_upward_rounded, size: 16),
+                            label: Text(l.levelN(after.level.level), overflow: TextOverflow.ellipsis),
+                            backgroundColor: AppColors.brand.withValues(alpha: 0.2),
+                          ),
                         ),
                     ],
                   ),

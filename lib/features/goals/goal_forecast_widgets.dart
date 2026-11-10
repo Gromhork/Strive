@@ -132,6 +132,119 @@ List<(String, int)> phaseSegments(List<PlannedWorkout> plans, DateTime planStart
   return out;
 }
 
+/// The next event goal (race day today or later, earliest first), null without one.
+Goal? activeEventGoal(List<Goal> goals, DateTime today) {
+  final list =
+      goals.where((g) => g.type == GoalType.event && g.deadline != null && !dayOnly(g.deadline!).isBefore(today)).toList()
+        ..sort((a, b) => a.deadline!.compareTo(b.deadline!));
+  return list.firstOrNull;
+}
+
+/// Where the plan stands on the way to an event: days left, the current phase and the
+/// training week of the plan ("Woche 2/13"). Phase and weeks are null without a plan
+/// leading to the race.
+class EventProgress {
+  const EventProgress({required this.daysLeft, this.phase, this.week, this.weeks});
+  final int daysLeft;
+  final String? phase;
+  final int? week;
+  final int? weeks;
+
+  static EventProgress of(DateTime race, List<PlannedWorkout> plans, DateTime today) {
+    final r = dayOnly(race);
+    final left = daysBetween(today, r);
+    final earliest = addDays(r, -(7 * 30));
+    DateTime? start;
+    for (final p in plans) {
+      if (p.phase == null || p.date.isAfter(r) || p.date.isBefore(earliest)) continue;
+      if (start == null || p.date.isBefore(start)) start = p.date;
+    }
+    if (start == null || today.isBefore(startOfWeek(start))) return EventProgress(daysLeft: left);
+    final segments = phaseSegments(plans, start, r);
+    final weeks = segments.fold<int>(0, (a, s) => a + s.$2);
+    final week = (daysBetween(startOfWeek(start), startOfWeek(today)) ~/ 7) + 1;
+    var i = week - 1;
+    String? phase;
+    for (final s in segments) {
+      if (i < s.$2) {
+        phase = s.$1;
+        break;
+      }
+      i -= s.$2;
+    }
+    return EventProgress(daysLeft: left, phase: phase, week: week.clamp(1, max(1, weeks)), weeks: weeks);
+  }
+}
+
+/// Long phase name ("Grundlagenphase").
+String phaseLong(AppLocalizations l, String phase) => switch (phase) {
+  'build' => l.phaseBuild,
+  'peak' => l.phasePeak,
+  'taper' => l.phaseTaper,
+  'recovery' => l.phaseRecovery,
+  _ => l.phaseBase,
+};
+
+/// "noch 88 Tage · Grundlagenphase (Woche 2/13)" – the countdown plus the plan's phase and
+/// week instead of a bare percentage.
+String eventProgressText(AppLocalizations l, EventProgress e) {
+  final days = e.daysLeft == 0 ? l.raceToday : l.daysLeftInline(e.daysLeft);
+  if (e.phase == null || e.week == null || e.weeks == null) return days;
+  return '$days · ${l.phaseWeekOf(phaseLong(l, e.phase!), e.week!, e.weeks!)}';
+}
+
+/// One line on Home right below today's workout: "Hamburg Triathlon · noch 88 Tage ·
+/// Grundlagenphase (Woche 2/13)". Taps open the goal status (or the goals).
+class EventGoalLine extends ConsumerWidget {
+  const EventGoalLine({super.key, required this.onTap});
+  final void Function(Goal goal) onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final today = ref.watch(todayProvider);
+    final g = activeEventGoal(ref.watch(goalsProvider).value ?? const [], today);
+    if (g == null) return const SizedBox.shrink();
+    final e = EventProgress.of(g.deadline!, ref.watch(planListProvider), today);
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: AppColors.warning.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          key: const ValueKey('eventGoalLine'),
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => onTap(g),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            child: Row(
+              children: [
+                const Icon(Icons.emoji_events_rounded, color: AppColors.warning, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: g.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        TextSpan(text: ' · ${eventProgressText(l, e)}'),
+                      ],
+                    ),
+                    style: theme.textTheme.bodyMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, size: 18, color: theme.colorScheme.outline),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Base → build → peak → taper bar with a marker at [position] (0…1).
 class PhaseTimeline extends StatelessWidget {
   const PhaseTimeline({super.key, required this.segments, required this.position, this.height = 10, this.labels = true});

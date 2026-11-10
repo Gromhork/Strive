@@ -410,7 +410,7 @@ abstract class AppLocalizations {
   /// No description provided for @fitnessLevel.
   ///
   /// In en, this message translates to:
-  /// **'Experience level'**
+  /// **'Experience'**
   String get fitnessLevel;
 
   /// No description provided for @fitnessLevelSub.
@@ -866,7 +866,7 @@ abstract class AppLocalizations {
   /// No description provided for @levelN.
   ///
   /// In en, this message translates to:
-  /// **'Level {level}'**
+  /// **'XP level {level}'**
   String levelN(int level);
 
   /// No description provided for @xpToNext.
@@ -3692,7 +3692,7 @@ abstract class AppLocalizations {
   /// No description provided for @diffEasySub.
   ///
   /// In en, this message translates to:
-  /// **'+5 % volume/week, recovery every 3rd week, mostly easy sessions.'**
+  /// **'+5 % volume/week, a deload week every 3rd week, mostly easy sessions.'**
   String get diffEasySub;
 
   /// No description provided for @diffBalanced.
@@ -3704,7 +3704,7 @@ abstract class AppLocalizations {
   /// No description provided for @diffBalancedSub.
   ///
   /// In en, this message translates to:
-  /// **'+8 % volume/week, recovery every 4th week, ~80/20 easy/hard.'**
+  /// **'+8 % volume/week, a deload week every 4th week, ~80/20 easy/hard.'**
   String get diffBalancedSub;
 
   /// No description provided for @diffChallenging.
@@ -4718,7 +4718,7 @@ abstract class AppLocalizations {
   /// No description provided for @editProfileSub.
   ///
   /// In en, this message translates to:
-  /// **'Name, body data, level, health'**
+  /// **'Name, body data, experience, health'**
   String get editProfileSub;
 
   /// No description provided for @timeTitle.
@@ -5312,7 +5312,7 @@ abstract class AppLocalizations {
   /// No description provided for @workoutPhases.
   ///
   /// In en, this message translates to:
-  /// **'Phases'**
+  /// **'Sequence'**
   String get workoutPhases;
 
   /// No description provided for @planDone.
@@ -6086,25 +6086,25 @@ abstract class AppLocalizations {
   /// No description provided for @adjustReplaces.
   ///
   /// In en, this message translates to:
-  /// **'replaces {title}'**
+  /// **'Replaces {title}'**
   String adjustReplaces(String title);
 
   /// No description provided for @adjustDropped.
   ///
   /// In en, this message translates to:
-  /// **'dropped – no need to make it up'**
+  /// **'Dropped – no need to make it up'**
   String get adjustDropped;
 
   /// No description provided for @adjustNoRoom.
   ///
   /// In en, this message translates to:
-  /// **'dropped – no free day this week without a key workout next to it'**
+  /// **'Dropped – no free day this week without a key session next to it'**
   String get adjustNoRoom;
 
   /// No description provided for @adjustProtected.
   ///
   /// In en, this message translates to:
-  /// **'dropped – recovery/taper week stays easy'**
+  /// **'Dropped – deload/taper week stays easy'**
   String get adjustProtected;
 
   /// No description provided for @adjustDone.
@@ -6350,7 +6350,7 @@ abstract class AppLocalizations {
   /// No description provided for @recalTitle.
   ///
   /// In en, this message translates to:
-  /// **'Adapt plan to your training'**
+  /// **'Review plan'**
   String get recalTitle;
 
   /// No description provided for @recalIntro.
@@ -7022,7 +7022,7 @@ abstract class AppLocalizations {
   /// No description provided for @termRirTip.
   ///
   /// In en, this message translates to:
-  /// **'The effort chips map to it: Easy ≈ 4+, Just right ≈ 2–3, Hard ≈ 1, Limit = 0. Most sets should end with 1–3 in the tank.'**
+  /// **'The rating chips map to it: Easy ≈ 4+, Just right ≈ 2–3, Hard ≈ 1, Limit = 0. Most sets should end with 1–3 in the tank.'**
   String get termRirTip;
 
   /// No description provided for @termE1rmTitle.
@@ -7652,7 +7652,7 @@ abstract class AppLocalizations {
   /// No description provided for @fcConfHigh.
   ///
   /// In en, this message translates to:
-  /// **'from a race effort'**
+  /// **'from a race result'**
   String get fcConfHigh;
 
   /// No description provided for @fcInRecal.
@@ -7958,7 +7958,7 @@ abstract class AppLocalizations {
   /// No description provided for @planLogDropped.
   ///
   /// In en, this message translates to:
-  /// **'dropped'**
+  /// **'Dropped'**
   String get planLogDropped;
 
   /// No description provided for @planLogUndoDone.
@@ -9008,13 +9008,13 @@ abstract class AppLocalizations {
   /// No description provided for @targetSuggestBasisRace.
   ///
   /// In en, this message translates to:
-  /// **'Based on your race times'**
+  /// **'from your race times'**
   String get targetSuggestBasisRace;
 
   /// No description provided for @targetSuggestBasisEfforts.
   ///
   /// In en, this message translates to:
-  /// **'Based on your recent runs'**
+  /// **'from your recent runs'**
   String get targetSuggestBasisEfforts;
 
   /// No description provided for @targetSuggestBasisLevel.
@@ -9032,7 +9032,7 @@ abstract class AppLocalizations {
   /// No description provided for @targetSuggestRange.
   ///
   /// In en, this message translates to:
-  /// **'Suggested {time} (range {fast} – {slow})'**
+  /// **'Realistic: {time} ({fast}–{slow})'**
   String targetSuggestRange(String time, String fast, String slow);
 
   /// No description provided for @restoreWorkoutTitle.
@@ -9490,6 +9490,486 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{sets} sets'**
   String programPreviewSets(int sets);
+
+  /// No description provided for @raceToday.
+  ///
+  /// In en, this message translates to:
+  /// **'race day'**
+  String get raceToday;
+
+  /// No description provided for @phaseWeekOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{phase} (week {n}/{total})'**
+  String phaseWeekOf(String phase, int n, int total);
+
+  /// No description provided for @raceType.
+  ///
+  /// In en, this message translates to:
+  /// **'Race type'**
+  String get raceType;
+
+  /// No description provided for @alignChangesFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Your training focus becomes {focus} so the plan fits this race.'**
+  String alignChangesFocus(String focus);
+
+  /// No description provided for @goalNeedsExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an exercise.'**
+  String get goalNeedsExercise;
+
+  /// No description provided for @goalNeedsDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the race date.'**
+  String get goalNeedsDate;
+
+  /// No description provided for @goalNeedsDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a distance or enter the km.'**
+  String get goalNeedsDistance;
+
+  /// No description provided for @goalNeedsTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a target above 0.'**
+  String get goalNeedsTarget;
+
+  /// No description provided for @deleteGoalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete goal?'**
+  String get deleteGoalTitle;
+
+  /// No description provided for @goalDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” deleted'**
+  String goalDeleted(String title);
+
+  /// No description provided for @eventSubFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a race (e.g. {examples}) and get a countdown. Optional.'**
+  String eventSubFor(String examples);
+
+  /// No description provided for @recreatePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Recreate plan'**
+  String get recreatePlan;
+
+  /// No description provided for @summaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check & create'**
+  String get summaryTitle;
+
+  /// No description provided for @summarySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan is rebuilt with these settings.'**
+  String get summarySub;
+
+  /// No description provided for @summaryChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'What changes:'**
+  String get summaryChanges;
+
+  /// No description provided for @summaryNoChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing – the plan is recreated with the same settings.'**
+  String get summaryNoChanges;
+
+  /// No description provided for @summaryWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Training week'**
+  String get summaryWeek;
+
+  /// No description provided for @summaryRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Race'**
+  String get summaryRace;
+
+  /// No description provided for @noRace.
+  ///
+  /// In en, this message translates to:
+  /// **'no race'**
+  String get noRace;
+
+  /// No description provided for @planWeeksN.
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks, plural, =1{1 week} other{{weeks} weeks}}'**
+  String planWeeksN(int weeks);
+
+  /// No description provided for @hiddenShort.
+  ///
+  /// In en, this message translates to:
+  /// **'filtered'**
+  String get hiddenShort;
+
+  /// No description provided for @secureGuestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure your data'**
+  String get secureGuestTitle;
+
+  /// No description provided for @secureGuestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You train as a guest – link an e-mail or Google so your workouts and plan aren’t lost.'**
+  String get secureGuestBody;
+
+  /// No description provided for @secureGuestButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Link e-mail or Google'**
+  String get secureGuestButton;
+
+  /// No description provided for @guestLogoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out as a guest?'**
+  String get guestLogoutTitle;
+
+  /// No description provided for @guestLogoutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out as a guest deletes all data on this device.'**
+  String get guestLogoutBody;
+
+  /// No description provided for @guestLogoutAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out anyway'**
+  String get guestLogoutAnyway;
+
+  /// No description provided for @guestSecureFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure first'**
+  String get guestSecureFirst;
+
+  /// No description provided for @experienceIs.
+  ///
+  /// In en, this message translates to:
+  /// **'Experience: {value}'**
+  String experienceIs(String value);
+
+  /// No description provided for @planGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This workout no longer exists.'**
+  String get planGone;
+
+  /// No description provided for @logAsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Log as done'**
+  String get logAsDone;
+
+  /// No description provided for @planMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} moved to {date}'**
+  String planMoved(String title, String date);
+
+  /// No description provided for @planLogMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout moved'**
+  String get planLogMoved;
+
+  /// No description provided for @planLogCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan created – starts {date}'**
+  String planLogCreated(String date);
+
+  /// No description provided for @legendDone.
+  ///
+  /// In en, this message translates to:
+  /// **'done'**
+  String get legendDone;
+
+  /// No description provided for @legendPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'planned'**
+  String get legendPlanned;
+
+  /// No description provided for @legendOnTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'as planned'**
+  String get legendOnTarget;
+
+  /// No description provided for @legendPartly.
+  ///
+  /// In en, this message translates to:
+  /// **'partly'**
+  String get legendPartly;
+
+  /// No description provided for @legendOff.
+  ///
+  /// In en, this message translates to:
+  /// **'far off'**
+  String get legendOff;
+
+  /// No description provided for @legendMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'missed'**
+  String get legendMissed;
+
+  /// No description provided for @replacesDayWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'replaces {day} workout'**
+  String replacesDayWorkout(String day);
+
+  /// No description provided for @painWhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Where does it hurt?'**
+  String get painWhere;
+
+  /// No description provided for @painFoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Foot / ankle'**
+  String get painFoot;
+
+  /// No description provided for @painArm.
+  ///
+  /// In en, this message translates to:
+  /// **'Arm / hand'**
+  String get painArm;
+
+  /// No description provided for @painNeck.
+  ///
+  /// In en, this message translates to:
+  /// **'Neck'**
+  String get painNeck;
+
+  /// No description provided for @yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get no;
+
+  /// No description provided for @countAsReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Count as a replacement for {title} ({day})?'**
+  String countAsReplacement(String title, String day);
+
+  /// No description provided for @countAsReplacementSub.
+  ///
+  /// In en, this message translates to:
+  /// **'You started it from a workout of another day. Yes ticks that workout off; no keeps it open.'**
+  String get countAsReplacementSub;
+
+  /// No description provided for @replacementDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} counts as done'**
+  String replacementDone(String title);
+
+  /// No description provided for @plannedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned: {title} · {amount}'**
+  String plannedLine(String title, String amount);
+
+  /// No description provided for @fulfilledPct.
+  ///
+  /// In en, this message translates to:
+  /// **'{share} done'**
+  String fulfilledPct(String share);
+
+  /// No description provided for @coachRpeHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} at RPE {n} – a bit easier next week?'**
+  String coachRpeHigh(String title, int n);
+
+  /// No description provided for @coachAsPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Done as planned – well done.'**
+  String get coachAsPlanned;
+
+  /// No description provided for @coachShorter.
+  ///
+  /// In en, this message translates to:
+  /// **'Shorter than planned – no problem, don’t make it up.'**
+  String get coachShorter;
+
+  /// No description provided for @coachLonger.
+  ///
+  /// In en, this message translates to:
+  /// **'Longer than planned – keep your next easy session really easy.'**
+  String get coachLonger;
+
+  /// No description provided for @maxRepsN.
+  ///
+  /// In en, this message translates to:
+  /// **'{reps, plural, =1{1 rep} other{{reps} reps}}'**
+  String maxRepsN(int reps);
+
+  /// No description provided for @predictionBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on {dist} in {time} ({source})'**
+  String predictionBasis(String dist, String time, String source);
+
+  /// No description provided for @predictionFromProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'profile'**
+  String get predictionFromProfile;
+
+  /// No description provided for @predictionFromRun.
+  ///
+  /// In en, this message translates to:
+  /// **'run on {date}'**
+  String predictionFromRun(String date);
+
+  /// No description provided for @recalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions for the next 2 weeks'**
+  String get recalSubtitle;
+
+  /// No description provided for @termKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Key session'**
+  String get termKeyTitle;
+
+  /// No description provided for @termKeyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The one or two sessions of a week that move your fitness forward most – e.g. intervals, a tempo run or the long run. The other sessions are easy and help you recover for them.'**
+  String get termKeyBody;
+
+  /// No description provided for @termKeyTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed one? “Adjust week” moves it to a free day – never right next to another key session.'**
+  String get termKeyTip;
+
+  /// No description provided for @termLoadWeekTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading week'**
+  String get termLoadWeekTitle;
+
+  /// No description provided for @termLoadWeekBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A normal training week in which volume or intensity rises a little. Two to four loading weeks are followed by a deload week.'**
+  String get termLoadWeekBody;
+
+  /// No description provided for @termLoadWeekTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeling tired at the end of a loading week is normal – the deload week turns it into fitness.'**
+  String get termLoadWeekTip;
+
+  /// No description provided for @termDeloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deload week'**
+  String get termDeloadTitle;
+
+  /// No description provided for @termDeloadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 3–5 weeks a lighter week (about 60–70 % of the volume, little intensity). Your body adapts to the training in this time.'**
+  String get termDeloadBody;
+
+  /// No description provided for @termDeloadTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t make up the missing volume – the week is meant to feel easy.'**
+  String get termDeloadTip;
+
+  /// No description provided for @termStridesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Strides'**
+  String get termStridesTitle;
+
+  /// No description provided for @termStridesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Short accelerations of 15–30 s up to a fast but relaxed pace, with full recovery in between. They improve running economy and technique without tiring you.'**
+  String get termStridesBody;
+
+  /// No description provided for @termStridesTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay relaxed: shoulders loose, quick steps – it is not a sprint.'**
+  String get termStridesTip;
+
+  /// No description provided for @termFartlekTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fartlek'**
+  String get termFartlekTitle;
+
+  /// No description provided for @termFartlekBody.
+  ///
+  /// In en, this message translates to:
+  /// **'“Speed play”: faster and easier sections alternate by feel or by time, without fixed distances. A playful way to bring speed into a run.'**
+  String get termFartlekBody;
+
+  /// No description provided for @termFartlekTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Use landmarks: faster to the next lamp post, easy to the next corner.'**
+  String get termFartlekTip;
+
+  /// No description provided for @termAcwrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ACWR – acute:chronic workload ratio'**
+  String get termAcwrTitle;
+
+  /// No description provided for @termAcwrBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your load of the last 7 days (acute, ATL) compared with your average week of the last 28 days (chronic, CTL). Between 0.8 and 1.3 you build fitness at a low injury risk; above 1.5 the risk rises clearly.'**
+  String get termAcwrBody;
+
+  /// No description provided for @termAcwrTip.
+  ///
+  /// In en, this message translates to:
+  /// **'A high value? Plan an easy day instead of adding more.'**
+  String get termAcwrTip;
+
+  /// No description provided for @daysLeftInline.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days left'**
+  String daysLeftInline(int days);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

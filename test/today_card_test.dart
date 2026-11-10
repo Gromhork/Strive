@@ -24,7 +24,12 @@ void main() {
     FlutterError.onError = (d) => errors.add(d.exceptionAsString());
     addTearDown(() => FlutterError.onError = old);
     final container = ProviderContainer(
-      overrides: [planListProvider.overrideWithValue(plans), sessionListProvider.overrideWithValue(const [])],
+      overrides: [
+        planListProvider.overrideWithValue(plans),
+        sessionListProvider.overrideWithValue(const []),
+        templateListProvider.overrideWithValue(const []),
+        profileOrDefaultProvider.overrideWithValue(const UserProfile()),
+      ],
     );
     addTearDown(container.dispose);
     if (filter != null) container.read(sportFilterProvider.notifier).set(filter);

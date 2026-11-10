@@ -5,7 +5,25 @@ import '../l10n/gen/app_localizations.dart';
 
 /// Terms and abbreviations a beginner may not know. Each has a title (abbreviation +
 /// long form), a short explanation and a practical tip.
-enum Term { rpe, rir, e1rm, vdot, ftp, css, superset, amrap, volume, phases, zones }
+enum Term {
+  rpe,
+  rir,
+  e1rm,
+  vdot,
+  ftp,
+  css,
+  superset,
+  amrap,
+  volume,
+  phases,
+  zones,
+  keySession,
+  loadWeek,
+  deloadWeek,
+  strides,
+  fartlek,
+  acwr,
+}
 
 extension TermText on Term {
   String title(AppLocalizations l) => switch (this) {
@@ -20,6 +38,12 @@ extension TermText on Term {
     Term.volume => l.termVolumeTitle,
     Term.phases => l.termPhaseTitle,
     Term.zones => l.termZonesTitle,
+    Term.keySession => l.termKeyTitle,
+    Term.loadWeek => l.termLoadWeekTitle,
+    Term.deloadWeek => l.termDeloadTitle,
+    Term.strides => l.termStridesTitle,
+    Term.fartlek => l.termFartlekTitle,
+    Term.acwr => l.termAcwrTitle,
   };
 
   String body(AppLocalizations l) => switch (this) {
@@ -34,6 +58,12 @@ extension TermText on Term {
     Term.volume => l.termVolumeBody,
     Term.phases => l.termPhaseBody,
     Term.zones => l.termZonesBody,
+    Term.keySession => l.termKeyBody,
+    Term.loadWeek => l.termLoadWeekBody,
+    Term.deloadWeek => l.termDeloadBody,
+    Term.strides => l.termStridesBody,
+    Term.fartlek => l.termFartlekBody,
+    Term.acwr => l.termAcwrBody,
   };
 
   String tip(AppLocalizations l) => switch (this) {
@@ -48,6 +78,12 @@ extension TermText on Term {
     Term.volume => l.termVolumeTip,
     Term.phases => l.termPhaseTip,
     Term.zones => l.termZonesTip,
+    Term.keySession => l.termKeyTip,
+    Term.loadWeek => l.termLoadWeekTip,
+    Term.deloadWeek => l.termDeloadTip,
+    Term.strides => l.termStridesTip,
+    Term.fartlek => l.termFartlekTip,
+    Term.acwr => l.termAcwrTip,
   };
 
   /// The short label shown in the UI (used for the tooltip "What does … mean?").

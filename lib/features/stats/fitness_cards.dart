@@ -113,12 +113,31 @@ class RunBestEffortsCard extends ConsumerWidget {
     final athlete = ref.watch(profileOrDefaultProvider).athlete;
     if (efforts.isEmpty && athlete.raceTimes.isEmpty) return const SizedBox.shrink();
     // VDOT: best of recorded efforts (≥ 5 km) and entered race times.
-    double? vdot = Vdot.of(athlete);
-    for (final e in efforts.values.where((e) => e.meters >= 5000)) {
-      final v = Vdot.fromRace(e.meters, e.seconds);
-      if (vdot == null || v > vdot) vdot = v;
-    }
+    // The source is named under the predictions ("Basierend auf 5 km in 22:30 (Profil)").
     final names = {'1k': '1 km', '5k': '5 km', '10k': '10 km', 'hm': l.halfMarathon, 'm': l.marathon};
+    double? vdot;
+    String? basis;
+    for (final r in athlete.raceTimes.entries) {
+      final m = Vdot.distances[r.key];
+      if (m == null || r.value <= 0) continue;
+      final v = Vdot.fromRace(m, r.value);
+      if (vdot == null || v > vdot) {
+        vdot = v;
+        basis = l.predictionBasis(names[r.key] ?? r.key, clock(r.value), l.predictionFromProfile);
+      }
+    }
+    vdot ??= Vdot.of(athlete);
+    for (final e in efforts.entries.where((e) => e.value.meters >= 5000)) {
+      final v = Vdot.fromRace(e.value.meters, e.value.seconds);
+      if (vdot == null || v > vdot) {
+        vdot = v;
+        basis = l.predictionBasis(
+          names[e.key] ?? '',
+          clock(e.value.seconds),
+          l.predictionFromRun(DateFormat.MMMd(context.localeName).format(e.value.session.start)),
+        );
+      }
+    }
     return SectionCard(
       title: l.bestEfforts,
       trailing: const Icon(Icons.timer_rounded, color: AppColors.run),
@@ -150,14 +169,12 @@ class RunBestEffortsCard extends ConsumerWidget {
             Row(
               children: [
                 Flexible(
-                  child: Text(
-                    '${l.racePredictions} · VDOT ${vdot.toStringAsFixed(1)}',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
+                  child: Text('${l.racePredictions} · VDOT ${Units.fixed(vdot)}', style: const TextStyle(fontWeight: FontWeight.w700)),
                 ),
                 const TermInfoButton(Term.vdot),
               ],
             ),
+            if (basis != null) Text(basis, key: const ValueKey('predictionBasis'), style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,

@@ -94,10 +94,10 @@ class RecalibrationSheet extends StatefulWidget {
     RecalReason.lowCompletion => l.recalWhyCompletion(((s.completion ?? 0) * 100).round()),
     RecalReason.cutShort => l.recalWhyCutShort(s.cutShort),
     RecalReason.missedKey => l.recalWhyMissed,
-    RecalReason.fasterRuns => l.recalWhyFaster(s.oldVdot.toStringAsFixed(1), (s.newVdot ?? s.oldVdot).toStringAsFixed(1)),
-    RecalReason.slowerRuns => l.recalWhySlower(s.oldVdot.toStringAsFixed(1), (s.newVdot ?? s.oldVdot).toStringAsFixed(1)),
-    RecalReason.runTrendSlower => l.recalWhyRunTrendSlower(s.oldVdot.toStringAsFixed(1), (s.newVdot ?? s.oldVdot).toStringAsFixed(1)),
-    RecalReason.runTrendFaster => l.recalWhyRunTrendFaster(s.oldVdot.toStringAsFixed(1), (s.newVdot ?? s.oldVdot).toStringAsFixed(1)),
+    RecalReason.fasterRuns => l.recalWhyFaster(Units.fixed(s.oldVdot), Units.fixed(s.newVdot ?? s.oldVdot)),
+    RecalReason.slowerRuns => l.recalWhySlower(Units.fixed(s.oldVdot), Units.fixed(s.newVdot ?? s.oldVdot)),
+    RecalReason.runTrendSlower => l.recalWhyRunTrendSlower(Units.fixed(s.oldVdot), Units.fixed(s.newVdot ?? s.oldVdot)),
+    RecalReason.runTrendFaster => l.recalWhyRunTrendFaster(Units.fixed(s.oldVdot), Units.fixed(s.newVdot ?? s.oldVdot)),
     RecalReason.ftpUp => l.recalWhyFtpUp('${s.oldFtp ?? ''}', '${s.newFtp ?? ''}'),
     RecalReason.ftpDown => l.recalWhyFtpDown('${s.oldFtp ?? ''}', '${s.newFtp ?? ''}'),
     RecalReason.cssFaster => l.recalWhyCssFaster(fmtPace(s.oldCss ?? 0), fmtPace(s.newCss ?? s.oldCss ?? 0)),
@@ -160,6 +160,7 @@ class _RecalibrationSheetState extends State<RecalibrationSheet> {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                 children: [
                   Text(l.recalTitle, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(l.recalSubtitle, style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 4),
                   Text(l.recalIntro, style: theme.textTheme.bodySmall),
                   if (widget.forecast != null) ...[

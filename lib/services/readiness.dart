@@ -81,11 +81,17 @@ class ReadinessAdvisor {
   /// Longest easy session when something hurts (minutes).
   static const painMaxMin = 30;
 
+  /// Pain areas that running doesn't load much (no swap to cycling).
+  static const upperBodyPain = {'shoulder', 'arm', 'neck'};
+
   late final _recal = Recalibrator(l, profile, plans: plans, sessions: sessions, now: now, fillGaps: false);
 
   /// Proposal for [p]. [minutes]: available time ([Readiness.time]). [exercises]: the gym
   /// workout's exercises (the plan's own or its program's).
-  ReadinessPlan propose(PlannedWorkout p, Readiness kind, {int? minutes, List<GymExercise> exercises = const []}) {
+  ///
+  /// [painArea] (pain): where it hurts – upper-body pain (shoulder, arm, neck) doesn't turn
+  /// a run into a ride; the run just gets easy and short.
+  ReadinessPlan propose(PlannedWorkout p, Readiness kind, {int? minutes, List<GymExercise> exercises = const [], String? painArea}) {
     final gym = p.sport == Sport.gym;
     final ex = p.exercises.isNotEmpty ? p.exercises : exercises;
     switch (kind) {
@@ -111,7 +117,7 @@ class ReadinessAdvisor {
         return ReadinessPlan(kind, [(p, _withMin(shorter, max(15, shorter.durationMin)))], const [ReadinessHint.shorter]);
       case Readiness.pain:
         if (gym) return ReadinessPlan(kind, _gym(p, _lighter(ex)), const [ReadinessHint.painRule, ReadinessHint.seeDoctor]);
-        final cross = p.sport == Sport.run ? _crossSport() : null;
+        final cross = p.sport == Sport.run && !upperBodyPain.contains(painArea) ? _crossSport() : null;
         if (cross != null) {
           final swapped = _plain(_recal.toEasy(_edit(p, {'sport': cross.name})));
           return ReadinessPlan(kind, [(p, swapped)], const [ReadinessHint.swapped, ReadinessHint.painRule, ReadinessHint.seeDoctor]);

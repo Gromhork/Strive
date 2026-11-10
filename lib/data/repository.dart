@@ -144,6 +144,7 @@ class Repository {
   Stream<List<Session>> sessions() =>
       _sessions.orderBy('start', descending: true).snapshots().map((q) => parseDocs(q.docs, (id, m) => Session.tryFromMap(id, m)));
   void saveSession(Session s) => _fire(_sessions.doc(s.id).set(s.toMap()));
+  void updateSession(String id, Map<String, dynamic> data) => _fire(_sessions.doc(id).update(data));
 
   /// Deletes a session; an imported one (Health Connect) is remembered so the next import
   /// does not bring it back.

@@ -71,6 +71,36 @@ class Units {
     if (s.contains('.')) s = s.replaceFirst(RegExp(r'\.?0+$'), '');
     return decimalComma ? s.replaceAll('.', ',') : s;
   }
+
+  /// Fixed number of decimals in the app language ("2,0" / "2.0", "43,4", "1,25").
+  static String fixed(double v, [int digits = 1]) {
+    final s = v.toStringAsFixed(digits);
+    return decimalComma ? s.replaceAll('.', ',') : s;
+  }
+
+  /// Whole number with thousands separators in the app language ("1.593" / "1,593").
+  static String grouped(double v) {
+    final n = v.round();
+    final digits = n.abs().toString();
+    final b = StringBuffer(n < 0 ? '-' : '');
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) b.write(decimalComma ? '.' : ',');
+      b.write(digits[i]);
+    }
+    return b.toString();
+  }
+
+  /// Percentage in the app language: "26 %" (German, with a narrow space) / "26%".
+  static String pct(double v) => '${v.round()}$pctSign';
+
+  /// Percent sign with the spacing of the app language (after a number formatted elsewhere).
+  static String get pctSign => decimalComma ? ' %' : '%';
+
+  /// Lifted volume: "1.593 kg", from 10 t on "12,4 t" (imperial: "3,512 lb").
+  String volume(double kg) {
+    if (imperial) return '${grouped(weightOut(kg))} lb';
+    return kg >= 10000 ? '${fixed(kg / 1000, 1)} t' : '${grouped(kg)} kg';
+  }
 }
 
 /// 75 -> "1:15", 3725 -> "1:02:05"
@@ -90,11 +120,12 @@ String humanDuration(int seconds) {
   return m == 0 ? '$h h' : '$h h $m min';
 }
 
+/// Counts (steps, reps): grouped in the app language up to 99.999 ("8.432" / "8,432"),
+/// above that "123k" / "1,2 Mio." – never English "1.6k" with a German decimal point.
 String compactNumber(num v) {
-  if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
-  if (v >= 10000) return '${(v / 1000).toStringAsFixed(0)}k';
-  if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}k';
-  return v.round().toString();
+  if (v >= 1000000) return Units.decimalComma ? '${Units.fixed(v / 1000000, 1)} Mio.' : '${Units.fixed(v / 1000000, 1)}M';
+  if (v >= 100000) return '${(v / 1000).round()}k';
+  return Units.grouped(v.toDouble());
 }
 
 /// Epley estimated one-rep max.

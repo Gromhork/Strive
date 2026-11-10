@@ -138,7 +138,7 @@ Future<void> _finish(WidgetTester tester) async {
   for (var i = 0; i < 10 && find.widgetWithText(FilledButton, l.next).evaluate().isNotEmpty; i++) {
     await _next(tester);
   }
-  final done = find.widgetWithText(FilledButton, l.letsGo).evaluate().isNotEmpty ? l.letsGo : l.save;
+  final done = [l.letsGo, l.recreatePlan, l.save].firstWhere((t) => find.widgetWithText(FilledButton, t).evaluate().isNotEmpty);
   await _tap(tester, find.widgetWithText(FilledButton, done));
 }
 
