@@ -2175,7 +2175,7 @@
   "wGymLegsHalvedNote": "Leg exercises with half the sets today – tomorrow's key session needs fresh legs.",
   "feasTitle": "Very ambitious goal",
   "feasBeginnerMarathon": "A marathon is not a beginner goal: build up over 5 km, 10 km and a half marathon first.",
-  "feasRunWalkLong": "As long as you can't run 30 min continuously, a half or full marathon is too far – start with 5 km.",
+  "feasRunWalkLong": "As long as you can't run 30 min continuously, a marathon is too far – build up over 5 km, 10 km and a half marathon first.",
   "feasRunWalk": "On race day you will still be on run/walk – continuous running takes longer to build.",
   "feasTooShort": "{weeks} weeks are not enough to build the long sessions this distance needs.",
   "@feasTooShort": {
@@ -3003,5 +3003,50 @@
     }
   },
   "abilityTitle": "Your current level",
-  "canSwim400Sub": "If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces."
+  "canSwim400Sub": "If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.",
+  "wLongRunWalkDesc": "Long run/walk: the same rhythm as your other runs, more repeats – time on your feet for the race. Talking pace, walk briskly. Grows about 10 min a week.",
+  "wWalkBreaksNote": "Walk 1 min after every 10 min of running (Galloway) – the breaks keep the long run easy on legs and joints. Drop them once it feels easy.",
+  "wSwimContinuous": "Continuous swim {meters} m",
+  "@wSwimContinuous": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "wSwimContinuousDesc": "Swim the main set in one go at an easy, steady pace – it grows about 100 m a week towards the distance your race needs without stopping.",
+  "progTitle": "Your build-up is falling behind",
+  "progLongShort": "Your long sessions of the last 3 weeks reached only {pct} % of the plan.",
+  "@progLongShort": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "progLongMissed": "Several long sessions – the key sessions of your build-up – were missed.",
+  "progRunWalkNotAchieved": "The run/walk steps were shortened or felt hard (RPE ≥ 7) – move on only when a step feels easy.",
+  "progHighEffort": "Your long sessions felt very hard (RPE ≥ 8) – they should feel easy.",
+  "progOptRepeatWeek": "Repeat this week before the next step",
+  "progOptLaterRace": "Choose a later race",
+  "progOptShorter": "Switch to a shorter distance",
+  "progOptRunWalkRace": "Plan the race with run/walk",
+  "targetSuggestBasisRace": "Based on your race times",
+  "targetSuggestBasisEfforts": "Based on your recent runs",
+  "targetSuggestBasisLevel": "Rough estimate from your level – a race time makes it precise",
+  "targetSuggestFinish": "Goal: finish – no target time for this race yet",
+  "targetSuggestRange": "Suggested {time} (range {fast} – {slow})",
+  "@targetSuggestRange": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "fast": {
+        "type": "String"
+      },
+      "slow": {
+        "type": "String"
+      }
+    }
+  }
 }

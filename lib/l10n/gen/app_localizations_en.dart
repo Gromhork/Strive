@@ -3688,7 +3688,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feasBeginnerMarathon => 'A marathon is not a beginner goal: build up over 5 km, 10 km and a half marathon first.';
 
   @override
-  String get feasRunWalkLong => 'As long as you can\'t run 30 min continuously, a half or full marathon is too far – start with 5 km.';
+  String get feasRunWalkLong => 'As long as you can\'t run 30 min continuously, a marathon is too far – build up over 5 km, 10 km and a half marathon first.';
 
   @override
   String get feasRunWalk => 'On race day you will still be on run/walk – continuous running takes longer to build.';
@@ -4783,4 +4783,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get canSwim400Sub => 'If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.';
+
+  @override
+  String get wLongRunWalkDesc => 'Long run/walk: the same rhythm as your other runs, more repeats – time on your feet for the race. Talking pace, walk briskly. Grows about 10 min a week.';
+
+  @override
+  String get wWalkBreaksNote => 'Walk 1 min after every 10 min of running (Galloway) – the breaks keep the long run easy on legs and joints. Drop them once it feels easy.';
+
+  @override
+  String wSwimContinuous(int meters) {
+    return 'Continuous swim $meters m';
+  }
+
+  @override
+  String get wSwimContinuousDesc => 'Swim the main set in one go at an easy, steady pace – it grows about 100 m a week towards the distance your race needs without stopping.';
+
+  @override
+  String get progTitle => 'Your build-up is falling behind';
+
+  @override
+  String progLongShort(int pct) {
+    return 'Your long sessions of the last 3 weeks reached only $pct % of the plan.';
+  }
+
+  @override
+  String get progLongMissed => 'Several long sessions – the key sessions of your build-up – were missed.';
+
+  @override
+  String get progRunWalkNotAchieved => 'The run/walk steps were shortened or felt hard (RPE ≥ 7) – move on only when a step feels easy.';
+
+  @override
+  String get progHighEffort => 'Your long sessions felt very hard (RPE ≥ 8) – they should feel easy.';
+
+  @override
+  String get progOptRepeatWeek => 'Repeat this week before the next step';
+
+  @override
+  String get progOptLaterRace => 'Choose a later race';
+
+  @override
+  String get progOptShorter => 'Switch to a shorter distance';
+
+  @override
+  String get progOptRunWalkRace => 'Plan the race with run/walk';
+
+  @override
+  String get targetSuggestBasisRace => 'Based on your race times';
+
+  @override
+  String get targetSuggestBasisEfforts => 'Based on your recent runs';
+
+  @override
+  String get targetSuggestBasisLevel => 'Rough estimate from your level – a race time makes it precise';
+
+  @override
+  String get targetSuggestFinish => 'Goal: finish – no target time for this race yet';
+
+  @override
+  String targetSuggestRange(String time, String fast, String slow) {
+    return 'Suggested $time (range $fast – $slow)';
+  }
 }

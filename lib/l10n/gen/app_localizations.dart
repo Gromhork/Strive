@@ -6908,7 +6908,7 @@ abstract class AppLocalizations {
   /// No description provided for @feasRunWalkLong.
   ///
   /// In en, this message translates to:
-  /// **'As long as you can\'t run 30 min continuously, a half or full marathon is too far – start with 5 km.'**
+  /// **'As long as you can\'t run 30 min continuously, a marathon is too far – build up over 5 km, 10 km and a half marathon first.'**
   String get feasRunWalkLong;
 
   /// No description provided for @feasRunWalk.
@@ -8830,6 +8830,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.'**
   String get canSwim400Sub;
+
+  /// No description provided for @wLongRunWalkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run/walk: the same rhythm as your other runs, more repeats – time on your feet for the race. Talking pace, walk briskly. Grows about 10 min a week.'**
+  String get wLongRunWalkDesc;
+
+  /// No description provided for @wWalkBreaksNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Walk 1 min after every 10 min of running (Galloway) – the breaks keep the long run easy on legs and joints. Drop them once it feels easy.'**
+  String get wWalkBreaksNote;
+
+  /// No description provided for @wSwimContinuous.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous swim {meters} m'**
+  String wSwimContinuous(int meters);
+
+  /// No description provided for @wSwimContinuousDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Swim the main set in one go at an easy, steady pace – it grows about 100 m a week towards the distance your race needs without stopping.'**
+  String get wSwimContinuousDesc;
+
+  /// No description provided for @progTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your build-up is falling behind'**
+  String get progTitle;
+
+  /// No description provided for @progLongShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Your long sessions of the last 3 weeks reached only {pct} % of the plan.'**
+  String progLongShort(int pct);
+
+  /// No description provided for @progLongMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Several long sessions – the key sessions of your build-up – were missed.'**
+  String get progLongMissed;
+
+  /// No description provided for @progRunWalkNotAchieved.
+  ///
+  /// In en, this message translates to:
+  /// **'The run/walk steps were shortened or felt hard (RPE ≥ 7) – move on only when a step feels easy.'**
+  String get progRunWalkNotAchieved;
+
+  /// No description provided for @progHighEffort.
+  ///
+  /// In en, this message translates to:
+  /// **'Your long sessions felt very hard (RPE ≥ 8) – they should feel easy.'**
+  String get progHighEffort;
+
+  /// No description provided for @progOptRepeatWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat this week before the next step'**
+  String get progOptRepeatWeek;
+
+  /// No description provided for @progOptLaterRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a later race'**
+  String get progOptLaterRace;
+
+  /// No description provided for @progOptShorter.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to a shorter distance'**
+  String get progOptShorter;
+
+  /// No description provided for @progOptRunWalkRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan the race with run/walk'**
+  String get progOptRunWalkRace;
+
+  /// No description provided for @targetSuggestBasisRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on your race times'**
+  String get targetSuggestBasisRace;
+
+  /// No description provided for @targetSuggestBasisEfforts.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on your recent runs'**
+  String get targetSuggestBasisEfforts;
+
+  /// No description provided for @targetSuggestBasisLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rough estimate from your level – a race time makes it precise'**
+  String get targetSuggestBasisLevel;
+
+  /// No description provided for @targetSuggestFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal: finish – no target time for this race yet'**
+  String get targetSuggestFinish;
+
+  /// No description provided for @targetSuggestRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested {time} (range {fast} – {slow})'**
+  String targetSuggestRange(String time, String fast, String slow);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
