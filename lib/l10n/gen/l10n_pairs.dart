@@ -1411,4 +1411,7 @@ const l10nPairs = <(String, String)>[
   ('On your long-session day (★) Strive plans {time} for this goal unless you set that day yourself.', 'An deinem Tag für lange Einheiten (★) plant Strive für dieses Ziel {time} ein, außer du legst den Tag selbst fest.'),
   ('Your current level', 'Dein aktueller Stand'),
   ('If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.', 'Falls nicht, beginnt der Plan mit Technik und baut bis 400 m am Stück auf – dann legt ein Schwimmtest deine Tempi fest.'),
+  ('Race', 'Wettkampf'),
+  ('Plan length only', 'Nur Planlänge'),
+  ('No race – a plan that builds your fitness over the chosen number of weeks, with recovery weeks and without taper.', 'Kein Wettkampf – ein Plan, der deine Form über die gewählten Wochen aufbaut, mit Entlastungswochen und ohne Tapering.'),
 ];

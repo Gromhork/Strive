@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -194,6 +195,13 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final l = context.l10n;
     final plans = _plans();
     final sessions = _sessions();
+    // Down to the last week of the plan (at least 8 weeks ahead, at most ~1 year) and up
+    // to the plan's first week (at least 12 weeks back).
+    final all = ref.watch(planListProvider);
+    final thisWeek = startOfWeek(DateTime.now());
+    int weeksTo(DateTime d) => (startOfWeek(d).difference(thisWeek).inDays / 7).round();
+    final ahead = all.isEmpty ? 8 : (all.map((p) => weeksTo(p.date)).reduce(max) + 1).clamp(8, 60);
+    final back = all.isEmpty ? _pastWeeks : (-all.map((p) => weeksTo(p.date)).reduce(min)).clamp(_pastWeeks, 60);
     return CustomScrollView(
       center: _nowKey,
       slivers: [
@@ -203,7 +211,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (_, i) => _weekCard(-(i + 1), plans, sessions, key: i == 0 ? _lastWeekKey : null),
-              childCount: _pastWeeks,
+              childCount: back,
             ),
           ),
         ),
@@ -227,7 +235,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 );
               }
               return _weekCard(i - 1, plans, sessions);
-            }, childCount: 9), // hint + current week … 7 weeks ahead
+            }, childCount: ahead + 1), // hint + current week … last plan week
           ),
         ),
       ],
@@ -481,7 +489,12 @@ class PlanCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(glueTitle(p.title), style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(
+                      glueTitle(p.title),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     Text(
                       [
                         '${p.durationMin} min',
@@ -525,7 +538,12 @@ class _SessionChip extends ConsumerWidget {
                 Icon(s.sport.icon, color: s.sport.color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(glueTitle(s.title), style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    glueTitle(s.title),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 Text(
                   s.sport == Sport.gym

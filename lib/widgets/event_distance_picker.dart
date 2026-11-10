@@ -35,7 +35,8 @@ class EventDistanceChips extends StatelessWidget {
         if (d.primary && sports.contains(d.sport)) d,
     ];
     final sel = eventDistanceOf(selected);
-    if (sel != null && !shown.contains(sel)) shown.add(sel);
+    // A distance of another sport (e.g. left over from a previous focus) is not offered.
+    if (sel != null && !shown.contains(sel) && sports.contains(sel.sport)) shown.add(sel);
     final chips = <Widget>[
       if (anyLabel != null) ChoiceChip(label: Text(anyLabel!), selected: selected == null, onSelected: (_) => onChanged(null)),
       for (final d in shown)
@@ -50,7 +51,7 @@ class EventDistanceChips extends StatelessWidget {
         avatar: const Icon(Icons.more_horiz_rounded, size: 18),
         label: Text(l.moreDistances),
         onPressed: () async {
-          final k = await showEventDistanceSheet(context, selected: selected);
+          final k = await showEventDistanceSheet(context, selected: selected, sports: sports);
           if (k != null) onChanged(k);
         },
       ),
@@ -63,9 +64,9 @@ class EventDistanceChips extends StatelessWidget {
   }
 }
 
-/// Bottom sheet with every race distance, grouped by sport, with the legs as subtitle.
-/// Returns the chosen key (null when dismissed).
-Future<String?> showEventDistanceSheet(BuildContext context, {String? selected}) {
+/// Bottom sheet with the race distances of [sports] (all sports when null), grouped by
+/// sport, with the legs as subtitle. Returns the chosen key (null when dismissed).
+Future<String?> showEventDistanceSheet(BuildContext context, {String? selected, List<EventSport>? sports}) {
   return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
@@ -84,7 +85,7 @@ Future<String?> showEventDistanceSheet(BuildContext context, {String? selected})
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
                 child: Text(l.eventDistance, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
               ),
-              for (final sport in EventSport.values) ...[
+              for (final sport in EventSport.values.where((x) => sports == null || sports.contains(x))) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 2),
                   child: Row(

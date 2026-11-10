@@ -14,7 +14,6 @@ import '../../data/models.dart';
 import '../../data/default_programs.dart';
 import '../calendar/feasibility_card.dart';
 import '../calendar/replace_plan_dialog.dart';
-import '../goals/race_search_page.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/event_spec.dart';
@@ -60,6 +59,9 @@ typedef _Step = (String id, Widget Function(AppLocalizations) build);
 class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _pager = PageController();
   int _page = 0;
+
+  /// Race goal (true) or just a plan length in weeks (false).
+  late bool _withEvent = a.eventDate != null || a.eventDistance != null;
   late UserProfile p;
   late AthleteData a;
   final _name = TextEditingController();
@@ -161,6 +163,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     a = a.merge({
       'dayPlan': {for (final e in a.dayPlan.entries) e.key: e.value.where(sports.contains).toList()},
       'eventName': _eventName.text.trim().isEmpty ? null : _eventName.text.trim(),
+      // Never plan for a race of another sport than the focus.
+      if (!eventFitsFocus(a.eventDistance, p.focus)) 'eventDistance': null,
+      if (!eventFitsFocus(a.eventDistance, p.focus)) 'targetTimeSec': null,
     });
     var days = [
       ...(p.trainingDays.isEmpty ? const [1, 3, 5] : p.trainingDays),
@@ -250,58 +255,67 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     ref.watch(planListProvider);
     final steps = _steps;
     final last = _page == steps.length - 1;
-    return Scaffold(
-      appBar: AppBar(
-        leading:
-            _page > 0
-                ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => _pager.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
-                )
-                : (widget.edit ? const CloseButton() : null),
-        title: Text(switch (widget.mode) {
-          SetupMode.setup => l.onboardingTitle,
-          SetupMode.profile => l.editProfile,
-          SetupMode.plan => l.planSettings,
-        }),
-        actions: [
-          if (!widget.edit) IconButton(tooltip: l.logout, onPressed: () => FirebaseAuth.instance.signOut(), icon: const Icon(Icons.logout)),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4),
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(end: (_page + 1) / steps.length),
-            duration: const Duration(milliseconds: 300),
-            builder: (_, v, __) => LinearProgressIndicator(value: v, minHeight: 4),
+    // Android back goes one step back like the app-bar arrow; only on the first step it
+    // leaves the setup.
+    return PopScope(
+      canPop: _page == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _page > 0) _pager.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading:
+              _page > 0
+                  ? IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => _pager.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
+                  )
+                  : (widget.edit ? const CloseButton() : null),
+          title: Text(switch (widget.mode) {
+            SetupMode.setup => l.onboardingTitle,
+            SetupMode.profile => l.editProfile,
+            SetupMode.plan => l.planSettings,
+          }),
+          actions: [
+            if (!widget.edit)
+              IconButton(tooltip: l.logout, onPressed: () => FirebaseAuth.instance.signOut(), icon: const Icon(Icons.logout)),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(4),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(end: (_page + 1) / steps.length),
+              duration: const Duration(milliseconds: 300),
+              builder: (_, v, __) => LinearProgressIndicator(value: v, minHeight: 4),
+            ),
           ),
         ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView(
-                controller: _pager,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) => setState(() => _page = i),
-                children: [
-                  for (final s in steps)
-                    SingleChildScrollView(key: ValueKey(s.$1), padding: const EdgeInsets.fromLTRB(20, 20, 20, 24), child: s.$2(l)),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: _page == 0 && widget.mode == SetupMode.setup && _name.text.trim().isEmpty ? null : _next,
-                  child: Text(last ? (widget.edit ? l.save : l.letsGo) : l.next),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: PageView(
+                  controller: _pager,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onPageChanged: (i) => setState(() => _page = i),
+                  children: [
+                    for (final s in steps)
+                      SingleChildScrollView(key: ValueKey(s.$1), padding: const EdgeInsets.fromLTRB(20, 20, 20, 24), child: s.$2(l)),
+                  ],
                 ),
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: _page == 0 && widget.mode == SetupMode.setup && _name.text.trim().isEmpty ? null : _next,
+                    child: Text(last ? (widget.edit ? l.save : l.letsGo) : l.next),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -622,6 +636,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 borderRadius: BorderRadius.circular(16),
                 onTap: () {
                   setState(() => p = p.copyWith(focus: f));
+                  // A race of another sport doesn't fit the new focus.
+                  if (!eventFitsFocus(a.eventDistance, f)) _setA({'eventDistance': null, 'targetTimeSec': null});
                   _syncDayPlan();
                 },
                 child: AnimatedContainer(
@@ -1324,48 +1340,95 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _h(l.eventQuestion, l.eventSub, icon: Icons.emoji_events_outlined, color: AppColors.warning),
-        TextField(controller: _eventName, decoration: InputDecoration(labelText: l.eventName, prefixIcon: const Icon(Icons.flag_outlined))),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          icon: const Icon(Icons.event),
-          label: Text(a.eventDate == null ? l.eventDate : df.format(a.eventDate!)),
-          onPressed: () async {
-            final d = await showDatePicker(
-              context: context,
-              firstDate: DateTime.now(),
-              lastDate: DateTime.now().add(const Duration(days: 730)),
-              initialDate: a.eventDate ?? DateTime.now().add(const Duration(days: 90)),
-            );
-            if (d != null) _setA({'eventDate': d});
-          },
+        // Race goal or just a plan length – both are first-class choices.
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<bool>(
+            key: const ValueKey('goalKind'),
+            segments: [
+              ButtonSegment(value: true, icon: const Icon(Icons.emoji_events_outlined), label: Text(l.goalKindRace)),
+              ButtonSegment(value: false, icon: const Icon(Icons.date_range_rounded), label: Text(l.goalKindWeeks)),
+            ],
+            selected: {_withEvent},
+            onSelectionChanged: (v) {
+              setState(() => _withEvent = v.first);
+              if (!_withEvent) {
+                _eventName.clear();
+                _setA({'eventDate': null, 'eventDistance': null, 'targetTimeSec': null});
+              }
+            },
+          ),
         ),
-        _label(l.eventDistance),
-        EventDistanceChips(sports: [sport], selected: a.eventDistance, onChanged: (k) => _setA({'eventDistance': k})),
-        if (a.eventDistance != null) ...[
-          _label(l.targetTime, hint: l.targetTimeHint),
-          _timeField(l.targetTime, a.targetTimeSec, (v) => _setA({'targetTimeSec': v}), hint: 'h:mm:ss'),
-          if (Vdot.of(a) != null && Vdot.distances[a.eventDistance] != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                l.predictedTime(clock(Vdot.raceTime(Vdot.of(a)!, Vdot.distances[a.eventDistance]!))),
-                style: const TextStyle(color: AppColors.run, fontWeight: FontWeight.w600),
+        const SizedBox(height: 16),
+        if (!_withEvent) ...[
+          Text(l.goalKindWeeksHint, style: Theme.of(context).textTheme.bodySmall),
+          _label(l.planLength),
+          _weekChips(l),
+        ] else ...[
+          TextField(
+            controller: _eventName,
+            decoration: InputDecoration(labelText: l.eventName, prefixIcon: const Icon(Icons.flag_outlined)),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.event),
+            label: Text(a.eventDate == null ? l.eventDate : df.format(a.eventDate!)),
+            onPressed: () async {
+              final d = await showDatePicker(
+                context: context,
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 730)),
+                initialDate: a.eventDate ?? DateTime.now().add(const Duration(days: 90)),
+              );
+              if (d != null) _setA({'eventDate': d});
+            },
+          ),
+          _label(l.eventDistance),
+          EventDistanceChips(
+            sports: [sport],
+            selected: eventFitsFocus(a.eventDistance, p.focus) ? a.eventDistance : null,
+            onChanged: (k) => _setA({'eventDistance': k}),
+          ),
+          if (a.eventDistance != null) ...[
+            _label(l.targetTime, hint: l.targetTimeHint),
+            _timeField(l.targetTime, a.targetTimeSec, (v) => _setA({'targetTimeSec': v}), hint: 'h:mm:ss'),
+            if (Vdot.of(a) != null && Vdot.distances[a.eventDistance] != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  l.predictedTime(clock(Vdot.raceTime(Vdot.of(a)!, Vdot.distances[a.eventDistance]!))),
+                  style: const TextStyle(color: AppColors.run, fontWeight: FontWeight.w600),
+                ),
               ),
-            ),
+          ],
         ],
-        const SizedBox(height: 12),
-        TextButton.icon(
-          icon: const Icon(Icons.travel_explore_rounded),
-          label: Text(l.raceSearch),
-          onPressed: () async {
-            // The setup saves the profile itself when finished.
-            final ev = eventDistanceOf(a.eventDistance);
-            final r = await openRaceSearch(context, saveToProfile: false, sport: ev?.sport ?? sport, distance: ev?.key);
-            if (r == null || !mounted) return;
-            _eventName.text = r.name;
-            _setA({'eventDate': r.date, if (eventDistanceOf(r.distance) != null) 'eventDistance': r.distance});
-          },
+      ],
+    );
+  }
+
+  /// Plan length chips (weeks), the recommended range marked.
+  Widget _weekChips(AppLocalizations l) {
+    final rec = _recommendedRange;
+    final options = [(4, l.plan4w), (8, l.plan8w), (12, l.plan12w), (16, l.plan16w), (20, l.plan20w)];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final (w, label) in options)
+              ChoiceChip(
+                key: ValueKey('weeks$w'),
+                label: Text(label),
+                selected: a.planWeeks == w,
+                avatar: w >= rec.$1 && w <= rec.$2 ? const Icon(Icons.thumb_up_alt_outlined, size: 16) : null,
+                onSelected: (_) => _setA({'planWeeks': w}),
+              ),
+          ],
         ),
+        const SizedBox(height: 8),
+        Text(l.planLengthHint(rec.$1, rec.$2), style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }
@@ -1377,7 +1440,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final weeksToEvent = a.eventDate == null ? null : GoalModel.weeksUntil(a.eventDate!, DateTime.now());
     final pre = weeksToEvent == null ? 0 : weeksToEvent - GoalModel.specificWeeks;
     final rec = _recommendedRange;
-    final options = [(4, l.plan4w), (8, l.plan8w), (12, l.plan12w), (16, l.plan16w), (20, l.plan20w)];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1435,21 +1497,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             Text(l.planEventTooFar, style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 8),
           ],
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final (w, label) in options)
-                ChoiceChip(
-                  label: Text(label),
-                  selected: a.planWeeks == w,
-                  avatar: w >= rec.$1 && w <= rec.$2 ? const Icon(Icons.thumb_up_alt_outlined, size: 16) : null,
-                  onSelected: (_) => _setA({'planWeeks': w}),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(l.planLengthHint(rec.$1, rec.$2), style: Theme.of(context).textTheme.bodySmall),
+          _weekChips(l),
         ],
         // Goal not realistic in the time left (§1.8): say why and what would work – the
         // plan is generated anyway.
