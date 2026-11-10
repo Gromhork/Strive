@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../data/exercise_db.dart';
+import '../../data/exercise_names_de.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/exercise_class.dart' show offersBodyweightMode;
@@ -18,6 +19,7 @@ import '../../widgets/common.dart';
 import '../../widgets/effort_chips.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart';
+import '../../widgets/term_info.dart';
 import '../train/exercise_detail_page.dart';
 import 'gym_session_page.dart';
 import 'music.dart';
@@ -70,7 +72,7 @@ class _ExerciseFocusPageState extends ConsumerState<ExerciseFocusPage> {
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(w.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16)),
+                Text(w.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, height: 1.15)),
                 StreamBuilder(
                   stream: Stream.periodic(const Duration(seconds: 1)),
                   builder:
@@ -149,6 +151,17 @@ class _FocusExercise extends ConsumerStatefulWidget {
 class _FocusExerciseState extends ConsumerState<_FocusExercise> {
   int? _sel; // selected set index (defaults to first open set)
 
+  /// Checks set [k] off (or un-checks it). Completing the selected set moves the selection
+  /// on to the next open set – it must not stay on the done set, where the big button
+  /// would turn into "Undo".
+  void _toggle(int k) {
+    final e = ref.read(activeGymProvider)?.exercises[widget.index];
+    if (e == null || k >= e.sets.length) return;
+    final completing = !e.sets[k].done;
+    ref.read(activeGymProvider.notifier).toggleDone(widget.index, k);
+    if (completing && (_sel == null || _sel == k)) setState(() => _sel = nextOpenSet(e.sets, k));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -221,7 +234,7 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                 ],
               ),
               const SizedBox(height: 14),
-              Text(capitalize(e.name), style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w700, height: 1.15)),
+              Text(exName(context, e.exId, e.name), style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w700, height: 1.15)),
               if (info != null) ...[
                 const SizedBox(height: 4),
                 Text(
@@ -234,6 +247,7 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                 PrescriptionHint(
                   prescription: rx,
                   units: u,
+                  sets: e.sets.where((s) => !s.warmup && s.type != SetType.drop).length,
                   onApply:
                       e.doneSets > 0 || _matches(e, rx)
                           ? null
@@ -267,7 +281,7 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                   bw: e.bw == true ? l.bodyweightShort : null,
                   onTap: () => setState(() => _sel = k),
                   onType: (tp) => n.updateSet(widget.index, k, type: tp),
-                  onToggle: () => n.toggleDone(widget.index, k),
+                  onToggle: () => _toggle(k),
                   onDelete: () => n.removeSet(widget.index, k),
                 ),
               if (e.workSets.isNotEmpty && e.workSets.every((s) => s.done)) ...[
@@ -330,7 +344,13 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
           ),
         ),
         if (sel != null)
-          _SetEditor(index: widget.index, set: sel, units: u, increment: loadIncrement(info, weight: e.sets[sel].weight, bodyweight: e.bw)),
+          _SetEditor(
+            index: widget.index,
+            set: sel,
+            units: u,
+            increment: loadIncrement(info, weight: e.sets[sel].weight, bodyweight: e.bw),
+            onToggle: () => _toggle(sel),
+          ),
         if (sel == null)
           SafeArea(
             top: false,
@@ -373,6 +393,16 @@ class _GlassButton extends StatelessWidget {
       child: Padding(padding: const EdgeInsets.all(9), child: Icon(icon, color: Colors.white, size: 22)),
     ),
   );
+}
+
+/// The open set after [k] (wrapping around to earlier open sets), null when every set is
+/// done. [k] itself counts as done – it is the set that was just completed.
+int? nextOpenSet(List<GymSet> sets, int k) {
+  for (var d = 1; d <= sets.length; d++) {
+    final i = (k + d) % sets.length;
+    if (i != k && !sets[i].done) return i;
+  }
+  return null;
 }
 
 /// True when the open work sets already carry the prescribed load.
@@ -476,10 +506,11 @@ class _SetLine extends StatelessWidget {
 
 /// Bottom panel with large steppers for the selected set.
 class _SetEditor extends ConsumerWidget {
-  const _SetEditor({required this.index, required this.set, required this.units, required this.increment});
+  const _SetEditor({required this.index, required this.set, required this.units, required this.increment, required this.onToggle});
   final int index, set;
   final Units units;
   final double increment;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -571,6 +602,20 @@ class _SetEditor extends ConsumerWidget {
                 const SizedBox(height: 10),
                 ReservePicker(rpe: s.rpe, onChanged: (v) => n.updateSet(index, set, rpe: v, clearRpe: v == null)),
               ],
+              // AMRAP only on the set it applies to (the last work set), not on every exercise.
+              if (s.amrap && !s.done)
+                Padding(
+                  key: const ValueKey('amrapHint'),
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.all_inclusive_rounded, size: 16, color: AppColors.gym),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text(l.amrapLastSet, style: Theme.of(context).textTheme.bodySmall)),
+                      const TermInfoButton(Term.amrap, size: 15),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
@@ -591,7 +636,7 @@ class _SetEditor extends ConsumerWidget {
                   ),
                   onPressed: () {
                     HapticFeedback.mediumImpact();
-                    n.toggleDone(index, set);
+                    onToggle();
                   },
                 ),
               ),
@@ -668,8 +713,10 @@ class _RestOverlay extends ConsumerWidget {
     // Optional effort rating of the exercise that was just finished.
     final rated = w.effortFor == null ? -1 : w.exercises.indexWhere((x) => identical(x, w.effortFor));
 
+    // Opaque: the exercise page behind must not shine through the timer.
     return Material(
-      color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.97),
+      key: const ValueKey('restOverlay'),
+      color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 1),
       child: SafeArea(
         child: StreamBuilder(
           stream: Stream.periodic(const Duration(milliseconds: 200)),
@@ -752,7 +799,7 @@ class _RestOverlay extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: EffortChips(
                       center: true,
-                      title: l.effortQuestionFor(capitalize(w.exercises[rated].name)),
+                      title: l.effortQuestionFor(exName(context, w.exercises[rated].exId, w.exercises[rated].name)),
                       value: w.exercises[rated].effort,
                       onChanged: (v) => n.setEffort(rated, v),
                     ),
@@ -777,7 +824,7 @@ class _RestOverlay extends ConsumerWidget {
                             children: [
                               Text(l.upNext, style: const TextStyle(fontSize: 12, color: AppColors.gym, fontWeight: FontWeight.w700)),
                               Text(
-                                capitalize(next.name),
+                                exName(context, next.exId, next.name),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(fontWeight: FontWeight.w600),

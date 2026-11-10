@@ -201,8 +201,18 @@ class CardioState {
   int get splitElapsed => elapsed - splits.fold<int>(0, (a, b) => a + b);
 
   /// Estimated seconds left in the whole structured workout.
-  int get workoutLeftSec =>
-      structured && !stepsDone ? workoutRemainingSec(steps, stepIndex, sport, stepElapsed: stepElapsed, stepDistance: stepDistance) : 0;
+  /// Indoors without a distance source (treadmill / trainer: no GPS, nothing entered) a
+  /// distance step never shows progress – it is then estimated from the time spent in it,
+  /// otherwise "left in total" would stand still for the whole step.
+  int get workoutLeftSec {
+    if (!structured || stepsDone) return 0;
+    final st = step;
+    final blind = indoor && !poolMode && stepDistance <= 0 && st?.distanceM != null;
+    if (blind) {
+      return max(0, approxStepSec(st!, sport) - stepElapsed) + workoutRemainingSec(steps, stepIndex + 1, sport);
+    }
+    return workoutRemainingSec(steps, stepIndex, sport, stepElapsed: stepElapsed, stepDistance: stepDistance);
+  }
 
   /// Moves to the next step (or marks the workout as done).
   CardioState advanceStep() {

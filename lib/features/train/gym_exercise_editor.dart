@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
 import '../../core/theme.dart';
+import '../../data/exercise_names_de.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/exercise_class.dart';
@@ -176,7 +177,7 @@ class _ExerciseEditCard extends ConsumerWidget {
     final e = exercise;
     final u = units;
     final scheme = Theme.of(context).colorScheme;
-    final name = e.name.isEmpty ? '' : e.name[0].toUpperCase() + e.name.substring(1);
+    final name = exName(context, e.exId, e.name);
 
     return Container(
       decoration: BoxDecoration(

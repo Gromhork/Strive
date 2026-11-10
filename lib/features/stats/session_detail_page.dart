@@ -139,7 +139,7 @@ class SessionDetailPage extends ConsumerWidget {
                         value: u.imperial ? '${(s.elevationM / 0.3048).round()} ft' : '${s.elevationM.round()} m',
                       ),
                     ),
-                  if (s.laps > 0) _half(context, StatTile(label: l.laps, value: '${s.laps} × ${s.poolLengthM} m')),
+                  if (s.sport == Sport.swim && s.laps > 0) _half(context, StatTile(label: l.laps, value: '${s.laps} × ${s.poolLengthM} m')),
                 ],
                 if (s.avgHr != null) _half(context, StatTile(label: l.avgHrShort, value: '${s.avgHr} bpm', color: AppColors.danger)),
                 if (s.maxHr != null) _half(context, StatTile(label: l.maxHr, value: '${s.maxHr} bpm')),

@@ -107,7 +107,7 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_isNew ? l.newProgram : l.editProgram),
+          title: Text(_isNew ? l.newProgram : l.editProgram, maxLines: 2, overflow: TextOverflow.ellipsis),
           actions: [
             TextButton(onPressed: _save, child: Text(l.save)),
             if (!_isNew)

@@ -1272,7 +1272,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get progAddReps => 'same weight – one more rep per set';
+  String get progAddReps => 'same weight – one more rep than last time';
 
   @override
   String get progHold => 'Keep the weight and own every rep';
@@ -4800,7 +4800,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabPlan => 'Plan';
 
   @override
-  String get planProjected => 'Projected finish';
+  String get planProjected => 'Expected finish after';
 
   @override
   String get planPlanned => 'Planned';
@@ -4822,7 +4822,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String planStepsLeft(int n) {
-    return '$n more after this one';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'then $n more sections',
+      one: 'then 1 more section',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4977,4 +4983,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reauthConfirm => 'Confirm';
+
+  @override
+  String get summaryPlanDone => 'Plan done – great work!';
+
+  @override
+  String get summaryPartial => 'Short and sweet – every session counts.';
+
+  @override
+  String get summaryFree => 'Nice work – session done.';
+
+  @override
+  String get summaryTooShortTitle => 'Too short to save?';
+
+  @override
+  String get summaryTooShortBody => 'Less than a minute or no distance recorded.';
+
+  @override
+  String get saveAnyway => 'Save anyway';
+
+  @override
+  String finishOpenSets(int n, int total) {
+    return '$n of $total sets still open.';
+  }
+
+  @override
+  String get keepTraining => 'Keep training';
+
+  @override
+  String get planBehind => 'behind plan';
+
+  @override
+  String get planAhead => 'ahead of plan';
+
+  @override
+  String get planOnPlan => 'on plan';
+
+  @override
+  String get todayPlannedTitle => 'Planned today';
+
+  @override
+  String todayPlannedBody(String title) {
+    return '$title – start it guided?';
+  }
+
+  @override
+  String get startGuided => 'Start guided';
+
+  @override
+  String get startFree => 'Free session';
+
+  @override
+  String rxToday(int sets, int reps, String load) {
+    return 'Today: $sets × $reps @ $load';
+  }
+
+  @override
+  String rxTodayList(String list, String load) {
+    return 'Today: $list reps @ $load';
+  }
+
+  @override
+  String get amrapLastSet => 'Last set: as many reps as possible – stop 1 rep before failure.';
+
+  @override
+  String programPreviewSets(int sets) {
+    return '$sets sets';
+  }
 }

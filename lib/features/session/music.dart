@@ -205,7 +205,7 @@ MusicPlan musicPlan(AppLocalizations l, Sport sport, {bool indoor = false, Music
         ),
         MusicOption(
           id: MusicId.strength,
-          icon: Icons.fitness_center_rounded,
+          icon: Sport.gym.icon,
           title: l.musicGymStrength,
           sub: '120–135 BPM',
           query: 'gym workout 130 bpm',

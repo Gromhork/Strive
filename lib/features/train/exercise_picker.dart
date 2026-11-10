@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../data/exercise_db.dart';
+import '../../data/exercise_names_de.dart';
 import '../../providers.dart';
 import '../../widgets/exercise_media.dart';
 import 'exercise_detail_page.dart';
@@ -69,7 +70,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
               ),
             ),
         data: (db) {
-          var list = db.search(_q, bodyPart: _body, equipment: _equip);
+          var list = db.search(_q, bodyPart: _body, equipment: _equip, lang: lang);
           // Exercises the user already did come first when not searching.
           if (_q.isEmpty) {
             list = [...list.where((e) => records.contains(e.id)), ...list.where((e) => !records.contains(e.id))];
@@ -122,11 +123,17 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                   itemBuilder: (_, i) {
                     final e = list[i];
                     final sel = _selected.contains(e);
+                    final name = exerciseName(e.id, e.name, lang);
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                       leading: ExerciseMedia(exId: e.id, animated: false, size: 52, radius: 14, done: sel),
-                      title: Text(e.displayName, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      subtitle: Text('${term(e.target, lang)} · ${term(e.equipment, lang)}'),
+                      title: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      // The English database name stays visible as an alias (videos, other apps).
+                      subtitle: Text(
+                        [term(e.target, lang), term(e.equipment, lang), if (name != e.displayName) e.displayName].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       trailing: records.contains(e.id) ? const Icon(Icons.history, size: 18) : null,
                       onTap: () {
                         if (widget.selectMode && widget.single) {

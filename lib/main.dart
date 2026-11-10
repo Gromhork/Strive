@@ -12,6 +12,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme.dart';
+import 'data/exercise_names_de.dart';
 import 'features/auth/login_page.dart';
 import 'features/calendar/auto_adjust.dart' show rootMessengerKey;
 import 'features/onboarding/onboarding_page.dart';
@@ -36,6 +37,7 @@ Future<void> main() async {
   WriteErrorNotifier.install();
   await initializeDateFormatting();
   final prefs = await SharedPreferences.getInstance();
+  exerciseNamePrefs = prefs; // cached German exercise names (translation service)
   runApp(ProviderScope(overrides: [prefsProvider.overrideWithValue(prefs)], child: const StriveApp()));
 }
 

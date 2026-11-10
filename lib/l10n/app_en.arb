@@ -569,7 +569,7 @@
       }
     }
   },
-  "progAddReps": "same weight – one more rep per set",
+  "progAddReps": "same weight – one more rep than last time",
   "progHold": "Keep the weight and own every rep",
   "apply": "Apply",
   "lastTime": "Last time",
@@ -3009,14 +3009,14 @@
   "goalKindWeeksHint": "No race – a plan that builds your fitness over the chosen number of weeks, with recovery weeks and without taper.",
   "tabZones": "Zones",
   "tabPlan": "Plan",
-  "planProjected": "Projected finish",
+  "planProjected": "Expected finish after",
   "planPlanned": "Planned",
   "planDelta": "vs. plan",
   "planOnTarget": "Intervals on target",
   "planNow": "now",
   "planShort": "Shortened",
   "planNoneDone": "Finished sections appear here with their actual values.",
-  "planStepsLeft": "{n} more after this one",
+  "planStepsLeft": "{n, plural, =1{then 1 more section} other{then {n} more sections}}",
   "@planStepsLeft": {
     "placeholders": {
       "n": {
@@ -3130,5 +3130,71 @@
   "reauthTitle": "Confirm it’s you",
   "reauthBody": "For your security, please sign in again before deleting your account.",
   "reauthGoogle": "Continue with Google",
-  "reauthConfirm": "Confirm"
+  "reauthConfirm": "Confirm",
+  "summaryPlanDone": "Plan done – great work!",
+  "summaryPartial": "Short and sweet – every session counts.",
+  "summaryFree": "Nice work – session done.",
+  "summaryTooShortTitle": "Too short to save?",
+  "summaryTooShortBody": "Less than a minute or no distance recorded.",
+  "saveAnyway": "Save anyway",
+  "finishOpenSets": "{n} of {total} sets still open.",
+  "@finishOpenSets": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "keepTraining": "Keep training",
+  "planBehind": "behind plan",
+  "planAhead": "ahead of plan",
+  "planOnPlan": "on plan",
+  "todayPlannedTitle": "Planned today",
+  "todayPlannedBody": "{title} – start it guided?",
+  "@todayPlannedBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "startGuided": "Start guided",
+  "startFree": "Free session",
+  "rxToday": "Today: {sets} × {reps} @ {load}",
+  "@rxToday": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "int"
+      },
+      "load": {
+        "type": "String"
+      }
+    }
+  },
+  "rxTodayList": "Today: {list} reps @ {load}",
+  "@rxTodayList": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      },
+      "load": {
+        "type": "String"
+      }
+    }
+  },
+  "amrapLastSet": "Last set: as many reps as possible – stop 1 rep before failure.",
+  "programPreviewSets": "{sets} sets",
+  "@programPreviewSets": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      }
+    }
+  }
 }

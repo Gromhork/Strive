@@ -42,6 +42,7 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
         profile: ref.read(profileOrDefaultProvider),
         sessions: ref.read(sessionListProvider),
         plans: ref.read(planListProvider),
+        goals: ref.read(goalsProvider).value ?? const [],
         lang: Localizations.localeOf(context).languageCode,
       );
 
@@ -64,7 +65,7 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
         setState(() {});
         _toBottom();
       }
-      if (answer.text.isEmpty) answer.text = '…';
+      if (answer.text.isEmpty) answer.text = 'â€¦';
     } catch (e) {
       answer.error = true;
       answer.text = '${l.aiUnavailable}\n\n$e';
@@ -223,21 +224,23 @@ class _Bubble extends StatelessWidget {
         child:
             msg.text.isEmpty && typing
                 ? const SizedBox(width: 36, height: 18, child: LinearProgressIndicator())
-                : _RichText(text: msg.text, color: msg.user ? Colors.white : null),
+                : CoachText(text: msg.text, color: msg.user ? Colors.white : null),
       ),
     );
   }
 }
 
 /// Minimal markdown: **bold**, bullet lines.
-class _RichText extends StatelessWidget {
-  const _RichText({required this.text, this.color});
+class CoachText extends StatelessWidget {
+  const CoachText({super.key, required this.text, this.color});
   final String text;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final base = TextStyle(color: color, height: 1.4, fontSize: 14);
+    // RichText does not inherit the theme's text colour â€“ an explicit fallback keeps the
+    // answer readable in light mode (black-on-dark would be invisible otherwise).
+    final base = TextStyle(color: color ?? Theme.of(context).colorScheme.onSurface, height: 1.4, fontSize: 14);
     final lines = text.split('\n');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,7 +250,7 @@ class _RichText extends StatelessWidget {
             builder: (_) {
               var line = raw;
               var bullet = false;
-              final m = RegExp(r'^\s*([*\-•]|\d+\.)\s+').firstMatch(line);
+              final m = RegExp(r'^\s*([*\-â€¢]|\d+\.)\s+').firstMatch(line);
               if (m != null) {
                 bullet = true;
                 line = line.substring(m.end);
@@ -259,12 +262,12 @@ class _RichText extends StatelessWidget {
               for (var i = 0; i < parts.length; i++) {
                 spans.add(TextSpan(text: parts[i], style: i.isOdd || heading ? const TextStyle(fontWeight: FontWeight.w700) : null));
               }
-              final rt = RichText(text: TextSpan(style: base, children: spans));
+              final rt = Text.rich(TextSpan(style: base, children: spans));
               return Padding(
                 padding: EdgeInsets.only(left: bullet ? 6 : 0, bottom: line.isEmpty ? 4 : 0),
                 child:
                     bullet
-                        ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('•  ', style: base), Expanded(child: rt)])
+                        ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('â€¢  ', style: base), Expanded(child: rt)])
                         : rt,
               );
             },

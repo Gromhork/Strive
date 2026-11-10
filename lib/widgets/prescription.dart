@@ -5,7 +5,6 @@ import '../core/theme.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../services/gym_tools.dart';
 import '../services/load_prescription.dart';
-import 'term_info.dart';
 import '../services/smart_progression.dart';
 
 /// Compact load text, e.g. "≈ 60 kg × 8", "≈ 12 kg × 10 per hand" or "Bodyweight × 8".
@@ -32,6 +31,8 @@ String bodyweightLoad(String label, double added, Units u) {
   if (added.abs() < 1e-6) return label;
   return '$label ${added > 0 ? '+' : '−'}${u.weight(added.abs())}';
 }
+
+String capitalizeFirst(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 /// Rep targets per work set ("9 · 9 · 8"), or null when they are all the same.
 String? todayReps(Prescription p) {
@@ -90,14 +91,28 @@ String progressReasonText(AppLocalizations l, ProgressReason r) => switch (r) {
   ProgressReason.e1rmFloor => l.progE1rmFloor,
 };
 
-/// Small hint "Suggestion: ≈ 62.5 kg × 8 · from your last workout" with an optional
-/// apply button (shown when the current sets differ from the suggestion).
+/// Today's target in one line: "Today: 3 × 6 @ 72.5 kg", or with differing rep targets
+/// "Today: 9 · 9 · 8 reps @ 72.5 kg" ([sets] = number of work sets; 0 = unknown).
+String prescriptionToday(AppLocalizations l, Prescription p, Units u, {int sets = 0}) {
+  final load = prescriptionLoad(l, p, u).replaceFirst('≈ ', '');
+  final reps = [for (var i = 0; i < (sets > 0 ? sets : p.setReps.length); i++) p.repsForSet(i)];
+  if (reps.isEmpty) return l.rxToday(1, p.reps, load);
+  if (reps.toSet().length == 1) return l.rxToday(reps.length, reps.first, load);
+  return l.rxTodayList(reps.join(' · '), load);
+}
+
+/// Coaching box of an exercise: one line "Today: 3 × 6 @ 72.5 kg" plus a short reason,
+/// with an optional apply button (shown when the current sets differ from the suggestion).
+/// The AMRAP note is not repeated here – it belongs to the last set only.
 class PrescriptionHint extends StatelessWidget {
-  const PrescriptionHint({super.key, required this.prescription, required this.units, this.onApply, this.dense = false});
+  const PrescriptionHint({super.key, required this.prescription, required this.units, this.onApply, this.dense = false, this.sets = 0});
   final Prescription prescription;
   final Units units;
   final VoidCallback? onApply;
   final bool dense;
+
+  /// Number of work sets of the exercise (0 = unknown – the prescription's own targets).
+  final int sets;
 
   @override
   Widget build(BuildContext context) {
@@ -114,17 +129,12 @@ class PrescriptionHint extends StatelessWidget {
       LoadSource.estimate => Icons.tune_rounded,
       _ => Icons.auto_awesome_outlined,
     };
-    final ranged = p.repMin != null && p.repMax != null;
-    final today = todayReps(p);
-    final head =
-        ranged ? l.targetLoad(prescriptionLoad(l, p, units), p.repMin!, p.repMax!) : l.loadSuggestion(prescriptionLabel(l, p, units));
+    final head = prescriptionToday(l, p, units, sets: sets);
     final text = Text.rich(
       TextSpan(
         children: [
-          TextSpan(text: head, style: const TextStyle(fontWeight: FontWeight.w600)),
-          if (today != null) TextSpan(text: dense ? ' · ${l.targetToday(today)}' : '\n${l.targetToday(today)}'),
-          if (reason != null) TextSpan(text: today != null && !dense ? ' – $reason' : (dense || !ranged ? ' · $reason' : '\n$reason')),
-          if (p.amrap) TextSpan(text: '\n${l.amrapHint}', style: const TextStyle(fontStyle: FontStyle.italic)),
+          TextSpan(text: head, style: TextStyle(fontWeight: FontWeight.w700, fontSize: dense ? 12 : 15)),
+          if (reason != null) TextSpan(text: dense ? ' · $reason' : '\n${capitalizeFirst(reason)}'),
         ],
       ),
       style: TextStyle(fontSize: dense ? 12 : 13, height: 1.3),
@@ -135,7 +145,6 @@ class PrescriptionHint extends StatelessWidget {
           Icon(icon, size: 15, color: color),
           const SizedBox(width: 6),
           Expanded(child: text),
-          if (p.amrap) const TermInfoButton(Term.amrap, size: 15),
           if (onApply != null)
             TextButton(
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 8)),
@@ -157,7 +166,6 @@ class PrescriptionHint extends StatelessWidget {
           Icon(icon, color: color, size: 20),
           const SizedBox(width: 10),
           Expanded(child: text),
-          if (p.amrap) const TermInfoButton(Term.amrap),
           if (onApply != null) TextButton(onPressed: onApply, child: Text(l.apply)),
         ],
       ),
