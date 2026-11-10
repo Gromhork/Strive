@@ -417,7 +417,7 @@ class PlanGenerator {
       final roles = _roles(schedule, phase, week: w);
       // Quality rides that really got a slot this week (spacing may leave fewer than allowed).
       final qRides = roles.values.expand((x) => x).where((r) => r.sport == Sport.ride && r.role.startsWith('q')).length;
-      final weekStart = monday.add(Duration(days: w * 7));
+      final weekStart = addDays(monday, w * 7);
       final rest = phase == 'recovery' || phase == 'taper';
       // Recovery / taper weeks shrink the time available as well: sessions that are
       // limited by the athlete's time (not by the volume curve) would otherwise stay
@@ -559,7 +559,7 @@ class PlanGenerator {
       (DateTime, int)? longCtx;
       final qualityCtx = <(int, DateTime, String, int)>[]; // index in week, day, role, cap
       for (final entry in roles.entries) {
-        final day = weekStart.add(Duration(days: entry.key - 1));
+        final day = addDays(weekStart, entry.key - 1);
         if (day.isBefore(dayOnly(start))) {
           skippedRuns += entry.value.where((r) => r.sport == Sport.run).length;
           continue;
@@ -3001,9 +3001,9 @@ class PlanGenerator {
     if (d == null || weeksToEvent == null || a.eventDistance == null) return;
     final race = dayOnly(d);
     if (race.isBefore(dayOnly(start))) return;
-    final before = race.subtract(const Duration(days: 1));
+    final before = addDays(race, -1);
     out.removeWhere((p) {
-      final diff = dayOnly(p.date).difference(race).inDays;
+      final diff = daysBetween(race, p.date);
       if (diff >= 0 && diff < 7) return true; // race day and the rest of race week
       if (diff == -1) return true; // replaced by the shake-out
       if (p.sport == Sport.gym && diff >= -3) return true;

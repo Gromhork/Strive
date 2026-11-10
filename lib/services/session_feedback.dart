@@ -452,7 +452,7 @@ class CardioTrend {
     int days = 42,
     HrMax? hrMax,
   }) {
-    final from = dayOnly(now).subtract(Duration(days: days));
+    final from = addDays(dayOnly(now), -days);
     final out = <Sport, List<SessionFeedback>>{};
     for (final p in plans) {
       if (p.sport == Sport.gym || p.intensity == 'race') continue;

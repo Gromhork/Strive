@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../core/format.dart';
 import '../data/models.dart';
 import 'event_spec.dart';
 import 'goal_model.dart';
@@ -80,7 +81,7 @@ TargetSuggestion suggestTargetTime(UserProfile p, String eventKey, DateTime even
   var vdot = profileVdot;
   var basis = guessed ? TargetBasis.levelEstimate : TargetBasis.raceTimes;
   if (guessed) {
-    final recent = sessions.where((s) => !s.start.isAfter(today) && today.difference(s.start).inDays <= 90).toList();
+    final recent = sessions.where((s) => !s.start.isAfter(today) && daysBetween(s.start, today) <= 90).toList();
     double? best;
     for (final e in runBestEfforts(recent).values) {
       if (!Vdot.distances.containsKey(e.key) || e.meters < 5000) continue;

@@ -129,7 +129,7 @@ class HrMax {
     var best = 0;
     for (final s in sessions) {
       final m = s.maxHr;
-      if (m == null || !s.sport.isCardio || now.difference(s.start).inDays > 365) continue;
+      if (m == null || !s.sport.isCardio || now.difference(s.start).inDays > 365) continue; // time span
       if (m > predicted + 25 || (s.avgHr != null && m < s.avgHr!)) continue;
       final hard = (s.rpe ?? 0) >= 7 || (s.avgHr ?? 0) >= 0.85 * predicted;
       if (hard && m > best) best = m;

@@ -11,6 +11,7 @@ import 'package:strive/data/repository.dart';
 import 'package:strive/features/onboarding/onboarding_page.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
+import 'package:strive/services/plan_service.dart';
 
 /// Records what the setup saves instead of writing to Firestore.
 class _FakeRepo extends Repository {
@@ -30,12 +31,20 @@ class _FakeRepo extends Repository {
   @override
   void saveGoal(Goal g) {}
   @override
-  void saveTemplates(List<WorkoutTemplate> list) => savedTemplates.addAll(list);
+  Future<void> saveTemplates(List<WorkoutTemplate> list) async => savedTemplates.addAll(list);
   @override
-  void savePlans(List<PlannedWorkout> list) => savedPlans.addAll(list);
+  Future<void> savePlans(List<PlannedWorkout> list) async => savedPlans.addAll(list);
   @override
-  void deletePlansFrom(List<PlannedWorkout> all, DateTime from) =>
+  Future<void> deletePlansFrom(List<PlannedWorkout> all, DateTime from) async =>
       deleted.addAll(all.where((p) => !p.date.isBefore(from) && p.status == 'planned').map((p) => p.id));
+  @override
+  Future<void> replacePlans(List<PlannedWorkout> all, DateTime from, List<PlannedWorkout> plan) async {
+    await deletePlansFrom(all, from);
+    await savePlans(plan);
+  }
+
+  @override
+  Future<List<WorkoutTemplate>?> templatesFromServer() async => null;
 }
 
 final l = lookupAppLocalizations(const Locale('en'));
@@ -140,6 +149,8 @@ Future<void> _toggleDays(WidgetTester tester, List<int> days) async {
 }
 
 void main() {
+  // Each test is its own setup run (the double-tap cooldown is global).
+  setUp(PlanService.reset);
   testWidgets('quick start: chosen days and long day are saved and used by the generated plan', (tester) async {
     final repo = await _pump(tester);
     await _toSchedule(tester, level: 'intermediate');
@@ -270,7 +281,13 @@ void main() {
   });
 
   testWidgets('Android back goes one setup step back instead of closing the plan settings', (tester) async {
-    final profile = UserProfile(name: 'Anna', onboarded: true, level: 'intermediate', focus: TrainingFocus.run, trainingDays: const [1, 3, 5]);
+    final profile = UserProfile(
+      name: 'Anna',
+      onboarded: true,
+      level: 'intermediate',
+      focus: TrainingFocus.run,
+      trainingDays: const [1, 3, 5],
+    );
     await _pump(tester, profile: profile, mode: SetupMode.plan);
     final first = find.byType(PageView);
     expect(first, findsOneWidget);

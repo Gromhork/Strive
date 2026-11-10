@@ -4895,6 +4895,90 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get restoreWorkoutTitle => 'Continue workout?';
+
+  @override
+  String restoreWorkoutBody(String title, String day, String time) {
+    return '$title – started $day at $time. The app was closed while it was running; continue where you left off or discard it.';
+  }
+
+  @override
+  String get restoreWorkoutResume => 'Continue';
+
+  @override
+  String get restoreSummaryTitle => 'Save your workout?';
+
+  @override
+  String restoreSummaryBody(String title, String day, String time) {
+    return '$title ($day, $time) was finished but not saved yet.';
+  }
+
+  @override
+  String get restoreSummaryOpen => 'Open summary';
+
+  @override
+  String get restoreToday => 'today';
+
+  @override
+  String get restoreYesterday => 'yesterday';
+
+  @override
+  String get workoutRunsInBackground => 'Your workout keeps running in the background.';
+
+  @override
+  String deletedAutoReverted(int count) {
+    return 'Deleted – $count automatic plan adjustments undone';
+  }
+
+  @override
+  String get writeFailed => 'A change could not be saved. Please check your connection and try again.';
+
+  @override
+  String get loadFailedTitle => 'Your data could not be loaded';
+
+  @override
+  String get loadFailedBody => 'Please check your internet connection and try again. If it keeps happening, log out and sign in again.';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountSub => 'Permanently deletes your account and all your data';
+
+  @override
+  String get deleteAccountConfirm1 => 'All your workouts, plans, programs, goals and body data will be deleted permanently – on all devices. This cannot be undone.';
+
+  @override
+  String get deleteAccountConfirm2Title => 'Really delete?';
+
+  @override
+  String get deleteAccountConfirm2 => 'Type DELETE to confirm.';
+
+  @override
+  String get deleteAccountWord => 'DELETE';
+
+  @override
+  String get deleteAccountRunning => 'Deleting your data…';
+
+  @override
+  String get deleteAccountDone => 'Your account and all data have been deleted.';
+
+  @override
+  String get deleteAccountFailed => 'Deleting failed – please try again when you are online.';
+
+  @override
+  String get reauthTitle => 'Confirm it’s you';
+
+  @override
+  String get reauthBody => 'For your security, please sign in again before deleting your account.';
+
+  @override
+  String get reauthGoogle => 'Continue with Google';
+
+  @override
+  String get reauthConfirm => 'Confirm';
+
+  @override
   String get wTriOpenWaterNote => 'Race preparation: practise sighting in the pool (look forward every 6–9 strokes); once the water allows, swim some sessions in open water in your wetsuit – in a group, never alone.';
 
   @override

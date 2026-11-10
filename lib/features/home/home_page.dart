@@ -114,6 +114,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(todayProvider); // "today" changes at midnight
     final l = context.l10n;
     final filter = ref.watch(sportFilterProvider);
     final today = dayOnly(DateTime.now());
@@ -363,7 +364,7 @@ class _ComingUp extends ConsumerWidget {
           for (var i = 1; i <= 6; i++)
             Builder(
               builder: (_) {
-                final d = today.add(Duration(days: i));
+                final d = addDays(today, i);
                 final dayPlans = plans.where((p) => sameDay(p.date, d) && (filter == null || p.sport == filter)).toList();
                 return Expanded(
                   child: InkWell(
@@ -542,7 +543,7 @@ class _WeekCard extends ConsumerWidget {
     final sessions = ref.watch(sessionListProvider);
     final plans = ref.watch(planListProvider);
     final weekStart = startOfWeek(DateTime.now());
-    final weekEnd = weekStart.add(const Duration(days: 7));
+    final weekEnd = addDays(weekStart, 7);
     bool inWeek(DateTime d) => !d.isBefore(weekStart) && d.isBefore(weekEnd);
     final done = sessions.where((s) => inWeek(s.start)).toList();
     final planned = plans.where((p) => inWeek(p.date)).toList();
@@ -735,7 +736,7 @@ class _WeightCardState extends ConsumerState<_WeightCard> {
     final profile = ref.watch(profileOrDefaultProvider);
     final u = profile.units;
     final current = _pending ?? (body.isNotEmpty ? body.last.weightKg : profile.weightKg);
-    final recent = body.where((b) => DateTime.now().difference(b.date).inDays <= 90).toList();
+    final recent = body.where((b) => DateTime.now().difference(b.date).inDays <= 90).toList(); // time span
     final yRange = paddedRange([for (final b in recent) u.weightOut(b.weightKg)], minSpan: u.weightOut(3));
     final delta = recent.length >= 2 ? recent.last.weightKg - recent.first.weightKg : null;
 

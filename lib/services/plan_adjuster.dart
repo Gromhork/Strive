@@ -25,7 +25,7 @@ bool isHardPlan(PlannedWorkout p) => p.isKey || const {'tempo', 'intervals', 'lo
 
 /// Workouts of the last [lookbackDays] days that were neither done nor skipped.
 List<PlannedWorkout> missedPlans(List<PlannedWorkout> plans, DateTime now, {int lookbackDays = 3}) {
-  final today = _d(now), from = today.subtract(Duration(days: lookbackDays));
+  final today = _d(now), from = addDays(today, -lookbackDays);
   return plans.where((p) => p.status == 'planned' && !_d(p.date).isBefore(from) && _d(p.date).isBefore(today)).toList()
     ..sort((a, b) => a.date.compareTo(b.date));
 }
@@ -41,7 +41,7 @@ List<PlannedWorkout> missedPlans(List<PlannedWorkout> plans, DateTime now, {int 
 ///   (one missed easy run doesn't need to be made up, stacking volume does harm).
 List<PlanChange> proposeWeekAdjustment(List<PlannedWorkout> plans, DateTime now) {
   final today = _d(now);
-  final weekEnd = today.add(Duration(days: 7 - today.weekday));
+  final weekEnd = addDays(today, 7 - today.weekday);
   final changes = <PlanChange>[];
   // Working copy of the schedule after the changes made so far: id → date.
   final dateOf = {for (final p in plans) p.id: _d(p.date)};
@@ -71,12 +71,10 @@ List<PlanChange> proposeWeekAdjustment(List<PlannedWorkout> plans, DateTime now)
     // Only inside the missed workout's own week: a Sunday long run missed and looked at on
     // Monday must not land in the next week, which already has its own long run.
     final md = _d(m.date);
-    final ownWeekEnd = md.add(Duration(days: 7 - md.weekday));
+    final ownWeekEnd = addDays(md, 7 - md.weekday);
     final last = ownWeekEnd.isBefore(weekEnd) ? ownWeekEnd : weekEnd;
-    for (var day = today; !day.isAfter(last); day = day.add(const Duration(days: 1))) {
-      if (hardOn(day, except: m.id) ||
-          hardOn(day.subtract(const Duration(days: 1)), except: m.id) ||
-          hardOn(day.add(const Duration(days: 1)), except: m.id)) {
+    for (var day = today; !day.isAfter(last); day = addDays(day, 1)) {
+      if (hardOn(day, except: m.id) || hardOn(addDays(day, -1), except: m.id) || hardOn(addDays(day, 1), except: m.id)) {
         continue;
       }
       final sameSport = upcoming.where((p) => p.sport == m.sport && dateOf[p.id] == day && !dropped.contains(p.id)).toList();

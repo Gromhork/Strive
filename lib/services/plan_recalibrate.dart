@@ -115,7 +115,7 @@ class Recalibrator {
 
   Recalibration run() {
     final linked = linkPlanSessions(plans, sessions);
-    final from = today.subtract(const Duration(days: lookbackDays));
+    final from = addDays(today, -lookbackDays);
     final window = plans.where((p) => !dayOnly(p.date).isBefore(from) && dayOnly(p.date).isBefore(today)).toList();
 
     // ── RPE signals
@@ -166,8 +166,7 @@ class Recalibrator {
     // A plan that started yesterday with one missed workout is no "0 % done" (the missed key
     // session is moved inside its week instead, rule 5).
     final dueList = window.where((p) => p.durationMin > 0 && p.intensity != 'race').toList();
-    final history =
-        dueList.isEmpty ? 0 : today.difference(dueList.map((p) => dayOnly(p.date)).reduce((x, y) => x.isBefore(y) ? x : y)).inDays;
+    final history = dueList.isEmpty ? 0 : daysBetween(dueList.map((p) => dayOnly(p.date)).reduce((x, y) => x.isBefore(y) ? x : y), today);
     final completion = dueList.length >= 3 && history >= minHistoryDays ? weeklyCompletion(dueList, linked, now: now) : null;
     // Key sessions (quality / long) of the look-back that were done: chronic partial adherence
     // (easy runs skipped, key sessions done) cuts easy volume, not the key sessions (B9).
@@ -275,7 +274,7 @@ class Recalibrator {
     // weeks), and the total rise since the plan start ≤ [GoalModel.optimistic] × the model's gain
     // for the weeks trained – the VDOT ran 40.4 → 48.4 in 8 weeks, one point every Monday.
     final lastStep = a.vdotEstimateAt;
-    final stepDue = lastStep == null || today.difference(dayOnly(lastStep)).inDays >= minVdotStepDays;
+    final stepDue = lastStep == null || daysBetween(lastStep, today) >= minVdotStepDays;
     if (newVdot == null && run != null && stepDue) {
       if (run.slowAndHard >= 3) {
         newVdot = oldVdot - 1;
@@ -384,7 +383,7 @@ class Recalibrator {
     }
 
     // ── Upcoming endurance workouts
-    final end = today.add(const Duration(days: horizonDays));
+    final end = addDays(today, horizonDays);
     final upcoming = [
       ...plans.where(
         (p) =>
@@ -412,7 +411,7 @@ class Recalibrator {
     for (final p0 in upcoming) {
       final fill = fills[p0.id];
       var p = held[p0.id] ?? p0;
-      final days = dayOnly(p.date).difference(today).inDays;
+      final days = daysBetween(today, dayOnly(p.date));
       var downgraded = false, eased = false, shortened = false;
       if (fill != null) {
         // Strength and race sessions come back as planned.
@@ -675,11 +674,11 @@ class Recalibrator {
   PlanFeasibility? _feasibilityNow() {
     if (!dayOnly(a.eventDate!).isAfter(today)) return null;
     final runs = sessions.where((s) => s.sport == Sport.run && !s.start.isAfter(now));
-    final longest = runs.where((s) => today.difference(dayOnly(s.start)).inDays <= 30).fold(0.0, (x, s) => max(x, s.distanceM / 1000));
+    final longest = runs.where((s) => daysBetween(s.start, today) <= 30).fold(0.0, (x, s) => max(x, s.distanceM / 1000));
     // Weekly volume: the last 3 weeks' average, not below 80 % of the stated one (a single short
     // week is no new baseline).
     final weekly = max(
-      runs.where((s) => today.difference(dayOnly(s.start)).inDays <= 21).fold(0.0, (x, s) => x + s.distanceM / 1000) / 3,
+      runs.where((s) => daysBetween(s.start, today) <= 21).fold(0.0, (x, s) => x + s.distanceM / 1000) / 3,
       0.8 * (a.runWeeklyKm ?? 0),
     );
     if (longest <= 0) return null;
@@ -710,7 +709,7 @@ class Recalibrator {
       if (phased.isNotEmpty) start = phased.reduce((x, y) => x.isBefore(y) ? x : y);
     }
     if (start == null) return null;
-    final weeks = max(0.0, today.difference(dayOnly(start)).inDays / 7);
+    final weeks = max(0.0, daysBetween(start, today) / 7);
     return base + GoalModel.optimistic * GoalModel.gain(profile, weeks);
   }
 
@@ -727,7 +726,7 @@ class Recalibrator {
 
   /// New VDOT from running best efforts of the last 90 days (5 km and longer), or null.
   double? _newVdot(double current) {
-    final recent = sessions.where((s) => now.difference(s.start).inDays <= 90).toList();
+    final recent = sessions.where((s) => now.difference(s.start).inDays <= 90).toList(); // time span
     double? bestOf(List<Session> list) {
       double? best;
       for (final e in runBestEfforts(list).values) {
@@ -807,7 +806,7 @@ class Recalibrator {
   /// workouts in the look-back) and trained before – a sport the plan just started is no return.
   Map<Sport, int> _breaks(List<PlannedWorkout> window, Map<String, Session> linked) {
     final out = <Sport, int>{};
-    final from = today.subtract(const Duration(days: lookbackDays));
+    final from = addDays(today, -lookbackDays);
     for (final sport in {for (final p in plans) p.sport}) {
       if (sport == Sport.gym) continue;
       final due = window.where((p) => p.sport == sport && p.durationMin > 0 && p.intensity != 'race').toList();
@@ -815,11 +814,11 @@ class Recalibrator {
       // A plan that just started is no return from a break: its first due workout must lie
       // ≥ [minHistoryDays] back (the generator already starts from the stated volume).
       final first = due.map((p) => dayOnly(p.date)).reduce((x, y) => x.isBefore(y) ? x : y);
-      if (today.difference(first).inDays < minHistoryDays) continue;
+      if (daysBetween(first, today) < minHistoryDays) continue;
       final mine = sessions.where((x) => x.sport == sport && !x.start.isAfter(now)).toList();
       if (mine.isEmpty) continue;
       final last = mine.map((x) => x.start).reduce((x, y) => x.isAfter(y) ? x : y);
-      final gap = today.difference(dayOnly(last)).inDays;
+      final gap = daysBetween(dayOnly(last), today);
       if (gap >= 10) {
         out[sport] = gap;
       } else if (due.length >= 3 && mine.any((x) => x.start.isBefore(from)) && (weeklyCompletion(due, linked, now: now) ?? 1) < 0.15) {
@@ -850,7 +849,7 @@ class Recalibrator {
   /// Reduced by the AutoAdjuster in the last 7 days.
   bool _autoReducedRecently(PlannedWorkout p) {
     final o = p.auto;
-    return o != null && !o.reason.startsWith('recal') && now.difference(o.at).inDays < 7 && _amount(p) < _origAmount(p) - 0.01;
+    return o != null && !o.reason.startsWith('recal') && now.difference(o.at).inDays < 7 && _amount(p) < _origAmount(p) - 0.01; // time span
   }
 
   /// Record of a recalibration volume change: keeps the generator's original (undo, and
@@ -889,7 +888,7 @@ class Recalibrator {
       var best = 0.0;
       for (final s in sessions) {
         if (s.sport != p.sport || s.start.isAfter(now)) continue;
-        final ago = day.difference(dayOnly(s.start)).inDays;
+        final ago = daysBetween(dayOnly(s.start), day);
         if (ago < fromDays || ago > toDays) continue;
         best = max(best, unitOf(s));
       }
@@ -914,7 +913,7 @@ class Recalibrator {
                   x.intensity == 'long' &&
                   x.id != p.id &&
                   dayOnly(x.date).isBefore(today) &&
-                  dayOnly(p.date).difference(dayOnly(x.date)).inDays <= 30,
+                  daysBetween(x.date, p.date) <= 30,
             )
             .toList();
     if (cap != null && recentLongs.isNotEmpty) {
@@ -946,7 +945,7 @@ class Recalibrator {
   /// recalibration does not lower it again (C3: the cap kept ratcheting below the last cut).
   bool _longCapped(PlannedWorkout p) {
     final o = p.auto;
-    return o != null && o.reason == 'longCutShort' && now.difference(o.at).inDays <= 14;
+    return o != null && o.reason == 'longCutShort' && daysBetween(o.at, now) <= 14;
   }
 
   /// Smallest run a reduction leaves, in [p]'s [_amount] unit: 25 min and 4 km for runners above
@@ -976,9 +975,9 @@ class Recalibrator {
       final before =
           plans
               .where((x) => x.id != p.id && isRunWalk(x) && x.intensity == p.intensity && x.status != 'skipped')
-              .where((x) => d.difference(dayOnly(x.date)).inDays >= 5 && d.difference(dayOnly(x.date)).inDays <= 9)
+              .where((x) => daysBetween(x.date, d) >= 5 && daysBetween(x.date, d) <= 9)
               .toList()
-            ..sort((x, y) => (d.difference(dayOnly(x.date)).inDays - 7).abs().compareTo((d.difference(dayOnly(y.date)).inDays - 7).abs()));
+            ..sort((x, y) => (daysBetween(x.date, d) - 7).abs().compareTo((daysBetween(y.date, d) - 7).abs()));
       if (before.isEmpty) continue;
       final prev = before.first;
       // Only a step up is held back (the taper's shorter sessions stay).
@@ -1011,12 +1010,11 @@ class Recalibrator {
             .where((x) => linked[x.id] == null && !x.isDone)
             .length;
     if (missed < 2) return const {};
-    final long =
-        upcoming.where((p) => p.intensity == 'long' && p.sport == Sport.run && dayOnly(p.date).difference(today).inDays < 7).firstOrNull;
+    final long = upcoming.where((p) => p.intensity == 'long' && p.sport == Sport.run && daysBetween(today, p.date) < 7).firstOrNull;
     if (long == null) return const {};
     final week = startOfWeek(long.date);
     bool hardNear(DateTime d) =>
-        plans.any((x) => x.id != long.id && x.status != 'skipped' && isHardPlan(x) && (dayOnly(x.date).difference(d).inDays).abs() == 1);
+        plans.any((x) => x.id != long.id && x.status != 'skipped' && isHardPlan(x) && daysBetween(d, x.date).abs() == 1);
     PlannedWorkout? best;
     var bestMin = PlanGenerator.dayMinutesFor(profile, long.date.weekday);
     for (final e in upcoming) {

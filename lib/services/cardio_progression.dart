@@ -66,7 +66,7 @@ class AutoAdjuster {
                   p.intensity != 'race' &&
                   dayOnly(p.date).isAfter(dayOnly(s.start)) &&
                   !dayOnly(p.date).isBefore(day) &&
-                  dayOnly(p.date).difference(day).inDays < 14,
+                  daysBetween(day, dayOnly(p.date)) < 14,
             )
             .toList()
           ..sort((a, b) => a.date.compareTo(b.date));
@@ -99,7 +99,7 @@ class AutoAdjuster {
       }
     } else if (isEasy(done)) {
       if (f.clearlyHarder || (f.cutShort && f.effort == SessionEffort.harder)) {
-        final p = next.where(isEasy).where((p) => dayOnly(p.date).difference(day).inDays < 7).firstOrNull;
+        final p = next.where(isEasy).where((p) => daysBetween(day, dayOnly(p.date)) < 7).firstOrNull;
         final fast = f.signals.any((x) => x.kind == SignalKind.pace && x.score >= 0.3);
         if (p != null) add(p, 0.9, fast ? 'easyTooFast' : 'easyHard');
       }
@@ -141,18 +141,18 @@ class AutoAdjuster {
     if (!loading.contains(p.phase ?? 'base') || !loading.contains(done.phase ?? 'base')) return false;
     if (hf.capIntensity || (p.sport == Sport.run && hf.lowImpactRun)) return false;
     // A race within the next 10 days: freshness first.
-    if (plans.any((r) => r.intensity == 'race' && !r.date.isBefore(p.date) && r.date.difference(p.date).inDays <= 10)) return false;
+    if (plans.any((r) => r.intensity == 'race' && !r.date.isBefore(p.date) && daysBetween(p.date, r.date) <= 10)) return false;
     // 10 % rule: the sport's planned minutes in the target's week (with the bump) ≤ 110 %
     // of the weekly average of the last 4 weeks (needs ≥ 3 sessions as a base).
-    final from = now.subtract(const Duration(days: 28));
+    final from = now.subtract(const Duration(days: 28)); // time span
     final recent = sessions.where((x) => x.sport == p.sport && x.start.isAfter(from) && !x.start.isAfter(now)).toList();
     if (recent.length < 3) return false;
     final chronic = recent.fold(0, (x, v) => x + v.minutes) / 4;
-    final monday = dayOnly(p.date).subtract(Duration(days: p.date.weekday - 1));
+    final monday = addDays(dayOnly(p.date), -(p.date.weekday - 1));
     final week =
         plans
             .where((x) => x.sport == p.sport && x.status != 'skipped' && !dayOnly(x.date).isBefore(monday))
-            .where((x) => dayOnly(x.date).isBefore(monday.add(const Duration(days: 7))))
+            .where((x) => dayOnly(x.date).isBefore(addDays(monday, 7)))
             .fold(0, (x, v) => x + v.durationMin) +
         p.durationMin * (bump - 1);
     return week <= chronic * 1.1;

@@ -299,7 +299,7 @@ void main() {
   });
 
   /// Weeks left to race day on that Monday.
-  int weeksLeft(SimWeek w) => dayOnly(w.profile.athlete.eventDate!).difference(dayOnly(w.day)).inDays ~/ 7;
+  int weeksLeft(SimWeek w) => daysBetween(w.day, w.profile.athlete.eventDate!) ~/ 7;
 
   group('perfect athlete: no negative messages, no cuts, on track', () {
     for (final name in ['M_good', '10k_good', 'BHM_good']) {
@@ -405,11 +405,7 @@ void main() {
         // After the recovery week, quality sessions are planned again.
         final rec = r.weeks.firstWhere((w) => w.recal.reasons.contains(RecalReason.fatigueRecovery));
         final after = r.plans.where(
-          (p) =>
-              isQuality(p) &&
-              p.sport == Sport.run &&
-              dayOnly(p.date).difference(dayOnly(rec.day)).inDays >= 7 &&
-              p.date.isBefore(r.weeks.last.day),
+          (p) => isQuality(p) && p.sport == Sport.run && daysBetween(rec.day, p.date) >= 7 && p.date.isBefore(r.weeks.last.day),
         );
         expect(after, isNotEmpty);
         // Floors: a non-beginner's easy run is never cut below 20 min / 4 km.
@@ -444,9 +440,9 @@ void main() {
       expect(w.recal.raceTimes, isNull, reason: 'W${w.week}: no race time is written for a training-derived VDOT');
       final v = w.recal.stats.newVdot;
       if (v == null) continue;
-      if (last != null) expect(w.day.difference(last).inDays, greaterThanOrEqualTo(21), reason: 'W${w.week}');
+      if (last != null) expect(daysBetween(last, w.day), greaterThanOrEqualTo(21), reason: 'W${w.week}');
       last = w.day;
-      final elapsed = w.day.difference(simStart).inDays / 7;
+      final elapsed = daysBetween(simStart, w.day) / 7;
       expect(v - base, lessThanOrEqualTo(GoalModel.optimistic * GoalModel.gain(w.profile, elapsed) + 0.05), reason: 'W${w.week} $v');
     }
     expect(last, isNotNull, reason: 'faster quality runs do lift the VDOT');

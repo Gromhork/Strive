@@ -165,14 +165,14 @@ class GoalForecast {
     final today = dayOnly(now);
     final race = dayOnly(a.eventDate!);
     if (race.isBefore(today)) return null;
-    final daysLeft = race.difference(today).inDays;
+    final daysLeft = daysBetween(today, race);
 
     // Plan start: the first phased workout of the plan leading to this race.
-    final horizon = race.subtract(const Duration(days: 7 * GoalModel.maxEventWeeks));
+    final horizon = addDays(race, -(7 * GoalModel.maxEventWeeks));
     final phased = plans.where((x) => x.phase != null && !x.date.isBefore(horizon) && !dayOnly(x.date).isAfter(race)).toList();
     final planStart = phased.isEmpty ? null : phased.map((x) => dayOnly(x.date)).reduce((x, y) => x.isBefore(y) ? x : y);
     final from = planStart ?? today;
-    final elapsedWeeks = max(0.0, today.difference(from).inDays / 7);
+    final elapsedWeeks = max(0.0, daysBetween(from, today) / 7);
 
     final linked = linkPlanSessions(plans, sessions);
     final hrMax = HrMax.of(p, sessions: sessions, now: now);
@@ -196,7 +196,7 @@ class GoalForecast {
     // ── Efforts (5 km and longer, last 60 days)
     final trend = <(DateTime, double)>[];
     double? effort, floor;
-    for (final s in runs.where((s) => today.difference(dayOnly(s.start)).inDays <= 60)) {
+    for (final s in runs.where((s) => daysBetween(dayOnly(s.start), today) <= 60)) {
       double? best;
       for (final e in runBestEfforts([s]).values) {
         if (!Vdot.distances.containsKey(e.key)) continue;
@@ -223,7 +223,7 @@ class GoalForecast {
     for (final x in plans) {
       if (x.sport != Sport.run || (x.intensity != 'tempo' && x.intensity != 'intervals')) continue;
       final s = linked[x.id];
-      if (s == null || s.distanceM <= 0 || s.durationSec <= 0 || today.difference(dayOnly(s.start)).inDays > 42) continue;
+      if (s == null || s.distanceM <= 0 || s.durationSec <= 0 || daysBetween(dayOnly(s.start), today) > 42) continue;
       final km = x.distanceKm ?? 0;
       final plannedSec = x.steps.fold<int>(0, (t, st) => t + estimateStepSec(st, Sport.run, easyPace: easyPace, css: 100));
       final planVdot = _vdotOfSteps(x.steps);
@@ -245,7 +245,7 @@ class GoalForecast {
     bool endurance(PlannedWorkout x) => x.sport != Sport.gym && x.intensity != 'race';
     final due = plans.where((x) => endurance(x) && !x.date.isBefore(from) && !dayOnly(x.date).isAfter(today)).toList();
     final adherence = due.length >= 3 ? weeklyCompletion(due, linked, now: now) : null;
-    final recentFrom = today.subtract(const Duration(days: 28));
+    final recentFrom = addDays(today, -28);
     final recentDue = due.where((x) => !x.date.isBefore(recentFrom)).toList();
     final recent = recentDue.length >= 3 ? weeklyCompletion(recentDue, linked, now: now) : adherence;
 
@@ -260,7 +260,7 @@ class GoalForecast {
     // "Faster than planned" needs more than two good days (B10): ≥ 3 quality runs over ≥ 14 days
     // (or a measured maximal effort) – the same evidence the recalibration needs for VDOT +1.
     final qDays = implied.map((x) => x.$1).toList()..sort();
-    final fasterEvidence = effort != null || (qDays.length >= 3 && qDays.last.difference(qDays.first).inDays >= 14);
+    final fasterEvidence = effort != null || (qDays.length >= 3 && daysBetween(qDays.first, qDays.last) >= 14);
     // ≥ 3 quality runs (C1): one or two sessions are no trend.
     if (recentRatios.length >= 3) {
       final rm = _median(recentRatios);
@@ -282,10 +282,10 @@ class GoalForecast {
       final points = [...days, today];
       var penalty = 0.0;
       for (var i = 1; i < points.length; i++) {
-        final gap = points[i].difference(points[i - 1]).inDays;
+        final gap = daysBetween(points[i - 1], points[i]);
         if (gap <= 10) continue;
         final open = i == points.length - 1;
-        final since = today.difference(points[i]).inDays;
+        final since = daysBetween(points[i], today);
         if (!open && (since > 28 || points[i - 1].isBefore(from))) continue;
         final full = min(4.0, (gap - 10) / 7 * 0.7 + 0.3);
         penalty = max(penalty, full * max(0.0, 1 - since / (2 * gap)));
@@ -332,7 +332,7 @@ class GoalForecast {
     // the long runs due in the last 3 weeks – ≥ 2 of them missed or < 75 % done (C3: eight
     // skipped long runs stayed "on track" because one long run 6 weeks ago still counted).
     final need = PlanGenerator.longRunTargetFor(ev);
-    final sixWeeks = today.subtract(const Duration(days: 42));
+    final sixWeeks = addDays(today, -42);
     final longest = runs.where((s) => !s.start.isBefore(sixWeeks)).fold<double>(0, (x, s) => max(x, s.distanceM / 1000));
     final pastLongs =
         plans
@@ -384,7 +384,7 @@ class GoalForecast {
       // Missed training and detraining are facts, not noise: they count at once.
       final facts = reasons.contains(ForecastReason.missedTraining) || reasons.contains(ForecastReason.trainingBreak);
       if (persist && pace != ForecastStatus.onTrack && effort == null && !facts) {
-        final weekAgo = now.subtract(const Duration(days: 7));
+        final weekAgo = DateTime(now.year, now.month, now.day - 7, now.hour, now.minute);
         final prev = _of(
           p,
           plans: plans,
@@ -445,9 +445,9 @@ class GoalForecast {
     // Expected line: from the plan start (baseline) to race day.
     final planned = <(DateTime, double)>[];
     if (planStart != null) {
-      final totalWeeks = race.difference(planStart).inDays / 7;
+      final totalWeeks = daysBetween(planStart, race) / 7;
       for (var w = 0.0; w <= totalWeeks + 1e-9; w += max(1.0, totalWeeks / 12)) {
-        planned.add((planStart.add(Duration(days: (w * 7).round())), baseline + GoalModel.gain(p, min(w, max(0, totalWeeks - 1)))));
+        planned.add((addDays(planStart, (w * 7).round()), baseline + GoalModel.gain(p, min(w, max(0, totalWeeks - 1)))));
       }
     }
 

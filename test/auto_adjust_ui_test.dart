@@ -15,11 +15,11 @@ class _FakeRepo extends Repository {
   _FakeRepo() : super('test');
   final updates = <Map<String, Map<String, dynamic>>>[];
   @override
-  void updateMany({
+  Future<void> updateMany({
     Map<String, Map<String, dynamic>> plans = const {},
     Map<String, Map<String, dynamic>> templates = const {},
     Map<String, Map<String, dynamic>> sessions = const {},
-  }) => updates.add(plans);
+  }) async => updates.add(plans);
 }
 
 Widget _app(Widget home, String lang) => MaterialApp(

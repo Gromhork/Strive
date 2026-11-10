@@ -486,7 +486,12 @@ void main() {
       Session Function(PlannedWorkout w, Session s)? tweak,
       bool Function(PlannedWorkout w)? skip,
     }) {
-      final gen = PlanGenerator(l, p, templates, () => 'g${n++}').generate(start: start, weeks: 10);
+      final gen = PlanGenerator(
+        l,
+        p,
+        templates,
+        () => 'g${n++}',
+      ).generate(start: start, weeks: 12); // covers the recalibration horizon (no "plan ended" refill)
       final plans = <PlannedWorkout>[];
       final sessions = <Session>[];
       for (final w in gen) {

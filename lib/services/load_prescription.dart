@@ -186,10 +186,10 @@ class LoadPrescriber {
   final List<Session> _sessions;
 
   /// History window for "current" training data.
-  static const recentWindow = Duration(days: 84);
+  static const recentWindow = Duration(days: 84); // time span
 
   /// Older data (up to a year) is still better than a body-weight guess, but discounted.
-  static const maxWindow = Duration(days: 365);
+  static const maxWindow = Duration(days: 365); // time span
 
   /// Phases that reduce load (deload / taper weeks).
   static bool lighterPhase(String? phase) => phase == 'recovery' || phase == 'taper';
@@ -511,7 +511,7 @@ class LoadPrescriber {
 
   Prescription? _fromHistory(GymExercise e, _Info info, List<_Entry> hist) {
     final last = hist.first;
-    final days = now.difference(last.date).inDays;
+    final days = now.difference(last.date).inDays; // time span
     final (bottom, top) = range(e);
     final est = _robustE1rm(hist);
     final lastW = last.sets.map((s) => s.weight).reduce(max);
@@ -531,7 +531,7 @@ class LoadPrescriber {
     // > 6 weeks off (or older data only): detraining – re-derive from e1RM × 0.9
     // (strength is largely kept for ~3 weeks, then declines; Mujika & Padilla 2000,
     // McMaster 2013). Data older than the 12-week window: × 0.85.
-    if (days > 42) return viaE1rm(days > recentWindow.inDays ? 0.85 : 0.9, breakDays: days);
+    if (days > 42) return viaE1rm(days > recentWindow.inDays ? 0.85 : 0.9, breakDays: days); // time span
     // Different rep range than last time (other program): use the e1RM, not the sets.
     if (!repsFit) return viaE1rm(days > 21 ? 0.95 : 1, breakDays: days > 21 ? days : null);
     // 3–6 weeks off: hold the last weight, 5–10 % lighter.
@@ -589,7 +589,7 @@ class LoadPrescriber {
     }
     // Never more than ~15 % below what the e1RM of the last 4 weeks supports unless reps
     // were actually missed (limit ratings and holds alone must not spiral the load down).
-    final month = hist.where((h) => now.difference(h.date).inDays <= 28).toList();
+    final month = hist.where((h) => now.difference(h.date).inDays <= 28).toList(); // time span
     if (month.isNotEmpty && !month.any((h) => _missed(h, bottom))) {
       final best = month.map((h) => h.top).reduce(max);
       final floor = _floorStep(_loadFor(best, reps, 2) * 0.85, info);
@@ -634,7 +634,7 @@ class LoadPrescriber {
   /// reps. Steps are judged against the total load (body load + added weight).
   Prescription _bodyweight(GymExercise e, List<_Entry> hist) {
     final (bottom, top) = range(e);
-    if (hist.isNotEmpty && now.difference(hist.first.date).inDays <= 42) {
+    if (hist.isNotEmpty && daysBetween(hist.first.date, now) <= 42) {
       final lift = classifyLift(e.exId, e.name, info: db?.byId(e.exId));
       // Loaded exercises switched to bodyweight mode by the user also progress the load.
       final inc = lift.loadableBodyweight || !lift.bodyweight ? 2.5 : 0.0;

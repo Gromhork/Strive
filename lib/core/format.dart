@@ -10,7 +10,17 @@ extension L10nX on BuildContext {
 }
 
 DateTime dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-DateTime startOfWeek(DateTime d) => dayOnly(d).subtract(Duration(days: d.weekday - 1));
+
+/// Calendar arithmetic for day values: midnight of the day [n] days after [d]'s day.
+/// Never use `Duration(days: n)` on day values – it is n × 24 h, so across a DST change
+/// (late October / late March) midnight becomes 23:00 of the day before (or 01:00).
+DateTime addDays(DateTime d, int n) => DateTime(d.year, d.month, d.day + n);
+
+/// Whole calendar days from [a]'s day to [b]'s day (negative when [b] is earlier) –
+/// DST-safe, unlike `b.difference(a).inDays` (a 23 h day counts as 0).
+int daysBetween(DateTime a, DateTime b) => DateTime.utc(b.year, b.month, b.day).difference(DateTime.utc(a.year, a.month, a.day)).inDays;
+
+DateTime startOfWeek(DateTime d) => addDays(d, -(d.weekday - 1));
 bool sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 String dayKey(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 DateTime parseDayKey(String s) => DateFormat('yyyy-MM-dd').parse(s);

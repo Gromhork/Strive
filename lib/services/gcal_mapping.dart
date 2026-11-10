@@ -23,7 +23,7 @@ const gcalFutureDays = 183;
 /// Local sync window [start, end) relative to [now].
 (DateTime, DateTime) gcalWindow(DateTime now) {
   final today = dayOnly(now);
-  return (today.subtract(const Duration(days: gcalPastDays)), today.add(const Duration(days: gcalFutureDays)));
+  return (addDays(today, -gcalPastDays), addDays(today, gcalFutureDays));
 }
 
 /// Start hour for the athlete's preferred training time.

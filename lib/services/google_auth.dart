@@ -51,6 +51,17 @@ class GoogleAuth {
     return true;
   }
 
+  /// Signs the current Firebase user in again with Google (sensitive operations such as
+  /// deleting the account need a recent login). Returns false when the user cancelled.
+  static Future<bool> reauthenticate(User user) async {
+    final g = _get(calendar: false);
+    final acc = await g.signIn();
+    if (acc == null) return false;
+    final a = await acc.authentication;
+    await user.reauthenticateWithCredential(GoogleAuthProvider.credential(accessToken: a.accessToken, idToken: a.idToken));
+    return true;
+  }
+
   static Future<void> signOut() async {
     try {
       await _get(calendar: _clientHasCalendar).signOut();

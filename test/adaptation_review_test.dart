@@ -345,7 +345,7 @@ void main() {
 
     /// Quality runs at RPE 3 (felt easy) without pace data → "rpeLow", no VDOT change.
     (List<PlannedWorkout>, List<Session>) easyQuality(UserProfile p) {
-      final (plans, sessions) = history(p, start, at);
+      final (plans, sessions) = history(p, start, at, weeks: 12); // covers the recalibration horizon (no "plan ended" refill)
       final out = <Session>[];
       final rated = <PlannedWorkout>[];
       for (final w in plans) {
@@ -485,6 +485,8 @@ void main() {
           recals++;
           if (i == back) expect(r.reasons, contains(RecalReason.returnAfterBreak));
           for (final c in r.changes) {
+            // Refills after the plan's end are new workouts (not part of the volume check).
+            if (c.kind == RecalKind.added) continue;
             plans[c.after.id] = c.after;
           }
           checkBounds('recal day $i');
