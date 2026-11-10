@@ -38,6 +38,9 @@ class GoalModel {
   /// Factor of the expected gain a high responder may reach.
   static const optimistic = 1.6;
 
+  /// A target more than 5 % slower than the realistic time is conservative ([TargetCheck.conservative]).
+  static const conservativeMargin = 1.05;
+
   /// Weeks from the plan start's week to race week (incl. race week).
   static int weeksUntil(DateTime event, DateTime start) =>
       // Whole days (a daylight-saving change makes one day 23 or 25 hours long).
@@ -92,6 +95,14 @@ class GoalModel {
     'ride160' => (0.68, 1.0, 0),
     _ => (0.72, 1.0, 0),
   };
+
+  /// Share of FTP held on the bike leg of [event] (70.3 0.77, Ironman 0.70 …) – the race power of the
+  /// race-pace blocks in long rides.
+  static double raceFtpShare(String? event) => _legModel(event ?? '').$1;
+
+  /// Slowdown of the run off the bike in [event] (× the stand-alone pace; Ironman 1.25) – the pace of
+  /// race-specific brick runs.
+  static double runOffBikeFactor(String? event) => _legModel(event ?? '').$2;
 
   /// Steady speed (km/h) on a flat course at [frac] × FTP: P·η = v·(Crr·m·g + ½·ρ·CdA·v²),
   /// η 0.975, Crr 0.005, ρ 1.2, CdA 0.32 / 0.30 / 0.27 by level, × 0.93 for turns, hills and wind.
@@ -152,6 +163,32 @@ class GoalModel {
       EventSport.swim => swim(d.km),
     };
     return (t + transition).round();
+  }
+
+  /// Leg times (s, race order) and the transitions (s) of a triathlon / duathlon at running fitness
+  /// [vdot] – the parts of [predict] (the race day shows one session per leg); null for other events.
+  static (List<int>, int)? legTimes(UserProfile p, double vdot) {
+    final d = eventDistanceOf(p.athlete.eventDistance);
+    if (d == null || (d.sport != EventSport.triathlon && d.sport != EventSport.duathlon) || d.legs.length != 3) return null;
+    final a = p.athlete;
+    final css = SwimZones.fromTests(a.swim400Sec, a.swim200Sec) ?? SwimZones.defaultFor(p.level);
+    final (frac, runF, transition) = _legModel(d.key);
+    final kmh =
+        a.ftp != null
+            ? bikeKmh(a.ftp!, p.weightKg, p.level, frac)
+            : (switch (p.level) {
+                  'advanced' => 33.0,
+                  'intermediate' => 29.0,
+                  _ => 25.0,
+                }) *
+                (frac < 0.75 ? 0.93 : 1.0);
+    double run(double km) => Vdot.raceTime(vdot, km * 1000).toDouble();
+    final l = d.legs;
+    final parts =
+        d.sport == EventSport.triathlon
+            ? [l[0] * 10 * (css + 10), l[1] / kmh * 3600, run(l[2]) * runF]
+            : [run(l[0]) * 1.02, l[1] / kmh * 3600, run(l[2]) * runF];
+    return ([for (final x in parts) x.round()], transition);
   }
 
   /// Predicted time after a VDOT [gain] from [vdot]: running directly, triathlon by the
@@ -257,4 +294,12 @@ class TargetCheck {
 
   /// Realistic target time to suggest (rounded, on the slow side).
   int get suggestedSec => GoalModel.roundTarget(realisticSec);
+
+  /// The target is clearly slower (> [GoalModel.conservativeMargin]) than the realistic race-day time –
+  /// feasibility says so, and race-pace work runs at the realistic pace (goal-pace work slower than
+  /// the base phase's marathon-pace work trains nothing race-specific; review IMPORTANT 2).
+  bool get conservative => status == TargetStatus.ok && targetSec > realisticSec * GoalModel.conservativeMargin;
+
+  /// The more ambitious (faster) of the target and the realistic race-day time.
+  int get ambitionSec => min(targetSec, realisticSec);
 }

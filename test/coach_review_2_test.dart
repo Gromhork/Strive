@@ -167,7 +167,10 @@ void main() {
         final r = Recalibrator(l, p, plans: plans, sessions: sessions, now: day.add(const Duration(hours: 6))).run();
         final ups = {for (final c in r.changes.where((c) => c.kind != RecalKind.added)) c.before.id: c.after};
         plans = [for (final w in plans) ups[w.id] ?? w];
-        if (r.raceTimes != null) p = p.copyWith(athlete: p.athlete.merge({'raceTimes': r.raceTimes}));
+        // The VDOT now comes as [Recalibration.athlete] (vdotEstimate), not as a race time (C5).
+        if (r.raceTimes != null || r.athlete.isNotEmpty) {
+          p = p.copyWith(athlete: p.athlete.merge({if (r.raceTimes != null) 'raceTimes': r.raceTimes, ...r.athlete}));
+        }
         vdots.add(Vdot.of(p.athlete)!);
       }
       for (final w in plans.where((w) => sameDay(w.date, day) && w.status == 'planned' && w.intensity != 'race').toList()) {

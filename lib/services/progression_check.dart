@@ -13,7 +13,7 @@ enum ProgressionIssue {
   /// ≥ 2 long sessions of the last 3 weeks were not done.
   longSessionsMissed,
 
-  /// ≥ 2 run/walk sessions were cut short (< 80 %) or felt hard (RPE ≥ 7) – Couch-to-5K only
+  /// ≥ 2 run/walk sessions were cut short (< 80 %) or felt hard (RPE ≥ 6) – Couch-to-5K only
   /// progresses at RPE ≤ 5 without pain (docs/training-science.md §1.10).
   runWalkNotAchieved,
 
@@ -74,6 +74,19 @@ const progressionWindowDays = 21;
 /// Run/walk session: a run whose first step is a walk (the generator's "Run/walk N × M min").
 bool isRunWalk(PlannedWorkout x) => x.sport == Sport.run && x.steps.isNotEmpty && x.steps.first.zone == 'walk';
 
+/// [w] with its run/walk title ("Run/walk 8 × 1 min") matching its steps after an adjustment changed
+/// the repeats or their length (review I13: sessions trimmed to 25' still read "2 × 10 min").
+PlannedWorkout retitledRunWalk(PlannedWorkout w) {
+  if (!isRunWalk(w)) return w;
+  final work = w.steps.where((s) => s.isWork && s.zone != 'walk').toList();
+  final m = RegExp(r'(\d+) × (\d+) min').firstMatch(w.title);
+  if (work.isEmpty || m == null) return w;
+  final sec = work.first.durationSec ?? 0;
+  if (sec <= 0 || sec % 60 != 0) return w;
+  final title = w.title.replaceRange(m.start, m.end, '${work.length} × ${sec ~/ 60} min');
+  return title == w.title ? w : PlannedWorkout.fromMap(w.id, {...w.toMap(), 'title': title});
+}
+
 /// Swim novice ladder session: a swim with continuous endurance (EN) work steps.
 bool _isSwimLadder(PlannedWorkout x) => x.sport == Sport.swim && x.steps.any((s) => s.isWork && s.zone == 'EN');
 
@@ -106,7 +119,8 @@ double? _ratio(PlannedWorkout x, Session s) {
 ///   a distance; marked done without data = 100 %); missed = no linked session.
 /// * behind when ≥ 2 planned long sessions and (share < 0.8 or ≥ 2 missed);
 /// * run/walk not achieved: ≥ 2 done run/walk sessions at < 80 % of the planned duration or
-///   RPE ≥ 7 (Couch-to-5K: progress only at RPE ≤ 5 without pain);
+///   RPE > 5 (Couch-to-5K: progress only at RPE ≤ 5 without pain; the recalibration then holds
+///   the stage – `RecalReason.repeatStage`);
 /// * high effort: ≥ 2 done long / run/walk sessions at RPE ≥ 8;
 /// * swim novices: the ladder swims (EN work steps) count like long sessions (distance done vs
 ///   planned).
@@ -167,7 +181,7 @@ ProgressionCheck? progressionCheck(
     if (rpe >= 8) hard++;
     if (isRunWalk(x)) {
       final r = _ratio(x, s);
-      if ((r != null && r < 0.8) || rpe >= 7) rwShort++;
+      if ((r != null && r < 0.8) || rpe >= 6) rwShort++;
     }
   }
   final runWalkNotAchieved = rwShort >= 2;

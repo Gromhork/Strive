@@ -109,6 +109,11 @@ class RecalibrationSheet extends StatefulWidget {
     RecalReason.rpeLowHold => l.recalWhyRpeLowHold,
     RecalReason.planGaps => l.recalWhyGaps(s.gaps),
     RecalReason.gapsOmitted => l.recalWhyGapsOmitted,
+    RecalReason.fatigueRecovery => l.recalWhyFatigueRecovery,
+    RecalReason.fatigueCheck => l.recalWhyFatigueCheck,
+    RecalReason.goalAtRisk => l.recalWhyGoalAtRisk,
+    RecalReason.repeatStage => l.recalWhyRepeatStage,
+    RecalReason.moveLong => l.recalWhyMoveLong,
   };
 
   /// Largest change of the aerobic efficiency factor (any sport).
@@ -334,7 +339,12 @@ class _GapTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(glueTitle(p.title), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      glueTitle(p.title),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     Text('${df.format(p.date)} · $amount', style: theme.textTheme.bodySmall),
                     const SizedBox(height: 2),
                     Text(

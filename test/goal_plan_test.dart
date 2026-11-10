@@ -156,7 +156,9 @@ void main() {
       // 1:45 HM ≈ 3:40 marathon now: 3:38 is realistic in 18 weeks, 3:05 is not.
       final ok = GoalModel.check(p(3 * 3600 + 38 * 60), start: start)!;
       expect(ok.status, TargetStatus.ok);
-      final okPace = (ok.targetSec / 42.195).round();
+      // Goal pace = the more ambitious of target and realistic time (plan review IMPORTANT 2: race-pace
+      // work is never slower than the realistic pace).
+      final okPace = (ok.ambitionSec / 42.195).round();
       final steps = racePace(gen(p(ok.targetSec)));
       expect(steps, isNotEmpty);
       for (final s in steps) {
@@ -177,11 +179,13 @@ void main() {
 
     test('half marathon: peak long-run goal segment at target pace when realistic', () {
       final p = runner(ev: 'hm', weeks: 14, times: const {'10k': 2700}, target: 6000);
-      expect(GoalModel.check(p, start: start)!.status, TargetStatus.ok);
+      final check = GoalModel.check(p, start: start)!;
+      expect(check.status, TargetStatus.ok);
       final steps = racePace(gen(p));
       expect(steps, isNotEmpty);
       for (final s in steps) {
-        expect((s.paceMin! + s.paceMax!) / 2, closeTo(6000 / 21.0975, 1));
+        // The more ambitious of target and realistic time (plan review IMPORTANT 2).
+        expect((s.paceMin! + s.paceMax!) / 2, closeTo(check.ambitionSec / 21.0975, 1));
       }
     });
   });
@@ -211,10 +215,16 @@ void main() {
     final now = start.add(const Duration(days: 28, hours: 12));
     final easy = PaceZones(Vdot.fromRace(10000, 3000)).easySlow;
 
-    (List<PlannedWorkout>, List<Session>) history(UserProfile p, {double speed = 1.0, int rpe = 6, bool Function(PlannedWorkout w)? skip}) {
+    (List<PlannedWorkout>, List<Session>) history(
+      UserProfile p, {
+      double speed = 1.0,
+      int rpe = 6,
+      bool Function(PlannedWorkout w)? skip,
+      DateTime? until,
+    }) {
       final plan = gen(p);
       final sessions = <Session>[];
-      for (final w in plan.where((w) => w.date.isBefore(dayOnly(now)))) {
+      for (final w in plan.where((w) => w.date.isBefore(dayOnly(until ?? now)))) {
         if (skip?.call(w) ?? false) continue;
         final sec = w.steps.fold<int>(0, (x, s) => x + estimateStepSec(s, w.sport, easyPace: easy, css: 100));
         final quality = w.intensity == 'tempo' || w.intensity == 'intervals';
@@ -268,7 +278,12 @@ void main() {
     });
 
     test('faster than planned: ahead, a more ambitious target suggested', () {
-      final f = fc(p, history(p, speed: 1.06, rpe: 6));
+      // Review C1: a quality run within ± 5 % of its step estimate – or that took the plan's displayed
+      // (rounded) duration – is on plan, and a status change needs the evidence on two consecutive
+      // Mondays: 8 % faster (6 % matched the rounded fartlek durations), read a week later.
+      final later = now.add(const Duration(days: 7));
+      final h = history(p, speed: 1.08, rpe: 6, until: later);
+      final f = GoalForecast.of(p, plans: h.$1, sessions: h.$2, now: later)!;
       expect(f.status, ForecastStatus.ahead);
       expect(f.reasons, contains(ForecastReason.fasterThanPlanned));
       expect(f.suggestedSec, lessThan(2910));

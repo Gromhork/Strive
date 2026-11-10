@@ -4074,7 +4074,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fcRiskBodyFinish => 'Recent training did not go as planned – consistent training now keeps the race comfortable.';
+  String get fcRiskBodyFinish => 'Recent training did not go as planned – at this rate the finish is at risk. Consistent training from now on (or one of the options) can still turn it around.';
 
   @override
   String fcAheadBody(String goal) {
@@ -4977,4 +4977,113 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reauthConfirm => 'Confirm';
+
+  @override
+  String feasLongDayDefault(String day, String time) {
+    return 'The long session on $day needs up to $time – far more than the time you set. The plan uses it; set that day\'s time yourself if it does not fit.';
+  }
+
+  @override
+  String feasLongRunShare(int min) {
+    return 'Your other runs are too short for the long run this race needs: it may be at most half of the week and twice your next-longest run. Plan about $min min for your other runs.';
+  }
+
+  @override
+  String feasTargetConservative(String goal, String now, String pred) {
+    return '$goal is a cautious target: today ~$now, realistic on race day ~$pred. Your race-pace sessions use the realistic pace.';
+  }
+
+  @override
+  String wRunContinuous(int min) {
+    return 'Continuous run $min min';
+  }
+
+  @override
+  String get wShakeoutRunWalkDesc => 'Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.';
+
+  @override
+  String get wShakeoutEasyDesc => '15 min very easy – just loosen up, nothing more. Lay out your race kit tonight.';
+
+  @override
+  String get wMastersStrengthNote => 'Strength tip: add 15–20 min of strength after this session (squats, lunges, calf raises, a plank) – twice a week it keeps muscle, bones and tendons strong as you get older.';
+
+  @override
+  String wRaceLeg(String leg, String dist) {
+    return '$leg $dist km – your race pace for this leg';
+  }
+
+  @override
+  String get wRaceFinishDesc => 'Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.';
+
+  @override
+  String get wTriOpenWaterNote => 'Race preparation: practise sighting in the pool (look forward every 6–9 strokes); once the water allows, swim some sessions in open water in your wetsuit – in a group, never alone.';
+
+  @override
+  String get stepSwimRaceFinishNote => 'Last third at race pace – steady, keep your technique';
+
+  @override
+  String get wLongSwimRaceDesc => 'This week the last third of the long swim is at race pace: practise holding the pace when you are already tired.';
+
+  @override
+  String wLongRideRacePace(int reps, int each) {
+    return 'Long ride with $reps × $each min at race power';
+  }
+
+  @override
+  String get wLongRideRacePaceDesc => 'Long Z2 ride with blocks at the power you want to hold on race day: steady, aero, and eat and drink as in the race (every 20–30 min).';
+
+  @override
+  String get stepRacePowerNote => 'Race power – steady, as on race day';
+
+  @override
+  String get wRideTempoDescIm => 'Race-specific tempo at 75–85 % FTP – the effort of an Ironman bike leg: steady, aero, with fuelling.';
+
+  @override
+  String get wRideTempoDescFondo => 'Race-specific tempo at 75–85 % FTP – the steady effort of long climbs and a fast group ride: even pacing, with fuelling.';
+
+  @override
+  String get wRideTempoBaseDesc => 'Tempo at 76–90 % FTP: aerobic strength for long efforts – controlled, a step below sweet spot.';
+
+  @override
+  String get stepThresholdNote2 => 'Threshold – 91–100 % FTP, controlled';
+
+  @override
+  String wHillReps(int reps, int sec) {
+    return 'Hill repeats $reps × $sec s';
+  }
+
+  @override
+  String get wHillRepsDesc => 'Uphill repeats on a steady climb (5–8 %): strong, short steps, upright posture; jog or walk down easily. Builds the climbing strength your ultra needs.';
+
+  @override
+  String get stepHillNote => 'Uphill – hard but controlled, by feel (no pace)';
+
+  @override
+  String get stepHillDownNote => 'Jog or walk down easily';
+
+  @override
+  String wGymLoadDescNoDeload(int rir) {
+    return 'Finish every work set with about $rir reps in reserve. Sets, rep range and suggested weight are shown with each exercise.';
+  }
+
+  @override
+  String get wGymRegressionNote => 'First weeks: easier variants of the technically demanding lifts (lat pulldown instead of pull-ups, dumbbell Romanian deadlift instead of the barbell deadlift, reverse crunches instead of hanging leg raises) – the full lifts follow once the technique is solid.';
+
+  @override
+  String get recalWhyFatigueRecovery => 'Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.';
+
+  @override
+  String get recalWhyFatigueCheck => 'Still harder than intended after the recovery week: check sleep, illness and stress – and consider a slower target time. Quality stays, with fewer repeats.';
+
+  @override
+  String get recalWhyGoalAtRisk => 'With the training of the last weeks the race goal is hard to reach (long runs or weekly volume far from what the race needs) – consider a later race or a shorter distance.';
+
+  @override
+  String get recalWhyRepeatStage => 'The run/walk sessions felt hard (RPE above 5) or were cut short: the coming week repeats your current stage instead of moving up.';
+
+  @override
+  String get recalWhyMoveLong => 'Long runs were missed while the other runs were done: the next long run moves to a training day with more time – the easy runs stay as they are.';
+
+  @override
+  String get fcReasonFatigue => 'Sessions felt harder than intended recently';
 }

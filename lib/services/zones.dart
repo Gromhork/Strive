@@ -37,8 +37,18 @@ class Vdot {
     return ((lo + hi) / 2 * 60).round();
   }
 
-  /// Best VDOT from the athlete's race times (most recent data is not tracked → best).
+  /// Current running VDOT of the athlete: the training-derived estimate ([AthleteData.vdotEstimate],
+  /// written by the recalibration) while the race times are the ones it was derived from, else the
+  /// best race time's ([ofRaces]).
   static double? of(AthleteData a) {
+    final races = ofRaces(a);
+    final e = a.vdotEstimate;
+    if (e != null && e > 0 && ((races ?? 0) - (a.vdotEstimateBase ?? 0)).abs() < 0.05) return e;
+    return races;
+  }
+
+  /// Best VDOT from the athlete's race times (most recent data is not tracked → best).
+  static double? ofRaces(AthleteData a) {
     double? best;
     for (final e in a.raceTimes.entries) {
       final d = distances[e.key];

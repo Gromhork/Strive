@@ -7592,7 +7592,7 @@ abstract class AppLocalizations {
   /// No description provided for @fcRiskBodyFinish.
   ///
   /// In en, this message translates to:
-  /// **'Recent training did not go as planned – consistent training now keeps the race comfortable.'**
+  /// **'Recent training did not go as planned – at this rate the finish is at risk. Consistent training from now on (or one of the options) can still turn it around.'**
   String get fcRiskBodyFinish;
 
   /// No description provided for @fcAheadBody.
@@ -9190,6 +9190,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm'**
   String get reauthConfirm;
+
+  /// No description provided for @feasLongDayDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'The long session on {day} needs up to {time} – far more than the time you set. The plan uses it; set that day\'s time yourself if it does not fit.'**
+  String feasLongDayDefault(String day, String time);
+
+  /// No description provided for @feasLongRunShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Your other runs are too short for the long run this race needs: it may be at most half of the week and twice your next-longest run. Plan about {min} min for your other runs.'**
+  String feasLongRunShare(int min);
+
+  /// No description provided for @feasTargetConservative.
+  ///
+  /// In en, this message translates to:
+  /// **'{goal} is a cautious target: today ~{now}, realistic on race day ~{pred}. Your race-pace sessions use the realistic pace.'**
+  String feasTargetConservative(String goal, String now, String pred);
+
+  /// No description provided for @wRunContinuous.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous run {min} min'**
+  String wRunContinuous(int min);
+
+  /// No description provided for @wShakeoutRunWalkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.'**
+  String get wShakeoutRunWalkDesc;
+
+  /// No description provided for @wShakeoutEasyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'15 min very easy – just loosen up, nothing more. Lay out your race kit tonight.'**
+  String get wShakeoutEasyDesc;
+
+  /// No description provided for @wMastersStrengthNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength tip: add 15–20 min of strength after this session (squats, lunges, calf raises, a plank) – twice a week it keeps muscle, bones and tendons strong as you get older.'**
+  String get wMastersStrengthNote;
+
+  /// No description provided for @wRaceLeg.
+  ///
+  /// In en, this message translates to:
+  /// **'{leg} {dist} km – your race pace for this leg'**
+  String wRaceLeg(String leg, String dist);
+
+  /// No description provided for @wRaceFinishDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.'**
+  String get wRaceFinishDesc;
+
+  /// No description provided for @wTriOpenWaterNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Race preparation: practise sighting in the pool (look forward every 6–9 strokes); once the water allows, swim some sessions in open water in your wetsuit – in a group, never alone.'**
+  String get wTriOpenWaterNote;
+
+  /// No description provided for @stepSwimRaceFinishNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Last third at race pace – steady, keep your technique'**
+  String get stepSwimRaceFinishNote;
+
+  /// No description provided for @wLongSwimRaceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This week the last third of the long swim is at race pace: practise holding the pace when you are already tired.'**
+  String get wLongSwimRaceDesc;
+
+  /// No description provided for @wLongRideRacePace.
+  ///
+  /// In en, this message translates to:
+  /// **'Long ride with {reps} × {each} min at race power'**
+  String wLongRideRacePace(int reps, int each);
+
+  /// No description provided for @wLongRideRacePaceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Long Z2 ride with blocks at the power you want to hold on race day: steady, aero, and eat and drink as in the race (every 20–30 min).'**
+  String get wLongRideRacePaceDesc;
+
+  /// No description provided for @stepRacePowerNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Race power – steady, as on race day'**
+  String get stepRacePowerNote;
+
+  /// No description provided for @wRideTempoDescIm.
+  ///
+  /// In en, this message translates to:
+  /// **'Race-specific tempo at 75–85 % FTP – the effort of an Ironman bike leg: steady, aero, with fuelling.'**
+  String get wRideTempoDescIm;
+
+  /// No description provided for @wRideTempoDescFondo.
+  ///
+  /// In en, this message translates to:
+  /// **'Race-specific tempo at 75–85 % FTP – the steady effort of long climbs and a fast group ride: even pacing, with fuelling.'**
+  String get wRideTempoDescFondo;
+
+  /// No description provided for @wRideTempoBaseDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo at 76–90 % FTP: aerobic strength for long efforts – controlled, a step below sweet spot.'**
+  String get wRideTempoBaseDesc;
+
+  /// No description provided for @stepThresholdNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold – 91–100 % FTP, controlled'**
+  String get stepThresholdNote2;
+
+  /// No description provided for @wHillReps.
+  ///
+  /// In en, this message translates to:
+  /// **'Hill repeats {reps} × {sec} s'**
+  String wHillReps(int reps, int sec);
+
+  /// No description provided for @wHillRepsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uphill repeats on a steady climb (5–8 %): strong, short steps, upright posture; jog or walk down easily. Builds the climbing strength your ultra needs.'**
+  String get wHillRepsDesc;
+
+  /// No description provided for @stepHillNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Uphill – hard but controlled, by feel (no pace)'**
+  String get stepHillNote;
+
+  /// No description provided for @stepHillDownNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Jog or walk down easily'**
+  String get stepHillDownNote;
+
+  /// No description provided for @wGymLoadDescNoDeload.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish every work set with about {rir} reps in reserve. Sets, rep range and suggested weight are shown with each exercise.'**
+  String wGymLoadDescNoDeload(int rir);
+
+  /// No description provided for @wGymRegressionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'First weeks: easier variants of the technically demanding lifts (lat pulldown instead of pull-ups, dumbbell Romanian deadlift instead of the barbell deadlift, reverse crunches instead of hanging leg raises) – the full lifts follow once the technique is solid.'**
+  String get wGymRegressionNote;
+
+  /// No description provided for @recalWhyFatigueRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.'**
+  String get recalWhyFatigueRecovery;
+
+  /// No description provided for @recalWhyFatigueCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Still harder than intended after the recovery week: check sleep, illness and stress – and consider a slower target time. Quality stays, with fewer repeats.'**
+  String get recalWhyFatigueCheck;
+
+  /// No description provided for @recalWhyGoalAtRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'With the training of the last weeks the race goal is hard to reach (long runs or weekly volume far from what the race needs) – consider a later race or a shorter distance.'**
+  String get recalWhyGoalAtRisk;
+
+  /// No description provided for @recalWhyRepeatStage.
+  ///
+  /// In en, this message translates to:
+  /// **'The run/walk sessions felt hard (RPE above 5) or were cut short: the coming week repeats your current stage instead of moving up.'**
+  String get recalWhyRepeatStage;
+
+  /// No description provided for @recalWhyMoveLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Long runs were missed while the other runs were done: the next long run moves to a training day with more time – the easy runs stay as they are.'**
+  String get recalWhyMoveLong;
+
+  /// No description provided for @fcReasonFatigue.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions felt harder than intended recently'**
+  String get fcReasonFatigue;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
