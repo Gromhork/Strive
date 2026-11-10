@@ -667,6 +667,7 @@ const l10nPairs = <(String, String)>[
   ('Steady', 'Zügig'),
   ('Threshold', 'Schwelle'),
   ('Interval', 'Intervall'),
+  ('Fast', 'Schnell'),
   ('Recovery', 'Erholung'),
   ('walk', 'Gehen'),
   ('Recovery', 'Erholung'),

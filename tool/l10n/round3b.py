@@ -1,0 +1,3 @@
+{
+ 'zStride': ['Fast', 'Schnell'],
+}
