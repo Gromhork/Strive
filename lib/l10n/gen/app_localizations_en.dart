@@ -3853,7 +3853,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raceRegion => 'Region (country or city)';
 
   @override
-  String get raceRegionHint => 'e.g. Germany, Munich – empty = worldwide';
+  String get raceRegionHint => 'e.g. Germany, Munich, 80331 – empty = anywhere';
 
   @override
   String get raceWindow => 'Time window';
@@ -3864,22 +3864,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get raceSearchButton => 'Search the web';
+  String get raceSearchButton => 'Search';
 
   @override
-  String get raceIntro => 'Searches the web for upcoming races with AI – or open a race calendar directly.';
+  String get raceIntro => 'Searches public race calendars (German running and triathlon calendars, RunSignup for the USA) – or open a race calendar directly.';
 
   @override
-  String get raceSearching => 'Searching the web for races…';
+  String get raceSearching => 'Searching race calendars…';
 
   @override
   String get raceWebResults => 'Web results (AI search)';
 
   @override
-  String get raceDisclaimer => 'Found on the web by AI – no guarantee. Check date and details on the organiser\'s page before you sign up.';
+  String get raceDisclaimer => 'From public race calendars – no guarantee. Check date and details with the organiser before you sign up.';
 
   @override
-  String get raceOrganiserPage => 'Organiser page';
+  String get raceOrganiserPage => 'Details';
 
   @override
   String get raceSetAsGoal => 'Set as goal';
@@ -4623,4 +4623,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stepLeft => 'Step left';
+
+  @override
+  String get raceRadius => 'Radius';
+
+  @override
+  String raceResultsCount(int n) {
+    return 'Races found: $n';
+  }
+
+  @override
+  String raceSourceOf(String name) {
+    return 'Source: $name';
+  }
+
+  @override
+  String raceDataFrom(String names) {
+    return 'Data: $names';
+  }
+
+  @override
+  String raceSourcesFailed(String names) {
+    return 'Not reachable right now: $names';
+  }
+
+  @override
+  String get raceNoSource => 'There is no direct search for this sport and region yet (connected: German running and triathlon calendars, RunSignup for the USA). Browse a race calendar below.';
 }

@@ -3853,7 +3853,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get raceRegion => 'Region (Land oder Stadt)';
 
   @override
-  String get raceRegionHint => 'z. B. Deutschland, München – leer = weltweit';
+  String get raceRegionHint => 'z. B. Deutschland, München, 80331 – leer = überall';
 
   @override
   String get raceWindow => 'Zeitraum';
@@ -3864,22 +3864,22 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get raceSearchButton => 'Im Web suchen';
+  String get raceSearchButton => 'Suchen';
 
   @override
-  String get raceIntro => 'Sucht mit KI im Web nach kommenden Wettkämpfen – oder öffne direkt einen Wettkampfkalender.';
+  String get raceIntro => 'Durchsucht öffentliche Wettkampfkalender (DLV-Laufkalender, DTU-Kalender, RunSignup für die USA) – oder öffne direkt einen Wettkampfkalender.';
 
   @override
-  String get raceSearching => 'Suche im Web nach Wettkämpfen…';
+  String get raceSearching => 'Durchsuche Wettkampfkalender…';
 
   @override
   String get raceWebResults => 'Web-Ergebnisse (KI-Suche)';
 
   @override
-  String get raceDisclaimer => 'Mit KI im Web gefunden – Angaben ohne Gewähr. Prüfe Datum und Details auf der Seite des Veranstalters, bevor du dich anmeldest.';
+  String get raceDisclaimer => 'Aus öffentlichen Wettkampfkalendern – ohne Gewähr. Prüfe Datum und Details beim Veranstalter, bevor du dich anmeldest.';
 
   @override
-  String get raceOrganiserPage => 'Veranstalterseite';
+  String get raceOrganiserPage => 'Details';
 
   @override
   String get raceSetAsGoal => 'Als Ziel übernehmen';
@@ -4623,4 +4623,30 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get stepLeft => 'Rest Abschnitt';
+
+  @override
+  String get raceRadius => 'Umkreis';
+
+  @override
+  String raceResultsCount(int n) {
+    return 'Gefundene Wettkämpfe: $n';
+  }
+
+  @override
+  String raceSourceOf(String name) {
+    return 'Quelle: $name';
+  }
+
+  @override
+  String raceDataFrom(String names) {
+    return 'Daten: $names';
+  }
+
+  @override
+  String raceSourcesFailed(String names) {
+    return 'Gerade nicht erreichbar: $names';
+  }
+
+  @override
+  String get raceNoSource => 'Für diese Sportart und Region gibt es noch keine direkte Suche (angebunden: DLV-Laufkalender, DTU-Kalender, RunSignup für die USA). Stöbere unten in einem Wettkampfkalender.';
 }

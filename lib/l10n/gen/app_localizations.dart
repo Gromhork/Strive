@@ -7214,7 +7214,7 @@ abstract class AppLocalizations {
   /// No description provided for @raceRegionHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. Germany, Munich – empty = worldwide'**
+  /// **'e.g. Germany, Munich, 80331 – empty = anywhere'**
   String get raceRegionHint;
 
   /// No description provided for @raceWindow.
@@ -7232,19 +7232,19 @@ abstract class AppLocalizations {
   /// No description provided for @raceSearchButton.
   ///
   /// In en, this message translates to:
-  /// **'Search the web'**
+  /// **'Search'**
   String get raceSearchButton;
 
   /// No description provided for @raceIntro.
   ///
   /// In en, this message translates to:
-  /// **'Searches the web for upcoming races with AI – or open a race calendar directly.'**
+  /// **'Searches public race calendars (German running and triathlon calendars, RunSignup for the USA) – or open a race calendar directly.'**
   String get raceIntro;
 
   /// No description provided for @raceSearching.
   ///
   /// In en, this message translates to:
-  /// **'Searching the web for races…'**
+  /// **'Searching race calendars…'**
   String get raceSearching;
 
   /// No description provided for @raceWebResults.
@@ -7256,13 +7256,13 @@ abstract class AppLocalizations {
   /// No description provided for @raceDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'Found on the web by AI – no guarantee. Check date and details on the organiser\'s page before you sign up.'**
+  /// **'From public race calendars – no guarantee. Check date and details with the organiser before you sign up.'**
   String get raceDisclaimer;
 
   /// No description provided for @raceOrganiserPage.
   ///
   /// In en, this message translates to:
-  /// **'Organiser page'**
+  /// **'Details'**
   String get raceOrganiserPage;
 
   /// No description provided for @raceSetAsGoal.
@@ -8566,6 +8566,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Step left'**
   String get stepLeft;
+
+  /// No description provided for @raceRadius.
+  ///
+  /// In en, this message translates to:
+  /// **'Radius'**
+  String get raceRadius;
+
+  /// No description provided for @raceResultsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Races found: {n}'**
+  String raceResultsCount(int n);
+
+  /// No description provided for @raceSourceOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Source: {name}'**
+  String raceSourceOf(String name);
+
+  /// No description provided for @raceDataFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Data: {names}'**
+  String raceDataFrom(String names);
+
+  /// No description provided for @raceSourcesFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reachable right now: {names}'**
+  String raceSourcesFailed(String names);
+
+  /// No description provided for @raceNoSource.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no direct search for this sport and region yet (connected: German running and triathlon calendars, RunSignup for the USA). Browse a race calendar below.'**
+  String get raceNoSource;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
