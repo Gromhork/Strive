@@ -7,6 +7,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../shell/account.dart';
 import '../shell/gcal_sync.dart';
 import '../shell/health_sync.dart';
 import 'google_calendar_page.dart';
@@ -309,10 +310,18 @@ class ProfilePage extends ConsumerWidget {
                         !await confirm(context, l.logout, body: l.guestLogoutWarning, ok: l.logout, danger: true)) {
                       return;
                     }
-                    if (context.mounted) Navigator.popUntil(context, (r) => r.isFirst);
-                    await GoogleAuth.signOut();
-                    await FirebaseAuth.instance.signOut();
+                    if (!context.mounted) return;
+                    final out = signOutAndClear(context);
+                    Navigator.popUntil(context, (r) => r.isFirst);
+                    await out;
                   },
+                ),
+                ListTile(
+                  key: const ValueKey('deleteAccount'),
+                  leading: const Icon(Icons.delete_forever_outlined, color: AppColors.danger),
+                  title: Text(l.deleteAccount, style: const TextStyle(color: AppColors.danger)),
+                  subtitle: Text(l.deleteAccountSub),
+                  onTap: () => deleteAccountFlow(context, ref),
                 ),
               ],
             ),

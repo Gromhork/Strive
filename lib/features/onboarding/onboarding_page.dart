@@ -14,13 +14,14 @@ import '../../data/models.dart';
 import '../../data/default_programs.dart';
 import '../calendar/feasibility_card.dart';
 import '../calendar/replace_plan_dialog.dart';
+import '../shell/account.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/target_suggestion.dart';
 import '../../services/event_spec.dart';
 import '../../services/goal_model.dart';
-import '../../services/plan_gaps.dart';
 import '../../services/plan_generator.dart';
+import '../../services/plan_service.dart';
 import '../../services/schedule_advisor.dart';
 import '../../services/zones.dart';
 import '../../widgets/common.dart';
@@ -150,7 +151,21 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     }
   }
 
+  /// Set while finishing: a second tap on "Finish" must not run the setup (and the plan
+  /// generation) twice.
+  bool _finishing = false;
+
   Future<void> _finish() async {
+    if (_finishing) return;
+    _finishing = true;
+    try {
+      await _doFinish();
+    } finally {
+      _finishing = false;
+    }
+  }
+
+  Future<void> _doFinish() async {
     // Asked first: cancelling leaves everything as it was.
     var start = dayOnly(DateTime.now());
     if (_generatePlan && widget.mode != SetupMode.profile) {
@@ -212,8 +227,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       return;
     }
 
-    // Programs: all built-ins for new users; otherwise add the ones the split needs.
+    // Programs: all built-ins for new users; otherwise add the ones the split needs. "New"
+    // only when the server confirms there are none – an empty local cache (first start
+    // offline) must not add every built-in program a second time.
     var templates = ref.read(templateListProvider);
+    if (templates.isEmpty) {
+      templates = await repo.templatesFromServer() ?? templates;
+      if (!mounted) return;
+    }
     final added =
         templates.isEmpty
             ? defaultTemplates(repo.newId, de: de)
@@ -242,10 +263,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     }
 
     if (_generatePlan) {
-      repo.deletePlansFrom(ref.read(planListProvider), start);
-      final plan = PlanGenerator(l, profile, templates, repo.newId).generate(start: start, weeks: a.planWeeks);
-      repo.savePlans(plan);
-      repo.saveProfile(withPlanMeta(profile, start, a.planWeeks));
+      await PlanService.replacePlan(
+        repo: repo,
+        l: l,
+        profile: profile,
+        templates: templates,
+        existing: ref.read(planListProvider),
+        start: start,
+        weeks: a.planWeeks,
+      );
     }
     if (widget.edit && mounted) Navigator.pop(context);
   }
@@ -281,8 +307,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             SetupMode.plan => l.planSettings,
           }),
           actions: [
-            if (!widget.edit)
-              IconButton(tooltip: l.logout, onPressed: () => FirebaseAuth.instance.signOut(), icon: const Icon(Icons.logout)),
+            if (!widget.edit) IconButton(tooltip: l.logout, onPressed: () => signOutAndClear(context), icon: const Icon(Icons.logout)),
           ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(4),
@@ -691,7 +716,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     );
   }
 
-  String _dayName(int d) => DateFormat.E(context.localeName).format(startOfWeek(DateTime.now()).add(Duration(days: d - 1)));
+  String _dayName(int d) => DateFormat.E(context.localeName).format(addDays(startOfWeek(DateTime.now()), d - 1));
 
   /// Quick setup: training days + long day + time + units.
   ///
@@ -1382,8 +1407,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               final d = await showDatePicker(
                 context: context,
                 firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 730)),
-                initialDate: a.eventDate ?? DateTime.now().add(const Duration(days: 90)),
+                lastDate: DateTime.now().add(const Duration(days: 730)), // time span
+                initialDate: a.eventDate ?? DateTime.now().add(const Duration(days: 90)), // time span
               );
               if (d != null) _setA({'eventDate': d});
             },

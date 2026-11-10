@@ -16,6 +16,8 @@ import 'features/auth/login_page.dart';
 import 'features/calendar/auto_adjust.dart' show rootMessengerKey;
 import 'features/onboarding/onboarding_page.dart';
 import 'features/shell/home_shell.dart';
+import 'features/shell/account.dart';
+import 'features/shell/dst_repair_sync.dart';
 import 'features/shell/gcal_sync.dart';
 import 'features/shell/program_upgrade_sync.dart';
 import 'features/shell/relocalize_sync.dart';
@@ -30,7 +32,8 @@ Future<void> main() async {
   if (kDebugMode) HttpOverrides.global = _DevTlsInspectionOverrides();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Offline mode: everything is cached locally and synced when online.
-  FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: true, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED);
+  FirebaseFirestore.instance.settings = firestoreSettings;
+  WriteErrorNotifier.install();
   await initializeDateFormatting();
   final prefs = await SharedPreferences.getInstance();
   runApp(ProviderScope(overrides: [prefsProvider.overrideWithValue(prefs)], child: const StriveApp()));
@@ -48,6 +51,7 @@ class StriveApp extends ConsumerWidget {
     ref.watch(gcalAutoSyncProvider);
     ref.watch(relocalizeSyncProvider);
     ref.watch(programUpgradeSyncProvider);
+    ref.watch(dstRepairSyncProvider);
     return MaterialApp(
       title: 'Strive',
       scaffoldMessengerKey: rootMessengerKey,
@@ -65,6 +69,7 @@ class StriveApp extends ConsumerWidget {
       ],
       builder: (context, child) {
         Units.decimalComma = Localizations.localeOf(context).languageCode == 'de';
+        WriteErrorNotifier.text = context.l10n.writeFailed;
         return child!;
       },
       home: const AuthGate(),
@@ -81,16 +86,60 @@ class AuthGate extends ConsumerWidget {
     final auth = ref.watch(authProvider);
     return auth.when(
       loading: () => const _Splash(),
-      error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
+      error: (e, _) => _LoadError(error: e),
       data: (user) {
         if (user == null) return const LoginPage();
         final profile = ref.watch(profileProvider);
         return profile.when(
           loading: () => const _Splash(),
-          error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
+          error: (e, _) => _LoadError(error: e),
           data: (p) => (p == null || !p.onboarded) ? const OnboardingPage() : const HomeShell(),
         );
       },
+    );
+  }
+}
+
+/// Sign-in state or profile could not be loaded: a readable message with "Retry" and
+/// "Log out" instead of a raw exception (the technical error is only logged).
+class _LoadError extends ConsumerWidget {
+  const _LoadError({required this.error});
+  final Object error;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('AuthGate load error: $error');
+    final l = context.l10n;
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off_rounded, size: 48),
+                const SizedBox(height: 16),
+                Text(l.loadFailedTitle, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text(l.loadFailedBody, textAlign: TextAlign.center),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  key: const ValueKey('loadRetry'),
+                  onPressed: () {
+                    ref.invalidate(authProvider);
+                    ref.invalidate(profileProvider);
+                  },
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(l.retry),
+                ),
+                const SizedBox(height: 8),
+                TextButton(key: const ValueKey('loadLogout'), onPressed: () => signOutAndClear(context), child: Text(l.logout)),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

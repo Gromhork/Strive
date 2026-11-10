@@ -93,7 +93,7 @@ class ReadinessAdvisor {
         final day = dayOnly(p.date);
         // Return after illness: hard sessions of the next two days become easy.
         final next = plans.where((x) {
-          final d = dayOnly(x.date).difference(day).inDays;
+          final d = daysBetween(day, dayOnly(x.date));
           return x.id != p.id && x.status == 'planned' && d >= 1 && d <= 2 && x.sport.isCardio && isHardPlan(x) && x.intensity != 'race';
         });
         return ReadinessPlan(

@@ -11,6 +11,7 @@ import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
+import '../calendar/auto_adjust.dart' show undoAutoAdjust;
 import '../session/route_map.dart';
 import 'edit_session_page.dart';
 import '../session/gym_session_page.dart' show setLabel;
@@ -58,23 +59,28 @@ class SessionDetailPage extends ConsumerWidget {
               final messenger = ScaffoldMessenger.of(context);
               if (await confirm(context, l.deleteSession, ok: l.delete, danger: true)) {
                 final repo = ref.read(repoProvider)!;
-                repo.deleteSession(s.id);
+                final plans = ref.read(planListProvider);
+                repo.deleteSession(s);
                 // The planned workout it completed is open again (no dangling link).
-                final linked = ref.read(planListProvider).where((p) => p.sessionId == s.id).toList();
+                final linked = plans.where((p) => p.sessionId == s.id).toList();
                 for (final p in linked) {
                   repo.updatePlan(p.id, {'status': 'planned', 'sessionId': FieldValue.delete()});
                 }
+                // Automatic adjustments this session triggered no longer have a reason.
+                final adjusted = plans.where((p) => p.auto?.sessionId == s.id && !p.isDone).toList();
+                undoAutoAdjust(repo, adjusted);
                 if (context.mounted) Navigator.pop(context);
-                // Undo restores the session and its plan link.
+                // Undo restores the session, its plan link and the adjustments.
                 undoToast(
                   messenger,
-                  text: l.deleted,
+                  text: adjusted.isEmpty ? l.deleted : l.deletedAutoReverted(adjusted.length),
                   undoLabel: l.undo,
                   onUndo: () {
-                    repo.saveSession(s);
+                    repo.restoreSession(s);
                     for (final p in linked) {
                       repo.updatePlan(p.id, {'status': 'done', 'sessionId': s.id});
                     }
+                    if (adjusted.isNotEmpty) repo.savePlans(adjusted);
                   },
                 );
               }

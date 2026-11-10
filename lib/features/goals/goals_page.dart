@@ -7,13 +7,11 @@ import '../../core/event_sport_x.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
-import '../../data/default_programs.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/goal_model.dart';
 import '../../services/insights.dart';
-import '../../services/plan_gaps.dart';
-import '../../services/plan_generator.dart';
+import '../../services/plan_service.dart';
 import '../calendar/feasibility_card.dart';
 import '../calendar/replace_plan_dialog.dart';
 import '../../widgets/common.dart';
@@ -28,9 +26,7 @@ class GoalsPage extends ConsumerWidget {
     final l = context.l10n;
     final goals = ref.watch(goalsProvider).value ?? const [];
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l.goals),
-      ),
+      appBar: AppBar(title: Text(l.goals)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showGoalEditor(context, ref),
         icon: const Icon(Icons.add),
@@ -69,7 +65,7 @@ class GoalsPage extends ConsumerWidget {
                 (s) =>
                     (g.sport == null || s.sport == g.sport) &&
                     !s.start.isBefore(g.created) &&
-                    (g.deadline == null || s.start.isBefore(g.deadline!.add(const Duration(days: 1)))),
+                    (g.deadline == null || s.start.isBefore(addDays(g.deadline!, 1))),
               )
               .fold<double>(0, (a, s) => a + s.distanceM) /
           1000;
@@ -85,8 +81,8 @@ class GoalsPage extends ConsumerWidget {
       final p = g.target <= start ? 1.0 : ((cur - start) / (g.target - start)).clamp(0.0, 1.0);
       return (cur, p, 'e1RM ${u.weight(cur, digits: 0)} / ${u.weight(g.target, digits: 0)}');
     case GoalType.event:
-      final total = g.deadline == null ? 1 : g.deadline!.difference(g.created).inDays.clamp(1, 10000);
-      final left = g.deadline == null ? 0 : g.deadline!.difference(dayOnly(DateTime.now())).inDays;
+      final total = g.deadline == null ? 1 : daysBetween(g.created, g.deadline!).clamp(1, 10000);
+      final left = g.deadline == null ? 0 : daysBetween(dayOnly(DateTime.now()), g.deadline!);
       return (left.toDouble(), (1 - left / total).clamp(0.0, 1.0), left >= 0 ? l.daysLeft(left) : l.eventPassed);
   }
 }
@@ -112,8 +108,8 @@ class GoalTile extends ConsumerWidget {
     // Dynamic adjustment hint: compare progress with elapsed time.
     String? pace;
     if (!compact && g.deadline != null && g.type != GoalType.event && g.type != GoalType.frequency) {
-      final total = g.deadline!.difference(g.created).inDays.clamp(1, 10000);
-      final elapsed = DateTime.now().difference(g.created).inDays.clamp(0, total);
+      final total = daysBetween(g.created, g.deadline!).clamp(1, 10000);
+      final elapsed = DateTime.now().difference(g.created).inDays.clamp(0, total); // time span
       final expected = elapsed / total;
       pace = progress >= expected - 0.05 ? l.onTrack : l.behindSchedule;
     }
@@ -277,27 +273,32 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   /// Rebuilds the plan up to race day: completed workouts stay, upcoming planned ones are replaced.
   void _alignPlan(UserProfile profile, DateTime start) {
     final l = context.l10n;
-    final repo = ref.read(repoProvider)!;
-
-    var templates = ref.read(templateListProvider);
-    final added = missingBuiltins(
-      templates,
-      repo.newId,
-      de: l.localeName.startsWith('de'),
-      only: PlanGenerator.gymKeysFor(profile).toSet(),
+    PlanService.replacePlan(
+      repo: ref.read(repoProvider)!,
+      l: l,
+      profile: profile,
+      templates: ref.read(templateListProvider),
+      existing: ref.read(planListProvider),
+      start: start,
+      weeks: profile.athlete.planWeeks,
     );
-    if (added.isNotEmpty) {
-      repo.saveTemplates(added);
-      templates = [...templates, ...added];
-    }
-    repo.deletePlansFrom(ref.read(planListProvider), start);
-    repo.savePlans(PlanGenerator(l, profile, templates, repo.newId).generate(start: start, weeks: profile.athlete.planWeeks));
-    // Plan start / length, so "Review plan" can rebuild it (gap filling).
-    repo.saveProfile(withPlanMeta(profile, start, profile.athlete.planWeeks));
     toast(context, l.planAligned(GoalModel.weeksUntil(profile.athlete.eventDate!, start)));
   }
 
+  /// Set while saving: a double tap must not save the goal / align the plan twice.
+  bool _saving = false;
+
   Future<void> _save() async {
+    if (_saving) return;
+    _saving = true;
+    try {
+      await _doSave();
+    } finally {
+      _saving = false;
+    }
+  }
+
+  Future<void> _doSave() async {
     // Aligning replaces the upcoming plan – asked first, cancelling saves nothing.
     final aligned = _alignedProfile();
     DateTime? planStart;
@@ -462,8 +463,8 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                     final d = await showDatePicker(
                       context: context,
                       firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 1095)),
-                      initialDate: _deadline ?? DateTime.now().add(const Duration(days: 60)),
+                      lastDate: DateTime.now().add(const Duration(days: 1095)), // time span
+                      initialDate: _deadline ?? DateTime.now().add(const Duration(days: 60)), // time span
                     );
                     if (d != null) setState(() => _deadline = d);
                   },

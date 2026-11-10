@@ -4,12 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers.dart';
 import '../../core/sport.dart';
 import '../../data/models.dart';
+import '../../data/repository.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../services/health_service.dart';
 import '../../services/plan_match.dart';
 import '../calendar/auto_adjust.dart';
 
-final healthServiceProvider = Provider<HealthService>((ref) => HealthService(ref.watch(prefsProvider)));
+final healthServiceProvider = Provider<HealthService>((ref) {
+  final uid = ref.watch(authProvider.select((a) => a.value?.uid));
+  return HealthService(ref.watch(prefsProvider), uid: uid)..migrateLegacyKeys();
+});
 
 /// Bumped after connect/disconnect – and when the app comes back to the foreground
 /// (at most every 15 min) – so vitals and watch workouts refresh while the app stays open.
@@ -59,25 +63,42 @@ final healthSyncProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(repoProvider);
   final hs = ref.watch(healthServiceProvider);
   if (repo == null || !hs.connected) return 0;
+  // One import at a time: a tick while an import runs waits for it and starts from its result
+  // (two parallel imports would both see the workout as new).
+  final previous = _inFlight;
+  if (previous != null) await previous.catchError((_) => 0);
+  final run = _import(ref, repo, hs);
+  _inFlight = run;
+  try {
+    return await run;
+  } finally {
+    if (identical(_inFlight, run)) _inFlight = null;
+  }
+});
+
+Future<int>? _inFlight;
+
+Future<int> _import(Ref ref, Repository repo, HealthService hs) async {
   // read, not watch: saving the imported sessions must not trigger another import.
   final sessions = await ref.read(sessionsProvider.future);
   final plans = await ref.read(plansProvider.future);
   final profile = ref.read(profileOrDefaultProvider);
   final code = ref.read(settingsProvider).locale ?? WidgetsBinding.instance.platformDispatcher.locale.languageCode;
   final l = lookupAppLocalizations(Locale(code == 'de' ? 'de' : 'en'));
-  final known = sessions.map((s) => s.externalId).whereType<String>().toSet();
-  final since = hs.lastSync?.subtract(const Duration(days: 2)) ?? DateTime.now().subtract(const Duration(days: 30));
+  // Already imported, and imported workouts the user deleted (never brought back).
+  final known = {...sessions.map((s) => s.externalId).whereType<String>(), ...await repo.deletedImports().catchError((_) => <String>{})};
+  final since = hs.lastSync?.subtract(const Duration(days: 2)) ?? DateTime.now().subtract(const Duration(days: 30)); // time span
   try {
-    final list = await hs.importWorkouts(since: since, knownIds: known, newId: repo.newId, titleFor: (s) => s.label(l));
+    final list = await hs.importWorkouts(since: since, knownIds: known, titleFor: (s) => s.label(l));
     final merged = <String, Map<String, dynamic>>{};
     final planUpdates = <String, Map<String, dynamic>>{};
     var added = 0;
     final open = [...plans];
     // Newly linked sessions of the last days → small automatic plan adjustments.
     final linkedNow = <(Session, PlannedWorkout)>[];
-    final recent = DateTime.now().subtract(const Duration(days: 3));
+    final recent = DateTime.now().subtract(const Duration(days: 3)); // time span
     // Watch workouts imported before plans were linked on import complete their plan now.
-    final cutoff = DateTime.now().subtract(const Duration(days: 60));
+    final cutoff = DateTime.now().subtract(const Duration(days: 60)); // time span
     // Their load also uses the heart-rate RPE estimate instead of the flat default.
     for (final old in sessions.where((s) => s.externalId != null && s.source != null && s.start.isAfter(cutoff))) {
       final fix = <String, dynamic>{};
@@ -138,4 +159,4 @@ final healthSyncProvider = FutureProvider<int>((ref) async {
     debugPrint('health sync failed: $e');
     return 0;
   }
-});
+}

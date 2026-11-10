@@ -210,7 +210,7 @@ E1rmTrend e1rmTrend(List<ProgressEntry> hist) {
   final newest = hist.first.date;
   final pts = [
     for (final h in hist.take(6))
-      if (newest.difference(h.date).inDays <= 56) (h.date.difference(newest).inHours / 24, sessionPerformance(h)),
+      if (daysBetween(h.date, newest) <= 56) (h.date.difference(newest).inHours / 24, sessionPerformance(h)),
   ];
   if (pts.length < 3) return E1rmTrend.unknown;
   final span = pts.map((p) => p.$1).reduce(max) - pts.map((p) => p.$1).reduce(min);
@@ -329,7 +329,7 @@ SmartProgression? smartProgression(
   }
 
   // 2. Performance dropped in the last two sessions.
-  if (hist.length >= 3 && hist[0].date.difference(hist[2].date).inDays <= 42) {
+  if (hist.length >= 3 && daysBetween(hist[2].date, hist[0].date) <= 42) {
     final ref = hist[2];
     final d0 = _shortfall(hist[0], ref), d1 = _shortfall(hist[1], ref);
     if (d0 != null && d1 != null) {
@@ -434,10 +434,10 @@ bool _stalled(List<ProgressEntry> hist, int top) {
   final newest = hist.first;
   final run = <ProgressEntry>[];
   for (final e in hist) {
-    if ((e.topWeight - newest.topWeight).abs() > 0.01 || newest.date.difference(e.date).inDays > 42) break;
+    if ((e.topWeight - newest.topWeight).abs() > 0.01 || daysBetween(e.date, newest.date) > 42) break;
     run.add(e);
   }
-  if (run.length < 3 || newest.date.difference(run.last.date).inDays < 14) return false;
+  if (run.length < 3 || daysBetween(run.last.date, newest.date) < 14) return false;
   if (run.any((e) => e.sets.every((s) => s.reps >= top))) return false;
   final targeted = run.every((e) => e.sets.any((s) => s.target != null));
   if (targeted && !run.any((e) => e.missedTarget)) return false;
