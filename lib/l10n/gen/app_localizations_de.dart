@@ -3965,4 +3965,38 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get raceGoogleSuggestions => 'Google-Suchen';
+
+  @override
+  String get recalGapsTitle => 'Lücken im Plan';
+
+  @override
+  String recalWhyGaps(int n) {
+    return 'Im Plan fehlen Einheiten ($n) – Vorschläge zum Auffüllen siehe unten.';
+  }
+
+  @override
+  String get recalWhyGapsOmitted => 'Einige fehlende Einheiten werden nicht aufgefüllt: Sie lägen neben einem Wettkampf oder die Woche hat ihren geplanten Umfang schon.';
+
+  @override
+  String get recalAdded => 'Neu';
+
+  @override
+  String recalGapMissing(String day) {
+    return 'Am $day fehlt die geplante Einheit – wieder eingefügt.';
+  }
+
+  @override
+  String get recalGapEmptyWeek => 'Diese Woche ist leer – die geplante Einheit wird wieder eingefügt.';
+
+  @override
+  String get recalGapEnded => 'Der Plan endete vorher – hier fortgesetzt.';
+
+  @override
+  String get recalGapDowngraded => 'Locker statt hart: Der Nachbartag ist schon hart.';
+
+  @override
+  String get recalGapEased => 'Locker, weil der Plan gerade entlastet.';
+
+  @override
+  String get recalGapShortened => 'Kürzer, damit Woche und langer Lauf im sicheren Rahmen bleiben.';
 }

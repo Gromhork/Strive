@@ -9,6 +9,7 @@ import '../../core/sport.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/coach_service.dart';
+import '../../services/plan_gaps.dart';
 import '../../services/plan_generator.dart';
 import '../../widgets/common.dart';
 import '../session/start_helpers.dart';
@@ -402,6 +403,8 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
       }
       if (_replace) repo.deletePlansFrom(ref.read(planListProvider), start);
       repo.savePlans(plan);
+      // Plan start / length: lets the recalibration rebuild the plan to find gaps (0 = AI plan).
+      if (ref.read(profileProvider).value != null) repo.saveProfile(withPlanMeta(profile, start, _ai ? 0 : _weeks));
       if (mounted) {
         Navigator.pop(context);
         toast(context, l.planCreated(plan.length));

@@ -913,6 +913,44 @@ back by ≤ 10 % a week (R1). Volume changes scale continuous parts (steady runs
 interval session keeps its intensity (Bosquet 2007 [18]: cut volume, keep intensity). Every changed workout gets the note
 "Adjusted to your recent training" (once, translatable).
 
+### 11.1 Gaps in the plan (deleted sessions, empty weeks, plan ended) [P]
+
+The same assistant also proposes sessions the plan expects but the calendar no longer has (`PlanGaps`,
+lib/services/plan_gaps.dart). Refills are only a proposal: a section "Gaps in the plan" in the preview lists each one
+(date, title, time / distance, why) with a tick box (default on); nothing is written until "Apply".
+
+**Which week the plan expects.** The plan is rebuilt with the generator from its start: plan start and length are stored on
+the profile (`athlete.planStart` / `planLength`) whenever a rule-based plan is generated (`planLength` 0 = AI plan → no
+gap detection). For older plans the start is reconstructed from the generated workouts: the first workout of the latest
+block (no hole > 3 weeks) or a point where the phases start over, accepted when the rebuilt plan reproduces ≥ 75 % of the
+stored phases. The rebuild uses the current profile, so pace targets are current. A plan whose last generated workout is
+> 14 days ago is over – nothing is filled.
+
+**What is a gap.** Horizon: from tomorrow (today is the athlete's call, past days are never refilled) to the end of the 4th
+week after the current one, never past the event day. Per week and sport the rebuilt sessions are counted against the
+calendar's workouts of **every** status: a skipped session is a decision, not a gap; a session moved to another day of the
+week still counts. If the calendar has fewer, the missing ones are the rebuilt sessions on a day without a workout of that
+sport – preferring the roles the week lacks (long / quality / easy). Rest days, recovery weeks with fewer sessions, the race
+week after the race and the days before a mid-week plan start have no rebuilt session, so they are never "missing". Weeks
+that only hold the athlete's own (non-generated) workouts are left alone.
+
+**Plan ended.** A plan without a race that ends before the horizon (no event) or before the event is continued with the
+generator from the Monday after its last week (blocks of the athlete's plan length; with an event the generator builds the
+phases and taper towards it). The continuation starts at the plan's last loading volume (largest loading week of its last 4
+weeks, longest run) instead of the setup values – no drop back, no jump.
+
+**Adapted like the rest of the plan.** Refills go through the same rules as the planned workouts of the same days: load
+factors of days 1–7 / 8–14 (later refills keep the plan's volume), R4 return, quality → easy under fatigue / re-entry, the new
+VDOT / FTP / CSS targets and the **R1 cap** for long sessions (every planned long session before it counts as done). Spacing:
+a refilled hard session (key, tempo, intervals, long) next to a hard day becomes an easy session (~80 % of its time); next
+to a race it is left out. **Volume:** a refilled week never exceeds the rebuilt week (minutes per sport, minus the
+calendar's not-skipped workouts); a refill that does not fit is shortened, below 20 min left out ("not refilled" reason).
+Applying writes the refills as new planned workouts with the rebuilt phase, so a second run proposes nothing (idempotent).
+
+**Limits.** Matching is by count per sport and week: a session moved into another week leaves a "gap" in its own week (shown
+as a proposal, can be unticked); a session deleted on a day that now holds a moved workout of that sport is not detected.
+After a profile change (training days, focus) without a new plan, the rebuilt week follows the new profile.
+
 ---
 
 ## 12. Session feedback and progressive adaptation of endurance plans (run, bike, swim) [M/P]

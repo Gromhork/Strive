@@ -3965,4 +3965,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get raceGoogleSuggestions => 'Google searches';
+
+  @override
+  String get recalGapsTitle => 'Gaps in the plan';
+
+  @override
+  String recalWhyGaps(int n) {
+    return 'Sessions the plan expects are missing ($n) – refills are proposed below.';
+  }
+
+  @override
+  String get recalWhyGapsOmitted => 'Some missing sessions are not refilled: they would sit next to a race or the week already has its planned volume.';
+
+  @override
+  String get recalAdded => 'Added';
+
+  @override
+  String recalGapMissing(String day) {
+    return 'The planned session on $day is missing – added back.';
+  }
+
+  @override
+  String get recalGapEmptyWeek => 'This week has no sessions – the planned one is added back.';
+
+  @override
+  String get recalGapEnded => 'The plan ended earlier – continued here.';
+
+  @override
+  String get recalGapDowngraded => 'Easy instead of hard: the day next to it is already hard.';
+
+  @override
+  String get recalGapEased => 'Easy, because the plan is lighter right now.';
+
+  @override
+  String get recalGapShortened => 'Shorter, so the week and the long run stay within safe limits.';
 }
