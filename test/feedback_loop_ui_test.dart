@@ -31,13 +31,13 @@ class _FakeRepo extends Repository {
   final savedSessions = <Session>[];
   final log = <PlanLogEntry>[];
   @override
-  void updateMany({
+  Future<void> updateMany({
     Map<String, Map<String, dynamic>> plans = const {},
     Map<String, Map<String, dynamic>> templates = const {},
     Map<String, Map<String, dynamic>> sessions = const {},
-  }) => updates.addAll(plans);
+  }) async => updates.addAll(plans);
   @override
-  void savePlans(List<PlannedWorkout> list) => saved.addAll(list);
+  Future<void> savePlans(List<PlannedWorkout> list) async => saved.addAll(list);
   @override
   void deletePlan(String id) => deleted.add(id);
   @override

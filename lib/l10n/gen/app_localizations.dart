@@ -9088,6 +9088,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your workout keeps running in the background.'**
   String get workoutRunsInBackground;
+
+  /// No description provided for @deletedAutoReverted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted – {count} automatic plan adjustments undone'**
+  String deletedAutoReverted(int count);
+
+  /// No description provided for @writeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'A change could not be saved. Please check your connection and try again.'**
+  String get writeFailed;
+
+  /// No description provided for @loadFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data could not be loaded'**
+  String get loadFailedTitle;
+
+  /// No description provided for @loadFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your internet connection and try again. If it keeps happening, log out and sign in again.'**
+  String get loadFailedBody;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently deletes your account and all your data'**
+  String get deleteAccountSub;
+
+  /// No description provided for @deleteAccountConfirm1.
+  ///
+  /// In en, this message translates to:
+  /// **'All your workouts, plans, programs, goals and body data will be deleted permanently – on all devices. This cannot be undone.'**
+  String get deleteAccountConfirm1;
+
+  /// No description provided for @deleteAccountConfirm2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Really delete?'**
+  String get deleteAccountConfirm2Title;
+
+  /// No description provided for @deleteAccountConfirm2.
+  ///
+  /// In en, this message translates to:
+  /// **'Type DELETE to confirm.'**
+  String get deleteAccountConfirm2;
+
+  /// No description provided for @deleteAccountWord.
+  ///
+  /// In en, this message translates to:
+  /// **'DELETE'**
+  String get deleteAccountWord;
+
+  /// No description provided for @deleteAccountRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting your data…'**
+  String get deleteAccountRunning;
+
+  /// No description provided for @deleteAccountDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account and all data have been deleted.'**
+  String get deleteAccountDone;
+
+  /// No description provided for @deleteAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting failed – please try again when you are online.'**
+  String get deleteAccountFailed;
+
+  /// No description provided for @reauthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm it’s you'**
+  String get reauthTitle;
+
+  /// No description provided for @reauthBody.
+  ///
+  /// In en, this message translates to:
+  /// **'For your security, please sign in again before deleting your account.'**
+  String get reauthBody;
+
+  /// No description provided for @reauthGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get reauthGoogle;
+
+  /// No description provided for @reauthConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get reauthConfirm;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -4924,4 +4924,57 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get workoutRunsInBackground => 'Deine Einheit läuft im Hintergrund weiter.';
+
+  @override
+  String deletedAutoReverted(int count) {
+    return 'Gelöscht – $count automatische Plananpassungen zurückgenommen';
+  }
+
+  @override
+  String get writeFailed => 'Eine Änderung konnte nicht gespeichert werden. Bitte prüfe die Verbindung und versuche es erneut.';
+
+  @override
+  String get loadFailedTitle => 'Deine Daten konnten nicht geladen werden';
+
+  @override
+  String get loadFailedBody => 'Bitte prüfe deine Internetverbindung und versuche es erneut. Wenn es weiter passiert, melde dich ab und wieder an.';
+
+  @override
+  String get deleteAccount => 'Konto löschen';
+
+  @override
+  String get deleteAccountSub => 'Löscht dein Konto und alle deine Daten endgültig';
+
+  @override
+  String get deleteAccountConfirm1 => 'Alle deine Einheiten, Pläne, Programme, Ziele und Körperdaten werden endgültig gelöscht – auf allen Geräten. Das kann nicht rückgängig gemacht werden.';
+
+  @override
+  String get deleteAccountConfirm2Title => 'Wirklich löschen?';
+
+  @override
+  String get deleteAccountConfirm2 => 'Gib LÖSCHEN ein, um zu bestätigen.';
+
+  @override
+  String get deleteAccountWord => 'LÖSCHEN';
+
+  @override
+  String get deleteAccountRunning => 'Deine Daten werden gelöscht…';
+
+  @override
+  String get deleteAccountDone => 'Dein Konto und alle Daten wurden gelöscht.';
+
+  @override
+  String get deleteAccountFailed => 'Löschen fehlgeschlagen – bitte versuche es erneut, wenn du online bist.';
+
+  @override
+  String get reauthTitle => 'Bestätige, dass du es bist';
+
+  @override
+  String get reauthBody => 'Zu deiner Sicherheit melde dich bitte noch einmal an, bevor du dein Konto löschst.';
+
+  @override
+  String get reauthGoogle => 'Weiter mit Google';
+
+  @override
+  String get reauthConfirm => 'Bestätigen';
 }

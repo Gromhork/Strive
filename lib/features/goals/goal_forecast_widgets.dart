@@ -13,14 +13,16 @@ import '../../services/progression_check.dart';
 import '../calendar/feasibility_card.dart' show eventDistanceName;
 
 /// Goal forecast of the signed-in athlete (null without an upcoming event).
-final goalForecastProvider = Provider<GoalForecast?>(
-  (ref) => GoalForecast.of(
+final goalForecastProvider = Provider<GoalForecast?>((ref) {
+  // Recomputed at midnight / on resume (days left, missed workouts).
+  ref.watch(todayProvider);
+  return GoalForecast.of(
     ref.watch(profileOrDefaultProvider),
     plans: ref.watch(planListProvider),
     sessions: ref.watch(sessionListProvider),
     now: DateTime.now(),
-  ),
-);
+  );
+});
 
 /// Sets a new target time: profile + the race-pace work of the upcoming peak weeks and the race.
 void applyTargetTime(BuildContext context, WidgetRef ref, int sec) {

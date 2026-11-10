@@ -10,8 +10,7 @@ import '../../core/sport.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/goal_model.dart';
-import '../../services/plan_gaps.dart';
-import '../../services/plan_generator.dart';
+import '../../services/plan_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
 import '../session/start_helpers.dart';
@@ -19,7 +18,6 @@ import '../session/step_editor.dart';
 import '../../services/zones.dart';
 import '../../widgets/segments.dart';
 import '../../core/theme.dart';
-import '../../data/default_programs.dart';
 import '../onboarding/onboarding_page.dart';
 import 'feasibility_card.dart';
 import 'replace_plan_dialog.dart';
@@ -248,8 +246,8 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
                 final d = await showDatePicker(
                   context: context,
                   initialDate: _date,
-                  firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                  lastDate: DateTime.now().add(const Duration(days: 730)),
+                  firstDate: DateTime.now().subtract(const Duration(days: 365)), // time span
+                  lastDate: DateTime.now().add(const Duration(days: 730)), // time span
                 );
                 if (d != null) setState(() => _date = d);
               },
@@ -413,31 +411,31 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
   }
 
   Future<void> _run() async {
+    // Busy before the dialog: a double tap must not open two dialogs / generate twice.
+    if (_busy) return;
+    setState(() => _busy = true);
     final l = context.l10n;
     final repo = ref.read(repoProvider)!;
     final profile = ref.read(profileOrDefaultProvider);
-    final templates = ref.read(templateListProvider);
     final start = await confirmReplacePlan(context, ref.read(planListProvider));
-    if (start == null || !mounted) return;
-    setState(() => _busy = true);
-    // Make sure the programs of the chosen split exist (built-ins added on demand).
-    final added = missingBuiltins(
-      templates,
-      repo.newId,
-      de: l.localeName.startsWith('de'),
-      only: PlanGenerator.gymKeysFor(profile).toSet(),
-    );
-    if (added.isNotEmpty) repo.saveTemplates(added);
-    final plan = PlanGenerator(l, profile, [...templates, ...added], repo.newId).generate(start: start, weeks: _weeks);
-    repo.deletePlansFrom(ref.read(planListProvider), start);
-    repo.savePlans(plan);
-    // Plan start / length: lets the plan review rebuild the plan to find gaps.
-    if (ref.read(profileProvider).value != null) {
-      repo.saveProfile(withPlanMeta(profile.copyWith(athlete: profile.athlete.merge({'planWeeks': _weeks})), start, _weeks));
+    if (!mounted) return;
+    if (start == null) {
+      setState(() => _busy = false);
+      return;
     }
+    final count = await PlanService.replacePlan(
+      repo: repo,
+      l: l,
+      profile: profile.copyWith(athlete: profile.athlete.merge({'planWeeks': _weeks})),
+      templates: ref.read(templateListProvider),
+      existing: ref.read(planListProvider),
+      start: start,
+      weeks: _weeks,
+      saveMeta: ref.read(profileProvider).value != null,
+    );
     if (mounted) {
       Navigator.pop(context);
-      toast(context, l.planCreated(plan.length));
+      if (count != null) toast(context, l.planCreated(count));
     }
   }
 

@@ -24,6 +24,22 @@ final programUpgradeSyncProvider = Provider<void>((ref) {
       if (upgradedBuiltinExercises(t, goal) case final ex?) t.id: {'exercises': ex.map((e) => e.toMap()).toList()},
   };
   debugPrint('program upgrade ($goal): ${updates.length} programs');
-  if (updates.isNotEmpty) repo.updateMany(templates: updates);
-  prefs.setString(key, goal);
+  if (updates.isEmpty) {
+    prefs.setString(key, goal);
+    return;
+  }
+  // Done only once the server accepted the change (idempotent: upgraded programs produce no
+  // updates on the next run).
+  final run = '$key/$goal';
+  if (!_running.add(run)) return;
+  repo
+      .updateMany(templates: updates)
+      .then((_) => prefs.setString(key, goal))
+      .catchError((Object e) {
+        debugPrint('program upgrade failed: $e');
+        return false;
+      })
+      .whenComplete(() => _running.remove(run));
 });
+
+final _running = <String>{};

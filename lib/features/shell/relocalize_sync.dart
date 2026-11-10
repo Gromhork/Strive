@@ -37,6 +37,22 @@ final relocalizeSyncProvider = Provider<void>((ref) {
       if (r.text(s.title) case final t when t != s.title) s.id: {'title': t},
   };
   debugPrint('relocalize → $lang: ${planUpdates.length} plans, ${templateUpdates.length} programs, ${sessionUpdates.length} sessions');
-  repo.updateMany(plans: planUpdates, templates: templateUpdates, sessions: sessionUpdates);
-  prefs.setString(key, lang);
+  if (planUpdates.isEmpty && templateUpdates.isEmpty && sessionUpdates.isEmpty) {
+    prefs.setString(key, lang);
+    return;
+  }
+  // Done only once the server accepted the change (a failed migration runs again; it is
+  // idempotent – translated texts produce no updates).
+  final run = '$key/$lang';
+  if (!_running.add(run)) return;
+  repo
+      .updateMany(plans: planUpdates, templates: templateUpdates, sessions: sessionUpdates)
+      .then((_) => prefs.setString(key, lang))
+      .catchError((Object e) {
+        debugPrint('relocalize failed: $e');
+        return false;
+      })
+      .whenComplete(() => _running.remove(run));
 });
+
+final _running = <String>{};

@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/format.dart';
 import 'core/sport.dart';
 import 'data/exercise_db.dart';
 import 'data/models.dart';
@@ -217,3 +220,48 @@ final exerciseRecordsProvider = Provider<Map<String, ExerciseRecord>>((ref) => e
 final planSessionsProvider = Provider<Map<String, Session>>(
   (ref) => linkPlanSessions(ref.watch(planListProvider), ref.watch(sessionListProvider)),
 );
+
+// ───────────────────────────── Today ─────────────────────────────
+
+/// Today's date (midnight). Changes at midnight and when the app comes back to the
+/// foreground on a new day, so "today", "missed" and the goal forecast never go stale while
+/// the app stays open overnight. Watch it in widgets / providers that depend on the day.
+class Today extends Notifier<DateTime> {
+  Timer? _timer;
+
+  @override
+  DateTime build() {
+    AppLifecycleListener? listener;
+    try {
+      listener = AppLifecycleListener(onResume: refresh);
+    } catch (_) {
+      // No widgets binding (pure unit tests): midnight timer only.
+    }
+    ref.onDispose(() {
+      _timer?.cancel();
+      listener?.dispose();
+    });
+    _schedule();
+    return dayOnly(DateTime.now());
+  }
+
+  void _schedule() {
+    _timer?.cancel();
+    // No midnight timer under `flutter test` (a pending timer fails widget tests; tests that
+    // need another day override this provider).
+    if (_underTest) return;
+    final now = DateTime.now();
+    _timer = Timer(addDays(now, 1).difference(now) + const Duration(seconds: 1), refresh);
+  }
+
+  /// Re-reads the clock (midnight timer, app resumed).
+  void refresh() {
+    final d = dayOnly(DateTime.now());
+    if (d != state) state = d;
+    _schedule();
+  }
+}
+
+bool get _underTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
+final todayProvider = NotifierProvider<Today, DateTime>(Today.new);

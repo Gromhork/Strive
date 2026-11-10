@@ -27,9 +27,10 @@ class _WeekPageState extends ConsumerState<WeekPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(todayProvider); // "today" changes at midnight
     final l = context.l10n;
     final u = ref.watch(profileOrDefaultProvider).units;
-    final end = _week.add(const Duration(days: 7));
+    final end = addDays(_week, 7);
     bool inWeek(DateTime d) => !d.isBefore(_week) && d.isBefore(end);
     final sessions = ref.watch(sessionListProvider).where((s) => inWeek(s.start)).toList()..sort((a, b) => a.start.compareTo(b.start));
     final plans = ref.watch(planListProvider).where((p) => inWeek(p.date)).toList();
@@ -49,20 +50,17 @@ class _WeekPageState extends ConsumerState<WeekPage> {
         children: [
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: () => setState(() => _week = _week.subtract(const Duration(days: 7))),
-              ),
+              IconButton(icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _week = addDays(_week, -7))),
               Expanded(
                 child: Text(
-                  '${df.format(_week)} – ${df.format(end.subtract(const Duration(days: 1)))}',
+                  '${df.format(_week)} – ${df.format(addDays(end, -1))}',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.chevron_right),
-                onPressed: thisWeek ? null : () => setState(() => _week = _week.add(const Duration(days: 7))),
+                onPressed: thisWeek ? null : () => setState(() => _week = addDays(_week, 7)),
               ),
             ],
           ),
@@ -102,10 +100,10 @@ class _WeekPageState extends ConsumerState<WeekPage> {
               children: [
                 for (var i = 0; i < 7; i++)
                   _DayRow(
-                    day: _week.add(Duration(days: i)),
-                    plans: plans.where((p) => sameDay(p.date, _week.add(Duration(days: i)))).toList(),
+                    day: addDays(_week, i),
+                    plans: plans.where((p) => sameDay(p.date, addDays(_week, i))).toList(),
                     linked: linked,
-                    sessions: sessions.where((s) => sameDay(s.start, _week.add(Duration(days: i))) && s.planId == null).toList(),
+                    sessions: sessions.where((s) => sameDay(s.start, addDays(_week, i)) && s.planId == null).toList(),
                     units: u,
                   ),
               ],

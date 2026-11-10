@@ -1498,5 +1498,22 @@
   "restoreSummaryOpen": "Zusammenfassung öffnen",
   "restoreToday": "heute",
   "restoreYesterday": "gestern",
-  "workoutRunsInBackground": "Deine Einheit läuft im Hintergrund weiter."
+  "workoutRunsInBackground": "Deine Einheit läuft im Hintergrund weiter.",
+  "deletedAutoReverted": "Gelöscht – {count} automatische Plananpassungen zurückgenommen",
+  "writeFailed": "Eine Änderung konnte nicht gespeichert werden. Bitte prüfe die Verbindung und versuche es erneut.",
+  "loadFailedTitle": "Deine Daten konnten nicht geladen werden",
+  "loadFailedBody": "Bitte prüfe deine Internetverbindung und versuche es erneut. Wenn es weiter passiert, melde dich ab und wieder an.",
+  "deleteAccount": "Konto löschen",
+  "deleteAccountSub": "Löscht dein Konto und alle deine Daten endgültig",
+  "deleteAccountConfirm1": "Alle deine Einheiten, Pläne, Programme, Ziele und Körperdaten werden endgültig gelöscht – auf allen Geräten. Das kann nicht rückgängig gemacht werden.",
+  "deleteAccountConfirm2Title": "Wirklich löschen?",
+  "deleteAccountConfirm2": "Gib LÖSCHEN ein, um zu bestätigen.",
+  "deleteAccountWord": "LÖSCHEN",
+  "deleteAccountRunning": "Deine Daten werden gelöscht…",
+  "deleteAccountDone": "Dein Konto und alle Daten wurden gelöscht.",
+  "deleteAccountFailed": "Löschen fehlgeschlagen – bitte versuche es erneut, wenn du online bist.",
+  "reauthTitle": "Bestätige, dass du es bist",
+  "reauthBody": "Zu deiner Sicherheit melde dich bitte noch einmal an, bevor du dein Konto löschst.",
+  "reauthGoogle": "Weiter mit Google",
+  "reauthConfirm": "Bestätigen"
 }

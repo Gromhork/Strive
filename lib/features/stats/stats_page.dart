@@ -58,9 +58,9 @@ class _PerformanceState extends ConsumerState<_Performance> {
     final u = ref.watch(profileOrDefaultProvider).units;
     final now = DateTime.now();
     final from = switch (_range) {
-      0 => now.subtract(const Duration(days: 28)),
-      1 => now.subtract(const Duration(days: 91)),
-      2 => now.subtract(const Duration(days: 365)),
+      0 => now.subtract(const Duration(days: 28)), // time span
+      1 => now.subtract(const Duration(days: 91)), // time span
+      2 => now.subtract(const Duration(days: 365)), // time span
       _ => DateTime(2000),
     };
     final s = all.where((x) => x.start.isAfter(from)).toList();
@@ -181,10 +181,10 @@ class _WeeklyBars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const weeks = 12;
-    final start = startOfWeek(DateTime.now()).subtract(const Duration(days: 7 * (weeks - 1)));
+    final start = addDays(startOfWeek(DateTime.now()), -(7 * (weeks - 1)));
     final data = List.generate(weeks, (_) => {for (final s in Sport.values) s: 0.0});
     for (final s in sessions) {
-      final i = startOfWeek(s.start).difference(start).inDays ~/ 7;
+      final i = daysBetween(start, startOfWeek(s.start)) ~/ 7;
       if (i >= 0 && i < weeks) data[i][s.sport] = data[i][s.sport]! + s.minutes;
     }
     final maxY = data.map((m) => m.values.fold(0.0, (a, b) => a + b)).fold(0.0, max);
@@ -206,7 +206,7 @@ class _WeeklyBars extends StatelessWidget {
                       v.toInt() % 3 != 2
                           ? const SizedBox.shrink()
                           : Text(
-                            DateFormat.Md(context.localeName).format(start.add(Duration(days: 7 * v.toInt()))),
+                            DateFormat.Md(context.localeName).format(addDays(start, 7 * v.toInt())),
                             style: const TextStyle(fontSize: 9),
                           ),
             ),
@@ -247,10 +247,10 @@ class _WeeklyDistance extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const weeks = 12;
-    final start = startOfWeek(DateTime.now()).subtract(const Duration(days: 7 * (weeks - 1)));
+    final start = addDays(startOfWeek(DateTime.now()), -(7 * (weeks - 1)));
     final data = List.filled(weeks, 0.0);
     for (final s in sessions.where((s) => s.sport == sport)) {
-      final i = startOfWeek(s.start).difference(start).inDays ~/ 7;
+      final i = daysBetween(start, startOfWeek(s.start)) ~/ 7;
       if (i >= 0 && i < weeks) data[i] += units.distOut(s.distanceM);
     }
     return BarChart(

@@ -191,7 +191,7 @@ class TrainingHeatmap extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final today = dayOnly(DateTime.now());
-    final firstMonday = startOfWeek(today).subtract(Duration(days: 7 * (weeks - 1)));
+    final firstMonday = addDays(startOfWeek(today), -(7 * (weeks - 1)));
     final lang = Localizations.localeOf(context).languageCode;
     final dayLabels = lang == 'de' ? ['Mo', '', 'Mi', '', 'Fr', '', 'So'] : ['Mo', '', 'We', '', 'Fr', '', 'Su'];
     return LayoutBuilder(
@@ -216,7 +216,7 @@ class TrainingHeatmap extends StatelessWidget {
                     for (var d = 0; d < 7; d++)
                       Builder(
                         builder: (_) {
-                          final day = firstMonday.add(Duration(days: w * 7 + d));
+                          final day = addDays(firstMonday, w * 7 + d);
                           final m = minutesByDay[day] ?? 0;
                           final future = day.isAfter(today);
                           final level = m == 0 ? 0.0 : (m < 30 ? 0.35 : (m < 60 ? 0.6 : (m < 90 ? 0.8 : 1.0)));
