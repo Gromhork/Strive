@@ -321,7 +321,7 @@ class PlanGenerator {
     // loading weeks before the peak (≥ 2 %); goal-directed builds keep their rate.
     var runGrowthEff = runGrowth;
     final start0 = _runStartKm(runPerWeek);
-    if (weeksToEvent != null && !goalBehind && prePlanWeeks == 0 && start0 > 0 && runCeiling > start0) {
+    if (weeksToEvent != null && spec?.multisport != true && !goalBehind && prePlanWeeks == 0 && start0 > 0 && runCeiling > start0) {
       final until = phases.contains('peak') ? phases.indexOf('peak') : (phases.contains('taper') ? phases.indexOf('taper') : total);
       final nLoad = [for (var i = 1; i < until; i++) phases[i]].where((p) => p != 'recovery' && p != 'taper').length;
       if (nLoad > 0) runGrowthEff = min(runGrowth, max(0.02, pow(runCeiling / start0, 1 / nLoad) - 1.0));
@@ -491,7 +491,9 @@ class PlanGenerator {
       // week (Pfitzinger; Mujika & Padilla 2003: volume down, intensity kept).
       final longF = _longRestFactor(phases, w);
       if (rest && lastLongKm > 0) longKm = min(longKm, lastLongKm * longF);
-      // (R1 reference: updated from the long run actually planned, after the whole-week checks.)
+      // R1 reference: running plans update it from the long run actually planned, after the whole-week
+      // checks; multisport plans (no whole-week checks) keep the planned value.
+      if (!rest && !runWalk && spec?.multisport == true) longestRun = max(longestRun, longKm);
       // Long ride (min): its share of the bike hours ([_longRideMin]); recovery / taper weeks stay
       // below the last loading week by the same factors as the long run.
       var longRide = _longRideMin(rideH[w], ridePerWeek, rest: rest);
@@ -758,8 +760,9 @@ class PlanGenerator {
             final q = qualityCtx.where((c) => c.$1 == i).firstOrNull;
             return q == null ? null : _run(q.$2, q.$3, phase, wk, longKm, tempoMin, intervalReps, w, capMin);
           },
-          // Within a loading block the long run never shrinks below last week's (coach review 2).
-          minLongKm: !rest && w > 0 && phases[w - 1] != 'recovery' && phases[w - 1] != 'taper' ? lastLongKm : 0,
+          // The share clamp never takes a loading week's long run below the last loading week's (coach
+          // review 2: no drop within a block; the longest run stays close to the race).
+          minLongKm: !rest && _longVariant != 2 ? lastLongKm : 0,
           ceilingKm: hf.lowImpactRun ? runCeiling * 0.9 : runCeiling,
           easyFloor: easyFloor,
           loading: !rest,
@@ -790,7 +793,7 @@ class PlanGenerator {
       out.addAll(week);
       final longRun = week.where((p) => p.sport == Sport.run && p.intensity == 'long').firstOrNull;
       if (!rest && longRun != null && _longVariant != 2) lastLongKm = longRun.distanceKm ?? lastLongKm;
-      if (!rest && !runWalk && longRun != null) {
+      if (!rest && !runWalk && longRun != null && spec?.multisport != true) {
         final km = longRun.distanceKm ?? 0;
         // A long run the whole-week checks cut below what R1 allowed: the plan's own long runs are the
         // reference from now on (the cold-start guess would let the next one jump > 10 %).
@@ -3108,7 +3111,7 @@ class PlanGenerator {
           s.durationSec == null
               ? null
               : (s.isWork && s.durationSec! * f >= 600
-                  ? (s.durationSec! * f / 300).floor() * 300
+                  ? (sport == Sport.run ? (s.durationSec! * f / 300).round() : (s.durationSec! * f / 300).floor()) * 300
                   : (s.durationSec! * f >= 120 ? (s.durationSec! * f / 60).floor() * 60 : max(30, (s.durationSec! * f / 30).round() * 30))),
       // Interval / repetition reps stay on whole 200 m steps (400 / 600 / 800 m, not 700 m).
       distanceM:
@@ -3138,8 +3141,10 @@ class PlanGenerator {
     // Proportionally – rounding the steps up (100 m) may still overshoot: shrink a little more then.
     final base = list;
     final t = total(base);
+    // (Runs only – the ride / swim builders keep their single proportional step.)
     for (var f = capSec / t; total(list) > capSec && f > 0.3; f *= 0.97) {
       list = [for (final s in base) scaled(s, f)];
+      if (sport != Sport.run) break;
     }
     return list;
   }
