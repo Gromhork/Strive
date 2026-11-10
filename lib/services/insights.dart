@@ -135,7 +135,7 @@ class GameStats {
   /// workouts when a plan exists for that week (so a plan with two sessions on one day
   /// or a lighter recovery week is judged fairly), else the profile's training days.
   static int weekGoal(DateTime week, int target, List<PlannedWorkout> plans) {
-    final end = week.add(const Duration(days: 7));
+    final end = addDays(week, 7);
     final planned = {
       for (final p in plans)
         if (!p.date.isBefore(week) && p.date.isBefore(end)) dayOnly(p.date),
@@ -153,7 +153,7 @@ class GameStats {
     return [
       for (var i = weeks - 1; i >= 0; i--)
         () {
-          final w = now.subtract(Duration(days: 7 * i));
+          final w = addDays(now, -7 * i);
           return WeekGoal(w, days[w]?.length ?? 0, weekGoal(w, target, plans));
         }(),
     ];
@@ -217,21 +217,21 @@ class RecoveryInfo {
 
   static RecoveryInfo compute(List<Session> sessions) {
     final now = DateTime.now();
-    double sum(int days) => sessions.where((s) => now.difference(s.start).inDays < days).fold(0.0, (a, s) => a + s.load);
+    double sum(int days) => sessions.where((s) => now.difference(s.start).inDays < days).fold(0.0, (a, s) => a + s.load); // time span
     final acute = sum(7);
     final chronic = sum(28) / 4;
     final ratio = chronic <= 0 ? (acute > 0 ? 1.0 : 0.0) : acute / chronic;
     var consecutive = 0;
     final days = sessions.map((s) => dayOnly(s.start)).toSet();
     var d = dayOnly(now);
-    if (!days.contains(d)) d = d.subtract(const Duration(days: 1));
+    if (!days.contains(d)) d = addDays(d, -1);
     while (days.contains(d)) {
       consecutive++;
-      d = d.subtract(const Duration(days: 1));
+      d = addDays(d, -1);
     }
     // ACWR needs a baseline: with less than 3 weeks of history the ratio is meaningless.
     final oldest = sessions.isEmpty ? now : sessions.map((s) => s.start).reduce((a, b) => a.isBefore(b) ? a : b);
-    if (now.difference(oldest).inDays < 21) {
+    if (daysBetween(oldest, now) < 21) {
       return RecoveryInfo(acute, chronic, consecutive >= 6 ? Readiness.overreaching : Readiness.building, consecutive);
     }
     final r =
@@ -397,11 +397,11 @@ List<FitnessPoint> fitnessSeries(List<Session> sessions, {int days = 90}) {
   final kC = 1 - exp(-1 / 42), kA = 1 - exp(-1 / 7);
   var ctl = 0.0, atl = 0.0;
   final out = <FitnessPoint>[];
-  for (var d = first; !d.isAfter(today); d = d.add(const Duration(days: 1))) {
+  for (var d = first; !d.isAfter(today); d = addDays(d, 1)) {
     final tss = byDay[d] ?? 0;
     ctl += (tss - ctl) * kC;
     atl += (tss - atl) * kA;
-    if (today.difference(d).inDays < days) out.add(FitnessPoint(d, ctl, atl));
+    if (daysBetween(d, today) < days) out.add(FitnessPoint(d, ctl, atl));
   }
   return out;
 }

@@ -13,7 +13,7 @@ import '../goals/goal_status_page.dart';
 /// When the "goal at risk" notice was last dismissed – it comes back at most once a week.
 class GoalAlertSnooze extends Notifier<DateTime?> {
   static const key = 'goalRiskSnoozed';
-  static const every = Duration(days: 7);
+  static const every = Duration(days: 7); // time span
 
   @override
   DateTime? build() {
@@ -100,8 +100,8 @@ class GoalStatusCardView extends StatelessWidget {
     final theme = Theme.of(context);
     final f = forecast;
     final start = f.planStart == null ? null : startOfWeek(f.planStart!);
-    final span = start == null ? 0 : f.raceDate.difference(start).inDays + 1;
-    final position = span <= 0 ? 0.0 : dayOnly(now).difference(start!).inDays / span;
+    final span = start == null ? 0 : daysBetween(start, f.raceDate) + 1;
+    final position = span <= 0 ? 0.0 : daysBetween(start!, dayOnly(now)) / span;
     return Card(
       key: const ValueKey('goalStatusCard'),
       clipBehavior: Clip.antiAlias,

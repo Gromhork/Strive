@@ -87,7 +87,7 @@ class NotificationService {
     final upcoming =
         plans
             .where((p) => p.status == 'planned' && !dayOnly(p.date).isBefore(dayOnly(DateTime.now())))
-            .where((p) => p.date.difference(DateTime.now()).inDays <= 14)
+            .where((p) => daysBetween(DateTime.now(), p.date) <= 14)
             .take(60)
             .toList();
     var idx = 0;

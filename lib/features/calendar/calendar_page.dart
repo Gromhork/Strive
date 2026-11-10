@@ -43,7 +43,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     if (_hideFeasibility || event == null || profile.athlete.eventDistance == null) return const PlanFeasibility();
     final race = dayOnly(event);
     if (race.isBefore(dayOnly(DateTime.now()))) return const PlanFeasibility();
-    final earliest = race.subtract(const Duration(days: 7 * 30));
+    final earliest = addDays(race, -(7 * 30));
     DateTime? start;
     for (final p in ref.watch(planListProvider)) {
       if (p.phase == null || p.date.isAfter(race) || p.date.isBefore(earliest)) continue;
@@ -54,6 +54,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(todayProvider); // "today" / missed workouts change at midnight
     final l = context.l10n;
     return Scaffold(
       floatingActionButton: FloatingActionButton(
@@ -145,8 +146,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   Widget _weekCard(int w, List<PlannedWorkout> plans, List<Session> sessions, {Key? key}) {
     final l = context.l10n;
     final df = DateFormat.MMMd(context.localeName);
-    final week = startOfWeek(DateTime.now()).add(Duration(days: 7 * w));
-    final end = week.add(const Duration(days: 7));
+    final week = addDays(startOfWeek(DateTime.now()), 7 * w);
+    final end = addDays(week, 7);
     final label = switch (w) {
       0 => l.currentWeek,
       1 => l.nextWeek,
@@ -181,11 +182,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         opacity: w < 0 ? 0.92 : 1,
         child: SectionCard(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-          title: '${df.format(week)} – ${df.format(week.add(const Duration(days: 6)))}',
+          title: '${df.format(week)} – ${df.format(addDays(week, 6))}',
           trailing: trailing,
-          child: Column(
-            children: [for (var d = 0; d < 7; d++) _DayRow(day: week.add(Duration(days: d)), plans: plans, sessions: sessions)],
-          ),
+          child: Column(children: [for (var d = 0; d < 7; d++) _DayRow(day: addDays(week, d), plans: plans, sessions: sessions)]),
         ),
       ),
     );
@@ -199,7 +198,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     // to the plan's first week (at least 12 weeks back).
     final all = ref.watch(planListProvider);
     final thisWeek = startOfWeek(DateTime.now());
-    int weeksTo(DateTime d) => (startOfWeek(d).difference(thisWeek).inDays / 7).round();
+    int weeksTo(DateTime d) => (daysBetween(thisWeek, startOfWeek(d)) / 7).round();
     final ahead = all.isEmpty ? 8 : (all.map((p) => weeksTo(p.date)).reduce(max) + 1).clamp(8, 60);
     final back = all.isEmpty ? _pastWeeks : (-all.map((p) => weeksTo(p.date)).reduce(min)).clamp(_pastWeeks, 60);
     return CustomScrollView(
@@ -277,9 +276,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         Row(
           children: [
             for (var i = 0; i < 7; i++)
-              Expanded(
-                child: Center(child: Text(names.format(gridStart.add(Duration(days: i))), style: Theme.of(context).textTheme.labelSmall)),
-              ),
+              Expanded(child: Center(child: Text(names.format(addDays(gridStart, i)), style: Theme.of(context).textTheme.labelSmall))),
           ],
         ),
         const SizedBox(height: 4),
@@ -289,7 +286,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               for (var d = 0; d < 7; d++)
                 Builder(
                   builder: (_) {
-                    final day = gridStart.add(Duration(days: w * 7 + d));
+                    final day = addDays(gridStart, w * 7 + d);
                     final inMonth = day.month == _focused.month;
                     final p = plans.where((x) => sameDay(x.date, day)).toList();
                     final s = sessions.where((x) => sameDay(x.start, day)).toList();
@@ -367,7 +364,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final b = StringBuffer('BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Strive//Training//EN\r\nCALSCALE:GREGORIAN\r\n');
     for (final p in plans) {
       final d = DateFormat('yyyyMMdd').format(p.date);
-      final end = DateFormat('yyyyMMdd').format(p.date.add(const Duration(days: 1)));
+      final end = DateFormat('yyyyMMdd').format(addDays(p.date, 1));
       b.write(
         'BEGIN:VEVENT\r\nUID:${p.id}@strive\r\nDTSTAMP:$stamp\r\nDTSTART;VALUE=DATE:$d\r\nDTEND;VALUE=DATE:$end\r\n'
         'SUMMARY:${esc('${p.sport.label(l)}: ${p.title}')}\r\nDESCRIPTION:${esc('${p.durationMin} min. ${p.description}')}\r\nEND:VEVENT\r\n',

@@ -11,10 +11,47 @@ DateTime _date(dynamic v) {
   return DateTime.now();
 }
 
-double _d(dynamic v, [double def = 0]) => v is num ? v.toDouble() : def;
-double? _dn(dynamic v) => v is num ? v.toDouble() : null;
-int _i(dynamic v, [int def = 0]) => v is num ? v.toInt() : def;
-int? _in(dynamic v) => v is num ? v.toInt() : null;
+// Tolerant parsing: Firestore data may come from older app versions, the console or a
+// partial write – a wrong type falls back to the default instead of throwing.
+double? _dn(dynamic v) => switch (v) {
+  num n when n.isFinite => n.toDouble(),
+  String s => double.tryParse(s.trim().replaceAll(',', '.')),
+  _ => null,
+};
+double _d(dynamic v, [double def = 0]) => _dn(v) ?? def;
+int? _in(dynamic v) => switch (v) {
+  int n => n,
+  num n when n.isFinite => n.round(),
+  String s => int.tryParse(s.trim()) ?? double.tryParse(s.trim())?.round(),
+  _ => null,
+};
+int _i(dynamic v, [int def = 0]) => _in(v) ?? def;
+String _s(dynamic v, [String def = '']) => v is String ? v : (v == null ? def : '$v');
+String? _sn(dynamic v) => v is String ? v : null;
+bool _b(dynamic v, [bool def = false]) => v is bool ? v : def;
+List<Map> _maps(dynamic v) => v is List ? v.whereType<Map>().toList() : const [];
+List<String> _strings(dynamic v) =>
+    v is List
+        ? [
+          for (final x in v)
+            if (x != null) '$x',
+        ]
+        : const [];
+List<int> _ints(dynamic v) =>
+    v is List
+        ? [
+          for (final x in v)
+            if (_in(x) != null) _in(x)!,
+        ]
+        : const [];
+
+/// Map with int keys ("1".."7" in Firestore); keys or values that do not parse are skipped.
+Map<int, T> _intKeyed<T>(dynamic v, T? Function(dynamic) value) => {
+  if (v is Map)
+    for (final e in v.entries)
+      if (int.tryParse('${e.key}') case final k?)
+        if (value(e.value) case final T x) k: x,
+};
 
 // ───────────────────────────── Profile ─────────────────────────────
 
@@ -79,24 +116,30 @@ class UserProfile {
   Units get units => Units(imperial);
 
   factory UserProfile.fromMap(Map<String, dynamic> m) => UserProfile(
-    name: m['name'] ?? '',
-    birthYear: m['birthYear'],
-    gender: m['gender'] ?? 'd',
+    name: _s(m['name']),
+    birthYear: _in(m['birthYear']),
+    gender: _s(m['gender'], 'd'),
     heightCm: _d(m['heightCm'], 175),
     weightKg: _d(m['weightKg'], 75),
     fatPct: _dn(m['fatPct']),
     musclePct: _dn(m['musclePct']),
-    level: m['level'] ?? 'beginner',
-    experience: ((m['experience'] as List?) ?? []).map((e) => SportX.parse(e)).toSet(),
-    focus: TrainingFocusX.parse(m['focus']),
-    goals: List<String>.from(m['goals'] ?? const []),
-    trainingDays: List<int>.from(m['trainingDays'] ?? const [1, 3, 5]),
-    longDay: m['longDay'],
-    imperial: m['imperial'] ?? false,
-    maxHr: m['maxHr'],
-    onboarded: m['onboarded'] ?? false,
-    athlete: AthleteData.fromMap((m['athlete'] as Map?)?.cast<String, dynamic>() ?? const {}),
-    folderOrder: List<String>.from(m['folderOrder'] ?? const []),
+    level: _s(m['level'], 'beginner'),
+    experience: _strings(m['experience']).map(SportX.parse).toSet(),
+    focus: TrainingFocusX.parse(_sn(m['focus'])),
+    goals: _strings(m['goals']),
+    trainingDays:
+        m['trainingDays'] is List
+            ? [
+              for (final d in _ints(m['trainingDays']))
+                if (d >= 1 && d <= 7) d,
+            ]
+            : const [1, 3, 5],
+    longDay: _in(m['longDay']),
+    imperial: _b(m['imperial']),
+    maxHr: _in(m['maxHr']),
+    onboarded: _b(m['onboarded']),
+    athlete: AthleteData.fromMap(m['athlete'] is Map ? Map<String, dynamic>.from(m['athlete'] as Map) : const {}),
+    folderOrder: _strings(m['folderOrder']),
   );
 
   Map<String, dynamic> toMap() => {
@@ -253,43 +296,48 @@ class AthleteData {
   int minutesOn(int weekday) => dayMinutes[weekday] ?? sessionMinutes;
 
   factory AthleteData.fromMap(Map<String, dynamic> m) => AthleteData(
-    setupMode: m['setupMode'] ?? 'simple',
-    difficulty: m['difficulty'] ?? 'balanced',
+    setupMode: _s(m['setupMode'], 'simple'),
+    difficulty: _s(m['difficulty'], 'balanced'),
     planWeeks: _i(m['planWeeks'], 8),
     sessionMinutes: _i(m['sessionMinutes'], 60),
-    dayMinutes: {for (final e in ((m['dayMinutes'] as Map?) ?? {}).entries) int.parse('${e.key}'): (e.value as num).toInt()},
+    dayMinutes: _intKeyed(m['dayMinutes'], _in),
     sessionsPerDay: _i(m['sessionsPerDay'], 1),
-    dayPlan: {
-      for (final e in ((m['dayPlan'] as Map?) ?? {}).entries)
-        int.parse('${e.key}'): ((e.value as List?) ?? []).map((x) => SportX.parse(x)).toList(),
+    dayPlan: _intKeyed(m['dayPlan'], (v) => v is List ? _strings(v).map(SportX.parse).toList() : null),
+    preferredTime: _s(m['preferredTime'], 'evening'),
+    restHr: _in(m['restHr']),
+    limitations: _strings(m['limitations']),
+    raceTimes: {
+      if (m['raceTimes'] is Map)
+        for (final e in (m['raceTimes'] as Map).entries)
+          if (_in(e.value) case final v?) '${e.key}': v,
     },
-    preferredTime: m['preferredTime'] ?? 'evening',
-    restHr: m['restHr'],
-    limitations: List<String>.from(m['limitations'] ?? const []),
-    raceTimes: {for (final e in ((m['raceTimes'] as Map?) ?? {}).entries) '${e.key}': (e.value as num).toInt()},
     runWeeklyKm: _dn(m['runWeeklyKm']),
     longestRunKm: _dn(m['longestRunKm']),
-    canRun30: m['canRun30'] ?? true,
-    ftp: m['ftp'],
+    canRun30: _b(m['canRun30'], true),
+    ftp: _in(m['ftp']),
     bikeWeeklyHours: _dn(m['bikeWeeklyHours']),
     longestRideKm: _dn(m['longestRideKm']),
-    hasPowerMeter: m['hasPowerMeter'] ?? false,
-    indoorTrainer: m['indoorTrainer'] ?? false,
-    swim400Sec: m['swim400Sec'],
-    swim200Sec: m['swim200Sec'],
+    hasPowerMeter: _b(m['hasPowerMeter']),
+    indoorTrainer: _b(m['indoorTrainer']),
+    swim400Sec: _in(m['swim400Sec']),
+    swim200Sec: _in(m['swim200Sec']),
     swimWeeklyKm: _dn(m['swimWeeklyKm']),
-    canSwim400: m['canSwim400'] ?? true,
+    canSwim400: _b(m['canSwim400'], true),
     poolLength: _i(m['poolLength'], 25),
-    equipment: m['equipment'] ?? 'gym',
-    gymGoal: m['gymGoal'] ?? 'general',
-    gymSplit: m['gymSplit'] ?? 'auto',
-    oneRm: {for (final e in ((m['oneRm'] as Map?) ?? {}).entries) '${e.key}': (e.value as num).toDouble()},
-    eventDistance: m['eventDistance'],
+    equipment: _s(m['equipment'], 'gym'),
+    gymGoal: _s(m['gymGoal'], 'general'),
+    gymSplit: _s(m['gymSplit'], 'auto'),
+    oneRm: {
+      if (m['oneRm'] is Map)
+        for (final e in (m['oneRm'] as Map).entries)
+          if (_dn(e.value) case final v?) '${e.key}': v,
+    },
+    eventDistance: _sn(m['eventDistance']),
     eventDate: m['eventDate'] == null ? null : _date(m['eventDate']),
-    targetTimeSec: m['targetTimeSec'],
+    targetTimeSec: _in(m['targetTimeSec']),
     planStart: m['planStart'] == null ? null : _date(m['planStart']),
     planLength: _in(m['planLength']),
-    eventName: m['eventName'],
+    eventName: _sn(m['eventName']),
   );
 
   Map<String, dynamic> toMap() => {
@@ -392,11 +440,11 @@ class GymSet {
   factory GymSet.fromMap(Map m) => GymSet(
     weight: _d(m['w']),
     reps: _i(m['r']),
-    done: m['d'] ?? false,
+    done: _b(m['d']),
     type:
         m['t'] != null
             ? SetType.values.firstWhere((e) => e.name == m['t'], orElse: () => SetType.normal)
-            : ((m['wu'] ?? false) ? SetType.warmup : SetType.normal),
+            : (_b(m['wu']) ? SetType.warmup : SetType.normal),
     rpe: _dn(m['rpe']),
     target: _in(m['tg']),
     amrap: m['am'] == true,
@@ -480,12 +528,12 @@ class GymExercise {
   double get maxWeight => sets.where((s) => s.done && !s.warmup).fold(0.0, (a, s) => a > s.weight ? a : s.weight);
 
   factory GymExercise.fromMap(Map m) => GymExercise(
-    exId: m['exId'] ?? '',
-    name: m['name'] ?? '',
-    sets: ((m['sets'] as List?) ?? []).map((e) => GymSet.fromMap(e as Map)).toList(),
+    exId: _s(m['exId']),
+    name: _s(m['name']),
+    sets: _maps(m['sets']).map(GymSet.fromMap).toList(),
     restSec: _i(m['rest'], 90),
-    note: m['note'] ?? '',
-    group: m['group'],
+    note: _s(m['note']),
+    group: _sn(m['group']),
     repMin: _in(m['repMin']),
     repMax: _in(m['repMax']),
     bw: m['bw'] is bool ? m['bw'] : null,
@@ -590,33 +638,40 @@ class Session {
   /// Training load = minutes × RPE (session-RPE method, Foster 2001).
   double get load => minutes * (rpe ?? 6).toDouble();
 
-  factory Session.fromDoc(DocumentSnapshot<Map<String, dynamic>> d) {
-    final m = d.data() ?? {};
+  factory Session.fromDoc(DocumentSnapshot<Map<String, dynamic>> d) => Session.fromMap(d.id, d.data() ?? const {});
+
+  /// Null for a document that is not a session (no start / sport, e.g. a stray partial write).
+  static Session? tryFromMap(String id, Map<String, dynamic> m) => m['start'] == null || m['sport'] == null ? null : Session.fromMap(id, m);
+
+  factory Session.fromMap(String id, Map<String, dynamic> m) {
     return Session(
-      id: d.id,
-      sport: SportX.parse(m['sport']),
-      title: m['title'] ?? '',
+      id: id,
+      sport: SportX.parse(_sn(m['sport'])),
+      title: _s(m['title']),
       start: _date(m['start']),
       durationSec: _i(m['durationSec']),
-      rpe: m['rpe'],
-      notes: m['notes'] ?? '',
-      exercises: ((m['exercises'] as List?) ?? []).map((e) => GymExercise.fromMap(e as Map)).toList(),
+      rpe: _in(m['rpe']),
+      notes: _s(m['notes']),
+      exercises: _maps(m['exercises']).map(GymExercise.fromMap).toList(),
       distanceM: _d(m['distanceM']),
       elevationM: _d(m['elevationM']),
-      avgHr: m['avgHr'],
-      route: ((m['route'] as List?) ?? []).map((p) => [(p as Map)['a'] as num, p['o'] as num].map((e) => e.toDouble()).toList()).toList(),
-      splits: List<int>.from(m['splits'] ?? const []),
+      avgHr: _in(m['avgHr']),
+      route: [
+        for (final p in _maps(m['route']))
+          if ((_dn(p['a']), _dn(p['o'])) case (final a?, final o?)) [a, o],
+      ],
+      splits: _ints(m['splits']),
       laps: _i(m['laps']),
       poolLengthM: _i(m['poolLengthM'], 25),
-      stroke: m['stroke'] ?? 'freestyle',
-      indoor: m['indoor'] ?? false,
-      templateId: m['templateId'],
-      planId: m['planId'],
-      source: m['source'],
-      externalId: m['externalId'],
-      calories: m['calories'],
-      maxHr: m['maxHr'],
-      avgPower: (m['avgPower'] as num?)?.round(),
+      stroke: _s(m['stroke'], 'freestyle'),
+      indoor: _b(m['indoor']),
+      templateId: _sn(m['templateId']),
+      planId: _sn(m['planId']),
+      source: _sn(m['source']),
+      externalId: _sn(m['externalId']),
+      calories: _in(m['calories']),
+      maxHr: _in(m['maxHr']),
+      avgPower: _in(m['avgPower']),
     );
   }
 
@@ -680,18 +735,22 @@ class WorkoutTemplate {
     this.order = 0,
   });
 
+  /// Null for a document that is not a program (no sport / name, e.g. a stray partial write).
+  static WorkoutTemplate? tryFromMap(String id, Map<String, dynamic> m) =>
+      m['sport'] == null || m['name'] == null ? null : WorkoutTemplate.fromMap(id, m);
+
   factory WorkoutTemplate.fromMap(String id, Map<String, dynamic> m) => WorkoutTemplate(
     id: id,
-    name: m['name'] ?? '',
-    sport: SportX.parse(m['sport']),
-    folder: m['folder'] ?? '',
-    exercises: ((m['exercises'] as List?) ?? []).map((e) => GymExercise.fromMap(e as Map)).toList(),
+    name: _s(m['name']),
+    sport: SportX.parse(_sn(m['sport'])),
+    folder: _s(m['folder']),
+    exercises: _maps(m['exercises']).map(GymExercise.fromMap).toList(),
     targetKm: _dn(m['targetKm']),
-    targetMin: m['targetMin'],
-    intensity: m['intensity'] ?? 'easy',
-    description: m['description'] ?? '',
-    steps: ((m['steps'] as List?) ?? []).map((e) => WorkoutStep.fromMap(e as Map)).toList(),
-    key: m['key'],
+    targetMin: _in(m['targetMin']),
+    intensity: _s(m['intensity'], 'easy'),
+    description: _s(m['description']),
+    steps: _maps(m['steps']).map(WorkoutStep.fromMap).toList(),
+    key: _sn(m['key']),
     order: _i(m['order']),
   );
 
@@ -802,24 +861,36 @@ class PlannedWorkout {
   });
 
   bool get isDone => status == 'done';
-  bool get isMissed => status == 'skipped' || (status == 'planned' && dayOnly(date).isBefore(dayOnly(DateTime.now())));
+  bool get isMissed => isMissedOn(DateTime.now());
+
+  /// Skipped, or still planned on a day before [today] (pass the ticking `todayProvider` value
+  /// in widgets, so the state changes at midnight without a rebuild from elsewhere).
+  bool isMissedOn(DateTime today) => status == 'skipped' || (status == 'planned' && dayOnly(date).isBefore(dayOnly(today)));
+
+  /// Null for a document without a valid date or sport (corrupt / stray partial write) – it is
+  /// skipped instead of showing up "today".
+  static PlannedWorkout? tryFromMap(String id, Map<String, dynamic> m) {
+    final d = m['date'];
+    if (d is! String || DateTime.tryParse(d) == null || m['sport'] == null) return null;
+    return PlannedWorkout.fromMap(id, m);
+  }
 
   factory PlannedWorkout.fromMap(String id, Map<String, dynamic> m) => PlannedWorkout(
     id: id,
     date: parseDayKey(m['date'] ?? dayKey(DateTime.now())),
-    sport: SportX.parse(m['sport']),
-    title: m['title'] ?? '',
-    description: m['description'] ?? '',
+    sport: SportX.parse(_sn(m['sport'])),
+    title: _s(m['title']),
+    description: _s(m['description']),
     durationMin: _i(m['durationMin'], 45),
     distanceKm: _dn(m['distanceKm']),
-    intensity: m['intensity'] ?? 'easy',
-    templateId: m['templateId'],
-    status: m['status'] ?? 'planned',
-    sessionId: m['sessionId'],
-    steps: ((m['steps'] as List?) ?? []).map((e) => WorkoutStep.fromMap(e as Map)).toList(),
-    phase: m['phase'],
-    isKey: m['isKey'] ?? false,
-    exercises: ((m['exercises'] as List?) ?? []).map((e) => GymExercise.fromMap(e as Map)).toList(),
+    intensity: _s(m['intensity'], 'easy'),
+    templateId: _sn(m['templateId']),
+    status: _s(m['status'], 'planned'),
+    sessionId: _sn(m['sessionId']),
+    steps: _maps(m['steps']).map(WorkoutStep.fromMap).toList(),
+    phase: _sn(m['phase']),
+    isKey: _b(m['isKey']),
+    exercises: _maps(m['exercises']).map(GymExercise.fromMap).toList(),
     auto: m['auto'] is Map ? AutoAdjustment.fromMap(m['auto'] as Map) : null,
   );
 
@@ -868,12 +939,12 @@ class AutoAdjustment {
   final List<WorkoutStep> steps;
 
   factory AutoAdjustment.fromMap(Map m) => AutoAdjustment(
-    sessionId: m['sessionId'] ?? '',
-    reason: m['reason'] ?? '',
+    sessionId: _s(m['sessionId']),
+    reason: _s(m['reason']),
     at: _date(m['at']),
     durationMin: _i(m['durationMin'], 45),
     distanceKm: _dn(m['distanceKm']),
-    steps: ((m['steps'] as List?) ?? []).map((e) => WorkoutStep.fromMap(e as Map)).toList(),
+    steps: _maps(m['steps']).map(WorkoutStep.fromMap).toList(),
   );
 
   Map<String, dynamic> toMap() => {
@@ -917,17 +988,17 @@ class WorkoutStep {
   bool get isWork => kind == 'work';
 
   factory WorkoutStep.fromMap(Map m) => WorkoutStep(
-    kind: m['k'] ?? 'steady',
-    durationSec: m['t'],
+    kind: _s(m['k'], 'steady'),
+    durationSec: _in(m['t']),
     distanceM: _dn(m['d']),
-    zone: m['z'] ?? 'E',
-    paceMin: m['p0'],
-    paceMax: m['p1'],
-    powerMin: m['w0'],
-    powerMax: m['w1'],
-    hrMin: m['h0'],
-    hrMax: m['h1'],
-    note: m['n'] ?? '',
+    zone: _s(m['z'], 'E'),
+    paceMin: _in(m['p0']),
+    paceMax: _in(m['p1']),
+    powerMin: _in(m['w0']),
+    powerMax: _in(m['w1']),
+    hrMin: _in(m['h0']),
+    hrMax: _in(m['h1']),
+    note: _s(m['n']),
   );
 
   Map<String, dynamic> toMap() => {
@@ -993,14 +1064,14 @@ class Goal {
   factory Goal.fromMap(String id, Map<String, dynamic> m) => Goal(
     id: id,
     type: GoalType.values.firstWhere((e) => e.name == m['type'], orElse: () => GoalType.frequency),
-    title: m['title'] ?? '',
-    sport: m['sport'] == null ? null : SportX.parse(m['sport']),
+    title: _s(m['title']),
+    sport: m['sport'] == null ? null : SportX.parse(_sn(m['sport'])),
     target: _d(m['target']),
     startValue: _dn(m['startValue']),
     created: _date(m['created']),
     deadline: m['deadline'] == null ? null : _date(m['deadline']),
-    exId: m['exId'],
-    exName: m['exName'],
+    exId: _sn(m['exId']),
+    exName: _sn(m['exName']),
     eventKm: _dn(m['eventKm']),
   );
 

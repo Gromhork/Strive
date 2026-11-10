@@ -190,7 +190,7 @@ class PlanGaps {
     }
     // Latest block of generated workouts (no hole > 3 weeks).
     var i = phased.length - 1;
-    while (i > 0 && phased[i].date.difference(phased[i - 1].date).inDays <= 21) {
+    while (i > 0 && daysBetween(phased[i - 1].date, phased[i].date) <= 21) {
       i--;
     }
     final block = phased.sublist(i);
@@ -209,7 +209,7 @@ class PlanGaps {
     }
     for (final start in cands.reversed.take(4)) {
       final mine = block.where((p) => !dayOnly(p.date).isBefore(start)).toList();
-      final weeks = _monday(mine.last.date).difference(_monday(start)).inDays ~/ 7 + 1;
+      final weeks = daysBetween(_monday(start), _monday(mine.last.date)) ~/ 7 + 1;
       final gen = _gen(profile, start, max(1, weeks.round()));
       final phaseOf = <String, String>{
         for (final p in gen)

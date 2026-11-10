@@ -23,8 +23,31 @@ class DailyVitals {
 /// workouts, heart rate, sleep etc. into Health Connect; Strive reads them and
 /// writes its own workouts back.
 class HealthService {
-  HealthService(this.prefs);
+  HealthService(this.prefs, {this.uid});
   final SharedPreferences prefs;
+
+  /// Signed-in user: the connection and the last import are per account (another account on
+  /// this phone must not inherit them).
+  final String? uid;
+
+  String get _connectedKey => uid == null ? 'hc_connected' : 'hc_connected.$uid';
+  String get _lastSyncKey => uid == null ? 'hc_lastSync' : 'hc_lastSync.$uid';
+
+  /// Adopts the device-wide keys of older versions for the first account that signs in.
+  void migrateLegacyKeys() {
+    if (uid == null) return;
+    final c = prefs.getBool('hc_connected'), t = prefs.getInt('hc_lastSync');
+    if (c == null && t == null) return;
+    if (c != null && prefs.getBool(_connectedKey) == null) prefs.setBool(_connectedKey, c);
+    if (t != null && prefs.getInt(_lastSyncKey) == null) prefs.setInt(_lastSyncKey, t);
+    prefs.remove('hc_connected');
+    prefs.remove('hc_lastSync');
+  }
+
+  /// Firestore id of an imported workout: deterministic, so importing the same workout twice
+  /// (two syncs at once, a reinstall) writes the same document instead of a duplicate.
+  static String importId(String uuid) => 'hc_${uuid.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_')}';
+
   final _h = Health();
   bool _configured = false;
 
@@ -40,9 +63,9 @@ class HealthService {
   ];
   static const writeTypes = [HealthDataType.WORKOUT, HealthDataType.WEIGHT];
 
-  bool get connected => prefs.getBool('hc_connected') ?? false;
+  bool get connected => prefs.getBool(_connectedKey) ?? false;
   DateTime? get lastSync {
-    final v = prefs.getInt('hc_lastSync');
+    final v = prefs.getInt(_lastSyncKey);
     return v == null ? null : DateTime.fromMillisecondsSinceEpoch(v);
   }
 
@@ -75,12 +98,12 @@ class HealthService {
         if (!await _h.isHealthDataHistoryAuthorized()) await _h.requestHealthDataHistoryAuthorization();
       } catch (_) {}
     }
-    await prefs.setBool('hc_connected', ok);
+    await prefs.setBool(_connectedKey, ok);
     return ok;
   }
 
   Future<void> disconnect() async {
-    await prefs.setBool('hc_connected', false);
+    await prefs.setBool(_connectedKey, false);
     try {
       await _h.revokePermissions();
     } catch (_) {}
@@ -105,13 +128,8 @@ class HealthService {
   };
 
   /// Reads workouts since [since] and converts them to sessions. Workouts that
-  /// Strive wrote itself and ones already imported ([knownIds]) are skipped.
-  Future<List<Session>> importWorkouts({
-    required DateTime since,
-    required Set<String> knownIds,
-    required String Function() newId,
-    String Function(Sport)? titleFor,
-  }) async {
+  // Strive wrote itself and ones already imported or deleted by the user ([knownIds]) are skipped.
+  Future<List<Session>> importWorkouts({required DateTime since, required Set<String> knownIds, String Function(Sport)? titleFor}) async {
     await _configure();
     final now = DateTime.now();
     final points = await _h.getHealthDataFromTypes(types: [HealthDataType.WORKOUT], startTime: since, endTime: now);
@@ -136,7 +154,7 @@ class HealthService {
       final name = v.workoutActivityType.name;
       out.add(
         Session(
-          id: newId(),
+          id: importId(p.uuid),
           sport: sport,
           title: (titleFor ?? _titleFor)(sport),
           start: p.dateFrom,
@@ -151,7 +169,7 @@ class HealthService {
         ),
       );
     }
-    await prefs.setInt('hc_lastSync', now.millisecondsSinceEpoch);
+    await prefs.setInt(_lastSyncKey, now.millisecondsSinceEpoch);
     return out;
   }
 
@@ -209,8 +227,8 @@ class HealthService {
     } catch (_) {}
     Future<List<HealthDataPoint>> get(HealthDataType t, DateTime from) =>
         _h.getHealthDataFromTypes(types: [t], startTime: from, endTime: now).catchError((_) => <HealthDataPoint>[]);
-    final rhr = await get(HealthDataType.RESTING_HEART_RATE, now.subtract(const Duration(days: 3)));
-    final hrv = await get(HealthDataType.HEART_RATE_VARIABILITY_RMSSD, now.subtract(const Duration(days: 3)));
+    final rhr = await get(HealthDataType.RESTING_HEART_RATE, now.subtract(const Duration(days: 3))); // time span
+    final hrv = await get(HealthDataType.HEART_RATE_VARIABILITY_RMSSD, now.subtract(const Duration(days: 3))); // time span
     final sleep = await get(HealthDataType.SLEEP_SESSION, midnight.subtract(const Duration(hours: 8)));
     double? latest(List<HealthDataPoint> l) {
       if (l.isEmpty) return null;

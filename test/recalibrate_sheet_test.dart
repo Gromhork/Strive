@@ -20,11 +20,11 @@ class _FakeRepo extends Repository {
   final updated = <String, Map<String, dynamic>>{};
   UserProfile? savedProfile;
   @override
-  void updateMany({
+  Future<void> updateMany({
     Map<String, Map<String, dynamic>> plans = const {},
     Map<String, Map<String, dynamic>> templates = const {},
     Map<String, Map<String, dynamic>> sessions = const {},
-  }) => updated.addAll(plans);
+  }) async => updated.addAll(plans);
   @override
   void saveProfile(UserProfile p) => savedProfile = p;
 }

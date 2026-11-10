@@ -21,7 +21,7 @@ class CoachService {
   String _context() {
     final p = profile;
     final now = DateTime.now();
-    final recent = sessions.where((s) => now.difference(s.start).inDays < 28).toList();
+    final recent = sessions.where((s) => now.difference(s.start).inDays < 28).toList(); // time span
     final bySport = <Sport, List<Session>>{};
     for (final s in recent) {
       bySport.putIfAbsent(s.sport, () => []).add(s);
@@ -60,14 +60,14 @@ class CoachService {
     final event =
         a.eventDate == null
             ? 'none'
-            : '${a.eventDistance ?? '?'} on ${dayKey(a.eventDate!)} (${a.eventDate!.difference(dayOnly(now)).inDays} days away)'
+            : '${a.eventDistance ?? '?'} on ${dayKey(a.eventDate!)} (${daysBetween(dayOnly(now), a.eventDate!)} days away)'
                 '${a.targetTimeSec != null ? ', target ${clock(a.targetTimeSec!)}' : ''}';
     final fit = fitnessSeries(sessions);
     final form =
         fit.isEmpty
             ? 'no data'
             : 'fitness (CTL) ${fit.last.fitness.toStringAsFixed(0)}, fatigue (ATL) ${fit.last.fatigue.toStringAsFixed(0)}, form (TSB) ${fit.last.form.toStringAsFixed(0)}';
-    final past = plans.where((x) => !x.date.isBefore(dayOnly(now).subtract(const Duration(days: 14))) && x.date.isBefore(dayOnly(now)));
+    final past = plans.where((x) => !x.date.isBefore(addDays(dayOnly(now), -14)) && x.date.isBefore(dayOnly(now)));
     final missed = past.where((x) => x.status == 'planned').map((x) => '${dayKey(x.date)} ${x.sport.name} "${x.title}"').take(6).join('; ');
     final done = past.where((x) => x.status == 'done').length;
     final phase = plans.where((x) => !x.date.isBefore(dayOnly(now))).firstOrNull?.phase;

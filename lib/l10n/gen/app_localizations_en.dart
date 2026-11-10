@@ -4895,6 +4895,90 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get restoreWorkoutTitle => 'Continue workout?';
+
+  @override
+  String restoreWorkoutBody(String title, String day, String time) {
+    return '$title – started $day at $time. The app was closed while it was running; continue where you left off or discard it.';
+  }
+
+  @override
+  String get restoreWorkoutResume => 'Continue';
+
+  @override
+  String get restoreSummaryTitle => 'Save your workout?';
+
+  @override
+  String restoreSummaryBody(String title, String day, String time) {
+    return '$title ($day, $time) was finished but not saved yet.';
+  }
+
+  @override
+  String get restoreSummaryOpen => 'Open summary';
+
+  @override
+  String get restoreToday => 'today';
+
+  @override
+  String get restoreYesterday => 'yesterday';
+
+  @override
+  String get workoutRunsInBackground => 'Your workout keeps running in the background.';
+
+  @override
+  String deletedAutoReverted(int count) {
+    return 'Deleted – $count automatic plan adjustments undone';
+  }
+
+  @override
+  String get writeFailed => 'A change could not be saved. Please check your connection and try again.';
+
+  @override
+  String get loadFailedTitle => 'Your data could not be loaded';
+
+  @override
+  String get loadFailedBody => 'Please check your internet connection and try again. If it keeps happening, log out and sign in again.';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountSub => 'Permanently deletes your account and all your data';
+
+  @override
+  String get deleteAccountConfirm1 => 'All your workouts, plans, programs, goals and body data will be deleted permanently – on all devices. This cannot be undone.';
+
+  @override
+  String get deleteAccountConfirm2Title => 'Really delete?';
+
+  @override
+  String get deleteAccountConfirm2 => 'Type DELETE to confirm.';
+
+  @override
+  String get deleteAccountWord => 'DELETE';
+
+  @override
+  String get deleteAccountRunning => 'Deleting your data…';
+
+  @override
+  String get deleteAccountDone => 'Your account and all data have been deleted.';
+
+  @override
+  String get deleteAccountFailed => 'Deleting failed – please try again when you are online.';
+
+  @override
+  String get reauthTitle => 'Confirm it’s you';
+
+  @override
+  String get reauthBody => 'For your security, please sign in again before deleting your account.';
+
+  @override
+  String get reauthGoogle => 'Continue with Google';
+
+  @override
+  String get reauthConfirm => 'Confirm';
+
+  @override
   String feasLongDayDefault(String day, String time) {
     return 'The long session on $day needs up to $time – far more than the time you set. The plan uses it; set that day\'s time yourself if it does not fit.';
   }
@@ -4918,6 +5002,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wShakeoutRunWalkDesc => 'Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.';
 
   @override
+  String get wShakeoutEasyDesc => '15 min very easy – just loosen up, nothing more. Lay out your race kit tonight.';
+
+  @override
   String get wMastersStrengthNote => 'Tip: add 2 short strength sessions a week (legs, hips, core, 20–30 min) – from 50 on they protect muscles, bones and tendons and make running more economical.';
 
   @override
@@ -4927,7 +5014,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wRaceFinishDesc => 'Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.';
-
-  @override
-  String get wShakeoutEasyDesc => '15 min very easy – just loosen up, nothing more. Lay out your race kit tonight.';
 }

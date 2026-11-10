@@ -17,6 +17,7 @@ import '../session/gym_session_page.dart';
 import '../stats/stats_page.dart';
 import '../train/train_page.dart';
 import 'streak_sheet.dart';
+import 'workout_restore.dart';
 
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key});
@@ -40,57 +41,79 @@ class HomeShell extends ConsumerWidget {
           return;
         }
         final now = DateTime.now();
+        final running = ref.read(activeGymProvider) != null || ref.read(trackerProvider) != null;
         if (_lastBack != null && now.difference(_lastBack!) < const Duration(seconds: 2)) {
-          SystemNavigator.pop();
+          _lastBack = null;
+          // A running workout must survive "exit": only send the app to the background
+          // (finishing the activity could get the process killed and the workout lost).
+          running ? moveAppToBackground() : SystemNavigator.pop();
           return;
         }
         _lastBack = now;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(l.backAgainToExit), duration: const Duration(seconds: 2)));
+          ..showSnackBar(
+            SnackBar(content: Text(running ? l.workoutRunsInBackground : l.backAgainToExit), duration: const Duration(seconds: 2)),
+          );
       },
-      child: Scaffold(
-        appBar: const StriveTopBar(),
-        body: IndexedStack(index: index, children: pages),
-        bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const _ActiveBanner(),
-            NavigationBar(
-              selectedIndex: index,
-              onDestinationSelected: ref.read(navIndexProvider.notifier).set,
-              destinations: [
-                NavigationDestination(
-                  icon: const Icon(Icons.home_outlined),
-                  selectedIcon: const Icon(Icons.home_rounded),
-                  label: l.navHome,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.bolt_outlined),
-                  selectedIcon: const Icon(Icons.bolt_rounded),
-                  label: l.navTrain,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.calendar_month_outlined),
-                  selectedIcon: const Icon(Icons.calendar_month_rounded),
-                  label: l.navCalendar,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.insights_outlined),
-                  selectedIcon: const Icon(Icons.insights_rounded),
-                  label: l.navStats,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.auto_awesome_outlined),
-                  selectedIcon: const Icon(Icons.auto_awesome),
-                  label: l.navCoach,
-                ),
-              ],
-            ),
-          ],
+      child: WorkoutRestoreGate(
+        child: Scaffold(
+          appBar: const StriveTopBar(),
+          body: IndexedStack(index: index, children: pages),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _ActiveBanner(),
+              NavigationBar(
+                selectedIndex: index,
+                onDestinationSelected: ref.read(navIndexProvider.notifier).set,
+                destinations: [
+                  NavigationDestination(
+                    icon: const Icon(Icons.home_outlined),
+                    selectedIcon: const Icon(Icons.home_rounded),
+                    label: l.navHome,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.bolt_outlined),
+                    selectedIcon: const Icon(Icons.bolt_rounded),
+                    label: l.navTrain,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.calendar_month_outlined),
+                    selectedIcon: const Icon(Icons.calendar_month_rounded),
+                    label: l.navCalendar,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.insights_outlined),
+                    selectedIcon: const Icon(Icons.insights_rounded),
+                    label: l.navStats,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.auto_awesome_outlined),
+                    selectedIcon: const Icon(Icons.auto_awesome),
+                    label: l.navCoach,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+}
+
+const _appChannel = MethodChannel('com.gromhork.strive/app');
+
+/// Sends the app to the background like the home button (Android `moveTaskToBack`); the
+/// activity and the process stay alive. Falls back to doing nothing elsewhere.
+Future<void> moveAppToBackground() async {
+  try {
+    await _appChannel.invokeMethod<bool>('moveTaskToBack');
+  } on MissingPluginException {
+    // Not Android / tests.
+  } on PlatformException {
+    // Ignore: staying in the app is the safe fallback.
   }
 }
 

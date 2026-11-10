@@ -73,8 +73,8 @@ class GoalStatusView extends StatelessWidget {
     final f = forecast;
     final (color, icon, label) = forecastStyle(l, f);
     final start = f.planStart == null ? null : startOfWeek(f.planStart!);
-    final span = start == null ? 0 : f.raceDate.difference(start).inDays + 1;
-    final elapsed = start == null ? 0 : dayOnly(now).difference(start).inDays;
+    final span = start == null ? 0 : daysBetween(start, f.raceDate) + 1;
+    final elapsed = start == null ? 0 : daysBetween(start, dayOnly(now));
     final position = span <= 0 ? 0.0 : elapsed / span;
     final currentWeek = elapsed ~/ 7;
     final small = theme.textTheme.bodySmall;
@@ -347,7 +347,7 @@ class _TrendChart extends StatelessWidget {
     final l = context.l10n;
     final theme = Theme.of(context);
     final origin = f.planStart ?? (f.trend.isEmpty ? dayOnly(now) : f.trend.first.$1);
-    double x(DateTime d) => d.difference(origin).inDays.toDouble();
+    double x(DateTime d) => daysBetween(origin, d).toDouble();
     final actual = [for (final p in f.trend) FlSpot(x(p.$1), p.$2)];
     final planned = [for (final p in f.planned) FlSpot(x(p.$1), p.$2)];
     if (actual.isEmpty) {
