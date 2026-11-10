@@ -1352,5 +1352,16 @@
   "wCruiseKm": "Cruise-Intervalle {reps} × {dist} km",
   "wRideTempo": "Tempo {reps} × {min} min",
   "wRideTempoDesc": "Wettkampfspezifisches Tempo bei 75–85 % FTP – die Belastung einer 70.3-Radstrecke: gleichmäßig, aerodynamisch, mit Verpflegung.",
-  "stepRideTempoNote": "Tempo – 75–85 % FTP, gleichmäßig"
+  "stepRideTempoNote": "Tempo – 75–85 % FTP, gleichmäßig",
+  "sprintTri": "Sprint-Triathlon",
+  "distUltra50": "Ultra 50 km",
+  "distIronman": "Langdistanz (Ironman)",
+  "distDuSprint": "Duathlon Sprint (5/20/2,5)",
+  "distDuStandard": "Duathlon Standard (10/40/5)",
+  "distRide100": "Radmarathon 100 km",
+  "distRide160": "Radmarathon 160 km",
+  "distSwim1500": "Freiwasser 1,5 km",
+  "distSwim3800": "Freiwasser 3,8 km",
+  "distSwim5000": "Freiwasser 5 km",
+  "moreDistances": "Weitere Distanzen…"
 }
