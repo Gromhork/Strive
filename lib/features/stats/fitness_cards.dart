@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../providers.dart';
 import '../../services/insights.dart';
 import '../../services/zones.dart';
+import '../../widgets/term_info.dart';
 import '../../widgets/common.dart';
 
 /// Fitness (CTL), fatigue (ATL) and form (TSB) – Banister impulse-response model.
@@ -146,7 +147,17 @@ class RunBestEffortsCard extends ConsumerWidget {
               ),
           if (vdot != null) ...[
             const Divider(height: 24),
-            Text('${l.racePredictions} · VDOT ${vdot.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    '${l.racePredictions} · VDOT ${vdot.toStringAsFixed(1)}',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const TermInfoButton(Term.vdot),
+              ],
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,

@@ -11,6 +11,7 @@ import '../../providers.dart';
 import '../../services/insights.dart';
 import '../../services/translate_service.dart';
 import '../../widgets/common.dart';
+import '../../widgets/term_info.dart';
 import '../../widgets/exercise_media.dart';
 
 class ExerciseDetailPage extends ConsumerWidget {
@@ -61,6 +62,7 @@ class ExerciseDetailPage extends ConsumerWidget {
           if (rec != null)
             SectionCard(
               title: l.yourRecords,
+              trailing: const TermInfoButton(Term.e1rm),
               child: Row(
                 children: [
                   if (rec.maxWeight > 0) ...[

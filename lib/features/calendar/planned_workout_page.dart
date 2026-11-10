@@ -18,6 +18,7 @@ import '../session/step_list.dart';
 import '../session/zone_info.dart' show ZoneInfoButton;
 import '../stats/session_detail_page.dart';
 import 'auto_adjust.dart';
+import '../../widgets/term_info.dart';
 import 'plan_editor.dart';
 
 String phaseLabel(AppLocalizations l, String? phase) => switch (phase) {
@@ -99,7 +100,12 @@ class PlannedWorkoutPage extends ConsumerWidget {
                     spacing: 8,
                     children: [
                       if (phase.isNotEmpty)
-                        Chip(label: Text(phase), visualDensity: VisualDensity.compact, avatar: const Icon(Icons.timeline, size: 16)),
+                        ActionChip(
+                          label: Text(phase),
+                          visualDensity: VisualDensity.compact,
+                          avatar: const Icon(Icons.timeline, size: 16),
+                          onPressed: () => showTermInfo(context, Term.phases),
+                        ),
                       if (p.isKey)
                         Chip(
                           label: Text(l.keySession),

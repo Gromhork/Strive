@@ -16,6 +16,7 @@ import '../../services/plan_generator.dart';
 import '../../services/schedule_advisor.dart';
 import '../../services/zones.dart';
 import '../../widgets/common.dart';
+import '../../widgets/term_info.dart';
 import '../../widgets/segments.dart';
 
 /// What the setup flow edits.
@@ -312,12 +313,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     ),
   );
 
-  Widget _label(String s, {String? hint}) => Padding(
+  Widget _label(String s, {String? hint, Term? term}) => Padding(
     padding: const EdgeInsets.only(top: 22, bottom: 8),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(s, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Row(
+          children: [Flexible(child: Text(s, style: const TextStyle(fontWeight: FontWeight.w600))), if (term != null) TermInfoButton(term)],
+        ),
         if (hint != null) Text(hint, style: Theme.of(context).textTheme.bodySmall),
       ],
     ),
@@ -1038,7 +1041,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         value: a.indoorTrainer,
         onChanged: (v) => _setA({'indoorTrainer': v}),
       ),
-      _label(l.ftpTitle, hint: l.ftpHint),
+      _label(l.ftpTitle, hint: l.ftpHint, term: Term.ftp),
       _numField(
         'FTP',
         a.ftp,
@@ -1081,7 +1084,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           value: a.canSwim400,
           onChanged: (v) => _setA({'canSwim400': v}),
         ),
-        _label(l.cssTitle, hint: l.cssHint),
+        _label(l.cssTitle, hint: l.cssHint, term: Term.css),
         Row(
           children: [
             Expanded(child: _timeField('400 m', a.swim400Sec, (v) => _setA({'swim400Sec': v}))),
@@ -1485,7 +1488,14 @@ class _ZonesPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${l.yourPaceZones} · VDOT ${vdot.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+          Row(
+            children: [
+              Flexible(
+                child: Text('${l.yourPaceZones} · VDOT ${vdot.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+              ),
+              const TermInfoButton(Term.vdot),
+            ],
+          ),
           const SizedBox(height: 6),
           row(l.zoneEasy, '${fmtPace(z.easyFast)}–${fmtPace(z.easySlow)}', AppColors.run),
           row(l.zoneMarathon, fmtPace(z.marathon), AppColors.swim),
