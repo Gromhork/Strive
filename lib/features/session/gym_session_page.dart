@@ -102,6 +102,7 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 0,
         leading: IconButton(
           icon: const Icon(Icons.keyboard_arrow_down_rounded),
           tooltip: l.minimize,
@@ -112,7 +113,8 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
             final t = await askText(context, l.rename, initial: w.title);
             if (t != null && t.isNotEmpty) n.rename(t);
           },
-          child: Text(w.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, height: 1.15)),
+          // Two lines, and small enough that a single long word ("Ganzkörper") is not split.
+          child: Text(w.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, height: 1.15)),
         ),
         actions: [
           MusicButton(plan: () => gymMusicPlan(l, ref.read(activeGymProvider))),

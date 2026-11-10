@@ -53,7 +53,11 @@ Widget _app(Widget home, String lang, List<Override> overrides, {ThemeData? them
   ),
 );
 
-Future<List<Override>> _overrides(_FakeRepo repo, {List<PlannedWorkout> plans = const [], List<WorkoutTemplate> templates = const []}) async {
+Future<List<Override>> _overrides(
+  _FakeRepo repo, {
+  List<PlannedWorkout> plans = const [],
+  List<WorkoutTemplate> templates = const [],
+}) async {
   SharedPreferences.setMockInitialValues({});
   final p = await SharedPreferences.getInstance();
   return [
@@ -76,7 +80,11 @@ Session _gym({int done = 4, int total = 15, int sec = 1800, String? templateId =
   durationSec: sec,
   templateId: templateId,
   exercises: [
-    GymExercise(exId: '0043', name: 'barbell full squat', sets: [for (var i = 0; i < total; i++) GymSet(weight: 60, reps: 6, done: i < done)]),
+    GymExercise(
+      exId: '0043',
+      name: 'barbell full squat',
+      sets: [for (var i = 0; i < total; i++) GymSet(weight: 60, reps: 6, done: i < done)],
+    ),
   ],
 );
 
@@ -85,7 +93,8 @@ void main() {
   final now = DateTime(2026, 11, 10, 18);
 
   group('C5 coach context', () {
-    Session run(int daysAgo) => Session(id: 'r$daysAgo', sport: Sport.run, title: 'Lauf', start: addDays(now, -daysAgo), durationSec: 3600, distanceM: 10000);
+    Session run(int daysAgo) =>
+        Session(id: 'r$daysAgo', sport: Sport.run, title: 'Lauf', start: addDays(now, -daysAgo), durationSec: 3600, distanceM: 10000);
 
     test('baseline not ready: no load ratio / fitness numbers, says so', () {
       final c = CoachService(
@@ -140,6 +149,7 @@ void main() {
       await t.pump();
       final rich = t.widget<RichText>(find.byType(RichText).first);
       expect(rich.text.style?.color, theme.colorScheme.onSurface);
+      expect(find.text('•  '), findsOneWidget); // bullet glyph intact (no mojibake)
     });
   }
 
@@ -294,7 +304,9 @@ void main() {
       id: 't1',
       name: 'Ganzkörper A – Kniebeuge-Schwerpunkt mit langem Namen',
       sport: Sport.gym,
-      exercises: [GymExercise(exId: '0043', name: 'barbell full squat', sets: [for (var i = 0; i < 3; i++) GymSet(reps: 5)])],
+      exercises: [
+        GymExercise(exId: '0043', name: 'barbell full squat', sets: [for (var i = 0; i < 3; i++) GymSet(reps: 5)]),
+      ],
     );
     final o = await _overrides(_FakeRepo(), templates: [tpl]);
     await t.pumpWidget(_app(ProgramPreviewPage(template: tpl), 'de', o));

@@ -65,7 +65,7 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
         setState(() {});
         _toBottom();
       }
-      if (answer.text.isEmpty) answer.text = 'â€¦';
+      if (answer.text.isEmpty) answer.text = '…';
     } catch (e) {
       answer.error = true;
       answer.text = '${l.aiUnavailable}\n\n$e';
@@ -238,7 +238,7 @@ class CoachText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // RichText does not inherit the theme's text colour â€“ an explicit fallback keeps the
+    // RichText does not inherit the theme's text colour – an explicit fallback keeps the
     // answer readable in light mode (black-on-dark would be invisible otherwise).
     final base = TextStyle(color: color ?? Theme.of(context).colorScheme.onSurface, height: 1.4, fontSize: 14);
     final lines = text.split('\n');
@@ -250,7 +250,7 @@ class CoachText extends StatelessWidget {
             builder: (_) {
               var line = raw;
               var bullet = false;
-              final m = RegExp(r'^\s*([*\-â€¢]|\d+\.)\s+').firstMatch(line);
+              final m = RegExp(r'^\s*([*\-•]|\d+\.)\s+').firstMatch(line);
               if (m != null) {
                 bullet = true;
                 line = line.substring(m.end);
@@ -267,7 +267,7 @@ class CoachText extends StatelessWidget {
                 padding: EdgeInsets.only(left: bullet ? 6 : 0, bottom: line.isEmpty ? 4 : 0),
                 child:
                     bullet
-                        ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('â€¢  ', style: base), Expanded(child: rt)])
+                        ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('•  ', style: base), Expanded(child: rt)])
                         : rt,
               );
             },
