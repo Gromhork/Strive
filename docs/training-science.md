@@ -1261,6 +1261,51 @@ week; marathon perfect athlete ahead / at risk flips → on track; beginner HM p
 ≤ 2; marathon VDOT 40.4 → 48.4 in 8 weeks → 40.4 → 43.5 in 11 weeks (steps W3, W6, W9, W12), race times unchanged; eight
 skipped long runs "on track" until W12 → slightly behind from W6, at risk from W8, goalAtRisk.
 
+### 11.3 Generator rules from the same review (`test/plan_review_run_test.dart`, `test/plan_review_multi_test.dart`) [P]
+
+Running plans:
+- **Duration = steps.** Run durations are whole minutes equal to the step estimate (± 0.5 min) and easy / long runs imply a
+  pace inside E – the adaptation layer compares sessions against these numbers (§11.2), so a rounded "20' / 3.5 km" (5:43/km
+  for an E zone of 5:48–6:41) made "too fast" fire on an athlete who ran the plan.
+- **Day budget**: no day exceeds its minutes (strides and walk breaks included).
+- **Long-run share**: ≤ 50 % of the actual week's run volume (marathon 55 %, two-run weeks 60 %) and ≤ 2 × the next-longest
+  run (weeks with ≤ 4 runs, not marathon / ultra); easy runs grow first. Feasibility issues `longRunShare` (the other runs
+  need ≥ X min) and `longDayDefault` (the event's long-day default exceeds the time the athlete set: "long day needs ≥ X").
+  Trade-off: a 3 × 60 min half-marathon beginner peaks at ~12 km instead of 15.5 km and sees the warning.
+- **Weekly ceiling includes the long run** (1.5 × stated, level ceiling); event volume grows evenly to the peak instead of
+  reaching the ceiling in week 6. With a 52.5 km ceiling and a 28 km long run, marathon easy runs may drop to 5 km.
+- **Marathon peak**: one marathon-pace element a week (long run with MP finish, alternating with an MP run + ~80 % plain long
+  run) – ≤ 2 quality sessions besides the long run, the longest long run not three weeks in a row.
+- **Conservative target** (> 5 % slower than realistic): issue `targetConservative`; race-pace training uses the faster of
+  target and realistic (race day keeps the athlete's target).
+- **Quality progresses** (1000 → 1200 m reps, cruise 1.6 → 2.4 → 3.2 km, beginner fartlek grows); the first two weeks after
+  run/walk use threshold pick-ups, not VO2max fartlek.
+- **Recovery weeks** ≤ 75 % of the last loading week, the first right after the run/walk ladder.
+- **Race day**: one source for the race time (target, else `suggestTargetTime`); race step zone I (5 km), T (10 km / HM), M
+  (marathon); finish-only run/walk races (`PlanGenerator.finishOnly`, VDOT ≤ 28) carry no pace; triathlon / duathlon races
+  are one session stored as a ride with swim / bike / run leg steps that add up to the predicted time. Run/walk athletes get
+  a run/walk shake-out; former run/walkers 15' easy without strides.
+- Minor: interval blocks ≥ 10 min in 5-min steps; goal-pace HR from the pace zone's HR zone; "continuous run 30 min" title;
+  a quick-setup beginner's 4th day returns after run/walk.
+
+Multisport, cycling, swimming, ultra, hybrid, strength:
+- **Swim novices (triathlon)**: ≥ 2 swims a week (a double day if needed), continuous-swim target from the race's swim leg
+  (sprint 750 m, olympic 1200, 70.3 1900, Ironman 3000, + ≤ 200 m a week); build / peak triathlon swims carry sighting cues
+  and an open-water / wetsuit note (§4.4).
+- **Bricks** at the run leg's race pace (stand-alone pace × `GoalModel.runOffBikeFactor`: Ironman × 1.25, 70.3 × 1.12) and
+  ≤ 30' when a long run follows the next day.
+- **Progressions**: threshold rides 3 × 10 → 2 × 25 min at 91–100 % FTP (not 2 × 30 at 95–105 % for weeks); long rides with
+  race-power blocks (70.3 / Ironman / 160 km); swim3800 long swims rotate plain / race-pace finish / over-distance; duathlon
+  run quality tempo → 1 km / 1.5 km reps → 800 / 600 m; duathlon bike quality every week; no duplicate quality session in a
+  week (sweet spot + tempo ride).
+- **70.3** with a 4 h Saturday: long run + easy ride there, ≥ 3 rides a week when days allow.
+- **Ultra**: ≤ 3 key sessions (long + back-to-back + one quality run alternating hill repeats and cruise intervals).
+- **Hybrid**: full-body A / B alternate as the session before the long run (legs halved), so neither is halved every week;
+  time left in the gym slot fills with upper-body / core sets.
+- **Beginner strength**: weeks 1–6 use regressions (lat pulldown, dumbbell RDL, reverse crunch), full lifts from week 7; no
+  "next deload week" text without a deload.
+- **Masters** (≥ 50) and women ≥ 45 without strength days: a strength tip on one easy session per loading week (§2.9, §9.2).
+
 ---
 
 ## 12. Session feedback and progressive adaptation of endurance plans (run, bike, swim) [M/P]
