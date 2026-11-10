@@ -217,7 +217,8 @@ options      : the first later race date (same weekday, ≤ 30 weeks) that passe
 
 **Plan length.** With an event date the plan always runs to race day (`PlanGenerator.weeksToEvent`, 2–52 weeks; every
 creation path – setup, "new plan" sheet, goal editor "align plan to this event" – uses it). More than 30 weeks away: the
-first `weeks − 30` weeks are a base **pre-plan** block (easy volume, strides, recovery weeks), then the usual
+first `weeks − 30` weeks are a base **pre-plan** block (easy volume, strides, recovery weeks; long run ≤ 70 % of the race-specific
+cap – marathon 24.5 km, HM ~15 km), then the usual
 base → build → peak → taper of 30 weeks. Shorter than the recommended length: the plan is built anyway and the feasibility
 card warns (§1.8). Rebuilding keeps done workouts (only upcoming *planned* workouts are replaced).
 
@@ -261,6 +262,8 @@ fitness now : planned race / unplanned max effort (RPE ≥ 8 or HR ≥ 88 % HRma
               towards VDOT_targets · r^1.2, r > 1.02 lifts there; faster non-max efforts only raise
 detraining  : > 10 days without running → −(0.3 + 0.7 / week beyond day 10), ≤ −4 VDOT  (Mujika & Padilla [68])
 race day    : now + [gain(elapsed + left) − gain(elapsed)] × (0.3 + 0.7 · completion_28d / 0.9, ≤ 1)
+plan line   : starts at the VDOT of the plan's first quality run (the plan-start paces) when a recalibration has moved
+              the profile's VDOT since – baseline + gain would otherwise count the realised gain twice
 range       : ± 1 (max effort) · 1.5 (quality runs) · 2 (race times) · 3.5 (level default) + 0.04 / week left
 status      : forecast / target ≤ 0.97 ahead (suggest faster) · ≤ 1.01 on track · ≤ 1.03 slightly behind · else at risk
 no target   : completion < 50 % or long run < 75 % of the planned so far with ≤ 6 weeks left → at risk
@@ -319,7 +322,9 @@ beginners: >= 2 rest days/week (strength only: <= 4 days), <= 4 runs/week (<= 3 
 
 Long-run share for half/full marathon goals: Daniels' 25–30 % (1.4) keeps an amateur HM long run at ~11 km on 35 km/week.
 Race-specific plans (Higdon, Pfitzinger, Hanson) use 35–45 % at amateur volumes, so with ≥ 3 runs/week the generator allows
-HM 40 % (< 50 km/week, else 32 %) and marathon 42 % (< 70 km/week, else 33 %), capped at 21 / 35 km, still bounded by R1 and
+HM 40 % (above 50 km/week falling towards 32 % only as fast as the long run stays at 20 km) and marathon 42 % (above
+70 km/week falling towards 33 %, long run ≥ 29.4 km) – continuous, so a growing week never shortens the long run (review 2:
+a step at 50 km cut it from 19 to 16 km) – capped at 21 / 35 km, still bounded by R1 and
 the 150 min (marathon 180 min) limit. At low volumes the share may rise to what the race-specific long run needs:
 HM up to min(50 %, 15 km / weekly km), marathon up to min(55 %, 30 km / weekly km) (Higdon / Hanson novice plans 45–60 %).
 Peak run volume with a stated current volume: ≤ 1.5 × that volume (at least +10 km), whatever the table ceiling says
@@ -339,7 +344,7 @@ All quality sessions: 10–15 min E warm-up with 4 × 20 s strides, and a 10 min
 | Strides | 4–8 × 15–20 s quick (≈ R pace), 60 s easy walk/jog | 4 | +1–2 / week | 10 |
 | Hill sprints | 6–10 × 8–10 s steep hill, full recovery | 4 | +2 | 10 |
 | Fartlek | 6–10 × 1 min at I/T feel / 1–2 min E | 6 × 1 min | +1 rep or +30 s | 20 min "on" |
-| Tempo (continuous T) | 15 → 30 min at T | 15 min (N), 20 (I) | +3–5 min | 30–40 min or 10% weekly km |
+| Tempo (continuous T) | 15 → 30 min at T | 15 min (N), 20 (I) | +3–5 min | 30 min, and ≤ 10 % of the weekly km (at least 20 min) |
 | Cruise intervals (T) | n × 1 mile/1.6 km (or 5–8 min) at T, 60 s jog | 3 × 1.6 km | +1 rep | T cap (1.4) |
 | VO2 intervals (I) | n × 800–1200 m (3–5 min) at I, jog = 0.5–1 × rep time | 5 × 800 m / 4 × 1000 m | +1 rep or +200 m | min(8% wk, 10 km) |
 | Repetitions (R) | n × 200–400 m at R, jog 2–3 × rep time | 8 × 200 m | +2 reps | min(5% wk, 8 km) |
@@ -1073,6 +1078,9 @@ session); a manual edit or a recalibration with a new volume replaces the record
 
 * **Sessions without RPE** count toward the §11 "too hard" score when the evaluation is clearly harder (score ≥ 0.6 → 1,
   else ½) and toward "too easy" for quality sessions – so watch imports with HR also adapt the plan.
+* **Only current targets count** for the VDOT / FTP / CSS trend: sessions whose work targets were set for another
+  threshold (before the last update) are left out – otherwise the same old sessions raised the VDOT again every week
+  (simulated: true VDOT 42.5 on a VDOT 40 plan → 41, 42, … 45, then back down; now 41 and holding).
 * **Run VDOT** (only when no best effort changed it): ≥ 3 key runs (tempo / intervals / long) slower than the targets with an
   internal score ≥ 0.3 → VDOT −1; ≥ 3 quality runs on target that felt easier than intended, none too hard, EF not falling →
   VDOT +1. Daniels [7]: adjust VDOT in steps of about one point after a few weeks of training at it.

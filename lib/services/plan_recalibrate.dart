@@ -183,7 +183,17 @@ class Recalibrator {
     final oldVdot = Vdot.of(a) ?? Vdot.defaultFor(profile.level);
     var newVdot = _newVdot(oldVdot);
     if (newVdot != null) reasons.add(newVdot > oldVdot ? RecalReason.fasterRuns : RecalReason.slowerRuns);
-    final trends = CardioTrend.of(plans, linked, profile, now: now, days: trendDays, hrMax: hrMax);
+    // Only sessions whose targets were set for the current thresholds: a session run against
+    // the old (pre-update) paces / power would count again after every update – the VDOT rose
+    // 40 → 45 for a 42.5 runner (one point a week on the same old sessions) and then fell back.
+    final oldFtp = a.ftp;
+    final cssNow = SwimZones.fromTests(a.swim400Sec, a.swim200Sec) ?? SwimZones.defaultFor(profile.level);
+    final byId = {for (final p in plans) p.id: p};
+    final linkedNow = {
+      for (final e in linked.entries)
+        if (_targetsCurrent(byId[e.key], oldVdot, oldFtp, cssNow)) e.key: e.value,
+    };
+    final trends = CardioTrend.of(plans, linkedNow, profile, now: now, days: trendDays, hrMax: hrMax);
     final run = trends[Sport.run], ride = trends[Sport.ride], swim = trends[Sport.swim];
     if (newVdot == null && run != null) {
       if (run.slowAndHard >= 3) {
@@ -514,6 +524,34 @@ class Recalibrator {
     }
     if (best < current + 0.5) return null;
     return double.parse(min(best, current + 2).toStringAsFixed(1));
+  }
+
+  /// Whether [p]'s work targets were set for the current VDOT / FTP / CSS (true when it has
+  /// none to compare: easy / long runs, technique swims, plans without paces or power).
+  static bool _targetsCurrent(PlannedWorkout? p, double vdot, int? ftp, int css) {
+    if (p == null) return true;
+    for (final s in p.steps) {
+      if (!s.isWork) continue;
+      switch (p.sport) {
+        case Sport.run:
+          final f = switch (s.zone) {
+            'T' => 0.88,
+            'I' => 0.975,
+            _ => null,
+          };
+          if (f == null || s.paceMin == null || s.paceMax == null) continue;
+          return (Vdot.vo2(60000 / ((s.paceMin! + s.paceMax!) / 2)) / f - vdot).abs() < 0.75;
+        case Sport.ride:
+          if (ftp == null || s.powerMin == null) continue;
+          return (PowerZones(ftp).range(s.zone).$1 - s.powerMin!).abs() <= 3;
+        case Sport.swim:
+          if (s.paceMin == null) continue;
+          return (SwimZones(css).range(s.zone).$1 - s.paceMin!).abs() <= 1;
+        case Sport.gym:
+          return true;
+      }
+    }
+    return true;
   }
 
   /// A race / time trial, or a run that was rated (RPE ≥ 8) or measured (average HR
