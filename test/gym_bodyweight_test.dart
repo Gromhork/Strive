@@ -353,7 +353,7 @@ void main() {
         Future<void> openAndSave({int? rpe}) async {
           await t.tap(find.text('open'));
           await t.pumpAndSettle();
-          expect(find.text(de.howHardOptional), findsOneWidget);
+          expect(find.text(de.summaryEffortTitle), findsOneWidget);
           if (rpe != null) {
             await t.ensureVisible(find.byKey(ValueKey('rpe-$rpe')));
             await t.tap(find.byKey(ValueKey('rpe-$rpe')));

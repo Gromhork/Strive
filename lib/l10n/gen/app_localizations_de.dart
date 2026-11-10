@@ -596,7 +596,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get rpeEasy => 'leicht';
 
   @override
-  String get rpeModerate => 'moderat';
+  String get rpeModerate => 'mittel';
 
   @override
   String get rpeHard => 'hart';
@@ -1021,7 +1021,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coachQ1 => 'Wie läuft mein Training? Was sollte ich verbessern?';
 
   @override
-  String get coachQ2 => 'Wie viel Protein brauche ich pro Tag?';
+  String get coachQ2 => 'Warum sieht meine Woche so aus?';
 
   @override
   String get coachQ3 => 'Wie werde ich auf 10 km schneller?';
@@ -1030,7 +1030,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coachQ4 => 'Ich habe schlecht geschlafen – soll ich heute trotzdem trainieren?';
 
   @override
-  String get coachQ5 => 'Was sollte ich vor einem langen Lauf essen?';
+  String get coachQ5 => 'Ich bin krank/müde – was soll ich anpassen?';
 
   @override
   String get coachDisclaimer => 'KI-Antworten können fehlerhaft sein und ersetzen keine ärztliche Beratung.';
@@ -4252,4 +4252,144 @@ class AppLocalizationsDe extends AppLocalizations {
   String hintPlannedNeutral(String sport) {
     return 'Heute geplant: $sport – passend anziehen';
   }
+
+  @override
+  String get summaryEffortTitle => 'Wie hart war\'s? Dein Plan passt sich daran an.';
+
+  @override
+  String get summaryEffortHint => 'Optional · 1 = ganz locker, 10 = alles gegeben';
+
+  @override
+  String get summaryEffortPrefilled => 'Vorausgewählt aus deinen Übungsbewertungen – tippe, um es zu ändern.';
+
+  @override
+  String autoAdjBanner(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n Einheiten automatisch angepasst – ansehen',
+      one: '1 Einheit automatisch angepasst – ansehen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get autoAdjSheetIntro => 'Nach deinen letzten Einheiten hat sich der Plan hier angepasst. Behalte die Änderungen oder mach einzelne rückgängig.';
+
+  @override
+  String get planHistory => 'Planverlauf';
+
+  @override
+  String get planHistoryEmpty => 'Noch keine Planänderungen. Automatische Anpassungen, „Plan überprüfen“, „Woche anpassen“ und „Nicht 100 % fit?“ erscheinen hier.';
+
+  @override
+  String get planLogRecal => 'Plan überprüft';
+
+  @override
+  String planLogReadiness(String why) {
+    return 'Nicht 100 % fit: $why';
+  }
+
+  @override
+  String get planLogWeekReason => 'Verpasste Einheiten innerhalb der Woche verschoben oder gestrichen.';
+
+  @override
+  String get planLogUndone => 'Rückgängig gemacht';
+
+  @override
+  String get planLogChanged => 'Inzwischen geändert – kein Rückgängig';
+
+  @override
+  String get planLogNew => 'neu';
+
+  @override
+  String get planLogDropped => 'entfällt';
+
+  @override
+  String get planLogUndoDone => 'Änderung rückgängig gemacht';
+
+  @override
+  String get notFitButton => 'Nicht 100 % fit?';
+
+  @override
+  String get notFitIntro => 'Sag dem Plan, wie es dir geht – er schlägt eine sichere Änderung vor. Erst mit „Übernehmen“ ändert sich etwas.';
+
+  @override
+  String get notFitSick => 'Krank';
+
+  @override
+  String get notFitPain => 'Schmerzen';
+
+  @override
+  String get notFitTired => 'Müde';
+
+  @override
+  String get notFitTime => 'Wenig Zeit';
+
+  @override
+  String get notFitMinutes => 'Verfügbare Zeit';
+
+  @override
+  String get notFitNoChange => 'Keine Änderung nötig – die Einheit passt so.';
+
+  @override
+  String get notFitPreview => 'Vorgeschlagene Änderung';
+
+  @override
+  String get notFitApplied => 'Plan angepasst';
+
+  @override
+  String get notFitHintAboveNeck => 'Hals-Regel: Nur Schnupfen oder leichtes Halskratzen ohne Fieber – Pause oder höchstens eine kurze, lockere Einheit. Fieber, Gliederschmerzen, Brust- oder Magen-Darm-Beschwerden: kein Training, bis du gesund bist.';
+
+  @override
+  String get notFitHintReturn => 'Nach dem Kranksein: Harte Einheiten der nächsten zwei Tage werden locker. Nach 10 Tagen Pause oder mehr nutze „Plan überprüfen“ – er baut mit 50–70 % deines bisherigen Umfangs wieder auf.';
+
+  @override
+  String get notFitHintPainRule => 'Schmerz bis 3/10, der am nächsten Morgen abgeklungen ist, ist vertretbar. Brich ab, wenn er während der Einheit zunimmt.';
+
+  @override
+  String get notFitHintDoctor => 'Hält der Schmerz länger als ein paar Tage an oder kommt immer wieder, lass ihn ärztlich oder physiotherapeutisch abklären.';
+
+  @override
+  String get notFitHintSwapped => 'Gegen gelenkschonendes Alternativtraining getauscht: Es erhält deine Ausdauer ohne die Stoßbelastung beim Laufen.';
+
+  @override
+  String get notFitHintKeyEasy => 'Müde: Die Schlüsseleinheit wird zur lockeren Einheit (ca. 20 % kürzer). Qualität mit müden Beinen bringt Ermüdung statt Form.';
+
+  @override
+  String get notFitHintShorter => 'Müde: Die lockere Einheit ist ca. 25 % kürzer – bleib wirklich locker.';
+
+  @override
+  String get notFitHintGymLighter => 'Etwa ein Drittel weniger Sätze bei gleichen Gewichten; beende jeden Satz mit 2–3 Wdh. im Tank. Lass Übungen weg, die schmerzen.';
+
+  @override
+  String get notFitHintGymShorter => 'Weniger Sätze, damit es in deine Zeit passt – Hauptübungen zuerst. Wenige harte Sätze erhalten den Großteil der Wirkung.';
+
+  @override
+  String get notFitHintTime => 'Auf deine Zeit gekürzt: Aufwärmen und Ausklang bleiben, der Hauptteil wird kürzer.';
+
+  @override
+  String get askCoachAbout => 'Coach fragen';
+
+  @override
+  String coachExplainWorkout(String title, String date) {
+    return 'Erklär mir die Einheit „$title“ am $date';
+  }
+
+  @override
+  String get reserveLabel => 'Reserve';
+
+  @override
+  String reserveN(String value) {
+    return 'Reserve $value';
+  }
+
+  @override
+  String get reserveHint => 'Wdh. im Tank';
+
+  @override
+  String get logRirSetting => 'Reserve pro Satz erfassen';
+
+  @override
+  String get logRirSettingSub => 'Wiederholungen im Tank nach jedem Satz (RIR). Die Bewertung pro Übung bleibt.';
 }

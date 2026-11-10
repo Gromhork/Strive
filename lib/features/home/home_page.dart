@@ -18,6 +18,7 @@ import '../../widgets/common.dart';
 import '../profile/health_connect_page.dart';
 import '../shell/health_sync.dart';
 import 'adjust_week.dart';
+import 'auto_adjusted_banner.dart';
 import 'goal_status_card.dart';
 import 'weather_page.dart';
 import 'week_page.dart';
@@ -49,6 +50,7 @@ class HomePage extends ConsumerWidget {
           _Greeting(),
           SizedBox(height: 12),
           AdjustWeekBanner(),
+          AutoAdjustedBanner(),
           TodayCard(),
           SizedBox(height: 12),
           GoalStatusCard(),

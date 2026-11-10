@@ -124,6 +124,16 @@ class NavIndex extends Notifier<int> {
 
 final navIndexProvider = NotifierProvider<NavIndex, int>(NavIndex.new);
 
+/// Question another page hands to the coach tab ("Ask the coach" on a planned workout): the
+/// coach page puts it into its input field and clears it.
+class CoachDraft extends Notifier<String?> {
+  @override
+  String? build() => null;
+  void set(String? q) => state = q;
+}
+
+final coachDraftProvider = NotifierProvider<CoachDraft, String?>(CoachDraft.new);
+
 // ───────────────────────────── Settings (device-local) ─────────────────────────────
 
 final prefsProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError('override in main'));
@@ -135,12 +145,17 @@ class AppSettings {
   final int reminderHour;
   final bool vibrate;
 
+  /// Gym: log the reserve (reps in the tank) of every set – off by default; the per-exercise
+  /// effort chips stay.
+  final bool logRir;
+
   const AppSettings({
     this.locale,
     this.themeMode = ThemeMode.dark,
     this.trainingReminder = false,
     this.reminderHour = 8,
     this.vibrate = true,
+    this.logRir = false,
   });
 
   AppSettings copyWith({
@@ -150,12 +165,14 @@ class AppSettings {
     bool? trainingReminder,
     int? reminderHour,
     bool? vibrate,
+    bool? logRir,
   }) => AppSettings(
     locale: clearLocale ? null : (locale ?? this.locale),
     themeMode: themeMode ?? this.themeMode,
     trainingReminder: trainingReminder ?? this.trainingReminder,
     reminderHour: reminderHour ?? this.reminderHour,
     vibrate: vibrate ?? this.vibrate,
+    logRir: logRir ?? this.logRir,
   );
 }
 
@@ -171,6 +188,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       trainingReminder: p.getBool('trainingReminder') ?? false,
       reminderHour: p.getInt('reminderHour') ?? 8,
       vibrate: p.getBool('vibrate') ?? true,
+      logRir: p.getBool('logRir') ?? false,
     );
   }
 
@@ -181,6 +199,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _p.setBool('trainingReminder', s.trainingReminder);
     _p.setInt('reminderHour', s.reminderHour);
     _p.setBool('vibrate', s.vibrate);
+    _p.setBool('logRir', s.logRir);
   }
 }
 

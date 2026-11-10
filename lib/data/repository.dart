@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import 'models.dart';
+import 'plan_log.dart';
 
 /// Thin Firestore layer. All user data lives below `users/{uid}`.
 ///
@@ -24,6 +25,7 @@ class Repository {
   CollectionReference<Map<String, dynamic>> get _plans => _user.collection('plans');
   CollectionReference<Map<String, dynamic>> get _body => _user.collection('body');
   CollectionReference<Map<String, dynamic>> get _goals => _user.collection('goals');
+  CollectionReference<Map<String, dynamic>> get _planLog => _user.collection('planLog');
 
   String newId() => _sessions.doc().id;
 
@@ -117,6 +119,23 @@ class Repository {
       batch.delete(_plans.doc(p.id));
     }
     _fire(batch.commit());
+  }
+
+  // ── Plan history ("Planverlauf"): every applied plan change, newest first.
+  Stream<List<PlanLogEntry>> planLog() => _planLog
+      .orderBy('at', descending: true)
+      .limit(200)
+      .snapshots()
+      .map((q) => q.docs.map((d) => PlanLogEntry.fromMap(d.id, d.data())).toList());
+
+  /// Records an applied plan change. Never throws: the history must not break the change itself.
+  void logPlanChange(PlanLogEntry e) {
+    if (e.items.isEmpty) return;
+    try {
+      _fire(_planLog.doc().set(e.toMap()));
+    } catch (err) {
+      debugPrint('Plan log write failed: $err');
+    }
   }
 
   // ── Body

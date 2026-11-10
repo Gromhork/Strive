@@ -19,6 +19,7 @@ import '../session/zone_info.dart' show ZoneInfoButton;
 import '../stats/session_detail_page.dart';
 import 'auto_adjust.dart';
 import '../../widgets/term_info.dart';
+import 'not_fit_sheet.dart';
 import 'plan_editor.dart';
 
 String phaseLabel(AppLocalizations l, String? phase) => switch (phase) {
@@ -118,6 +119,32 @@ class PlannedWorkoutPage extends ConsumerWidget {
                 if (p.steps.isNotEmpty) ...[const SizedBox(height: 14), WorkoutProfileBar(steps: p.steps, sport: p.sport, height: 50)],
               ],
             ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              if (offersNotFit(p, DateTime.now()))
+                OutlinedButton.icon(
+                  key: const ValueKey('notFitButton'),
+                  onPressed: () => showNotFitSheet(context, ref, p, exercises: exercises),
+                  icon: const Icon(Icons.healing_rounded, size: 18),
+                  label: Text(l.notFitButton),
+                ),
+              OutlinedButton.icon(
+                key: const ValueKey('askCoachButton'),
+                onPressed: () {
+                  ref
+                      .read(coachDraftProvider.notifier)
+                      .set(l.coachExplainWorkout(p.title, DateFormat.MMMMEEEEd(context.localeName).format(p.date)));
+                  ref.read(navIndexProvider.notifier).set(4);
+                  Navigator.of(context).popUntil((r) => r.isFirst);
+                },
+                icon: const Icon(Icons.auto_awesome_outlined, size: 18),
+                label: Text(l.askCoachAbout),
+              ),
+            ],
           ),
           if (p.auto != null && !p.isDone) ...[
             const SizedBox(height: 16),

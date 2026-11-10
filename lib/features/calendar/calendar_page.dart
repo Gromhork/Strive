@@ -16,6 +16,7 @@ import '../../widgets/common.dart';
 import '../stats/session_detail_page.dart';
 import 'feasibility_card.dart';
 import 'plan_editor.dart';
+import 'plan_history_page.dart';
 import 'planned_workout_page.dart';
 import 'recalibrate_sheet.dart';
 import '../../widgets/segments.dart';
@@ -81,12 +82,21 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   key: const ValueKey('calendarMore'),
                   tooltip: l.recalMore,
                   icon: const Icon(Icons.more_vert_rounded),
-                  onSelected: (v) => v == 'new' ? showPlanGenerator(context, ref) : _exportIcs(),
+                  onSelected:
+                      (v) => switch (v) {
+                        'new' => showPlanGenerator(context, ref),
+                        'history' => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlanHistoryPage())),
+                        _ => _exportIcs(),
+                      },
                   itemBuilder:
                       (_) => [
                         PopupMenuItem(
                           value: 'new',
                           child: ListTile(leading: const Icon(Icons.restart_alt_rounded), title: Text(l.recalNewPlan)),
+                        ),
+                        PopupMenuItem(
+                          value: 'history',
+                          child: ListTile(leading: const Icon(Icons.history_rounded), title: Text(l.planHistory)),
                         ),
                         PopupMenuItem(
                           value: 'export',

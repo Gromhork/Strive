@@ -1095,6 +1095,19 @@ session); a manual edit or a recalibration with a new volume replaces the record
   direction (Kendall |τ| ≥ 0.45; otherwise 0 – day-to-day pace / HR noise of ~3 % and single hot days are no trend);
   ±3 % or more is reported ("your base is growing" / "watch recovery, sleep and heat") – informational, no changes by itself.
 
+## 13. Day-of readiness: "Not feeling 100 %?" (`ReadinessAdvisor`, lib/services/readiness.dart) [P]
+
+On a planned endurance or strength workout from today on (not a race) the athlete can say how they feel. The app proposes
+a change with a preview; nothing is saved until "Apply", and the change is logged in the plan history (source
+`readiness`) with undo.
+
+| Choice | Change | Rationale |
+|---|---|---|
+| **Sick** | the workout is skipped; hard endurance sessions of the next two days become easy (`Recalibrator.toEasy`, ~80 % of the time). Hints: above-the-neck rule, and after ≥ 10 days off "Plan überprüfen" applies the return rule (R4: 50–70 % of the previous volume) | "Neck check": symptoms only above the neck (runny nose, mild sore throat) and no fever → rest or at most short and easy; fever, aching muscles, chest or stomach symptoms → no training (Eichner 1993 [83]; Primos 1996 [84]). Detraining after short breaks is small (Mujika & Padilla [68]), so skipping costs little |
+| **Pain** | run → easy ride (or swim) of ~80 % of the time when the athlete does that sport; otherwise easy and ≤ 30 min. Strength: about ⅓ fewer sets, same loads. Hints: pain-monitoring rule, see a doctor if it persists | low-impact cross-training keeps aerobic fitness without the impact load of running (Keller 1996 [61]); pain ≤ 3/10 that settles by the next morning is acceptable (Silbernagel 2007 [62], §9.1) |
+| **Tired** | key / hard session (tempo, intervals, long) → easy session of the same sport, ~20 % shorter; an easy session −25 %. Strength: ⅓ fewer sets, loads unchanged, 2–3 RIR | quality on a fatigued body adds strain rather than adaptation – keep easy days easy (Seiler [1]; Meeusen [67]); in strength, cutting volume while keeping load maintains adaptations (minimum effective dose, Androulakis-Korakakis [77]; deload practice §2.7) |
+| **Short on time** | endurance: shortened to the available minutes – warm-up and cool-down kept (shortened in proportion, ≥ 5 min), interval sets lose whole repeats first (each repeat keeps length and pace), continuous parts scale. Strength: one work set at a time from the exercise with the most sets (accessories first), then accessories dropped; the first (main) exercise always stays | keep intensity, cut volume (Bosquet [18]); a few hard sets keep most of the strength / hypertrophy stimulus (Iversen 2021 [23]) |
+
 ---
 
 ## 10. References
@@ -1182,3 +1195,5 @@ Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
 80. Milanović Z, Sporiš G, Weston M. Effectiveness of high-intensity interval training (HIT) and continuous endurance training for VO2max improvements: a systematic review and meta-analysis of controlled trials. *Sports Med.* 2015;45(10):1469–1481. doi:10.1007/s40279-015-0365-0
 81. Bacon AP, Carter RE, Ogle EA, Joyner MJ. VO2max trainability and high intensity interval training in humans: a meta-analysis. *PLoS One.* 2013;8(9):e73182. doi:10.1371/journal.pone.0073182
 82. Bouchard C, An P, Rice T, et al. Familial aggregation of VO2max response to exercise training: results from the HERITAGE Family Study. *J Appl Physiol.* 1999;87(3):1003–1008. doi:10.1152/jappl.1999.87.3.1003
+83. Eichner ER. Infection, immunity, and exercise: what to tell patients? *Phys Sportsmed.* 1993;21(1):125–135. doi:10.1080/00913847.1993.11710319 (the "above-the-neck" rule)
+84. Primos WA Jr. Sports and exercise during acute illness: recommending the right course for patients. *Phys Sportsmed.* 1996;24(1):44–53. doi:10.3810/psm.1996.01.1195

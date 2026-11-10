@@ -75,6 +75,12 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    // A question handed over from another page ("Ask the coach") goes into the input field.
+    ref.listen(coachDraftProvider, (_, q) {
+      if (q == null) return;
+      _input.value = TextEditingValue(text: q, selection: TextSelection.collapsed(offset: q.length));
+      ref.read(coachDraftProvider.notifier).set(null);
+    });
     final l = context.l10n;
     final suggestions = [l.coachQ1, l.coachQ2, l.coachQ3, l.coachQ4, l.coachQ5];
     return Column(

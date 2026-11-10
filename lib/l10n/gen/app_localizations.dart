@@ -2078,7 +2078,7 @@ abstract class AppLocalizations {
   /// No description provided for @coachQ2.
   ///
   /// In en, this message translates to:
-  /// **'How much protein do I need per day?'**
+  /// **'Why does my week look like this?'**
   String get coachQ2;
 
   /// No description provided for @coachQ3.
@@ -2096,7 +2096,7 @@ abstract class AppLocalizations {
   /// No description provided for @coachQ5.
   ///
   /// In en, this message translates to:
-  /// **'What should I eat before a long run?'**
+  /// **'I\'m sick/tired – what should I change?'**
   String get coachQ5;
 
   /// No description provided for @coachDisclaimer.
@@ -7876,6 +7876,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Planned today: {sport} – dress for the weather'**
   String hintPlannedNeutral(String sport);
+
+  /// No description provided for @summaryEffortTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How hard was it? Your plan adapts to it.'**
+  String get summaryEffortTitle;
+
+  /// No description provided for @summaryEffortHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional · 1 = very easy, 10 = all-out'**
+  String get summaryEffortHint;
+
+  /// No description provided for @summaryEffortPrefilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Preselected from your exercise ratings – tap to change.'**
+  String get summaryEffortPrefilled;
+
+  /// No description provided for @autoAdjBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 workout adapted automatically – review} other{{n} workouts adapted automatically – review}}'**
+  String autoAdjBanner(int n);
+
+  /// No description provided for @autoAdjSheetIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'After your last workouts the plan adapted these sessions. Keep them or undo single changes.'**
+  String get autoAdjSheetIntro;
+
+  /// No description provided for @planHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan history'**
+  String get planHistory;
+
+  /// No description provided for @planHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No plan changes yet. Automatic adjustments, “Review plan”, “Adjust week” and “Not feeling 100%?” show up here.'**
+  String get planHistoryEmpty;
+
+  /// No description provided for @planLogRecal.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan reviewed'**
+  String get planLogRecal;
+
+  /// No description provided for @planLogReadiness.
+  ///
+  /// In en, this message translates to:
+  /// **'Not feeling 100%: {why}'**
+  String planLogReadiness(String why);
+
+  /// No description provided for @planLogWeekReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed workouts moved within the week or dropped.'**
+  String get planLogWeekReason;
+
+  /// No description provided for @planLogUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'Undone'**
+  String get planLogUndone;
+
+  /// No description provided for @planLogChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed since – no undo'**
+  String get planLogChanged;
+
+  /// No description provided for @planLogNew.
+  ///
+  /// In en, this message translates to:
+  /// **'new'**
+  String get planLogNew;
+
+  /// No description provided for @planLogDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'dropped'**
+  String get planLogDropped;
+
+  /// No description provided for @planLogUndoDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Change undone'**
+  String get planLogUndoDone;
+
+  /// No description provided for @notFitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Not feeling 100%?'**
+  String get notFitButton;
+
+  /// No description provided for @notFitIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell the plan how you feel – it suggests a safe change. Nothing changes until you apply it.'**
+  String get notFitIntro;
+
+  /// No description provided for @notFitSick.
+  ///
+  /// In en, this message translates to:
+  /// **'Sick'**
+  String get notFitSick;
+
+  /// No description provided for @notFitPain.
+  ///
+  /// In en, this message translates to:
+  /// **'Pain'**
+  String get notFitPain;
+
+  /// No description provided for @notFitTired.
+  ///
+  /// In en, this message translates to:
+  /// **'Tired'**
+  String get notFitTired;
+
+  /// No description provided for @notFitTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Short on time'**
+  String get notFitTime;
+
+  /// No description provided for @notFitMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Time available'**
+  String get notFitMinutes;
+
+  /// No description provided for @notFitNoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'No change needed – the workout fits as planned.'**
+  String get notFitNoChange;
+
+  /// No description provided for @notFitPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested change'**
+  String get notFitPreview;
+
+  /// No description provided for @notFitApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan adjusted'**
+  String get notFitApplied;
+
+  /// No description provided for @notFitHintAboveNeck.
+  ///
+  /// In en, this message translates to:
+  /// **'Above-the-neck rule: only a runny nose or a mild sore throat and no fever – rest or at most a short, easy session. Fever, aching muscles, chest or stomach symptoms: no training until you are well.'**
+  String get notFitHintAboveNeck;
+
+  /// No description provided for @notFitHintReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Back after being sick: hard sessions of the next two days become easy. After 10 days or more off, use “Review plan” – it rebuilds at 50–70 % of your previous volume.'**
+  String get notFitHintReturn;
+
+  /// No description provided for @notFitHintPainRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Pain up to 3/10 that has settled by the next morning is acceptable. Stop if it gets worse during the session.'**
+  String get notFitHintPainRule;
+
+  /// No description provided for @notFitHintDoctor.
+  ///
+  /// In en, this message translates to:
+  /// **'If the pain lasts more than a few days or keeps coming back, have it checked by a doctor or physiotherapist.'**
+  String get notFitHintDoctor;
+
+  /// No description provided for @notFitHintSwapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Swapped for low-impact cross-training: it keeps your endurance without the impact of running.'**
+  String get notFitHintSwapped;
+
+  /// No description provided for @notFitHintKeyEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Tired: the key workout becomes an easy session (about 20 % shorter). Quality on tired legs adds fatigue, not fitness.'**
+  String get notFitHintKeyEasy;
+
+  /// No description provided for @notFitHintShorter.
+  ///
+  /// In en, this message translates to:
+  /// **'Tired: the easy session is about 25 % shorter – keep it truly easy.'**
+  String get notFitHintShorter;
+
+  /// No description provided for @notFitHintGymLighter.
+  ///
+  /// In en, this message translates to:
+  /// **'About a third fewer sets with the same weights; end each set with 2–3 reps in reserve. Leave out exercises that hurt.'**
+  String get notFitHintGymLighter;
+
+  /// No description provided for @notFitHintGymShorter.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer sets to fit your time – main lifts first. A few hard sets keep most of the effect.'**
+  String get notFitHintGymShorter;
+
+  /// No description provided for @notFitHintTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortened to your time: warm-up and cool-down stay, the main part gets shorter.'**
+  String get notFitHintTime;
+
+  /// No description provided for @askCoachAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the coach'**
+  String get askCoachAbout;
+
+  /// No description provided for @coachExplainWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain the workout “{title}” on {date} to me'**
+  String coachExplainWorkout(String title, String date);
+
+  /// No description provided for @reserveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserve'**
+  String get reserveLabel;
+
+  /// No description provided for @reserveN.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserve {value}'**
+  String reserveN(String value);
+
+  /// No description provided for @reserveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'reps in the tank'**
+  String get reserveHint;
+
+  /// No description provided for @logRirSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Log reserve per set'**
+  String get logRirSetting;
+
+  /// No description provided for @logRirSettingSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Reps left in the tank after each set (RIR). The rating per exercise stays.'**
+  String get logRirSettingSub;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
