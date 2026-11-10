@@ -29,6 +29,17 @@ class StepMark {
   final int lastLengthAt;
 }
 
+/// Actual result of a finished structured step (for the plan-vs-actual page).
+class StepResult {
+  const StepResult(this.index, this.sec, this.distanceM, {required this.complete});
+  final int index;
+  final int sec;
+  final double distanceM;
+
+  /// False when the step was ended early (skipped) before its target was reached.
+  final bool complete;
+}
+
 /// Live state of a run / ride / swim being recorded.
 class CardioState {
   final Sport sport;
@@ -68,6 +79,10 @@ class CardioState {
   final List<double> lapDists;
   final int lapStartSec;
   final double lapStartDist;
+  // Structured workout: actual time / distance of every finished step.
+  final List<StepResult> stepResults;
+  // Moving time per live pace (sec/km rounded to 5 s → seconds) – time in pace zones.
+  final Map<int, int> paceTime;
 
   const CardioState({
     required this.sport,
@@ -102,6 +117,8 @@ class CardioState {
     this.lapDists = const [],
     this.lapStartSec = 0,
     this.lapStartDist = 0,
+    this.stepResults = const [],
+    this.paceTime = const {},
   });
 
   bool get paused => runningSince == null;
@@ -184,8 +201,16 @@ class CardioState {
     final next = stepIndex + 1;
     // Leaving a timed step in the pool (rest): the next length starts now, not at the last wall touch.
     final restEnded = poolMode && s.distanceM == null;
-    if (next >= steps.length) return copyWith(stepsDone: true, lastLengthAt: restEnded ? elapsed : null);
-    return copyWith(stepIndex: next, stepStartSec: elapsed, stepStartDist: effectiveDistance, lastLengthAt: restEnded ? elapsed : null);
+    final open = s.distanceM == null && s.durationSec == null;
+    final results = [...stepResults, StepResult(stepIndex, max(0, stepElapsed), max(0, stepDistance), complete: open || stepComplete)];
+    if (next >= steps.length) return copyWith(stepsDone: true, lastLengthAt: restEnded ? elapsed : null, stepResults: results);
+    return copyWith(
+      stepIndex: next,
+      stepStartSec: elapsed,
+      stepStartDist: effectiveDistance,
+      lastLengthAt: restEnded ? elapsed : null,
+      stepResults: results,
+    );
   }
 
   /// Pool: one length swum. Ends a running rest early, adds the length and
@@ -211,7 +236,16 @@ class CardioState {
   CardioState undoLength() {
     if (laps == 0) return this;
     final m = lengthMarks.isNotEmpty ? lengthMarks.last : null;
+    // Steps finished by the removed length are open again.
+    final results =
+        m == null
+            ? null
+            : [
+              for (final r in stepResults)
+                if (r.index < m.stepIndex || (m.stepsDone && r.index <= m.stepIndex)) r,
+            ];
     return copyWith(
+      stepResults: results,
       laps: laps - 1,
       lengthSecs: lengthSecs.isEmpty ? null : lengthSecs.sublist(0, lengthSecs.length - 1),
       lengthMarks: lengthMarks.isEmpty ? null : lengthMarks.sublist(0, lengthMarks.length - 1),
@@ -273,6 +307,8 @@ class CardioState {
     List<double>? lapDists,
     int? lapStartSec,
     double? lapStartDist,
+    List<StepResult>? stepResults,
+    Map<int, int>? paceTime,
   }) => CardioState(
     sport: sport,
     title: title,
@@ -306,6 +342,8 @@ class CardioState {
     lapDists: lapDists ?? this.lapDists,
     lapStartSec: lapStartSec ?? this.lapStartSec,
     lapStartDist: lapStartDist ?? this.lapStartDist,
+    stepResults: stepResults ?? this.stepResults,
+    paceTime: paceTime ?? this.paceTime,
   );
 }
 
@@ -435,7 +473,13 @@ class TrackerNotifier extends Notifier<CardioState?> {
       if (now % 5 == 0 && pace != null) hist = [...hist.length > 120 ? hist.sublist(hist.length - 120) : hist, pace];
       // Max speed (rides): ignore implausible spikes (> 100 km/h).
       final best = pace != null && !s.paused && pace >= 36 && (s.bestPace == null || pace < s.bestPace!) ? pace : null;
-      s = s.copyWith(currentPace: pace, clearPace: pace == null, paceHistory: hist, bestPace: best);
+      // Time in pace zones: moving time only (not while auto-paused).
+      var paceTime = s.paceTime;
+      if (pace != null && !s.paused) {
+        final bucket = (pace / 5).round() * 5;
+        paceTime = {...paceTime, bucket: (paceTime[bucket] ?? 0) + 1};
+      }
+      s = s.copyWith(currentPace: pace, clearPace: pace == null, paceHistory: hist, bestPace: best, paceTime: paceTime);
       state = s;
       _autoPause(s);
     } else {

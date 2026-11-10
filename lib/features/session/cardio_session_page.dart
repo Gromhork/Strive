@@ -16,6 +16,7 @@ import '../../providers.dart';
 import '../../services/step_progress.dart';
 import '../../services/tracker.dart';
 import '../../widgets/common.dart';
+import 'cardio_extra_pages.dart';
 import 'music.dart';
 import 'session_summary_page.dart';
 import 'step_list.dart';
@@ -23,14 +24,20 @@ import 'step_text.dart';
 import 'zone_info.dart' show showSwimDrills;
 
 /// Pages of the live recording screen.
-enum CardioTab { data, map, splits }
+enum CardioTab { data, zones, plan, splits, map }
 
-/// Which pages a session has: the map only outdoors; splits/structure whenever there
-/// is something to show (outdoor splits, pool lengths or a structured workout).
+/// Which pages a session has – only pages with data for this session:
+/// * zones: live pace zones (outdoor runs, swims – there is no live HR / power source);
+/// * plan: plan vs. actual (structured workouts);
+/// * splits/structure: outdoor splits, pool lengths or a structured workout;
+/// * map: outdoors only. Last, because swiping is disabled on the map (it pans), so
+///   all other pages stay reachable by swiping.
 List<CardioTab> cardioTabs(CardioState s) => [
   CardioTab.data,
-  if (!s.indoor) CardioTab.map,
+  if (hasZonesPage(s)) CardioTab.zones,
+  if (hasPlanPage(s)) CardioTab.plan,
   if (s.structured || !s.indoor || s.poolMode) CardioTab.splits,
+  if (!s.indoor) CardioTab.map,
 ];
 
 /// Live recording screen for runs, rides and swims.
@@ -232,6 +239,8 @@ class _CardioSessionPageState extends ConsumerState<CardioSessionPage> {
                           CardioTab.data => _DataPage(s: s, onRoute: () => _goTo(tabs, CardioTab.map)),
                           CardioTab.map => _MapPage(s: s, controller: _map, follow: _follow, onFollow: (v) => setState(() => _follow = v)),
                           CardioTab.splits => _SplitsPage(s: s),
+                          CardioTab.zones => ZonesPage(s: s),
+                          CardioTab.plan => PlanPage(s: s),
                         },
                     ],
                   ),
@@ -323,10 +332,11 @@ class _TabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final cs = Theme.of(context).colorScheme;
+    final compact = tabs.length >= 4;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
       child: Container(
-        height: 48,
+        height: compact ? 52 : 48,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(color: cs.surfaceContainer, borderRadius: BorderRadius.circular(16)),
         child: Row(
@@ -346,30 +356,39 @@ class _TabBar extends StatelessWidget {
                         borderRadius: BorderRadius.circular(13),
                       ),
                       alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Row(
+                        // ≥ 4 pages: icon above the label so every label stays readable on 360 dp.
+                        child: Flex(
+                          direction: compact ? Axis.vertical : Axis.horizontal,
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               switch (tabs[i]) {
                                 CardioTab.data => Icons.speed_rounded,
                                 CardioTab.map => Icons.map_rounded,
+                                CardioTab.zones => Icons.stacked_bar_chart_rounded,
+                                CardioTab.plan => Icons.fact_check_rounded,
                                 CardioTab.splits => structured ? Icons.format_list_numbered_rounded : Icons.bar_chart_rounded,
                               },
                               size: 20,
                               color: i == index ? Colors.black : cs.onSurfaceVariant,
                             ),
-                            const SizedBox(width: 6),
+                            SizedBox(width: compact ? 0 : 6, height: compact ? 1 : 0),
                             Text(
                               switch (tabs[i]) {
                                 CardioTab.data => l.tabData,
                                 CardioTab.map => l.tabMap,
+                                CardioTab.zones => l.tabZones,
+                                CardioTab.plan => l.tabPlan,
                                 CardioTab.splits => structured ? l.tabWorkout : (pool ? l.lengths : l.tabSplits),
                               },
+                              maxLines: 1,
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                fontSize: 14,
+                                fontSize: compact ? 12.5 : 14,
+                                height: 1.1,
                                 color: i == index ? Colors.black : cs.onSurfaceVariant,
                               ),
                             ),
