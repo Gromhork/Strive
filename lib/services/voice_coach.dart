@@ -26,8 +26,9 @@ class VoiceCoach {
     _ready = true;
   }
 
-  Future<void> say(String text) async {
-    if (!enabled || text.isEmpty) return;
+  /// [force] speaks even with cues switched off (the user asked for it).
+  Future<void> say(String text, {bool force = false}) async {
+    if ((!enabled && !force) || text.isEmpty) return;
     await _init();
     try {
       await _tts.speak(text);

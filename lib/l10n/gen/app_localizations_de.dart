@@ -4478,4 +4478,149 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get backAgainToExit => 'Nochmal zurück zum Beenden';
+
+  @override
+  String get musicRpm => 'U/min';
+
+  @override
+  String get musicIntroRun => 'Musik im Takt deiner Schrittfrequenz (≈ 150–185 Schritte/min) macht das Laufen ökonomischer und gefühlt leichter.';
+
+  @override
+  String get musicRunEasy => 'Lockerer Lauf';
+
+  @override
+  String get musicRunSteady => 'Langer / gleichmäßiger Lauf';
+
+  @override
+  String get musicRunTempo => 'Tempolauf';
+
+  @override
+  String get musicRunIntervals => 'Intervalle & Steigerungen';
+
+  @override
+  String get musicPodcastsRun => 'Ideal für lange lockere Läufe';
+
+  @override
+  String get musicIntroRide => 'Musik im Takt deiner Trittfrequenz (80–100 U/min): ein Schlag pro Kurbelumdrehung oder Double-Time.';
+
+  @override
+  String get musicRideSafety => 'Draußen: Lautstärke niedrig oder nur ein Ohrhörer – den Verkehr musst du weiter hören.';
+
+  @override
+  String get musicRideEasy => 'Lockere Fahrt';
+
+  @override
+  String get musicRideSteady => 'Grundlage & Sweet Spot';
+
+  @override
+  String get musicRideThreshold => 'Schwelle';
+
+  @override
+  String get musicRideIntervals => 'Intervalle & Sprints';
+
+  @override
+  String get musicPodcastsRide => 'Ideal für lange lockere Ausfahrten';
+
+  @override
+  String get musicPodcastsTrainer => 'Ideal für lange Einheiten auf der Rolle';
+
+  @override
+  String get musicIntroSwim => 'Unter Wasser hörst du Musik nur mit Spezial-Kopfhörern – starte sie vor dem Einstieg.';
+
+  @override
+  String get musicSwimPoolHint => 'Bluetooth funktioniert unter Wasser nicht: Du brauchst wasserdichte Knochenschall-Kopfhörer mit eigenem Speicher (MP3). Lade die Playlist vorher herunter.';
+
+  @override
+  String get musicSwimOpenHint => 'Freiwasser: nur mit Knochenschall-Kopfhörern und so leise, dass du Boote, deine Gruppe und die Wasseraufsicht hörst.';
+
+  @override
+  String get musicPreSwim => 'Vor dem Schwimmen: Aufwärmen & Fokus';
+
+  @override
+  String get musicSwimList => 'Schwimm-Playlist (zum Herunterladen)';
+
+  @override
+  String get musicSwimListSub => 'Gleichmäßiger Rhythmus für MP3-Kopfhörer';
+
+  @override
+  String get musicPodcastsSwim => 'Für lange, ruhige Strecken (Knochenschall)';
+
+  @override
+  String get musicIntroGym => 'Laute, motivierende Musik mit 120–140 BPM hilft beim Krafttraining; Zirkel schneller, Aufwärmen und Dehnen ruhiger.';
+
+  @override
+  String get musicGymHint => 'Tipp: Durchgehende Mixe halten die Energie in den Satzpausen – der Pausen-Timer vibriert trotzdem, wenn die Pause vorbei ist.';
+
+  @override
+  String get musicGymWarmup => 'Aufwärmen & Mobility';
+
+  @override
+  String get musicGymStrength => 'Krafttraining';
+
+  @override
+  String get musicGymHeavy => 'Schwere Sätze';
+
+  @override
+  String get musicGymCircuit => 'Supersätze, Zirkel & HIIT';
+
+  @override
+  String get musicGymCooldown => 'Cool-down & Dehnen';
+
+  @override
+  String get tabData => 'Daten';
+
+  @override
+  String get tabMap => 'Karte';
+
+  @override
+  String get tabSplits => 'Splits';
+
+  @override
+  String get tabWorkout => 'Ablauf';
+
+  @override
+  String get autoPausedHint => 'Läuft weiter, sobald du dich bewegst';
+
+  @override
+  String get pausedHint => 'Zum Beenden ■ gedrückt halten';
+
+  @override
+  String lapDone(int n, String time, String dist) {
+    return 'Runde $n: $time · $dist';
+  }
+
+  @override
+  String get currentLap => 'Aktuelle Runde';
+
+  @override
+  String get lapCount => 'Runden';
+
+  @override
+  String get currentSplit => 'Aktueller km';
+
+  @override
+  String get bestSplit => 'Schnellster km';
+
+  @override
+  String get avgSplit => 'Ø km';
+
+  @override
+  String get repeatCue => 'Ansage wiederholen';
+
+  @override
+  String get cadenceTarget => 'Ziel-Trittfrequenz';
+
+  @override
+  String vcStatus(String time, String dist) {
+    return 'Zeit $time. Distanz $dist.';
+  }
+
+  @override
+  String get targetBand => 'Ziel';
+
+  @override
+  String get routeTapHint => 'Karte';
+
+  @override
+  String get stepLeft => 'Rest Abschnitt';
 }

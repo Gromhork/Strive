@@ -17,6 +17,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../widgets/prescription.dart';
 import '../train/exercise_picker.dart';
 import 'exercise_focus_page.dart';
+import 'music.dart';
 import '../../widgets/term_info.dart';
 import 'session_summary_page.dart';
 
@@ -105,9 +106,10 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
             final t = await askText(context, l.rename, initial: w.title);
             if (t != null && t.isNotEmpty) n.rename(t);
           },
-          child: Text(w.title),
+          child: Text(w.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
         actions: [
+          MusicButton(plan: () => gymMusicPlan(l, ref.read(activeGymProvider))),
           IconButton(
             tooltip: _table ? l.viewFocus : l.viewTable,
             icon: Icon(_table ? Icons.view_agenda_outlined : Icons.table_rows_outlined),
