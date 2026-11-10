@@ -2701,5 +2701,59 @@
   },
   "reserveHint": "reps in the tank",
   "logRirSetting": "Log reserve per set",
-  "logRirSettingSub": "Reps left in the tank after each set (RIR). The rating per exercise stays."
+  "logRirSettingSub": "Reps left in the tank after each set (RIR). The rating per exercise stays.",
+  "wRaceGoalStart": "Goal {goal} – start at {pace}",
+  "@wRaceGoalStart": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "wProgressionRun": "Progression run",
+  "wProgressionRunDesc": "Start easy, run the last part at a steady marathon-pace effort – aerobic strength without a hard interval day.",
+  "stepProgressionNote": "Steady – marathon-pace effort, still controlled",
+  "wLongRunProgression": "Progression long run",
+  "wLongRunProgressionDesc": "Easy long run, the last part at a steady marathon-pace effort – fatigue resistance without a race-pace session.",
+  "wLongRunShortDesc": "Shorter long run this week: a lighter week between the longest runs – the body absorbs the load before the next step.",
+  "wGoalPaceSet": "Goal pace {reps} × {dist} km",
+  "@wGoalPaceSet": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "dist": {
+        "type": "String"
+      }
+    }
+  },
+  "wGoalPaceSetDesc": "Repeats at your goal race pace with short jog breaks – the race-specific session: rhythm, pace judgement, confidence.",
+  "stepGoalPaceNote": "Goal race pace – even and controlled",
+  "wCruiseKm": "Cruise intervals {reps} × {dist} km",
+  "@wCruiseKm": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "dist": {
+        "type": "String"
+      }
+    }
+  },
+  "wRideTempo": "Tempo {reps} × {min} min",
+  "@wRideTempo": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "wRideTempoDesc": "Race-specific tempo at 75–85 % FTP – the effort of a 70.3 bike leg: steady, aero, fuelled.",
+  "stepRideTempoNote": "Tempo – 75–85 % FTP, steady"
 }

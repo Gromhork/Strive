@@ -57,10 +57,13 @@ workout template.
 | **Generator rule** | Default to a **pyramidal** distribution (Z1 > Z2 > Z3) in base/build and switch to **polarized** in peak. Always keep **≥ 75–80% of sessions easy**. Users with ≤ 3 runs per week: at most 1 quality session (2 when difficulty = CHALLENGING) | [P] synthesis of [4,5,17] |
 
 ```text
-maxQualityRunsPerWeek(nRuns):
-  nRuns <= 3 -> 1     (2 if CHALLENGING and level >= INTERMEDIATE)
-  nRuns 4-5  -> 2
-  nRuns >= 6 -> 2     (3 only for ADVANCED in the build phase)
+maxQualityRunsPerWeek(nRuns):          // = PlanGenerator._maxQualityRuns (decided 2026-11, coach review 3)
+  nRuns <= 1 -> 0
+  nRuns 2-4  -> 1     (3-4 runs: 2 if CHALLENGING and level >= INTERMEDIATE)
+  nRuns >= 5 -> 2     (3 only for ADVANCED with >= 6 runs in the build phase)
+  EASY difficulty, joint or heart limitations -> at most 1
+// 4 runs = long run + 1 quality + 2 easy: the long run is already a key session, so 2 quality runs
+// would leave only half of the runs easy (< 75-80 %). The earlier spec line "4-5 -> 2" is superseded.
 the long run counts as a "key" session but not as a quality (Z2/Z3) session
 unless it contains M-pace or T-pace segments
 ```
@@ -188,6 +191,11 @@ taperWeekFactor (marathon, 3-wk taper): [0.80, 0.65, 0.45 race week incl. race]
 taperWeekFactor (2-wk taper): [0.70, 0.50]
 ```
 
+**Race-specific intensity in the taper** (coach review 3, Bosquet 2007 [18], Mujika & Padilla 2003 [20]): the taper's
+quality run is the peak's race-pace session at ~60 % of its volume, not a generic fartlek – 5 km 4 × 800 m · 10 km 3 × 1 km ·
+HM 3 × 2 km · marathon 2 × 3 km at goal pace (race week one repeat less, two repeats: shorter ones; ≤ 20 % of the week and ≤ 50 %
+of that week's long run). Beginners, triathlon and plans without an event keep the short fartlek.
+
 ### 1.8 Plan length and prerequisites [P] (Daniels [7], Higdon/Pfitzinger plans, NHS Couch-to-5K [44])
 
 | Goal | Beginner (cannot run 30 min) | Novice | Intermediate | Advanced | Entry requirement before the plan starts | Weekly volume ceiling (Nov / Int / Adv) |
@@ -206,7 +214,8 @@ the "new plan" sheet and the calendar header show a short warning with options w
 not allowed  : BEGINNER + marathon; still on run/walk (cannot run 30 min) + HM / marathon
 runWalk      : run/walk stages still planned in race week (one stage per week, §1.10)
 tooShort     : the plan's longest long run stays below 10k 8 km · HM 15 km · marathon 28 km (~70–80 % of the distance),
-               or the long ride below 90 % of olympic 90 min · 70.3 180 min, because there are too few weeks
+               or the long ride below 90 % of olympic 90 min · 70.3 180 min, because there are too few weeks;
+               70.3 also needs a long run of ~16 km or 100 min (whichever is shorter at the long-run pace)
 longRunTime / longRideTime : the time on the long day (not the weeks) caps the long session below those minimums
 options      : the first later race date (same weekday, ≤ 30 weeks) that passes · the largest shorter distance that passes
                by the date · finish with run/walk (5k / 10k / sprint / olympic) – race day then shows a run/walk rhythm
@@ -216,10 +225,40 @@ options      : the first later race date (same weekday, ≤ 30 weeks) that passe
 ### 1.12 Goal-driven plans: race date, target time, forecast [M/P]
 
 **Plan length.** With an event date the plan always runs to race day (`PlanGenerator.weeksToEvent`, 2–52 weeks; every
-creation path – setup, "new plan" sheet, goal editor "align plan to this event" – uses it). More than 30 weeks away: the
-first `weeks − 30` weeks are a base **pre-plan** block (easy volume, strides, recovery weeks; long run ≤ 70 % of the race-specific
-cap – marathon 24.5 km, HM ~15 km), then the usual
-base → build → peak → taper of 30 weeks. Shorter than the recommended length: the plan is built anyway and the feasibility
+creation path – setup, "new plan" sheet, goal editor "align plan to this event" – uses it). More than 20 weeks away
+(`GoalModel.specificWeeks`, was 30 until coach review 3): the first `weeks − 20` weeks are a base **pre-plan** block (easy
+volume, strides, recovery weeks; long run ≤ 70 % of the race-specific cap – marathon 24.5 km, HM ~15 km; volume ≤ 85 % of the
+ceiling, so it still rises in the specific block), then the usual base → build → peak → taper of 20 weeks (amateur marathon
+plans: 16–20 weeks).
+
+**Long-run monotony** (coach review 3: a 40-week marathon plan repeated 29 km long runs ~20 times in a flat 53 km week, the long
+run 55 % of the week). HM / marathon / 70.3 with ≥ 3 runs: the long run is ≤ 40 % of the weekly km outside the last 12 weeks
+(the race-specific 45–55 % only close to the race). Once the long run stops growing (≥ 12 km, base / build), the loading weeks
+rotate *long easy → progression long run* (build; last ~25 %, ≤ 8 km, at a steady M effort) *→ shorter week* (~80 %, text says
+why) – Pfitzinger / Hansons alternate long, medium-long and marathon-pace long runs. Peak: race-pace long runs (below).
+
+**Quality progression** (coach review 3, B3–B6). Each quality type progresses over the loading weeks of its phase in three
+stages (0 → 1 → 2, proportional to the phase length):
+
+```text
+VO2max (I)     : volume ≤ min(8 % week, 10 km); once that cap binds, longer repeats 800 → 1000 → 1200 m (advanced 1000 → 1200)
+threshold (T)  : ≤ 10 % week, ≤ 40 min in cruise intervals; once the cap binds 1.6 km → 2.4 km → 3.2 km repeats, then one
+                 continuous tempo (≤ 30 min)
+5 / 10 km peak : one goal-pace set a week (q1): 10 km 5 × 1 km → 4 × 1.5 km → 3 × 2 km, 5 km 6 × 800 m → 5 × 1 km → 3 × 1.6 km
+                 (≤ 15 % week, ≤ 8 km, ≥ 2 repeats); a second quality run is VO2max; strides on easy runs stay in the peak
+                 one quality run a week in the build: intervals and threshold alternate
+HM peak        : long run with an HM-pace finish of 3 → 5 → 8 km (≤ 40 % of the run)
+marathon peak  : long run with an MP finish of 6 → 10 → 13 km (≤ 45 %); MP run 70 → 85 → 100 % of min(20 % week, 14 km)
+base           : q1 tempo (odd weeks) / I-pace fartlek (even weeks) – VO2 work only every other week; q2 = progression run
+                 (easy, last 15–25 min at M effort, ≤ 20 % of the week, ≤ 70 % of the long run) – pyramidal base
+```
+
+Goal-pace steps use zone M with the goal pace (±3 s/km; marathon ±5) – the race-pace convention the target change
+(`GoalForecast.retarget`, now also for the taper) follows; a VDOT step of the recalibration leaves them on the goal.
+
+**Race day** (A4): the race step uses the *realistic* race-day pace (`_goalPace`: target when realistic, else the realistic
+prediction) – an ambitious / unrealistic target would send the athlete out 2–3 % too fast. The description then reads
+"Goal {target} – start at {pace}" ("Ziel … – starte mit …"); the race duration is the realistic time. Shorter than the recommended length: the plan is built anyway and the feasibility
 card warns (§1.8). Rebuilding keeps done workouts (only upcoming *planned* workouts are replaced).
 
 **Improvement model** (`GoalModel`, lib/services/goal_model.dart). Expected VDOT gain after `w` weeks of consistent training:
@@ -259,13 +298,18 @@ per phase) – the line the forecast compares with.
 fitness now : planned race / unplanned max effort (RPE ≥ 8 or HR ≥ 88 % HRmax) of the last 60 days → measured VDOT;
               else the plan line  baseline + gain(weeks since plan start) × min(1, completion / 0.9);
               quality runs (last 42 days, ≥ 2): median actual/planned avg speed r → r < 0.98 at a real effort pulls
-              towards VDOT_targets · r^1.2, r > 1.02 lifts there; faster non-max efforts only raise
-detraining  : > 10 days without running → −(0.3 + 0.7 / week beyond day 10), ≤ −4 VDOT  (Mujika & Padilla [68])
+              towards VDOT_targets · r^1.2, r > 1.02 lifts there only with ≥ 3 quality runs over ≥ 14 days (or a max
+              effort) – the same evidence the recalibration needs for VDOT +1; faster non-max efforts only raise
+detraining  : the longest gap without running of the last 28 days (> 10 days; open gap up to today, or a finished one that
+              started after the plan start) → −(0.3 + 0.7 / week beyond day 10), ≤ −4 VDOT (Mujika & Padilla [68]);
+              a finished gap fades linearly over 2 × its length after the return (one easy run no longer erases it)
 race day    : now + [gain(elapsed + left) − gain(elapsed)] × (0.3 + 0.7 · completion_28d / 0.9, ≤ 1)
 plan line   : starts at the VDOT of the plan's first quality run (the plan-start paces) when a recalibration has moved
               the profile's VDOT since – baseline + gain would otherwise count the realised gain twice
 range       : ± 1 (max effort) · 1.5 (quality runs) · 2 (race times) · 3.5 (level default) + 0.04 / week left
-status      : forecast / target ≤ 0.97 ahead (suggest faster) · ≤ 1.01 on track · ≤ 1.03 slightly behind · else at risk
+status      : forecast / target ≤ 0.97 ahead (suggest faster; running: needs the evidence above, triathlon: also when the
+              target is ≥ 3 % slower than what FTP / CSS / race time predict today) · ≤ 1.01 on track · ≤ 1.03 slightly
+              behind · else at risk
 no target   : completion < 50 % or long run < 75 % of the planned so far with ≤ 6 weeks left → at risk
 early       : < 2 done endurance sessions since the plan start → no verdict
 ```
@@ -792,13 +836,32 @@ Generator implementation of H1–H3 (review 2026-11):
 ```text
 key days     : never 3 in a row; BEGINNER / INTERMEDIATE / age >= 50 never 2 (long run + long ride of different sports may
                follow each other, except masters)
-CSS swim set : a key session for spacing, weighted as half: may sit next to one key day (masters: only next to a long Z2
-               session), never between two
+CSS swim set : a key session for spacing, weighted as half: may sit next to long Z2 sessions – also right before a Saturday +
+               Sunday long block – but never in a chain with a quality session (masters: only next to one long Z2 session)
 H3           : ADVANCED may go hard on consecutive days only across sports – never two key runs (or rides) within 48 h
 H2 budget    : with >= 2 endurance sports one budget across sports: sessions <= 4: 2 · 5–7: 3 · more: 4 points;
                quality run / ride 1, long session 0.5, CSS set 0.5; base phase <= 2 quality sessions (BEGINNER 1).
                Priority: bike quality first; base CSS before run quality, build / peak run quality before CSS – another
                order only if it fits more quality sessions. Quality days avoid double days.
+```
+
+Triathlon intensity rotation (coach review 3, B7/B8; an olympic 6-day week with long sessions Saturday + Sunday had zero run
+quality and zero CSS sets in 16 weeks):
+
+```text
+build / peak : the order of the sports is chosen by value = 2 · sessions + 3 · (disciplines without quality last week);
+               ties: the discipline that waited longest – the single full quality slot such a week leaves rotates bike ↔ run,
+               the CSS set goes next to the long block
+invariant    : every discipline with >= 2 sessions a week gets >= 1 quality session per 2 loading weeks (build / peak).
+               Exceptions (H1 wins): beginners (no back-to-back key days, no CSS yet: >= 1 quality of any discipline per
+               2 weeks); a discipline whose other days all sit right next to a long session (intermediates / masters), or
+               flank a Saturday + Sunday long block (three key days in a row)
+masters      : the long sessions are kept apart only where the second sport keeps a day for its quality session that is
+               not next to a long one; if a build / peak week still has no quality at all, they may follow each other
+long day     : without a chosen long day the day with the most time set (70.3 with Sat 240 / Sun 120 min → long ride
+               Saturday; before: Sunday, 120 min); the second long session goes on the free day with the most time
+70.3 peak    : race-specific bike tempo 2 × 25 → 2 × 30 → 3 × 25 min at 75–85 % FTP (Z3) instead of VO2max 6 × 4 min
+swim drills  : no pace target (technique, not speed); session feedback ignores them for the pace signal
 ```
 
 ### 6.2 Session allocation by days available (examples, all sports in hybrid order of priority) [P]
@@ -947,7 +1010,9 @@ model of §0 (Z1 RPE 1–4, Z2 5–6, Z3 7–10) – session-RPE is a valid inte
 too hard (score 1):    easy / technique / long RPE >= 7 · tempo RPE >= 9 · intervals RPE 10
 elevated (score 1/2):  easy / technique / long RPE 5–6 (threshold-like effort on an easy day)
 too easy:              tempo / intervals RPE <= 4 (a zone-1 effort for a quality set)
-completion:            done share of the due planned minutes (each workout <= its plan), needs >= 3 due workouts
+completion:            done share of the due planned minutes (each workout <= its plan), needs >= 3 due workouts (races
+                       excluded) whose first lies >= 7 days back – a plan that started yesterday with one missed workout
+                       (or leftovers of an older plan) is no "0 % done"; the break rule needs the same 7 days of history
 cut short:             session < 80 % of the planned duration / distance
 best effort:           fastest 5 km / 10 km / HM / M of the last 90 days (km splits or whole runs)
 ```
@@ -959,7 +1024,7 @@ best effort:           fastest 5 km / 10 km / HM / M of the last 90 days (km spl
 | too-hard score ≥ 2 | days 1–7 −10 %; next quality session per sport → easy (~80 % of its time) | §7.9 "RPE ≥ target + 2 twice → repeat the week"; rising RPE at the same external load is an early marker of non-functional overreaching [67] |
 | too-hard score ≥ 3 | days 1–7 −20 %, days 8–14 −10 %; all quality of days 1–7 → easy (taper keeps its intensity) | as above, stronger signal; reduce load before intensity is resumed [67] |
 | completion < 70 % | days 1–7 −10 % (no progression after missed training) | §8 auto-downgrade (< 70 % over 2 weeks); ACWR spikes after gaps raise injury risk [13] |
-| completion < 50 % | days 1–7 −20 %, days 8–14 −10 %, first quality per sport → easy (re-entry) | detraining after ~2 weeks of reduced training [68]; gradual return |
+| completion < 50 % | days 1–7 −20 %, days 8–14 −10 %, first quality per sport → easy (re-entry) – only when the key sessions (quality / long) themselves were missed (< 75 % of them done); with the key sessions done (easy runs skipped – chronic partial adherence) the easy volume comes down, the key sessions and the long run keep theirs and missed key sessions are still moved | detraining after ~2 weeks of reduced training [68]; gradual return; coach review 3 (B9): turning done key sessions easy week after week removed the intensity the athlete was actually doing |
 | ≥ 2 sessions cut short | long sessions of the next 14 days −10 % | the planned duration was not sustainable |
 | ≥ 2 quality sessions at RPE ≤ 4, no fatigue signal, completion ≥ 90 % | easy + long sessions of loading weeks, days 1–7, +5 % – not when a threshold (VDOT / FTP / CSS) rises in the same recalibration, and not on a workout the AutoAdjuster reduced in the last 7 days | within the 5–10 %/week growth rule (§1.5); R3: never raise volume and intensity together (the new paces are the step up) |
 | return after a break: a planned sport with no session for ≥ 10 days (or < 15 % of its due training in the 14 days), trained before | days 1–7 at 60 % of the plan (50 % after ≥ 21 days off), days 8–14 at 70 %; all quality of days 1–7 → easy (the easy replacement scaled the same way); missed key sessions dropped | R4: restart at 50–70 % of the pre-break volume [68]; the plan is the pre-break reference |
@@ -978,6 +1043,10 @@ Simulated: two sick weeks → 60 % / 70 % → the volume is back at the plan thr
 back by ≤ 10 % a week (R1). Volume changes scale continuous parts (steady runs / rides, swim sets); short repeats keep their length, so a reduced
 interval session keeps its intensity (Bosquet 2007 [18]: cut volume, keep intensity). Every changed workout gets the note
 "Adjusted to your recent training" (once, translatable).
+
+A key session turned easy is written with `isKey: false` (the Firestore update sets fields the new workout drops – isKey,
+steps, phase, auto – to their default instead of leaving the old value; before, a swapped session still counted as key).
+Race-pace steps (zone M at a goal pace other than the old VDOT's marathon pace) keep their goal when the VDOT steps up.
 
 ### 11.1 Gaps in the plan (deleted sessions, empty weeks, plan ended) [P]
 
@@ -1083,7 +1152,10 @@ session); a manual edit or a recalibration with a new volume replaces the record
   (simulated: true VDOT 42.5 on a VDOT 40 plan → 41, 42, … 45, then back down; now 41 and holding).
 * **Run VDOT** (only when no best effort changed it): ≥ 3 key runs (tempo / intervals / long) slower than the targets with an
   internal score ≥ 0.3 → VDOT −1; ≥ 3 quality runs on target that felt easier than intended, none too hard, EF not falling →
-  VDOT +1. Daniels [7]: adjust VDOT in steps of about one point after a few weeks of training at it.
+  VDOT +1; also ≥ 3 quality runs with T / I targets ≥ 3 % faster than planned at the intended effort (not harder), none too
+  hard, EF not falling → VDOT +1 (coach review 3, B10 – the forecast already called that "ahead"; only sessions run against the
+  current VDOT's targets count, so the same sessions never lift it twice). Daniels [7]: adjust VDOT in steps of about one
+  point after a few weeks of training at it.
 * **Bike FTP** (only with a known FTP): ≥ 2 quality rides above the power targets without feeling harder, none too hard →
   FTP +3 %; ≥ 2 key rides below target at a high effort → FTP −3 %. Power targets of the upcoming rides follow (Coggan
   zones [48]); the profile's FTP is updated on "Apply".

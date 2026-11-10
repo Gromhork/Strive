@@ -374,7 +374,8 @@ void main() {
         trainingDays: const [2, 4, 6],
         athlete: AthleteData(sessionMinutes: 30, raceTimes: const {'10k': 3300}, eventDistance: '10k', eventDate: race(10)),
       );
-      final iv = gen(p).where((w) => w.intensity == 'intervals').toList();
+      // VO2max (I) repeats – the goal-pace sets of the peak / taper are a different session.
+      final iv = gen(p).where((w) => w.intensity == 'intervals' && w.steps.any((s) => s.isWork && s.zone == 'I')).toList();
       expect(iv, isNotEmpty);
       for (final w in iv) {
         final work = w.steps.where((s) => s.isWork).toList();

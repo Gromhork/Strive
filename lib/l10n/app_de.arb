@@ -1338,5 +1338,19 @@
   "reserveN": "Reserve {value}",
   "reserveHint": "Wdh. im Tank",
   "logRirSetting": "Reserve pro Satz erfassen",
-  "logRirSettingSub": "Wiederholungen im Tank nach jedem Satz (RIR). Die Bewertung pro Übung bleibt."
+  "logRirSettingSub": "Wiederholungen im Tank nach jedem Satz (RIR). Die Bewertung pro Übung bleibt.",
+  "wRaceGoalStart": "Ziel {goal} – starte mit {pace}",
+  "wProgressionRun": "Steigerungslauf",
+  "wProgressionRunDesc": "Locker beginnen, den letzten Teil gleichmäßig im Marathontempo laufen – aerobe Kraft ohne harten Intervalltag.",
+  "stepProgressionNote": "Zügig – Marathontempo, noch kontrolliert",
+  "wLongRunProgression": "Langer Lauf mit Steigerung",
+  "wLongRunProgressionDesc": "Lockerer langer Lauf, der letzte Teil zügig im Marathontempo – Ermüdungsresistenz ohne Renntempo-Einheit.",
+  "wLongRunShortDesc": "Kürzerer langer Lauf diese Woche: eine leichtere Woche zwischen den längsten Läufen – der Körper verarbeitet die Belastung vor dem nächsten Schritt.",
+  "wGoalPaceSet": "Zieltempo {reps} × {dist} km",
+  "wGoalPaceSetDesc": "Wiederholungen im Wettkampf-Zieltempo mit kurzen Trabpausen – die wettkampfspezifische Einheit: Rhythmus, Tempogefühl, Selbstvertrauen.",
+  "stepGoalPaceNote": "Wettkampf-Zieltempo – gleichmäßig und kontrolliert",
+  "wCruiseKm": "Cruise-Intervalle {reps} × {dist} km",
+  "wRideTempo": "Tempo {reps} × {min} min",
+  "wRideTempoDesc": "Wettkampfspezifisches Tempo bei 75–85 % FTP – die Belastung einer 70.3-Radstrecke: gleichmäßig, aerodynamisch, mit Verpflegung.",
+  "stepRideTempoNote": "Tempo – 75–85 % FTP, gleichmäßig"
 }

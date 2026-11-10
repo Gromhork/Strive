@@ -4392,4 +4392,54 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get logRirSettingSub => 'Wiederholungen im Tank nach jedem Satz (RIR). Die Bewertung pro Übung bleibt.';
+
+  @override
+  String wRaceGoalStart(String goal, String pace) {
+    return 'Ziel $goal – starte mit $pace';
+  }
+
+  @override
+  String get wProgressionRun => 'Steigerungslauf';
+
+  @override
+  String get wProgressionRunDesc => 'Locker beginnen, den letzten Teil gleichmäßig im Marathontempo laufen – aerobe Kraft ohne harten Intervalltag.';
+
+  @override
+  String get stepProgressionNote => 'Zügig – Marathontempo, noch kontrolliert';
+
+  @override
+  String get wLongRunProgression => 'Langer Lauf mit Steigerung';
+
+  @override
+  String get wLongRunProgressionDesc => 'Lockerer langer Lauf, der letzte Teil zügig im Marathontempo – Ermüdungsresistenz ohne Renntempo-Einheit.';
+
+  @override
+  String get wLongRunShortDesc => 'Kürzerer langer Lauf diese Woche: eine leichtere Woche zwischen den längsten Läufen – der Körper verarbeitet die Belastung vor dem nächsten Schritt.';
+
+  @override
+  String wGoalPaceSet(int reps, String dist) {
+    return 'Zieltempo $reps × $dist km';
+  }
+
+  @override
+  String get wGoalPaceSetDesc => 'Wiederholungen im Wettkampf-Zieltempo mit kurzen Trabpausen – die wettkampfspezifische Einheit: Rhythmus, Tempogefühl, Selbstvertrauen.';
+
+  @override
+  String get stepGoalPaceNote => 'Wettkampf-Zieltempo – gleichmäßig und kontrolliert';
+
+  @override
+  String wCruiseKm(int reps, String dist) {
+    return 'Cruise-Intervalle $reps × $dist km';
+  }
+
+  @override
+  String wRideTempo(int reps, int min) {
+    return 'Tempo $reps × $min min';
+  }
+
+  @override
+  String get wRideTempoDesc => 'Wettkampfspezifisches Tempo bei 75–85 % FTP – die Belastung einer 70.3-Radstrecke: gleichmäßig, aerodynamisch, mit Verpflegung.';
+
+  @override
+  String get stepRideTempoNote => 'Tempo – 75–85 % FTP, gleichmäßig';
 }

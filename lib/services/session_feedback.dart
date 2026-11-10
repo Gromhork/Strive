@@ -308,7 +308,8 @@ double? _expectedHr(PlannedWorkout p, HrZones hz, UserProfile profile) {
 /// Planned average pace: run sec/km, swim sec/100 m (incl. the rests between repeats).
 /// Null when the main steps have no pace target.
 double? _expectedPace(PlannedWorkout p, UserProfile profile) {
-  final main = p.steps.where((x) => x.kind == 'steady' || x.kind == 'work');
+  // Swim drills carry no pace target (technique, not speed): they don't void the main set's.
+  final main = p.steps.where((x) => (x.kind == 'steady' || x.kind == 'work') && x.zone != 'DR');
   if (main.isEmpty || main.any((x) => x.paceMin == null || x.paceMax == null)) return null;
   if (p.sport == Sport.swim) {
     final m = p.steps.fold(0.0, (x, s) => x + (s.distanceM ?? 0));

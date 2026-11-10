@@ -59,8 +59,15 @@ void main() {
       runner(ev: 'm', weeks: 18, times: const {'hm': 5520}, km: 60, longest: 24, minutes: 90, dayMin: const {7: 180}),
     ]) {
       final plan = gen(p);
+      // Intended shorter weeks of the long-run variation (coach review 3) are not a drop.
       final longs = {
-        for (final w in plan.where((w) => w.sport == Sport.run && w.intensity == 'long' && (w.phase == 'base' || w.phase == 'build')))
+        for (final w in plan.where(
+          (w) =>
+              w.sport == Sport.run &&
+              w.intensity == 'long' &&
+              (w.phase == 'base' || w.phase == 'build') &&
+              !w.description.contains(l.wLongRunShortDesc),
+        ))
           week(w): w.distanceKm!,
       };
       final ks = longs.keys.toList()..sort();

@@ -208,11 +208,15 @@ class GoalForecast {
     final expectedNow = baseline + GoalModel.gain(p, elapsedWeeks) * ((adherence ?? 1) / 0.9).clamp(0.0, 1.0);
     var vdot = effort ?? expectedNow;
     final recentRatios = ratios.skip(max(0, ratios.length - 5)).toList();
+    // "Faster than planned" needs more than two good days (B10): ≥ 3 quality runs over ≥ 14 days
+    // (or a measured maximal effort) – the same evidence the recalibration needs for VDOT +1.
+    final qDays = implied.map((x) => x.$1).toList()..sort();
+    final fasterEvidence = effort != null || (qDays.length >= 3 && qDays.last.difference(qDays.first).inDays >= 14);
     if (recentRatios.length >= 2) {
       final rm = _median(recentRatios);
       final q = _median(planVdots.skip(max(0, planVdots.length - 5)).toList()) * pow(rm, 1.2);
       if (rm < 0.98) vdot = min(vdot, (vdot + 2 * q) / 3);
-      if (rm > 1.02) vdot = max(vdot, q.toDouble());
+      if (rm > 1.02 && fasterEvidence) vdot = max(vdot, q.toDouble());
     }
     final qm = recentRatios.length >= 2;
     if (floor != null && floor > vdot) vdot = floor;
@@ -220,11 +224,24 @@ class GoalForecast {
 
     // ── Detraining after a break
     final runPlansDue = plans.where((x) => x.sport == Sport.run && !x.date.isBefore(from) && dayOnly(x.date).isBefore(today)).length;
+    // The longest gap of the last 28 days counts (B11), not only the one up to today – one easy
+    // run after three weeks off does not undo the detraining. A finished gap fades linearly over
+    // twice its length after the return; gaps before the plan start are the plan's baseline.
     if (runs.isNotEmpty && runPlansDue >= 2) {
-      final last = runs.map((s) => dayOnly(s.start)).reduce((x, y) => x.isAfter(y) ? x : y);
-      final off = today.difference(last).inDays;
-      if (off > 10) {
-        vdot -= min(4.0, (off - 10) / 7 * 0.7 + 0.3);
+      final days = {for (final s in runs) dayOnly(s.start)}.toList()..sort();
+      final points = [...days, today];
+      var penalty = 0.0;
+      for (var i = 1; i < points.length; i++) {
+        final gap = points[i].difference(points[i - 1]).inDays;
+        if (gap <= 10) continue;
+        final open = i == points.length - 1;
+        final since = today.difference(points[i]).inDays;
+        if (!open && (since > 28 || points[i - 1].isBefore(from))) continue;
+        final full = min(4.0, (gap - 10) / 7 * 0.7 + 0.3);
+        penalty = max(penalty, full * max(0.0, 1 - since / (2 * gap)));
+      }
+      if (penalty > 0.05) {
+        vdot -= penalty;
         reasons.add(ForecastReason.trainingBreak);
       }
     }
@@ -274,8 +291,11 @@ class GoalForecast {
     int? suggested;
     if (target != null) {
       final r = raceSec! / target;
+      // Ahead: running needs the B10 evidence; a triathlon target slower than what the athlete's
+      // data (FTP / CSS / race time) predicts already today is ahead as well – suggest a faster one.
+      final triAhead = GoalModel.isTri(ev) && nowSec != null && nowSec <= 0.97 * target;
       status =
-          r <= 0.97 && confidence != ForecastConfidence.low
+          r <= 0.97 && ((confidence != ForecastConfidence.low && fasterEvidence) || triAhead)
               ? ForecastStatus.ahead
               : (r <= 1.01 ? ForecastStatus.onTrack : (r <= 1.03 ? ForecastStatus.slightlyBehind : ForecastStatus.atRisk));
       if (status == ForecastStatus.ahead || status == ForecastStatus.slightlyBehind || status == ForecastStatus.atRisk) {
@@ -349,7 +369,7 @@ class GoalForecast {
   }
 
   /// Planned workouts to update when the target changes to [newTarget]: race-pace steps of
-  /// upcoming peak workouts and the race itself follow the new goal pace.
+  /// upcoming peak / taper workouts and the race itself follow the new goal pace.
   static Map<String, Map<String, dynamic>> retarget(UserProfile p, List<PlannedWorkout> plans, int newTarget, {required DateTime now}) {
     final meters = Vdot.distances[p.athlete.eventDistance];
     if (meters == null) return const {};
@@ -359,7 +379,8 @@ class GoalForecast {
     for (final x in plans) {
       if (x.status != 'planned' || dayOnly(x.date).isBefore(dayOnly(now)) || x.sport != Sport.run) continue;
       final race = x.intensity == 'race';
-      if (!race && x.phase != 'peak') continue;
+      // Peak and taper: the goal-pace sets of the taper follow the target too.
+      if (!race && x.phase != 'peak' && x.phase != 'taper') continue;
       var changed = false;
       final steps = [
         for (final s in x.steps)

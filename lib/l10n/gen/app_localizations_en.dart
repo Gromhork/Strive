@@ -4392,4 +4392,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logRirSettingSub => 'Reps left in the tank after each set (RIR). The rating per exercise stays.';
+
+  @override
+  String wRaceGoalStart(String goal, String pace) {
+    return 'Goal $goal – start at $pace';
+  }
+
+  @override
+  String get wProgressionRun => 'Progression run';
+
+  @override
+  String get wProgressionRunDesc => 'Start easy, run the last part at a steady marathon-pace effort – aerobic strength without a hard interval day.';
+
+  @override
+  String get stepProgressionNote => 'Steady – marathon-pace effort, still controlled';
+
+  @override
+  String get wLongRunProgression => 'Progression long run';
+
+  @override
+  String get wLongRunProgressionDesc => 'Easy long run, the last part at a steady marathon-pace effort – fatigue resistance without a race-pace session.';
+
+  @override
+  String get wLongRunShortDesc => 'Shorter long run this week: a lighter week between the longest runs – the body absorbs the load before the next step.';
+
+  @override
+  String wGoalPaceSet(int reps, String dist) {
+    return 'Goal pace $reps × $dist km';
+  }
+
+  @override
+  String get wGoalPaceSetDesc => 'Repeats at your goal race pace with short jog breaks – the race-specific session: rhythm, pace judgement, confidence.';
+
+  @override
+  String get stepGoalPaceNote => 'Goal race pace – even and controlled';
+
+  @override
+  String wCruiseKm(int reps, String dist) {
+    return 'Cruise intervals $reps × $dist km';
+  }
+
+  @override
+  String wRideTempo(int reps, int min) {
+    return 'Tempo $reps × $min min';
+  }
+
+  @override
+  String get wRideTempoDesc => 'Race-specific tempo at 75–85 % FTP – the effort of a 70.3 bike leg: steady, aero, fuelled.';
+
+  @override
+  String get stepRideTempoNote => 'Tempo – 75–85 % FTP, steady';
 }
