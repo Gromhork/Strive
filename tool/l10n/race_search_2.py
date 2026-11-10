@@ -1,0 +1,15 @@
+{
+ 'openWater': ['Open water', 'Freiwasser'],
+ 'raceRadius': ['Radius', 'Umkreis'],
+ 'raceRegionHint': ['e.g. Germany, Munich, 80331 – empty = anywhere', 'z. B. Deutschland, München, 80331 – leer = überall'],
+ 'raceSearchButton': ['Search', 'Suchen'],
+ 'raceIntro': ['Searches public race calendars (German running and triathlon calendars, RunSignup for the USA) – or open a race calendar directly.', 'Durchsucht öffentliche Wettkampfkalender (DLV-Laufkalender, DTU-Kalender, RunSignup für die USA) – oder öffne direkt einen Wettkampfkalender.'],
+ 'raceSearching': ['Searching race calendars…', 'Durchsuche Wettkampfkalender…'],
+ 'raceDisclaimer': ['From public race calendars – no guarantee. Check date and details with the organiser before you sign up.', 'Aus öffentlichen Wettkampfkalendern – ohne Gewähr. Prüfe Datum und Details beim Veranstalter, bevor du dich anmeldest.'],
+ 'raceResultsCount': ['Races found: {n}', 'Gefundene Wettkämpfe: {n}'],
+ 'raceSourceOf': ['Source: {name}', 'Quelle: {name}'],
+ 'raceDataFrom': ['Data: {names}', 'Daten: {names}'],
+ 'raceSourcesFailed': ['Not reachable right now: {names}', 'Gerade nicht erreichbar: {names}'],
+ 'raceNoSource': ['There is no direct search for this sport and region yet (connected: German running and triathlon calendars, RunSignup for the USA). Browse a race calendar below.', 'Für diese Sportart und Region gibt es noch keine direkte Suche (angebunden: DLV-Laufkalender, DTU-Kalender, RunSignup für die USA). Stöbere unten in einem Wettkampfkalender.'],
+ 'raceOrganiserPage': ['Details', 'Details'],
+}

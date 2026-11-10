@@ -2274,7 +2274,7 @@
   "raceSport": "Sport",
   "raceAnyDistance": "Any distance",
   "raceRegion": "Region (country or city)",
-  "raceRegionHint": "e.g. Germany, Munich – empty = worldwide",
+  "raceRegionHint": "e.g. Germany, Munich, 80331 – empty = anywhere",
   "raceWindow": "Time window",
   "raceNextMonths": "{n} months",
   "@raceNextMonths": {
@@ -2284,23 +2284,18 @@
       }
     }
   },
-  "raceSearchButton": "Search the web",
-  "raceIntro": "Searches the web for upcoming races with AI – or open a race calendar directly.",
-  "raceSearching": "Searching the web for races…",
-  "raceWebResults": "Web results (AI search)",
-  "raceDisclaimer": "Found on the web by AI – no guarantee. Check date and details on the organiser's page before you sign up.",
-  "raceOrganiserPage": "Organiser page",
+  "raceSearchButton": "Search",
+  "raceIntro": "Searches public race calendars (German running and triathlon calendars, RunSignup for the USA) – or open a race calendar directly.",
+  "raceSearching": "Searching race calendars…",
+  "raceDisclaimer": "From public race calendars – no guarantee. Check date and details with the organiser before you sign up.",
+  "raceOrganiserPage": "Details",
   "raceSetAsGoal": "Set as goal",
   "raceGoalSet": "Race set as your goal",
   "raceEmpty": "No races found for these filters. Try a longer time window or a wider region – or browse a race calendar.",
-  "raceUnavailable": "The AI web search is not available right now (quota or plan of the AI service). Browse a race calendar instead.",
   "raceError": "The search failed. Check your connection and try again – or browse a race calendar.",
-  "raceBadResponse": "The search returned no usable result. Try again – or browse a race calendar.",
   "raceRetry": "Try again",
   "racePortals": "Race calendars",
   "racePortalsHint": "Opens in the browser, filtered where the site supports it.",
-  "raceSources": "Sources",
-  "raceGoogleSuggestions": "Google searches",
   "recalGapsTitle": "Gaps in the plan",
   "recalWhyGaps": "Sessions the plan expects are missing ({n}) – refills are proposed below.",
   "@recalWhyGaps": {
@@ -2766,5 +2761,39 @@
   "distSwim1500": "Open water 1.5 km",
   "distSwim3800": "Open water 3.8 km",
   "distSwim5000": "Open water 5 km",
-  "moreDistances": "More distances…"
+  "moreDistances": "More distances…",
+  "raceRadius": "Radius",
+  "raceResultsCount": "Races found: {n}",
+  "@raceResultsCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "raceSourceOf": "Source: {name}",
+  "@raceSourceOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "raceDataFrom": "Data: {names}",
+  "@raceDataFrom": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "raceSourcesFailed": "Not reachable right now: {names}",
+  "@raceSourcesFailed": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "raceNoSource": "There is no direct search for this sport and region yet (connected: German running and triathlon calendars, RunSignup for the USA). Browse a race calendar below."
 }
