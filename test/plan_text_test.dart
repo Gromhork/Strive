@@ -13,13 +13,21 @@ void main() {
     expect(planDescription(en.wGymDescRange(4, 3), de), '${de.wGymLoadDesc(3)}\n${de.wGymProgressNote}');
     expect(planDescription(de.wGymDesc(3, 8, 12, 2), de), '${de.wGymLoadDesc(2)}\n${de.wGymProgressNote}');
     expect(planDescription(en.wGymDesc(3, 8, 12, 2), en), '${en.wGymLoadDesc(2)}\n${en.wGymProgressNote}');
-    expect(planDescription(de.wGymDeloadDesc(2), de), de.wGymDeloadNote2);
-    expect(planDescription('${de.wGymDeloadDesc(2)}\n${de.wGymTimeCapNote(30)}', de), '${de.wGymDeloadNote2}\n${de.wGymTimeCapNote2(30)}');
+    expect(planDescription(de.wGymDeloadDesc(2), de), de.wGymDeloadNote3);
+    expect(planDescription('${de.wGymDeloadDesc(2)}\n${de.wGymTimeCapNote(30)}', de), '${de.wGymDeloadNote3}\n${de.wGymTimeCapNote2(30)}');
   });
 
   test('the previous deload note (one set less) is replaced', () {
-    expect(planDescription(de.wGymDeloadNote, de), de.wGymDeloadNote2);
-    expect(planDescription(en.wGymDeloadNote, de), de.wGymDeloadNote2);
+    expect(planDescription(de.wGymDeloadNote, de), de.wGymDeloadNote3);
+    expect(planDescription(en.wGymDeloadNote, de), de.wGymDeloadNote3);
+  });
+
+  test('stored "Deload week" notes are shown as "Recovery week"', () {
+    expect(planDescription(en.wGymDeloadNote2, en), en.wGymDeloadNote3);
+    expect(planDescription(en.wRecoveryWeekNote, en), en.wRecoveryWeekNote2);
+    expect(planDescription(en.wRecoveryWeekNote, de), de.wRecoveryWeekNote2);
+    expect(en.wRecoveryWeekNote2, startsWith('Recovery week'));
+    expect(planDescription(de.wRecoveryWeekNote, en), en.wRecoveryWeekNote2);
   });
 
   test('other text is kept', () {

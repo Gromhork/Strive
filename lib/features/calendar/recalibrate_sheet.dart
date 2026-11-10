@@ -15,7 +15,7 @@ import '../../services/zones.dart' show fmtPace;
 import '../../widgets/common.dart';
 import '../goals/goal_forecast_widgets.dart';
 
-/// "Re-plan & recalibrate": computes the proposal for the next two weeks and shows it as
+/// "Review plan" (adapt plan to your training): computes the proposal for the next two weeks and shows it as
 /// a preview; nothing changes until the athlete confirms with "Apply".
 Future<void> showRecalibration(BuildContext context, WidgetRef ref) {
   final profile = ref.read(profileOrDefaultProvider);

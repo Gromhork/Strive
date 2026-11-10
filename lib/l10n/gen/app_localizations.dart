@@ -410,7 +410,7 @@ abstract class AppLocalizations {
   /// No description provided for @fitnessLevel.
   ///
   /// In en, this message translates to:
-  /// **'Fitness level'**
+  /// **'Experience level'**
   String get fitnessLevel;
 
   /// No description provided for @fitnessLevelSub.
@@ -512,7 +512,7 @@ abstract class AppLocalizations {
   /// No description provided for @goalRace.
   ///
   /// In en, this message translates to:
-  /// **'Race / event'**
+  /// **'Race'**
   String get goalRace;
 
   /// No description provided for @scheduleTitle.
@@ -578,13 +578,13 @@ abstract class AppLocalizations {
   /// No description provided for @eventName.
   ///
   /// In en, this message translates to:
-  /// **'Event name'**
+  /// **'Race name'**
   String get eventName;
 
   /// No description provided for @eventDate.
   ///
   /// In en, this message translates to:
-  /// **'Event date'**
+  /// **'Race date'**
   String get eventDate;
 
   /// No description provided for @eventDistance.
@@ -604,12 +604,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Marathon'**
   String get marathon;
-
-  /// No description provided for @searchMarathonDe.
-  ///
-  /// In en, this message translates to:
-  /// **'Find events on marathon.de'**
-  String get searchMarathonDe;
 
   /// No description provided for @generatePlanNow.
   ///
@@ -812,7 +806,7 @@ abstract class AppLocalizations {
   /// No description provided for @readyFreshText.
   ///
   /// In en, this message translates to:
-  /// **'Your load is low – a great time for a hard session or to increase volume.'**
+  /// **'Your load is low – a great time for a key workout or more volume.'**
   String get readyFreshText;
 
   /// No description provided for @readyOptimal.
@@ -908,7 +902,7 @@ abstract class AppLocalizations {
   /// No description provided for @startTraining.
   ///
   /// In en, this message translates to:
-  /// **'Start training'**
+  /// **'Start workout'**
   String get startTraining;
 
   /// No description provided for @logManually.
@@ -1670,7 +1664,7 @@ abstract class AppLocalizations {
   /// No description provided for @generatePlan.
   ///
   /// In en, this message translates to:
-  /// **'Generate plan'**
+  /// **'Create plan'**
   String get generatePlan;
 
   /// No description provided for @generatePlanSub.
@@ -1679,53 +1673,11 @@ abstract class AppLocalizations {
   /// **'Focus: {focus} · {days} days/week (change in profile)'**
   String generatePlanSub(String focus, int days);
 
-  /// No description provided for @weeks.
-  ///
-  /// In en, this message translates to:
-  /// **'Weeks'**
-  String get weeks;
-
-  /// No description provided for @planLocal.
-  ///
-  /// In en, this message translates to:
-  /// **'Smart rules'**
-  String get planLocal;
-
-  /// No description provided for @planAi.
-  ///
-  /// In en, this message translates to:
-  /// **'AI (Gemini)'**
-  String get planAi;
-
   /// No description provided for @planLocalDesc.
   ///
   /// In en, this message translates to:
-  /// **'Periodised plan based on sports science (80/20, progressive overload, deload every 4th week). Works offline.'**
+  /// **'Periodised plan based on sports science (80/20, progressive overload, a recovery week every 3–5 weeks depending on difficulty). Works offline.'**
   String get planLocalDesc;
-
-  /// No description provided for @planAiDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Gemini creates an individual plan from your profile and recent training. Needs internet.'**
-  String get planAiDesc;
-
-  /// No description provided for @planWishHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Special wishes? e.g. \"focus on legs\", \"sub-50 10k\"'**
-  String get planWishHint;
-
-  /// No description provided for @replaceExisting.
-  ///
-  /// In en, this message translates to:
-  /// **'Replace upcoming planned workouts'**
-  String get replaceExisting;
-
-  /// No description provided for @generate.
-  ///
-  /// In en, this message translates to:
-  /// **'Generate'**
-  String get generate;
 
   /// No description provided for @planCreated.
   ///
@@ -1786,12 +1738,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Strength session – progressive overload: add weight or reps when all sets feel good.'**
   String get planGymDesc;
-
-  /// No description provided for @planDeloadGym.
-  ///
-  /// In en, this message translates to:
-  /// **'Deload week: same exercises, ~60 % of the usual sets, leave 3–4 reps in reserve.'**
-  String get planDeloadGym;
 
   /// No description provided for @planEasyRun.
   ///
@@ -2192,7 +2138,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventPassed.
   ///
   /// In en, this message translates to:
-  /// **'Event passed'**
+  /// **'Race is over'**
   String get eventPassed;
 
   /// No description provided for @onTrack.
@@ -2339,18 +2285,6 @@ abstract class AppLocalizations {
   /// **'Reminders'**
   String get reminders;
 
-  /// No description provided for @hydrationReminder.
-  ///
-  /// In en, this message translates to:
-  /// **'Drink reminder'**
-  String get hydrationReminder;
-
-  /// No description provided for @everyNHours.
-  ///
-  /// In en, this message translates to:
-  /// **'Every {hours} h (8–20 h)'**
-  String everyNHours(int hours);
-
   /// No description provided for @trainingReminder.
   ///
   /// In en, this message translates to:
@@ -2369,29 +2303,11 @@ abstract class AppLocalizations {
   /// **'Time'**
   String get reminderTime;
 
-  /// No description provided for @testNotification.
-  ///
-  /// In en, this message translates to:
-  /// **'Send test notification'**
-  String get testNotification;
-
   /// No description provided for @notificationsDenied.
   ///
   /// In en, this message translates to:
   /// **'Notifications are blocked in system settings.'**
   String get notificationsDenied;
-
-  /// No description provided for @hydrationTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Time to drink 💧'**
-  String get hydrationTitle;
-
-  /// No description provided for @hydrationBody.
-  ///
-  /// In en, this message translates to:
-  /// **'A glass of water keeps your performance up.'**
-  String get hydrationBody;
 
   /// No description provided for @trainingReminderTitle.
   ///
@@ -2404,12 +2320,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Integrations'**
   String get integrations;
-
-  /// No description provided for @comingSoon.
-  ///
-  /// In en, this message translates to:
-  /// **'Soon'**
-  String get comingSoon;
 
   /// No description provided for @googleCalendar.
   ///
@@ -2632,12 +2542,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'same weight – one more rep per set'**
   String get progAddReps;
-
-  /// No description provided for @progDeload.
-  ///
-  /// In en, this message translates to:
-  /// **'Last time was a grind – reset to {value} and build back up'**
-  String progDeload(String value);
 
   /// No description provided for @progHold.
   ///
@@ -3812,7 +3716,7 @@ abstract class AppLocalizations {
   /// No description provided for @diffChallengingSub.
   ///
   /// In en, this message translates to:
-  /// **'+10 % volume/week, more quality sessions – for experienced athletes.'**
+  /// **'+10 % volume/week, more key workouts – for experienced athletes.'**
   String get diffChallengingSub;
 
   /// No description provided for @planLength.
@@ -4442,7 +4346,7 @@ abstract class AppLocalizations {
   /// No description provided for @keySession.
   ///
   /// In en, this message translates to:
-  /// **'Key session'**
+  /// **'Key workout'**
   String get keySession;
 
   /// No description provided for @viewSession.
@@ -4478,7 +4382,7 @@ abstract class AppLocalizations {
   /// No description provided for @formFresh.
   ///
   /// In en, this message translates to:
-  /// **'Fresh – ready for a race or hard session'**
+  /// **'Fresh – ready for a race or key workout'**
   String get formFresh;
 
   /// No description provided for @formNeutral.
@@ -5402,7 +5306,7 @@ abstract class AppLocalizations {
   /// No description provided for @keySessionSub.
   ///
   /// In en, this message translates to:
-  /// **'Important session of the week – Strive keeps hard days apart.'**
+  /// **'Important workout of the week – Strive keeps hard days apart.'**
   String get keySessionSub;
 
   /// No description provided for @workoutPhases.
@@ -5966,7 +5870,7 @@ abstract class AppLocalizations {
   /// No description provided for @loadPhaseLighter.
   ///
   /// In en, this message translates to:
-  /// **'deload week'**
+  /// **'recovery week'**
   String get loadPhaseLighter;
 
   /// No description provided for @loadTaperLighter.
@@ -6164,19 +6068,19 @@ abstract class AppLocalizations {
   /// No description provided for @adjustWeekBanner.
   ///
   /// In en, this message translates to:
-  /// **'{n, plural, =1{1 planned workout missed – adjust your week?} other{{n} planned workouts missed – adjust your week?}}'**
+  /// **'{n, plural, =1{1 planned workout missed – adjust week?} other{{n} planned workouts missed – adjust week?}}'**
   String adjustWeekBanner(int n);
 
   /// No description provided for @adjustWeekTitle.
   ///
   /// In en, this message translates to:
-  /// **'Adjust my week'**
+  /// **'Adjust week'**
   String get adjustWeekTitle;
 
   /// No description provided for @adjustWeekIntro.
   ///
   /// In en, this message translates to:
-  /// **'Key workouts move to a free day this week – never right next to another hard session. Easy workouts don\'t need to be made up: piling up volume does more harm than good.'**
+  /// **'Key workouts move to a free day this week – never right next to another key workout. Easy workouts don\'t need to be made up: piling up volume does more harm than good.'**
   String get adjustWeekIntro;
 
   /// No description provided for @adjustReplaces.
@@ -6194,7 +6098,7 @@ abstract class AppLocalizations {
   /// No description provided for @adjustNoRoom.
   ///
   /// In en, this message translates to:
-  /// **'dropped – no free day this week without a hard session next to it'**
+  /// **'dropped – no free day this week without a key workout next to it'**
   String get adjustNoRoom;
 
   /// No description provided for @adjustProtected.
@@ -6440,13 +6344,13 @@ abstract class AppLocalizations {
   /// No description provided for @recalButton.
   ///
   /// In en, this message translates to:
-  /// **'Re-plan & recalibrate'**
+  /// **'Review plan'**
   String get recalButton;
 
   /// No description provided for @recalTitle.
   ///
   /// In en, this message translates to:
-  /// **'Re-plan & recalibrate'**
+  /// **'Adapt plan to your training'**
   String get recalTitle;
 
   /// No description provided for @recalIntro.
@@ -6476,7 +6380,7 @@ abstract class AppLocalizations {
   /// No description provided for @recalWhyRpeLow.
   ///
   /// In en, this message translates to:
-  /// **'Your quality sessions felt easy – a little more volume.'**
+  /// **'Your key workouts felt easy – a little more volume.'**
   String get recalWhyRpeLow;
 
   /// No description provided for @recalWhyCompletion.
@@ -6494,7 +6398,7 @@ abstract class AppLocalizations {
   /// No description provided for @recalWhyMissed.
   ///
   /// In en, this message translates to:
-  /// **'Missed key sessions move to a free day this week.'**
+  /// **'Missed key workouts move to a free day this week.'**
   String get recalWhyMissed;
 
   /// No description provided for @recalWhyFaster.
@@ -6566,13 +6470,13 @@ abstract class AppLocalizations {
   /// No description provided for @recalApplied.
   ///
   /// In en, this message translates to:
-  /// **'Plan recalibrated'**
+  /// **'Plan adapted'**
   String get recalApplied;
 
   /// No description provided for @recalNewPlan.
   ///
   /// In en, this message translates to:
-  /// **'Create a new plan'**
+  /// **'Start plan over…'**
   String get recalNewPlan;
 
   /// No description provided for @recalMore.
@@ -6656,7 +6560,7 @@ abstract class AppLocalizations {
   /// No description provided for @recalWhyRunTrendFaster.
   ///
   /// In en, this message translates to:
-  /// **'Your quality runs hit the target paces and felt easy – paces a little faster (VDOT {from} → {to}).'**
+  /// **'Your key runs hit the target paces and felt easy – paces a little faster (VDOT {from} → {to}).'**
   String recalWhyRunTrendFaster(String from, String to);
 
   /// No description provided for @recalWhyFtpUp.
@@ -6698,19 +6602,19 @@ abstract class AppLocalizations {
   /// No description provided for @autoAdjSnack.
   ///
   /// In en, this message translates to:
-  /// **'Plan adjusted: {workout} {date} now {after} instead of {before}'**
+  /// **'Plan adapted: {workout} {date} now {after} instead of {before}'**
   String autoAdjSnack(String workout, String date, String after, String before);
 
   /// No description provided for @autoAdjSnackMany.
   ///
   /// In en, this message translates to:
-  /// **'Plan adjusted: {n} upcoming sessions'**
+  /// **'Plan adapted: {n} upcoming workouts'**
   String autoAdjSnackMany(int n);
 
   /// No description provided for @autoAdjTitle.
   ///
   /// In en, this message translates to:
-  /// **'Adjusted automatically'**
+  /// **'Adapted automatically'**
   String get autoAdjTitle;
 
   /// No description provided for @autoAdjOriginal.
@@ -6752,13 +6656,13 @@ abstract class AppLocalizations {
   /// No description provided for @autoAdjQualityHard.
   ///
   /// In en, this message translates to:
-  /// **'Your last quality session was harder than intended – this one is not increased.'**
+  /// **'Your last key workout was harder than intended – this one is not increased.'**
   String get autoAdjQualityHard;
 
   /// No description provided for @autoAdjQualityEasy.
   ///
   /// In en, this message translates to:
-  /// **'Your last quality session hit the targets and felt easy – this one is 5 % longer.'**
+  /// **'Your last key workout hit the targets and felt easy – this one is 5 % longer.'**
   String get autoAdjQualityEasy;
 
   /// No description provided for @progTopReached.
@@ -6950,7 +6854,7 @@ abstract class AppLocalizations {
   /// No description provided for @recalWhyRpeLowHold.
   ///
   /// In en, this message translates to:
-  /// **'Your quality sessions felt easy – the new targets are this week\'s step up, the volume stays (never both at once).'**
+  /// **'Your key workouts felt easy – the new targets are this week\'s step up, the volume stays (never both at once).'**
   String get recalWhyRpeLowHold;
 
   /// No description provided for @wBrickRun.
@@ -7256,13 +7160,13 @@ abstract class AppLocalizations {
   /// No description provided for @termPhaseBody.
   ///
   /// In en, this message translates to:
-  /// **'Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Deload: a lighter week every 3–4 weeks so your body can adapt.'**
+  /// **'Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Recovery week: a lighter week every 3–5 weeks so your body can adapt.'**
   String get termPhaseBody;
 
   /// No description provided for @termPhaseTip.
   ///
   /// In en, this message translates to:
-  /// **'Deload and taper weeks feel easy on purpose – don\'t make up for them.'**
+  /// **'Recovery and taper weeks feel easy on purpose – don\'t make up for them.'**
   String get termPhaseTip;
 
   /// No description provided for @termZonesTitle.
@@ -7568,7 +7472,7 @@ abstract class AppLocalizations {
   /// No description provided for @alignPlanToEvent.
   ///
   /// In en, this message translates to:
-  /// **'Align training plan to this event'**
+  /// **'Align training plan to this race'**
   String get alignPlanToEvent;
 
   /// No description provided for @alignPlanToEventSub.
@@ -7706,13 +7610,13 @@ abstract class AppLocalizations {
   /// No description provided for @fcReasonSlower.
   ///
   /// In en, this message translates to:
-  /// **'Quality runs slower than planned'**
+  /// **'Key runs slower than planned'**
   String get fcReasonSlower;
 
   /// No description provided for @fcReasonFaster.
   ///
   /// In en, this message translates to:
-  /// **'Quality runs faster than planned'**
+  /// **'Key runs faster than planned'**
   String get fcReasonFaster;
 
   /// No description provided for @fcReasonLongRun.
@@ -7846,6 +7750,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plan settings'**
   String get goalEditPlan;
+
+  /// No description provided for @replacePlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start plan over?'**
+  String get replacePlanTitle;
+
+  /// No description provided for @replacePlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 planned workout from {date} will be replaced.} other{{n} planned workouts from {date} will be replaced.}}'**
+  String replacePlanBody(String date, int n);
+
+  /// No description provided for @replacePlanKeeps.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed workouts and stats stay.'**
+  String get replacePlanKeeps;
+
+  /// No description provided for @replaceFromToday.
+  ///
+  /// In en, this message translates to:
+  /// **'From today'**
+  String get replaceFromToday;
+
+  /// No description provided for @replaceFromMonday.
+  ///
+  /// In en, this message translates to:
+  /// **'From next Monday'**
+  String get replaceFromMonday;
+
+  /// No description provided for @replacePlanOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get replacePlanOk;
+
+  /// No description provided for @startOverTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start plan over'**
+  String get startOverTitle;
+
+  /// No description provided for @startOverButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Start over'**
+  String get startOverButton;
+
+  /// No description provided for @wRecoveryWeekNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery week: volume is reduced on purpose – keep it easy even if you feel fresh. This is when your body absorbs the last weeks.'**
+  String get wRecoveryWeekNote2;
+
+  /// No description provided for @wGymDeloadNote3.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
+  String get wGymDeloadNote3;
+
+  /// No description provided for @eventQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Training for a race?'**
+  String get eventQuestion;
+
+  /// No description provided for @noPlanYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No plan yet'**
+  String get noPlanYet;
+
+  /// No description provided for @noPlanYetSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Strive builds one from your goal, training days and time.'**
+  String get noPlanYetSub;
+
+  /// No description provided for @todayNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {title} · {day}'**
+  String todayNext(String title, String day);
+
+  /// No description provided for @todayHiddenByFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 workout hidden by filter} other{{n} workouts hidden by filter}}'**
+  String todayHiddenByFilter(int n);
+
+  /// No description provided for @todayHiddenByFilterSub.
+  ///
+  /// In en, this message translates to:
+  /// **'The sport filter is on – today is not a rest day.'**
+  String get todayHiddenByFilterSub;
+
+  /// No description provided for @showAllSports.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get showAllSports;
+
+  /// No description provided for @hintPlannedDry.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned today: {sport} – dry until {time}'**
+  String hintPlannedDry(String sport, String time);
+
+  /// No description provided for @hintPlannedBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned today: {sport} – best at {time}'**
+  String hintPlannedBest(String sport, String time);
+
+  /// No description provided for @hintPlannedStorm.
+  ///
+  /// In en, this message translates to:
+  /// **'Thunderstorm – move your {sport} indoors or later'**
+  String hintPlannedStorm(String sport);
+
+  /// No description provided for @hintPlannedNeutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned today: {sport} – dress for the weather'**
+  String hintPlannedNeutral(String sport);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

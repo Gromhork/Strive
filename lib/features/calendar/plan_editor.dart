@@ -8,7 +8,6 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
-import '../../services/coach_service.dart';
 import '../../services/goal_model.dart';
 import '../../services/plan_gaps.dart';
 import '../../services/plan_generator.dart';
@@ -21,6 +20,7 @@ import '../../core/theme.dart';
 import '../../data/default_programs.dart';
 import '../onboarding/onboarding_page.dart';
 import 'feasibility_card.dart';
+import 'replace_plan_dialog.dart';
 import '../train/gym_exercise_editor.dart';
 
 /// Add or edit a planned workout (full-screen editor with phases for endurance).
@@ -345,7 +345,8 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
   }
 }
 
-/// Generate a multi-week plan (local rules or Gemini).
+/// Start the plan over: a new science-based plan (to race day when an event is set) replaces
+/// the upcoming planned workouts after [confirmReplacePlan].
 Future<void> showPlanGenerator(BuildContext context, WidgetRef ref) {
   return showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => const _PlanGenerator());
 }
@@ -357,9 +358,11 @@ class _PlanGenerator extends ConsumerStatefulWidget {
 }
 
 class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
-  /// Plan length: the weeks to race day when an event is set (the local generator always plans
-  /// to race day then), else the length from the plan settings.
-  late int _weeks = (_eventWeeks(ref.read(profileOrDefaultProvider)) ?? ref.read(profileOrDefaultProvider).athlete.planWeeks).clamp(1, 24);
+  /// Plan length without an event (with one, the generator always plans to race day) –
+  /// the same choices as the plan settings.
+  late int _weeks = ref.read(profileOrDefaultProvider).athlete.planWeeks;
+  bool _busy = false;
+  final _feasibility = FeasibilityCache();
 
   static int? _eventWeeks(UserProfile p) {
     final d = p.athlete.eventDate;
@@ -368,63 +371,32 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
     return w >= 2 && w <= GoalModel.maxEventWeeks ? w : null;
   }
 
-  bool _ai = false;
-  bool _replace = true;
-  bool _busy = false;
-  final _wish = TextEditingController();
-  final _feasibility = FeasibilityCache();
-
   Future<void> _run() async {
     final l = context.l10n;
     final repo = ref.read(repoProvider)!;
     final profile = ref.read(profileOrDefaultProvider);
     final templates = ref.read(templateListProvider);
-    final start = dayOnly(DateTime.now());
+    final start = await confirmReplacePlan(context, ref.read(planListProvider));
+    if (start == null || !mounted) return;
     setState(() => _busy = true);
-    try {
-      List<PlannedWorkout> plan;
-      if (_ai) {
-        final coach = CoachService(
-          profile: profile,
-          sessions: ref.read(sessionListProvider),
-          plans: ref.read(planListProvider),
-          lang: Localizations.localeOf(context).languageCode,
-        );
-        final items = await coach.generatePlan(weeks: _weeks, start: start, wish: _wish.text.trim());
-        plan = [
-          for (final m in items)
-            PlannedWorkout(
-              id: repo.newId(),
-              date: start.add(Duration(days: (m['dayOffset'] as num?)?.toInt() ?? 0)),
-              sport: SportX.parse(m['sport']),
-              title: m['title'] ?? '',
-              description: m['description'] ?? '',
-              durationMin: (m['durationMin'] as num?)?.toInt() ?? 45,
-              distanceKm: ((m['distanceKm'] as num?)?.toDouble() ?? 0) > 0 ? (m['distanceKm'] as num).toDouble() : null,
-              intensity: m['intensity'] ?? 'easy',
-              templateId: templates.where((t) => t.name == m['title']).firstOrNull?.id,
-            ),
-        ];
-      } else {
-        // Make sure the programs of the chosen split exist (built-ins added on demand).
-        final de = l.localeName.startsWith('de');
-        final added = missingBuiltins(templates, repo.newId, de: de, only: PlanGenerator.gymKeysFor(profile).toSet());
-        if (added.isNotEmpty) repo.saveTemplates(added);
-        plan = PlanGenerator(l, profile, [...templates, ...added], repo.newId).generate(start: start, weeks: _weeks);
-      }
-      if (_replace) repo.deletePlansFrom(ref.read(planListProvider), start);
-      repo.savePlans(plan);
-      // Plan start / length: lets the recalibration rebuild the plan to find gaps (0 = AI plan).
-      if (ref.read(profileProvider).value != null) repo.saveProfile(withPlanMeta(profile, start, _ai ? 0 : _weeks));
-      if (mounted) {
-        Navigator.pop(context);
-        toast(context, l.planCreated(plan.length));
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _busy = false);
-        toast(context, '${l.aiUnavailable} ($e)');
-      }
+    // Make sure the programs of the chosen split exist (built-ins added on demand).
+    final added = missingBuiltins(
+      templates,
+      repo.newId,
+      de: l.localeName.startsWith('de'),
+      only: PlanGenerator.gymKeysFor(profile).toSet(),
+    );
+    if (added.isNotEmpty) repo.saveTemplates(added);
+    final plan = PlanGenerator(l, profile, [...templates, ...added], repo.newId).generate(start: start, weeks: _weeks);
+    repo.deletePlansFrom(ref.read(planListProvider), start);
+    repo.savePlans(plan);
+    // Plan start / length: lets the plan review rebuild the plan to find gaps.
+    if (ref.read(profileProvider).value != null) {
+      repo.saveProfile(withPlanMeta(profile.copyWith(athlete: profile.athlete.merge({'planWeeks': _weeks})), start, _weeks));
+    }
+    if (mounted) {
+      Navigator.pop(context);
+      toast(context, l.planCreated(plan.length));
     }
   }
 
@@ -432,6 +404,8 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final p = ref.watch(profileOrDefaultProvider);
+    final eventWeeks = _eventWeeks(p);
+    final options = [(4, l.plan4w), (8, l.plan8w), (12, l.plan12w), (16, l.plan16w), (20, l.plan20w)];
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SafeArea(
@@ -440,7 +414,7 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(l.generatePlan, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              Text(l.startOverTitle, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
               Text(l.generatePlanSub(p.focus.label(l), p.weeklyTarget), style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 12),
@@ -458,7 +432,7 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
                   },
                 ),
               ),
-              if (!_ai && p.athlete.eventDate != null && p.athlete.eventDistance != null) ...[
+              if (p.athlete.eventDate != null && p.athlete.eventDistance != null) ...[
                 const SizedBox(height: 12),
                 FeasibilityCard(
                   _feasibility.of(p, DateTime.now(), l),
@@ -471,7 +445,7 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
                 ),
               ],
               const SizedBox(height: 16),
-              if (!_ai && _eventWeeks(p) != null)
+              if (eventWeeks != null)
                 Container(
                   key: const ValueKey('planUntilRace'),
                   padding: const EdgeInsets.all(12),
@@ -480,45 +454,33 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
                     children: [
                       const Icon(Icons.event_available_rounded, color: AppColors.brand),
                       const SizedBox(width: 10),
-                      Expanded(child: Text('\n', style: const TextStyle(fontSize: 13))),
+                      Expanded(child: Text(l.planUntilRace(eventWeeks), style: const TextStyle(fontSize: 13))),
                     ],
                   ),
                 )
-              else
-                LabeledSlider(
-                  label: l.weeks,
-                  value: _weeks.toDouble(),
-                  min: 1,
-                  max: 24,
-                  divisions: 23,
-                  onChanged: (v) => setState(() => _weeks = v.round()),
+              else ...[
+                Text(l.planLength, style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Wrap(
+                  key: const ValueKey('planLengthChoice'),
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final (w, label) in options)
+                      ChoiceChip(label: Text(label), selected: _weeks == w, onSelected: (_) => setState(() => _weeks = w)),
+                  ],
                 ),
-              const SizedBox(height: 8),
-              Segments<bool>(
-                segments: [Seg(false, label: l.planLocal, icon: Icons.rule), Seg(true, label: l.planAi, icon: Icons.auto_awesome)],
-                value: _ai,
-                onChanged: (v) => setState(() => _ai = v),
-              ),
-              const SizedBox(height: 8),
-              Text(_ai ? l.planAiDesc : l.planLocalDesc, style: Theme.of(context).textTheme.bodySmall),
-              if (_ai) ...[
-                const SizedBox(height: 12),
-                TextField(controller: _wish, maxLines: 2, decoration: InputDecoration(hintText: l.planWishHint)),
               ],
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _replace,
-                onChanged: (v) => setState(() => _replace = v),
-                title: Text(l.replaceExisting),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              Text(l.planLocalDesc, style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: _busy ? null : _run,
                 icon:
                     _busy
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.auto_fix_high_rounded),
-                label: Text(l.generate),
+                        : const Icon(Icons.restart_alt_rounded),
+                label: Text(l.startOverButton),
               ),
             ],
           ),

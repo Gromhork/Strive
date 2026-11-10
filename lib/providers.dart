@@ -131,8 +131,6 @@ final prefsProvider = Provider<SharedPreferences>((ref) => throw UnimplementedEr
 class AppSettings {
   final String? locale; // null = system
   final ThemeMode themeMode;
-  final bool hydration;
-  final int hydrationInterval;
   final bool trainingReminder;
   final int reminderHour;
   final bool vibrate;
@@ -140,8 +138,6 @@ class AppSettings {
   const AppSettings({
     this.locale,
     this.themeMode = ThemeMode.dark,
-    this.hydration = false,
-    this.hydrationInterval = 2,
     this.trainingReminder = false,
     this.reminderHour = 8,
     this.vibrate = true,
@@ -151,16 +147,12 @@ class AppSettings {
     String? locale,
     bool clearLocale = false,
     ThemeMode? themeMode,
-    bool? hydration,
-    int? hydrationInterval,
     bool? trainingReminder,
     int? reminderHour,
     bool? vibrate,
   }) => AppSettings(
     locale: clearLocale ? null : (locale ?? this.locale),
     themeMode: themeMode ?? this.themeMode,
-    hydration: hydration ?? this.hydration,
-    hydrationInterval: hydrationInterval ?? this.hydrationInterval,
     trainingReminder: trainingReminder ?? this.trainingReminder,
     reminderHour: reminderHour ?? this.reminderHour,
     vibrate: vibrate ?? this.vibrate,
@@ -176,8 +168,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
     return AppSettings(
       locale: p.getString('locale'),
       themeMode: ThemeMode.values[p.getInt('themeMode') ?? ThemeMode.dark.index],
-      hydration: p.getBool('hydration') ?? false,
-      hydrationInterval: p.getInt('hydrationInterval') ?? 2,
       trainingReminder: p.getBool('trainingReminder') ?? false,
       reminderHour: p.getInt('reminderHour') ?? 8,
       vibrate: p.getBool('vibrate') ?? true,
@@ -188,8 +178,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
     state = s;
     s.locale == null ? _p.remove('locale') : _p.setString('locale', s.locale!);
     _p.setInt('themeMode', s.themeMode.index);
-    _p.setBool('hydration', s.hydration);
-    _p.setInt('hydrationInterval', s.hydrationInterval);
     _p.setBool('trainingReminder', s.trainingReminder);
     _p.setInt('reminderHour', s.reminderHour);
     _p.setBool('vibrate', s.vibrate);
