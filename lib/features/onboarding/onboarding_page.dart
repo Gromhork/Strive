@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../data/default_programs.dart';
 import '../calendar/feasibility_card.dart';
+import '../calendar/replace_plan_dialog.dart';
 import '../goals/race_search_page.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
@@ -137,7 +138,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     }
   }
 
-  void _finish() {
+  Future<void> _finish() async {
+    // Asked first: cancelling leaves everything as it was.
+    var start = dayOnly(DateTime.now());
+    if (_generatePlan && widget.mode != SetupMode.profile) {
+      final s = await confirmReplacePlan(context, ref.read(planListProvider));
+      if (s == null || !mounted) return;
+      start = s;
+    }
     final repo = ref.read(repoProvider)!;
     final l = context.l10n;
     final de = context.localeName.startsWith('de');
@@ -219,11 +227,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     }
 
     if (_generatePlan) {
-      final existing = ref.read(planListProvider);
-      repo.deletePlansFrom(existing, dayOnly(now));
-      final plan = PlanGenerator(l, profile, templates, repo.newId).generate(start: now, weeks: a.planWeeks);
+      repo.deletePlansFrom(ref.read(planListProvider), start);
+      final plan = PlanGenerator(l, profile, templates, repo.newId).generate(start: start, weeks: a.planWeeks);
       repo.savePlans(plan);
-      repo.saveProfile(withPlanMeta(profile, now, a.planWeeks));
+      repo.saveProfile(withPlanMeta(profile, start, a.planWeeks));
     }
     if (widget.edit && mounted) Navigator.pop(context);
   }
@@ -1290,7 +1297,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     'sprint' => 'Sprint-Triathlon',
     'olympic' => l.olympicTri,
     '70.3' => l.middleDistance,
-    _ => l.eventTitle,
+    _ => l.goalTypeEvent,
   };
 
   Widget _event(AppLocalizations l) {
@@ -1302,7 +1309,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _h(l.eventTitle, l.eventSub, icon: Icons.emoji_events_outlined, color: AppColors.warning),
+        _h(l.eventQuestion, l.eventSub, icon: Icons.emoji_events_outlined, color: AppColors.warning),
         TextField(controller: _eventName, decoration: InputDecoration(labelText: l.eventName, prefixIcon: const Icon(Icons.flag_outlined))),
         const SizedBox(height: 12),
         OutlinedButton.icon(

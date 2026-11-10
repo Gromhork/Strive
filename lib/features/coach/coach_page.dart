@@ -5,7 +5,6 @@ import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../providers.dart';
 import '../../services/coach_service.dart';
-import '../calendar/plan_editor.dart';
 import '../goals/goals_page.dart';
 
 class _Msg {
@@ -84,15 +83,6 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
           child: Row(
             children: [
-              Expanded(
-                child: FilledButton.tonalIcon(
-                  style: FilledButton.styleFrom(minimumSize: const Size(0, 42)),
-                  onPressed: () => showPlanGenerator(context, ref),
-                  icon: const Icon(Icons.auto_fix_high_rounded, size: 18),
-                  label: Text(l.generatePlan),
-                ),
-              ),
-              const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(minimumSize: const Size(0, 42)),

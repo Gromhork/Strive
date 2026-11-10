@@ -7,7 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/format.dart';
+import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/weather_service.dart';
@@ -31,22 +33,31 @@ String clothingLabel(AppLocalizations l, Clothing c) => switch (c) {
   Clothing.winter => l.clothWinter,
 };
 
-/// Short athlete-focused hint for the home card.
-String weatherHint(AppLocalizations l, Weather w, String locale) {
+/// Short athlete-focused hint for the home card. [planned]: the outdoor sport (run / ride)
+/// planned for today – the hint is then about that session instead of suggesting the gym.
+String weatherHint(AppLocalizations l, Weather w, String locale, {Sport? planned}) {
   final rain = w.nextRain;
-  if (skyOf(w.code) == Sky.storm) return l.hintStorm;
-  if (rain != null && rain.time.difference(DateTime.now()).inMinutes > 30) {
-    return l.hintRainAt(DateFormat.Hm(locale).format(rain.time));
+  final now = DateTime.now();
+  final sport = planned?.label(l);
+  if (skyOf(w.code) == Sky.storm) return sport == null ? l.hintStorm : l.hintPlannedStorm(sport);
+  if (rain != null && rain.time.difference(now).inMinutes > 30) {
+    final t = DateFormat.Hm(locale).format(rain.time);
+    return sport != null && sameDay(rain.time, now) ? l.hintPlannedDry(sport, t) : l.hintRainAt(t);
   }
   if (w.feelsLike > 26) return l.hintHot;
   if (w.feelsLike < -2) return l.hintCold;
   final best = w.bestWindow;
   if (best != null && best.$2 >= 70) {
     final t = DateFormat.Hm(locale).format(best.$1.time);
-    return l.hintBest(sameDay(best.$1.time, DateTime.now()) ? t : '${l.tomorrow} $t');
+    if (sport != null && sameDay(best.$1.time, now)) return l.hintPlannedBest(sport, t);
+    if (sport == null) return l.hintBest(sameDay(best.$1.time, now) ? t : '${l.tomorrow} $t');
   }
-  return l.hintIndoor;
+  return sport == null ? l.hintIndoor : l.hintPlannedNeutral(sport);
 }
+
+/// Today's planned outdoor session (run / ride), if any – the weather hint refers to it.
+Sport? plannedOutdoorToday(List<PlannedWorkout> plans, DateTime now) =>
+    plans.where((p) => p.status == 'planned' && sameDay(p.date, now) && (p.sport == Sport.run || p.sport == Sport.ride)).firstOrNull?.sport;
 
 // ───────────────────────────── Home card ─────────────────────────────
 
@@ -154,7 +165,7 @@ class WeatherCard extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(10)),
                 child: Text(
-                  weatherHint(l, w, context.localeName),
+                  weatherHint(l, w, context.localeName, planned: plannedOutdoorToday(ref.watch(planListProvider), DateTime.now())),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600, height: 1.25),

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:firebase_ai/firebase_ai.dart';
 
 import '../core/format.dart';
@@ -101,8 +99,7 @@ You are "Strive Coach", an evidence-based personal coach for strength training, 
 
 ${_context()}''';
 
-  GenerativeModel _model({GenerationConfig? config}) =>
-      FirebaseAI.googleAI().generativeModel(model: model, systemInstruction: Content.system(_system), generationConfig: config);
+  GenerativeModel _model() => FirebaseAI.googleAI().generativeModel(model: model, systemInstruction: Content.system(_system));
 
   Stream<String> ask(String message) async* {
     _chat ??= _model().startChat();
@@ -110,34 +107,5 @@ ${_context()}''';
       final t = chunk.text;
       if (t != null) yield t;
     }
-  }
-
-  /// Asks Gemini for a structured plan. Returns raw items; caller maps to [PlannedWorkout].
-  Future<List<Map<String, dynamic>>> generatePlan({required int weeks, required DateTime start, String wish = ''}) async {
-    final schema = Schema.array(
-      items: Schema.object(
-        properties: {
-          'dayOffset': Schema.integer(description: 'days after start date (0 = start date)'),
-          'sport': Schema.enumString(enumValues: ['gym', 'run', 'ride', 'swim']),
-          'title': Schema.string(),
-          'description': Schema.string(description: 'concrete session content, e.g. sets/intervals/paces'),
-          'durationMin': Schema.integer(),
-          'distanceKm': Schema.number(description: '0 for gym'),
-          'intensity': Schema.enumString(enumValues: ['easy', 'moderate', 'tempo', 'intervals', 'long', 'technique']),
-        },
-      ),
-    );
-    final m = _model(config: GenerationConfig(responseMimeType: 'application/json', responseSchema: schema));
-    final days = profile.trainingDays.map((d) => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d - 1]).join(', ');
-    final prompt = '''
-Create a periodised $weeks-week training plan starting ${dayKey(start)} (a ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][start.weekday - 1]}).
-Train only on: $days${profile.longDay != null ? '; long session on ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][profile.longDay! - 1]}' : ''}.
-Apply progressive overload and a deload in week 4 if the plan is long enough.
-For gym sessions use one of these titles when fitting: Push, Pull, Legs, Upper, Lower, Full Body A, Full Body B.
-${wish.isNotEmpty ? 'Athlete wish: $wish' : ''}
-Titles and descriptions in ${lang == 'de' ? 'German' : 'English'}.''';
-    final res = await m.generateContent([Content.text(prompt)]);
-    final list = jsonDecode(res.text ?? '[]') as List;
-    return list.cast<Map<String, dynamic>>();
   }
 }

@@ -165,7 +165,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get muscle => 'Muscle';
 
   @override
-  String get fitnessLevel => 'Fitness level';
+  String get fitnessLevel => 'Experience level';
 
   @override
   String get fitnessLevelSub => 'Be honest – the plan adapts as you improve.';
@@ -216,7 +216,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalHealth => 'Health';
 
   @override
-  String get goalRace => 'Race / event';
+  String get goalRace => 'Race';
 
   @override
   String get scheduleTitle => 'Training days';
@@ -251,10 +251,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventSub => 'Add a race (marathon, triathlon …) and get a countdown. Optional.';
 
   @override
-  String get eventName => 'Event name';
+  String get eventName => 'Race name';
 
   @override
-  String get eventDate => 'Event date';
+  String get eventDate => 'Race date';
 
   @override
   String get eventDistance => 'Distance';
@@ -264,9 +264,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get marathon => 'Marathon';
-
-  @override
-  String get searchMarathonDe => 'Find events on marathon.de';
 
   @override
   String get generatePlanNow => 'Create my training plan';
@@ -370,7 +367,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readyFresh => 'Fresh';
 
   @override
-  String get readyFreshText => 'Your load is low – a great time for a hard session or to increase volume.';
+  String get readyFreshText => 'Your load is low – a great time for a key workout or more volume.';
 
   @override
   String get readyOptimal => 'Optimal load';
@@ -422,7 +419,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discardAndStart => 'Discard & start';
 
   @override
-  String get startTraining => 'Start training';
+  String get startTraining => 'Start workout';
 
   @override
   String get logManually => 'Log manually';
@@ -813,7 +810,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get markSkipped => 'Mark as skipped';
 
   @override
-  String get generatePlan => 'Generate plan';
+  String get generatePlan => 'Create plan';
 
   @override
   String generatePlanSub(String focus, int days) {
@@ -821,28 +818,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get weeks => 'Weeks';
-
-  @override
-  String get planLocal => 'Smart rules';
-
-  @override
-  String get planAi => 'AI (Gemini)';
-
-  @override
-  String get planLocalDesc => 'Periodised plan based on sports science (80/20, progressive overload, deload every 4th week). Works offline.';
-
-  @override
-  String get planAiDesc => 'Gemini creates an individual plan from your profile and recent training. Needs internet.';
-
-  @override
-  String get planWishHint => 'Special wishes? e.g. \"focus on legs\", \"sub-50 10k\"';
-
-  @override
-  String get replaceExisting => 'Replace upcoming planned workouts';
-
-  @override
-  String get generate => 'Generate';
+  String get planLocalDesc => 'Periodised plan based on sports science (80/20, progressive overload, a recovery week every 3–5 weeks depending on difficulty). Works offline.';
 
   @override
   String planCreated(int count) {
@@ -875,9 +851,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planGymDesc => 'Strength session – progressive overload: add weight or reps when all sets feel good.';
-
-  @override
-  String get planDeloadGym => 'Deload week: same exercises, ~60 % of the usual sets, leave 3–4 reps in reserve.';
 
   @override
   String get planEasyRun => 'Easy run';
@@ -1082,7 +1055,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eventPassed => 'Event passed';
+  String get eventPassed => 'Race is over';
 
   @override
   String get onTrack => 'On track';
@@ -1157,14 +1130,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminders => 'Reminders';
 
   @override
-  String get hydrationReminder => 'Drink reminder';
-
-  @override
-  String everyNHours(int hours) {
-    return 'Every $hours h (8–20 h)';
-  }
-
-  @override
   String get trainingReminder => 'Training reminder';
 
   @override
@@ -1176,16 +1141,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderTime => 'Time';
 
   @override
-  String get testNotification => 'Send test notification';
-
-  @override
   String get notificationsDenied => 'Notifications are blocked in system settings.';
-
-  @override
-  String get hydrationTitle => 'Time to drink 💧';
-
-  @override
-  String get hydrationBody => 'A glass of water keeps your performance up.';
 
   @override
   String trainingReminderTitle(String sport) {
@@ -1194,9 +1150,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get integrations => 'Integrations';
-
-  @override
-  String get comingSoon => 'Soon';
 
   @override
   String get googleCalendar => 'Google Calendar';
@@ -1320,11 +1273,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get progAddReps => 'same weight – one more rep per set';
-
-  @override
-  String progDeload(String value) {
-    return 'Last time was a grind – reset to $value and build back up';
-  }
 
   @override
   String get progHold => 'Keep the weight and own every rep';
@@ -1944,7 +1892,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diffChallenging => 'Challenging';
 
   @override
-  String get diffChallengingSub => '+10 % volume/week, more quality sessions – for experienced athletes.';
+  String get diffChallengingSub => '+10 % volume/week, more key workouts – for experienced athletes.';
 
   @override
   String get planLength => 'Plan length';
@@ -2275,7 +2223,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get phaseRecovery => 'Recovery week';
 
   @override
-  String get keySession => 'Key session';
+  String get keySession => 'Key workout';
 
   @override
   String get viewSession => 'View workout';
@@ -2293,7 +2241,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get form => 'Form';
 
   @override
-  String get formFresh => 'Fresh – ready for a race or hard session';
+  String get formFresh => 'Fresh – ready for a race or key workout';
 
   @override
   String get formNeutral => 'Balanced – maintaining';
@@ -2819,7 +2767,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noLengthsYet => 'Your lengths appear here after the first tap.';
 
   @override
-  String get keySessionSub => 'Important session of the week – Strive keeps hard days apart.';
+  String get keySessionSub => 'Important workout of the week – Strive keeps hard days apart.';
 
   @override
   String get workoutPhases => 'Phases';
@@ -3135,7 +3083,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadSrcEstimate => 'estimated from body weight – adjust it';
 
   @override
-  String get loadPhaseLighter => 'deload week';
+  String get loadPhaseLighter => 'recovery week';
 
   @override
   String get loadTaperLighter => 'taper week';
@@ -3250,17 +3198,17 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n planned workouts missed – adjust your week?',
-      one: '1 planned workout missed – adjust your week?',
+      other: '$n planned workouts missed – adjust week?',
+      one: '1 planned workout missed – adjust week?',
     );
     return '$_temp0';
   }
 
   @override
-  String get adjustWeekTitle => 'Adjust my week';
+  String get adjustWeekTitle => 'Adjust week';
 
   @override
-  String get adjustWeekIntro => 'Key workouts move to a free day this week – never right next to another hard session. Easy workouts don\'t need to be made up: piling up volume does more harm than good.';
+  String get adjustWeekIntro => 'Key workouts move to a free day this week – never right next to another key workout. Easy workouts don\'t need to be made up: piling up volume does more harm than good.';
 
   @override
   String adjustReplaces(String title) {
@@ -3271,7 +3219,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adjustDropped => 'dropped – no need to make it up';
 
   @override
-  String get adjustNoRoom => 'dropped – no free day this week without a hard session next to it';
+  String get adjustNoRoom => 'dropped – no free day this week without a key workout next to it';
 
   @override
   String get adjustProtected => 'dropped – recovery/taper week stays easy';
@@ -3406,10 +3354,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recalNote => 'Adjusted to your recent training (effort and completed sessions).';
 
   @override
-  String get recalButton => 'Re-plan & recalibrate';
+  String get recalButton => 'Review plan';
 
   @override
-  String get recalTitle => 'Re-plan & recalibrate';
+  String get recalTitle => 'Adapt plan to your training';
 
   @override
   String get recalIntro => 'Your next two weeks, adapted to the last two: effort (RPE), completed and missed sessions, new best efforts. Completed workouts stay as they are.';
@@ -3424,7 +3372,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recalWhyRpeHigh => 'Several sessions felt harder than planned – more recovery first.';
 
   @override
-  String get recalWhyRpeLow => 'Your quality sessions felt easy – a little more volume.';
+  String get recalWhyRpeLow => 'Your key workouts felt easy – a little more volume.';
 
   @override
   String recalWhyCompletion(int pct) {
@@ -3437,7 +3385,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get recalWhyMissed => 'Missed key sessions move to a free day this week.';
+  String get recalWhyMissed => 'Missed key workouts move to a free day this week.';
 
   @override
   String recalWhyFaster(String from, String to) {
@@ -3485,10 +3433,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get recalApplied => 'Plan recalibrated';
+  String get recalApplied => 'Plan adapted';
 
   @override
-  String get recalNewPlan => 'Create a new plan';
+  String get recalNewPlan => 'Start plan over…';
 
   @override
   String get recalMore => 'More';
@@ -3539,7 +3487,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String recalWhyRunTrendFaster(String from, String to) {
-    return 'Your quality runs hit the target paces and felt easy – paces a little faster (VDOT $from → $to).';
+    return 'Your key runs hit the target paces and felt easy – paces a little faster (VDOT $from → $to).';
   }
 
   @override
@@ -3574,16 +3522,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String autoAdjSnack(String workout, String date, String after, String before) {
-    return 'Plan adjusted: $workout $date now $after instead of $before';
+    return 'Plan adapted: $workout $date now $after instead of $before';
   }
 
   @override
   String autoAdjSnackMany(int n) {
-    return 'Plan adjusted: $n upcoming sessions';
+    return 'Plan adapted: $n upcoming workouts';
   }
 
   @override
-  String get autoAdjTitle => 'Adjusted automatically';
+  String get autoAdjTitle => 'Adapted automatically';
 
   @override
   String autoAdjOriginal(String value) {
@@ -3606,10 +3554,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoAdjEasyTooFast => 'Your last easy session was faster than the easy pace – this one is a little shorter. Slow down: easy days build the aerobic base (80/20).';
 
   @override
-  String get autoAdjQualityHard => 'Your last quality session was harder than intended – this one is not increased.';
+  String get autoAdjQualityHard => 'Your last key workout was harder than intended – this one is not increased.';
 
   @override
-  String get autoAdjQualityEasy => 'Your last quality session hit the targets and felt easy – this one is 5 % longer.';
+  String get autoAdjQualityEasy => 'Your last key workout hit the targets and felt easy – this one is 5 % longer.';
 
   @override
   String get progTopReached => 'all sets at the top of the range – more weight';
@@ -3709,7 +3657,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recalWhyLongCap => 'Long sessions stay within +10 % of your longest one of the last 30 days – beyond that the injury risk rises.';
 
   @override
-  String get recalWhyRpeLowHold => 'Your quality sessions felt easy – the new targets are this week\'s step up, the volume stays (never both at once).';
+  String get recalWhyRpeLowHold => 'Your key workouts felt easy – the new targets are this week\'s step up, the volume stays (never both at once).';
 
   @override
   String wBrickRun(int min) {
@@ -3878,10 +3826,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termPhaseTitle => 'Plan phases';
 
   @override
-  String get termPhaseBody => 'Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Deload: a lighter week every 3–4 weeks so your body can adapt.';
+  String get termPhaseBody => 'Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Recovery week: a lighter week every 3–5 weeks so your body can adapt.';
 
   @override
-  String get termPhaseTip => 'Deload and taper weeks feel easy on purpose – don\'t make up for them.';
+  String get termPhaseTip => 'Recovery and taper weeks feel easy on purpose – don\'t make up for them.';
 
   @override
   String get termZonesTitle => 'Intensity zones';
@@ -4058,7 +4006,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get alignPlanToEvent => 'Align training plan to this event';
+  String get alignPlanToEvent => 'Align training plan to this race';
 
   @override
   String get alignPlanToEventSub => 'The plan runs until race day; completed workouts are kept.';
@@ -4139,10 +4087,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fcReasonSlower => 'Quality runs slower than planned';
+  String get fcReasonSlower => 'Key runs slower than planned';
 
   @override
-  String get fcReasonFaster => 'Quality runs faster than planned';
+  String get fcReasonFaster => 'Key runs faster than planned';
 
   @override
   String get fcReasonLongRun => 'Long runs shorter than planned';
@@ -4215,4 +4163,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goalEditPlan => 'Plan settings';
+
+  @override
+  String get replacePlanTitle => 'Start plan over?';
+
+  @override
+  String replacePlanBody(String date, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n planned workouts from $date will be replaced.',
+      one: '1 planned workout from $date will be replaced.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get replacePlanKeeps => 'Completed workouts and stats stay.';
+
+  @override
+  String get replaceFromToday => 'From today';
+
+  @override
+  String get replaceFromMonday => 'From next Monday';
+
+  @override
+  String get replacePlanOk => 'Replace';
+
+  @override
+  String get startOverTitle => 'Start plan over';
+
+  @override
+  String get startOverButton => 'Start over';
+
+  @override
+  String get wRecoveryWeekNote2 => 'Recovery week: volume is reduced on purpose – keep it easy even if you feel fresh. This is when your body absorbs the last weeks.';
+
+  @override
+  String get wGymDeloadNote3 => 'Recovery week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+
+  @override
+  String get eventQuestion => 'Training for a race?';
+
+  @override
+  String get noPlanYet => 'No plan yet';
+
+  @override
+  String get noPlanYetSub => 'Strive builds one from your goal, training days and time.';
+
+  @override
+  String todayNext(String title, String day) {
+    return 'Next: $title · $day';
+  }
+
+  @override
+  String todayHiddenByFilter(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n workouts hidden by filter',
+      one: '1 workout hidden by filter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get todayHiddenByFilterSub => 'The sport filter is on – today is not a rest day.';
+
+  @override
+  String get showAllSports => 'Show all';
+
+  @override
+  String hintPlannedDry(String sport, String time) {
+    return 'Planned today: $sport – dry until $time';
+  }
+
+  @override
+  String hintPlannedBest(String sport, String time) {
+    return 'Planned today: $sport – best at $time';
+  }
+
+  @override
+  String hintPlannedStorm(String sport) {
+    return 'Thunderstorm – move your $sport indoors or later';
+  }
+
+  @override
+  String hintPlannedNeutral(String sport) {
+    return 'Planned today: $sport – dress for the weather';
+  }
 }

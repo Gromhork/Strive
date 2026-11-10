@@ -1544,7 +1544,7 @@ class PlanGenerator {
     // LoadPrescriber, which also applies the deload: −10 % load, about half the work sets) – the note
     // only states what is true for every exercise: the effort target and the progression.
     final notes = [
-      if (phase == 'taper') l.wGymTaperNote else if (deload) l.wGymDeloadNote2 else ...[l.wGymLoadDesc(rir), l.wGymProgressNote],
+      if (phase == 'taper') l.wGymTaperNote else if (deload) l.wGymDeloadNote3 else ...[l.wGymLoadDesc(rir), l.wGymProgressNote],
       if (endurance && role == 'nolegs' && legsInside) l.wGymConcurrentNote,
       if (lighter) l.wGymLegsHalvedNote,
       if (minutes > capMin) l.wGymTimeCapNote2(capMin),
@@ -1806,7 +1806,7 @@ class PlanGenerator {
       // shake-out, which explain themselves).
       description: [
         desc,
-        if (phase == 'recovery' && intensity != 'race') l.wRecoveryWeekNote,
+        if (phase == 'recovery' && intensity != 'race') l.wRecoveryWeekNote2,
         if (phase == 'taper' && intensity != 'race' && title != l.wShakeout) l.wTaperWeekNote,
       ].where((x) => x.isNotEmpty).join('\n'),
       durationMin: max(15, (sec / 60 / 5).round() * 5),

@@ -13,6 +13,7 @@ import '../../services/insights.dart';
 import '../../services/plan_gaps.dart';
 import '../../services/plan_generator.dart';
 import '../calendar/feasibility_card.dart';
+import '../calendar/replace_plan_dialog.dart';
 import '../../services/race_search.dart';
 import '../../widgets/common.dart';
 import '../train/exercise_picker.dart';
@@ -235,7 +236,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   }
 
   /// Rebuilds the plan up to race day: completed workouts stay, upcoming planned ones are replaced.
-  void _alignPlan(UserProfile profile) {
+  void _alignPlan(UserProfile profile, DateTime start) {
     final l = context.l10n;
     final repo = ref.read(repoProvider)!;
 
@@ -250,15 +251,21 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
       repo.saveTemplates(added);
       templates = [...templates, ...added];
     }
-    final now = DateTime.now();
-    repo.deletePlansFrom(ref.read(planListProvider), dayOnly(now));
-    repo.savePlans(PlanGenerator(l, profile, templates, repo.newId).generate(start: now, weeks: profile.athlete.planWeeks));
-    // Plan start / length, so "Re-plan & recalibrate" can rebuild it (gap filling).
-    repo.saveProfile(withPlanMeta(profile, now, profile.athlete.planWeeks));
-    toast(context, l.planAligned(GoalModel.weeksUntil(profile.athlete.eventDate!, now)));
+    repo.deletePlansFrom(ref.read(planListProvider), start);
+    repo.savePlans(PlanGenerator(l, profile, templates, repo.newId).generate(start: start, weeks: profile.athlete.planWeeks));
+    // Plan start / length, so "Review plan" can rebuild it (gap filling).
+    repo.saveProfile(withPlanMeta(profile, start, profile.athlete.planWeeks));
+    toast(context, l.planAligned(GoalModel.weeksUntil(profile.athlete.eventDate!, start)));
   }
 
-  void _save() {
+  Future<void> _save() async {
+    // Aligning replaces the upcoming plan – asked first, cancelling saves nothing.
+    final aligned = _alignedProfile();
+    DateTime? planStart;
+    if (aligned != null) {
+      planStart = await confirmReplacePlan(context, ref.read(planListProvider));
+      if (planStart == null || !mounted) return;
+    }
     final l = context.l10n;
     final repo = ref.read(repoProvider)!;
     final u = ref.read(profileOrDefaultProvider).units;
@@ -293,8 +300,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
         eventKm: _type == GoalType.event ? target : null,
       ),
     );
-    final aligned = _alignedProfile();
-    if (aligned != null) _alignPlan(aligned);
+    if (aligned != null) _alignPlan(aligned, planStart!);
     Navigator.pop(context);
   }
 

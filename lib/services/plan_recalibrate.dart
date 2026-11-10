@@ -13,7 +13,7 @@ import 'plan_gaps.dart';
 import 'session_feedback.dart';
 import 'zones.dart';
 
-/// "Re-plan & recalibrate": adapts the upcoming weeks of the current plan to how the
+/// "Review plan" (adapt plan to your training): adapts the upcoming weeks of the current plan to how the
 /// athlete actually trained (docs/training-science.md §11). Pure – no Firestore, no UI.
 ///
 /// Signals (last [Recalibrator.lookbackDays] days):
