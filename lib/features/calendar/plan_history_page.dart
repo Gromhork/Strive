@@ -48,7 +48,8 @@ class PlanHistoryPage extends ConsumerWidget {
     final l = context.l10n;
     final log = ref.watch(planLogProvider);
     final current = {for (final p in ref.watch(planListProvider)) p.id: p};
-    final entries = log.value ?? const <PlanLogEntry>[];
+    // Changes of a replaced plan and accidental duplicates are left out.
+    final entries = visiblePlanLog(log.value ?? const <PlanLogEntry>[], current);
     return Scaffold(
       appBar: AppBar(title: Text(l.planHistory)),
       body:

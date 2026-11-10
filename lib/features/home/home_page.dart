@@ -263,7 +263,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(p.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                              Text(glueTitle(p.title), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, height: 1.2)),
                               Text(
                                 [
                                   '${p.durationMin} min',
@@ -447,7 +447,7 @@ class _ComingUp extends ConsumerWidget {
                     Card(
                       child: ListTile(
                         leading: SportBadge(p.sport),
-                        title: Text(p.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        title: Text(glueTitle(p.title), style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(
                           [
                             l.sessionN(i + 1),

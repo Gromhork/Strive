@@ -80,7 +80,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(p.title, style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                          Text(glueTitle(p.title), style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                           const SizedBox(height: 2),
                           Text(
                             [

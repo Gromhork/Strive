@@ -1363,5 +1363,6 @@
   "distSwim1500": "Freiwasser 1,5 km",
   "distSwim3800": "Freiwasser 3,8 km",
   "distSwim5000": "Freiwasser 5 km",
-  "moreDistances": "Weitere Distanzen…"
+  "moreDistances": "Weitere Distanzen…",
+  "backAgainToExit": "Nochmal zurück zum Beenden"
 }

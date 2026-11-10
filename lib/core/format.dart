@@ -132,3 +132,8 @@ int? parseClock(String s) {
 
 /// "barbell curl" → "Barbell curl" (exercise names from the database are lower case).
 String capFirst(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+/// Line-break friendly title: short connectors ("+", "–", "&", "/", "·") stick to the
+/// preceding word with a non-breaking space, so a wrapped title never shows a lone "+"
+/// on its own line ("Lockerer Lauf +" / "Steigerungen").
+String glueTitle(String s) => s.replaceAllMapped(RegExp(r' ([+–&/·]) '), (m) => ' ${m[1]} ');

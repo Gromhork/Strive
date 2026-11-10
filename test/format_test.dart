@@ -12,4 +12,10 @@ void main() {
     expect(parseHms('abc'), isNull);
     expect(parseHms('1:2:3:4'), isNull);
   });
+
+  test('glueTitle keeps connectors with the previous word', () {
+    expect(glueTitle('Lockerer Lauf + Steigerungen'), 'Lockerer Lauf + Steigerungen');
+    expect(glueTitle('Push & Pull'), 'Push & Pull');
+    expect(glueTitle('Ganzkörper A'), 'Ganzkörper A');
+  });
 }

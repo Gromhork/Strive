@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
@@ -20,42 +21,74 @@ import 'streak_sheet.dart';
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key});
 
+  /// Time of the last back press on Home (double-press to exit).
+  static DateTime? _lastBack;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final index = ref.watch(navIndexProvider);
     const pages = [HomePage(), TrainPage(), CalendarPage(), StatsPage(), CoachPage()];
-    return Scaffold(
-      appBar: const StriveTopBar(),
-      body: IndexedStack(index: index, children: pages),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const _ActiveBanner(),
-          NavigationBar(
-            selectedIndex: index,
-            onDestinationSelected: ref.read(navIndexProvider.notifier).set,
-            destinations: [
-              NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home_rounded), label: l.navHome),
-              NavigationDestination(icon: const Icon(Icons.bolt_outlined), selectedIcon: const Icon(Icons.bolt_rounded), label: l.navTrain),
-              NavigationDestination(
-                icon: const Icon(Icons.calendar_month_outlined),
-                selectedIcon: const Icon(Icons.calendar_month_rounded),
-                label: l.navCalendar,
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.insights_outlined),
-                selectedIcon: const Icon(Icons.insights_rounded),
-                label: l.navStats,
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.auto_awesome_outlined),
-                selectedIcon: const Icon(Icons.auto_awesome),
-                label: l.navCoach,
-              ),
-            ],
-          ),
-        ],
+    // Android back: from another tab back to Home; on Home a first press only shows a hint,
+    // a second press within 2 s closes the app (instead of leaving it from anywhere).
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (index != 0) {
+          ref.read(navIndexProvider.notifier).set(0);
+          return;
+        }
+        final now = DateTime.now();
+        if (_lastBack != null && now.difference(_lastBack!) < const Duration(seconds: 2)) {
+          SystemNavigator.pop();
+          return;
+        }
+        _lastBack = now;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l.backAgainToExit), duration: const Duration(seconds: 2)));
+      },
+      child: Scaffold(
+        appBar: const StriveTopBar(),
+        body: IndexedStack(index: index, children: pages),
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const _ActiveBanner(),
+            NavigationBar(
+              selectedIndex: index,
+              onDestinationSelected: ref.read(navIndexProvider.notifier).set,
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.home_outlined),
+                  selectedIcon: const Icon(Icons.home_rounded),
+                  label: l.navHome,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.bolt_outlined),
+                  selectedIcon: const Icon(Icons.bolt_rounded),
+                  label: l.navTrain,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  selectedIcon: const Icon(Icons.calendar_month_rounded),
+                  label: l.navCalendar,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.insights_outlined),
+                  selectedIcon: const Icon(Icons.insights_rounded),
+                  label: l.navStats,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.auto_awesome_outlined),
+                  selectedIcon: const Icon(Icons.auto_awesome),
+                  label: l.navCoach,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
