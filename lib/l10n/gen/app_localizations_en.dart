@@ -2167,7 +2167,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get zInterval => 'Interval';
 
   @override
-  String get zStride => 'Sprint';
+  String get zStride => 'Fast';
 
   @override
   String get zJog => 'Recovery';

@@ -4238,7 +4238,7 @@ abstract class AppLocalizations {
   /// No description provided for @zStride.
   ///
   /// In en, this message translates to:
-  /// **'Sprint'**
+  /// **'Fast'**
   String get zStride;
 
   /// No description provided for @zJog.
