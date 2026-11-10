@@ -66,5 +66,4 @@
  'goalPhaseNow': ['now', 'jetzt'],
  'goalWeeksN': ['{weeks} wk', '{weeks} Wo.'],
  'goalEditPlan': ['Plan settings', 'Planeinstellungen'],
- 'goalModelNote': ['Forecast: Daniels VDOT from your race times, race efforts and tempo runs; expected progress ~1 VDOT per 4–6 weeks of consistent training (faster for beginners). Training paces stay on your current fitness.', 'Prognose: Daniels-VDOT aus deinen Wettkampfzeiten, Wettkampf-Efforts und Tempoläufen; erwarteter Fortschritt ~1 VDOT pro 4–6 Wochen konsequenten Trainings (bei Einsteigern schneller). Die Trainingstempi bleiben bei deiner aktuellen Form.'],
 }

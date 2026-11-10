@@ -4,6 +4,7 @@ import '../core/format.dart';
 import '../core/sport.dart';
 
 DateTime _date(dynamic v) {
+  if (v is DateTime) return v;
   if (v is Timestamp) return v.toDate();
   if (v is String) return DateTime.tryParse(v) ?? DateTime.now();
   if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
@@ -200,6 +201,14 @@ class AthleteData {
   final DateTime? eventDate;
   final int? targetTimeSec;
 
+  /// First day and length (weeks) of the current rule-based plan, written when a plan is
+  /// generated (null for plans from before this was stored; [planLength] 0 = the current
+  /// plan is not rule-based, e.g. AI) – lets the recalibration rebuild it to find gaps.
+  final DateTime? planStart;
+  final int? planLength;
+  /// Name of the target event (e.g. taken over from the race search); optional.
+  final String? eventName;
+
   const AthleteData({
     this.setupMode = 'simple',
     this.difficulty = 'balanced',
@@ -232,6 +241,9 @@ class AthleteData {
     this.eventDistance,
     this.eventDate,
     this.targetTimeSec,
+    this.planStart,
+    this.planLength,
+    this.eventName,
   });
 
   bool get advanced => setupMode == 'advanced';
@@ -274,6 +286,9 @@ class AthleteData {
     eventDistance: m['eventDistance'],
     eventDate: m['eventDate'] == null ? null : _date(m['eventDate']),
     targetTimeSec: m['targetTimeSec'],
+    planStart: m['planStart'] == null ? null : _date(m['planStart']),
+    planLength: _in(m['planLength']),
+    eventName: m['eventName'],
   );
 
   Map<String, dynamic> toMap() => {
@@ -308,6 +323,9 @@ class AthleteData {
     'eventDistance': eventDistance,
     'eventDate': eventDate == null ? null : Timestamp.fromDate(eventDate!),
     'targetTimeSec': targetTimeSec,
+    if (planStart != null) 'planStart': Timestamp.fromDate(planStart!),
+    if (planLength != null) 'planLength': planLength,
+    'eventName': eventName,
   };
 
   /// Copy with some fields replaced (keys as in [toMap]); `null` values clear a field.

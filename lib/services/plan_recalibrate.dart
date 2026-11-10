@@ -9,6 +9,7 @@ import 'cardio_progression.dart';
 import 'compliance.dart';
 import 'insights.dart';
 import 'plan_adjuster.dart';
+import 'plan_gaps.dart';
 import 'session_feedback.dart';
 import 'zones.dart';
 
@@ -60,17 +61,37 @@ import 'zones.dart';
 ///    70 % in days 8–14, without quality in days 1–7.
 /// 11. R1 cap on every long session of the horizon: ≤ 1.1 × the longest of that sport in the
 ///    30 days before it (× 1.1 per earlier long session), else ≤ 0.6 × the longest before.
+/// 12. Gaps ([PlanGaps], §11.1): sessions the rebuilt plan expects but the calendar lacks
+///    (deleted, empty week, plan ended) are proposed as [RecalKind.added], adapted by the
+///    rules above; a hard refill next to a hard day becomes easy (next to a race: left out),
+///    and a refilled week never exceeds the planned week.
 ///
 /// Reductions count from the original volume (kept in an [AutoAdjustment] record, reason
 /// 'recal'), so repeated runs never compound.
 class Recalibrator {
-  Recalibrator(this.l, this.profile, {required this.plans, required this.sessions, required this.now});
+  Recalibrator(
+    this.l,
+    this.profile, {
+    required this.plans,
+    required this.sessions,
+    required this.now,
+    this.templates = const [],
+    this.newId,
+    this.fillGaps = true,
+  });
 
   final AppLocalizations l;
   final UserProfile profile;
   final List<PlannedWorkout> plans;
   final List<Session> sessions;
   final DateTime now;
+
+  /// Programs for refilled strength sessions; ids for refilled workouts.
+  final List<WorkoutTemplate> templates;
+  final String Function()? newId;
+
+  /// Propose sessions for gaps in the plan ([PlanGaps], rule 12).
+  final bool fillGaps;
 
   static const lookbackDays = 14;
   static const horizonDays = 14;
@@ -233,54 +254,106 @@ class Recalibrator {
     }
     if (adjust.any((c) => isHardPlan(c.plan))) reasons.add(RecalReason.missedKey);
 
+    // ── Gaps (rule 12): sessions the plan expects but the calendar lacks – proposed, with
+    // the same adaptations as the planned workouts below.
+    final current = [
+      for (final p in plans)
+        if (moved.contains(p.id))
+          adjust.where((c) => c.plan.id == p.id).map((c) => c.isMove ? _copy(p, date: c.to) : _copy(p, status: 'skipped')).firstOrNull ??
+              _copy(p, status: 'skipped')
+        else
+          p,
+    ];
+    final gapFinder = fillGaps ? PlanGaps(l, profile, plans: current, now: now, templates: templates, newId: newId) : null;
+    final fills = {for (final f in gapFinder?.find() ?? const <GapFill>[]) f.plan.id: f};
+    final budgets = gapFinder?.budgets ?? const <String, int>{};
+    // Workouts that count as hard neighbours of a refilled session (endurance, not skipped).
+    final hardDays = <DateTime, bool>{}; // day → race on that day
+    for (final p in current) {
+      if (p.sport == Sport.gym || p.status == 'skipped' || !isHardPlan(p)) continue;
+      final d = dayOnly(p.date);
+      hardDays[d] = (hardDays[d] ?? false) || p.intensity == 'race';
+    }
+
     // ── Upcoming endurance workouts
     final end = today.add(const Duration(days: horizonDays));
-    final upcoming =
-        plans
-            .where(
-              (p) =>
-                  p.status == 'planned' &&
-                  !moved.contains(p.id) &&
-                  p.sport != Sport.gym &&
-                  p.intensity != 'race' &&
-                  !dayOnly(p.date).isBefore(today) &&
-                  dayOnly(p.date).isBefore(end),
-            )
-            .toList()
-          ..sort((x, y) => x.date.compareTo(y.date));
+    final upcoming = [
+      ...plans.where(
+        (p) =>
+            p.status == 'planned' &&
+            !moved.contains(p.id) &&
+            p.sport != Sport.gym &&
+            p.intensity != 'race' &&
+            !dayOnly(p.date).isBefore(today) &&
+            dayOnly(p.date).isBefore(end),
+      ),
+      for (final f in fills.values) f.plan,
+    ]..sort((x, y) => x.date.compareTo(y.date));
     final swappedSports = <Sport>{};
     final pz = newVdot == null ? null : PaceZones(newVdot);
     final longIndex = <Sport, int>{};
     var capped = false;
-    for (final p in upcoming) {
+    var gapCount = 0, gapOmitted = 0;
+    final fillLongs = <Sport, int>{};
+    for (final p0 in upcoming) {
+      final fill = fills[p0.id];
+      var p = p0;
       final days = dayOnly(p.date).difference(today).inDays;
+      var downgraded = false, eased = false, shortened = false;
+      if (fill != null) {
+        // Strength and race sessions come back as planned.
+        if (p.sport == Sport.gym || p.intensity == 'race') {
+          gapCount++;
+          changes.add(RecalChange(p0, p, RecalKind.added, gap: GapNote(fill.why)));
+          continue;
+        }
+        // Spacing: a refilled hard session never sits next to a hard day – it becomes easy
+        // (next to a race it is left out).
+        if (isHardPlan(p)) {
+          final d = dayOnly(p.date);
+          final near = [hardDays[Recalibrator._add(d, -1)], hardDays[Recalibrator._add(d, 1)]];
+          if (near.contains(true)) {
+            gapOmitted++;
+            continue;
+          }
+          if (near.contains(false)) {
+            p = _toEasy(p, pz);
+            downgraded = true;
+          }
+        }
+      }
+      // Load factors: days 0–6, 7–13; refills after the 14-day horizon keep the plan's volume.
+      final fd = days < 7 ? f1 : (days < horizonDays ? f2 : 1.0);
       final quality = p.intensity == 'tempo' || p.intensity == 'intervals';
       final rest = p.phase == 'recovery' || p.phase == 'taper';
       // R4: restart at 50–70 % of the pre-break volume (50 % after >= 3 weeks off), 70 % in
       // the second week; no intensity in the first week back.
       final gap = breaks[p.sport];
-      final bf = gap == null ? 1.0 : (days < 7 ? (gap >= 21 ? 0.5 : 0.6) : 0.7);
+      final bf = gap == null ? 1.0 : (days < 7 ? (gap >= 21 ? 0.5 : 0.6) : (days < horizonDays ? 0.7 : 1.0));
       var w = p;
       RecalKind? kind;
       // Fatigue / re-entry: quality → easy (never in the taper – it keeps its intensity).
       if (quality &&
           p.phase != 'taper' &&
-          ((gap != null && days < 7) || (swapAll && days < 7) || (swapFirst && !swappedSports.contains(p.sport)))) {
+          ((gap != null && days < 7) || (swapAll && days < 7) || (swapFirst && days < horizonDays && !swappedSports.contains(p.sport)))) {
         swappedSports.add(p.sport);
         w = _toEasy(p, pz);
         // The swap already takes ~20 % off; a stronger reduction of the day (e.g. R4 60 %)
         // comes on top. The easy replacement is the reference of later steps and of undo
         // ('recalEasy': later reductions know the 0.8 is already in it).
         final easy = w;
-        final fe = min(1.0, min(days < 7 ? f1 : f2, bf) / swapFactor);
+        final fe = min(1.0, min(fd, bf) / swapFactor);
         if (fe < 0.97) w = _scaledTo(w, _amount(w) * fe);
-        w = _copy(w, auto: _record(easy, fresh: true, reason: 'recalEasy'));
+        if (fill == null) w = _copy(w, auto: _record(easy, fresh: true, reason: 'recalEasy'));
         kind = RecalKind.toEasy;
+        if (fill != null) eased = true;
       } else if (!quality) {
-        final f = min(min(days < 7 ? f1 : f2, bf), shortenLong && p.intensity == 'long' ? 0.9 : 1.0);
+        final f = min(min(fd, bf), shortenLong && p.intensity == 'long' ? 0.9 : 1.0);
         final cur = _amount(p);
         var g = 1.0;
-        if (f < 1) {
+        if (fill != null) {
+          g = f;
+        } else if (f < 1) {
           // Reductions count from the original volume: they replace an earlier automatic or
           // recalibration step instead of stacking on it (running the assistant twice, or a
           // week later on an overlapping look-back, never compounds).
@@ -294,19 +367,22 @@ class Recalibrator {
         // (each earlier long session of the horizon counts as done: × 1.1 per step); none in
         // those 30 days → 0.6 × the longest before (return after a break).
         if (p.intensity == 'long') {
-          final k = longIndex[p.sport] ?? 0;
-          longIndex[p.sport] = k + 1;
+          var k = longIndex[p.sport] ?? 0;
+          if (days < horizonDays) longIndex[p.sport] = k + 1;
+          // A refill after the horizon: every planned long session before it counts.
+          if (fill != null && days >= horizonDays) k = _longsBefore(p, current) + (fillLongs[p.sport] ?? 0);
           final cap = _longCap(p, k);
           if (cap != null && cur * g > cap * 1.02) {
             g = cap / cur;
             capped = true;
+            if (fill != null) shortened = true;
           }
         }
         // 3 %: below the rounding of the steps (100 m / 1 min), so a second run is a no-op.
         if ((g - 1).abs() >= 0.03) {
           final scaled = _scaledTo(p, cur * g);
           if (_amount(scaled) != cur) {
-            w = _copy(scaled, auto: _record(p));
+            w = fill != null ? scaled : _copy(scaled, auto: _record(p));
             kind = _amount(scaled) < cur ? RecalKind.easier : RecalKind.harder;
           }
         }
@@ -332,10 +408,35 @@ class Recalibrator {
           kind ??= RecalKind.paces;
         }
       }
+      if (fill != null) {
+        // The refilled week never exceeds the planned week (its sport's minutes).
+        final left = budgets[fill.budgetKey];
+        if (left != null && w.durationMin > left + 2) {
+          if (left < 20) {
+            gapOmitted++;
+            continue;
+          }
+          w = _scaledTo(w, _amount(w) * left / w.durationMin);
+          shortened = true;
+        }
+        if (left != null) budgets[fill.budgetKey] = max(0, left - w.durationMin);
+        if (w.intensity == 'long') fillLongs[w.sport] = (fillLongs[w.sport] ?? 0) + 1;
+        if (isHardPlan(w)) {
+          final d = dayOnly(w.date);
+          hardDays[d] = hardDays[d] ?? false;
+        }
+        gapCount++;
+        changes.add(
+          RecalChange(p0, w, RecalKind.added, gap: GapNote(fill.why, downgraded: downgraded, eased: eased, shortened: shortened)),
+        );
+        continue;
+      }
       if (kind != null) changes.add(RecalChange(p, kind == RecalKind.paces ? w : _noted(w), kind));
     }
 
     if (capped) reasons.add(RecalReason.longCap);
+    if (gapCount > 0) reasons.add(RecalReason.planGaps);
+    if (gapOmitted > 0) reasons.add(RecalReason.gapsOmitted);
 
     // Race times for the profile, so newly generated plans use the new VDOT too.
     Map<String, int>? raceTimes;
@@ -366,6 +467,7 @@ class Recalibrator {
         oldVdot: oldVdot,
         newVdot: newVdot,
         breakDays: breaks.values.fold<int?>(null, (x, v) => max(x ?? 0, v)),
+        gaps: gapCount,
       ),
       changes: changes,
       raceTimes: raceTimes,
@@ -703,6 +805,21 @@ class Recalibrator {
     return _copy(p, description: [...lines, l.recalNote].join('\n'));
   }
 
+  static DateTime _add(DateTime d, int days) => DateTime(d.year, d.month, d.day + days);
+
+  /// Planned long sessions of [p]'s sport from today until the day before [p].
+  int _longsBefore(PlannedWorkout p, List<PlannedWorkout> all) =>
+      all
+          .where(
+            (x) =>
+                x.sport == p.sport &&
+                x.intensity == 'long' &&
+                x.status == 'planned' &&
+                !dayOnly(x.date).isBefore(today) &&
+                dayOnly(x.date).isBefore(dayOnly(p.date)),
+          )
+          .length;
+
   static String recalNote(String lang) => lookupAppLocalizations(Locale(lang)).recalNote;
 
   static WorkoutStep _step(
@@ -781,16 +898,40 @@ enum RecalReason {
 
   /// Quality felt easy, but a threshold went up: no extra volume this time (R3).
   rpeLowHold,
+
+  /// Sessions the plan expects are missing (deleted, empty week, plan ended) – refills proposed.
+  planGaps,
+
+  /// Missing sessions that are not refilled (next to a race, week volume already reached).
+  gapsOmitted,
 }
 
 /// What happens to one workout.
-enum RecalKind { easier, harder, toEasy, moved, dropped, paces }
+enum RecalKind { easier, harder, toEasy, moved, dropped, paces, added }
+
+/// Why and how a refilled session ([RecalKind.added]) was adapted.
+class GapNote {
+  const GapNote(this.why, {this.downgraded = false, this.eased = false, this.shortened = false});
+  final GapWhy why;
+
+  /// Hard session next to a hard day → easy.
+  final bool downgraded;
+
+  /// Quality → easy because of fatigue / re-entry (rules 1, 2, 10).
+  final bool eased;
+
+  /// Shorter than generated: week volume or R1 long-run cap.
+  final bool shortened;
+}
 
 class RecalChange {
-  const RecalChange(this.before, this.after, this.kind);
+  const RecalChange(this.before, this.after, this.kind, {this.gap});
   final PlannedWorkout before;
   final PlannedWorkout after;
   final RecalKind kind;
+
+  /// Set for a refilled session ([RecalKind.added]).
+  final GapNote? gap;
 
   /// Firestore update of this workout (only the fields that change). A volume change
   /// carries an [AutoAdjustment] record (reason 'recal') with the generator's original;
@@ -823,7 +964,11 @@ class RecalStats {
     required this.oldVdot,
     required this.newVdot,
     this.breakDays,
+    this.gaps = 0,
   });
+
+  /// Refilled sessions proposed (gaps in the plan).
+  final int gaps;
 
   /// Longest training break of a planned sport (days without a session), or null.
   final int? breakDays;
@@ -873,6 +1018,21 @@ class Recalibration {
   /// Plan id → changed fields, for [Repository.updateMany].
   Map<String, Map<String, dynamic>> get updates => {
     for (final c in changes)
-      if (c.update.isNotEmpty) c.before.id: c.update,
+      if (c.kind != RecalKind.added && c.update.isNotEmpty) c.before.id: c.update,
   };
+
+  /// New workouts that fill gaps of the plan, for [Repository.savePlans].
+  List<PlannedWorkout> get additions => [
+    for (final c in changes)
+      if (c.kind == RecalKind.added) c.after,
+  ];
+
+  /// This proposal without the changes in [skip] (refills the athlete unticked).
+  Recalibration without(Set<RecalChange> skip) => Recalibration(
+    reasons: reasons,
+    stats: stats,
+    changes: [...changes.where((c) => !skip.contains(c))],
+    raceTimes: raceTimes,
+    athlete: athlete,
+  );
 }

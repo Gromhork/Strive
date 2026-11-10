@@ -12,6 +12,7 @@ import 'package:strive/features/calendar/calendar_page.dart';
 import 'package:strive/features/calendar/recalibrate_sheet.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
+import 'package:strive/services/plan_gaps.dart';
 import 'package:strive/services/plan_recalibrate.dart';
 
 class _FakeRepo extends Repository {
@@ -78,7 +79,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       var applied = 0;
-      await tester.pumpWidget(_app(Scaffold(body: RecalibrationSheet(result: result, onApply: () => applied++)), lang));
+      await tester.pumpWidget(_app(Scaffold(body: RecalibrationSheet(result: result, onApply: (_) => applied++)), lang));
       await tester.pumpAndSettle();
       final l = lookupAppLocalizations(Locale(lang));
       expect(tester.takeException(), isNull);
@@ -93,6 +94,45 @@ void main() {
     });
   }
 
+  for (final lang in ['de', 'en']) {
+    testWidgets('gaps in the plan: own section with tick boxes, unticked refills are not applied, no overflow at 360 px ($lang)', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final l = lookupAppLocalizations(Locale(lang));
+      final thu = w('g1', 1, 'Dauerlauf mit einem wirklich sehr langen Titel, der umbrechen muss');
+      final sat = w('g2', 3, 'Langer Lauf', intensity: 'long');
+      final easyNow = edit(sat, {'intensity': 'easy', 'title': 'Lockerer Lauf'});
+      final gaps = Recalibration(
+        reasons: const [RecalReason.planGaps],
+        stats: const RecalStats(rated: 4, tooHard: 0, tooEasy: 0, completion: 1, cutShort: 0, oldVdot: 42, newVdot: null, gaps: 2),
+        changes: [
+          RecalChange(tempo, edit(tempo, {'durationMin': 45}), RecalKind.easier),
+          RecalChange(thu, thu, RecalKind.added, gap: const GapNote(GapWhy.missing)),
+          RecalChange(sat, easyNow, RecalKind.added, gap: const GapNote(GapWhy.emptyWeek, downgraded: true, shortened: true)),
+        ],
+      );
+      Recalibration? applied;
+      await tester.pumpWidget(_app(Scaffold(body: RecalibrationSheet(result: gaps, onApply: (r) => applied = r)), lang));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text(l.recalGapsTitle), findsOneWidget);
+      expect(find.text(l.recalWhyGaps(2)), findsOneWidget);
+      expect(find.byType(Checkbox), findsNWidgets(2));
+      expect(find.textContaining(l.recalGapDowngraded), findsOneWidget);
+      expect(find.text(l.recalApply(3)), findsOneWidget);
+      await tester.tap(find.byType(Checkbox).first);
+      await tester.pumpAndSettle();
+      expect(find.text(l.recalApply(2)), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('recalApply')));
+      expect(applied!.additions.map((p) => p.id), ['g2']);
+      expect(applied!.additions.single.intensity, 'easy');
+      expect(applied!.updates.keys, ['a']);
+    });
+  }
+
   testWidgets('nothing to change: on-track message, no apply button', (tester) async {
     await tester.pumpWidget(
       _app(
@@ -103,7 +143,7 @@ void main() {
               stats: RecalStats(rated: 0, tooHard: 0, tooEasy: 0, completion: null, cutShort: 0, oldVdot: 42, newVdot: null),
               changes: [],
             ),
-            onApply: () {},
+            onApply: (_) {},
           ),
         ),
         'en',
@@ -112,6 +152,7 @@ void main() {
     await tester.pumpAndSettle();
     final l = lookupAppLocalizations(const Locale('en'));
     expect(find.text(l.recalOnTrack), findsOneWidget);
+    expect(find.text(l.recalGapsTitle), findsNothing);
     expect(find.text(l.recalNoRpe), findsOneWidget);
     expect(find.byKey(const ValueKey('recalApply')), findsNothing);
   });

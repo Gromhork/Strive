@@ -11,6 +11,7 @@ import '../../providers.dart';
 import '../../services/goal_forecast.dart';
 import '../../services/plan_generator.dart';
 import '../../widgets/common.dart';
+import '../../widgets/term_info.dart';
 import '../calendar/recalibrate_sheet.dart';
 import '../onboarding/onboarding_page.dart';
 import 'goal_forecast_widgets.dart';
@@ -187,6 +188,7 @@ class GoalStatusView extends StatelessWidget {
         if (segments.isNotEmpty)
           SectionCard(
             title: l.goalPhaseOutlook,
+            trailing: const TermInfoButton(Term.phases),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -226,7 +228,7 @@ class GoalStatusView extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         // ── Trend
-        SectionCard(title: l.goalFitnessTrend, child: _TrendChart(f: f, now: now)),
+        SectionCard(title: l.goalFitnessTrend, trailing: const TermInfoButton(Term.vdot), child: _TrendChart(f: f, now: now)),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -242,8 +244,6 @@ class GoalStatusView extends StatelessWidget {
               OutlinedButton.icon(onPressed: onSettings, icon: const Icon(Icons.tune_rounded, size: 18), label: Text(l.goalEditPlan)),
           ],
         ),
-        const SizedBox(height: 12),
-        Text(l.goalModelNote, style: small?.copyWith(color: theme.colorScheme.outline)),
       ],
     );
   }

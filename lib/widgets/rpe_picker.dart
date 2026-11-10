@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/format.dart';
+import 'term_info.dart';
 import '../l10n/gen/app_localizations.dart';
 
 /// "very easy" … "maximal" for a session RPE 1–10.
@@ -39,6 +40,7 @@ class _RpePickerState extends State<RpePicker> {
       return Row(
         children: [
           Expanded(child: Text(l.rpeNotSet, style: t.bodySmall)),
+          const TermInfoButton(Term.rpe),
           TextButton(key: const ValueKey('rpe-rate'), onPressed: () => setState(() => _skipped = false), child: Text(l.rpeRate)),
         ],
       );
@@ -47,7 +49,7 @@ class _RpePickerState extends State<RpePicker> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(l.rpeOptionalHint, style: t.bodySmall),
+        Row(children: [Expanded(child: Text(l.rpeOptionalHint, style: t.bodySmall)), const TermInfoButton(Term.rpe)]),
         const SizedBox(height: 8),
         Wrap(
           spacing: 6,

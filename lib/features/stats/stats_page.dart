@@ -17,6 +17,7 @@ import '../session/session_summary_page.dart' show badgeTitle;
 import '../train/exercise_detail_page.dart';
 import 'body_page.dart';
 import 'session_detail_page.dart';
+import '../../widgets/term_info.dart';
 import '../../widgets/segments.dart';
 
 class StatsPage extends ConsumerWidget {
@@ -365,6 +366,7 @@ class _Records extends ConsumerWidget {
         if (filter == null || filter == Sport.gym)
           SectionCard(
             title: l.strengthRecords,
+            trailing: const TermInfoButton(Term.e1rm),
             child:
                 recs.isEmpty
                     ? Text(l.noRecordsYet, style: Theme.of(context).textTheme.bodySmall)
@@ -444,7 +446,13 @@ class BadgeView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(badgeTitle(context.l10n, b.def.id), textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontSize: 10)),
+          Text(
+            badgeTitle(context.l10n, b.def.id),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 10, height: 1.2),
+          ),
         ],
       ),
     );

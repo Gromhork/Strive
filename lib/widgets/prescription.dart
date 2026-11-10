@@ -5,6 +5,7 @@ import '../core/theme.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../services/gym_tools.dart';
 import '../services/load_prescription.dart';
+import 'term_info.dart';
 import '../services/smart_progression.dart';
 
 /// Compact load text, e.g. "≈ 60 kg × 8", "≈ 12 kg × 10 per hand" or "Bodyweight × 8".
@@ -134,6 +135,7 @@ class PrescriptionHint extends StatelessWidget {
           Icon(icon, size: 15, color: color),
           const SizedBox(width: 6),
           Expanded(child: text),
+          if (p.amrap) const TermInfoButton(Term.amrap, size: 15),
           if (onApply != null)
             TextButton(
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 8)),
@@ -155,6 +157,7 @@ class PrescriptionHint extends StatelessWidget {
           Icon(icon, color: color, size: 20),
           const SizedBox(width: 10),
           Expanded(child: text),
+          if (p.amrap) const TermInfoButton(Term.amrap),
           if (onApply != null) TextButton(onPressed: onApply, child: Text(l.apply)),
         ],
       ),

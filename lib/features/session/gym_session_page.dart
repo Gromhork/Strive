@@ -7,6 +7,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
+import '../../services/exercise_class.dart' show offersBodyweightMode;
 import '../../services/active_workout.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
@@ -16,6 +17,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../widgets/prescription.dart';
 import '../train/exercise_picker.dart';
 import 'exercise_focus_page.dart';
+import '../../widgets/term_info.dart';
 import 'session_summary_page.dart';
 
 /// Workout overview: progress, "up next" hero and the exercise list.
@@ -387,15 +389,8 @@ class _SupersetFrame extends StatelessWidget {
                   '${context.l10n.superset} $letter',
                   style: const TextStyle(color: c, fontWeight: FontWeight.w700, fontSize: 12, letterSpacing: 0.6),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    context.l10n.supersetHint,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
-                  ),
-                ),
+                // The full explanation lives in the info sheet (the one-line hint was cut off).
+                const TermInfoButton(Term.superset, size: 15),
               ],
             ),
           ),
@@ -545,7 +540,8 @@ class ExerciseMenu extends ConsumerWidget {
                 title: Text(l.replaceExercise),
               ),
             ),
-            CheckedPopupMenuItem(value: 'bodyweight', checked: e.bw == true, child: Text(l.bodyweight)),
+            if (offersBodyweightMode(e.exId, e.name, info: ref.watch(exerciseDbProvider).value?.byId(e.exId), current: e.bw))
+              CheckedPopupMenuItem(value: 'bodyweight', checked: e.bw == true, child: Text(l.bodyweight)),
             PopupMenuItem(
               value: 'rest',
               child: ListTile(

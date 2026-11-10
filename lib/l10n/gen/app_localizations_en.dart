@@ -3783,6 +3783,224 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wGymDeloadNote2 => 'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
 
   @override
+  String get glossary => 'Glossary';
+
+  @override
+  String get glossaryHint => 'Short explanations of the terms and abbreviations used in the app.';
+
+  @override
+  String termWhatIs(String term) {
+    return 'What does $term mean?';
+  }
+
+  @override
+  String get termRpeTitle => 'RPE – Rating of Perceived Exertion';
+
+  @override
+  String get termRpeBody => 'How hard a workout or set felt, on a scale from 1 (very easy) to 10 (maximal). 3–4 = easy, you can chat; 6–7 = hard but controlled; 9–10 = all-out.';
+
+  @override
+  String get termRpeTip => 'Optional. When you enter it, the plan adapts better – e.g. easy runs that feel too hard lead to a lighter next week.';
+
+  @override
+  String get termRirTitle => 'RIR – Reps in Reserve';
+
+  @override
+  String get termRirBody => 'How many more reps you could have done at the end of a set. \"2 in the tank\" means you stop two reps before failure.';
+
+  @override
+  String get termRirTip => 'The effort chips map to it: Easy ≈ 4+, Just right ≈ 2–3, Hard ≈ 1, Limit = 0. Most sets should end with 1–3 in the tank.';
+
+  @override
+  String get termE1rmTitle => 'e1RM – estimated one-rep max';
+
+  @override
+  String get termE1rmBody => 'The weight you could probably lift exactly once, calculated from a set with more reps (e.g. 80 kg × 8 ≈ 101 kg). No need to test a real max.';
+
+  @override
+  String get termE1rmTip => 'Good for comparing progress across different weights and rep counts.';
+
+  @override
+  String get termVdotTitle => 'VDOT – running fitness score';
+
+  @override
+  String get termVdotBody => 'A score by coach Jack Daniels derived from your race times. All running paces in your plan (easy, tempo, interval) are calculated from it.';
+
+  @override
+  String get termVdotTip => '+1 VDOT is roughly 1–2 % faster over any distance. It rises with consistent training and is updated when you run faster.';
+
+  @override
+  String get termFtpTitle => 'FTP – Functional Threshold Power';
+
+  @override
+  String get termFtpBody => 'The power (watts) you can hold on the bike for about one hour. Bike zones such as endurance, sweet spot and threshold are percentages of it.';
+
+  @override
+  String get termFtpTip => 'Without a power meter the plan uses heart rate and feel instead.';
+
+  @override
+  String get termCssTitle => 'CSS – Critical Swim Speed';
+
+  @override
+  String get termCssBody => 'Your threshold pace in the pool per 100 m, calculated from a 400 m and a 200 m time trial. Swim intervals are set relative to it.';
+
+  @override
+  String get termCssTip => 'Example: 400 m in 8:00 and 200 m in 3:40 → CSS ≈ 2:10 /100 m.';
+
+  @override
+  String get termSupersetTitle => 'Superset';
+
+  @override
+  String get termSupersetBody => 'Two (or three) exercises done back to back with only a short switch, then the full rest. The app pairs opposing muscles (e.g. press + row), so each recovers while the other works.';
+
+  @override
+  String get termSupersetTip => 'Saves time without losing performance.';
+
+  @override
+  String get termAmrapTitle => 'AMRAP – as many reps as possible';
+
+  @override
+  String get termAmrapBody => 'On the last set do as many clean reps as you can – but stop one rep before failure. The app uses the result to correct your weights.';
+
+  @override
+  String get termAmrapTip => 'Only appears when it helps: for new exercises and when you reach the top of the rep range.';
+
+  @override
+  String get termVolumeTitle => 'Volume';
+
+  @override
+  String get termVolumeBody => 'Weight × reps of all working sets added up (warm-ups don\'t count). For bodyweight exercises the lifted share of your body weight counts.';
+
+  @override
+  String get termVolumeTip => 'More volume is not automatically better – what matters is progress over weeks.';
+
+  @override
+  String get termPhaseTitle => 'Plan phases';
+
+  @override
+  String get termPhaseBody => 'Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Deload: a lighter week every 3–4 weeks so your body can adapt.';
+
+  @override
+  String get termPhaseTip => 'Deload and taper weeks feel easy on purpose – don\'t make up for them.';
+
+  @override
+  String get termZonesTitle => 'Intensity zones';
+
+  @override
+  String get termZonesBody => 'Training ranges from very easy to maximal, based on pace, heart rate or power. About 80 % of endurance training should be easy – that\'s what builds your base.';
+
+  @override
+  String get termZonesTip => 'Tap a zone in a workout for its exact range.';
+
+  @override
+  String get raceSearch => 'Find races';
+
+  @override
+  String get raceSport => 'Sport';
+
+  @override
+  String get raceAnyDistance => 'Any distance';
+
+  @override
+  String get raceRegion => 'Region (country or city)';
+
+  @override
+  String get raceRegionHint => 'e.g. Germany, Munich – empty = worldwide';
+
+  @override
+  String get raceWindow => 'Time window';
+
+  @override
+  String raceNextMonths(int n) {
+    return '$n months';
+  }
+
+  @override
+  String get raceSearchButton => 'Search the web';
+
+  @override
+  String get raceIntro => 'Searches the web for upcoming races with AI – or open a race calendar directly.';
+
+  @override
+  String get raceSearching => 'Searching the web for races…';
+
+  @override
+  String get raceWebResults => 'Web results (AI search)';
+
+  @override
+  String get raceDisclaimer => 'Found on the web by AI – no guarantee. Check date and details on the organiser\'s page before you sign up.';
+
+  @override
+  String get raceOrganiserPage => 'Organiser page';
+
+  @override
+  String get raceSetAsGoal => 'Set as goal';
+
+  @override
+  String get raceGoalSet => 'Race set as your goal';
+
+  @override
+  String get raceEmpty => 'No races found for these filters. Try a longer time window or a wider region – or browse a race calendar.';
+
+  @override
+  String get raceUnavailable => 'The AI web search is not available right now (quota or plan of the AI service). Browse a race calendar instead.';
+
+  @override
+  String get raceError => 'The search failed. Check your connection and try again – or browse a race calendar.';
+
+  @override
+  String get raceBadResponse => 'The search returned no usable result. Try again – or browse a race calendar.';
+
+  @override
+  String get raceRetry => 'Try again';
+
+  @override
+  String get racePortals => 'Race calendars';
+
+  @override
+  String get racePortalsHint => 'Opens in the browser, filtered where the site supports it.';
+
+  @override
+  String get raceSources => 'Sources';
+
+  @override
+  String get raceGoogleSuggestions => 'Google searches';
+
+  @override
+  String get recalGapsTitle => 'Gaps in the plan';
+
+  @override
+  String recalWhyGaps(int n) {
+    return 'Sessions the plan expects are missing ($n) – refills are proposed below.';
+  }
+
+  @override
+  String get recalWhyGapsOmitted => 'Some missing sessions are not refilled: they would sit next to a race or the week already has its planned volume.';
+
+  @override
+  String get recalAdded => 'Added';
+
+  @override
+  String recalGapMissing(String day) {
+    return 'The planned session on $day is missing – added back.';
+  }
+
+  @override
+  String get recalGapEmptyWeek => 'This week has no sessions – the planned one is added back.';
+
+  @override
+  String get recalGapEnded => 'The plan ended earlier – continued here.';
+
+  @override
+  String get recalGapDowngraded => 'Easy instead of hard: the day next to it is already hard.';
+
+  @override
+  String get recalGapEased => 'Easy, because the plan is lighter right now.';
+
+  @override
+  String get recalGapShortened => 'Shorter, so the week and the long run stay within safe limits.';
+
+  @override
   String get feasTitleTarget => 'Target time check';
 
   @override
@@ -3997,7 +4215,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goalEditPlan => 'Plan settings';
-
-  @override
-  String get goalModelNote => 'Forecast: Daniels VDOT from your race times, race efforts and tempo runs; expected progress ~1 VDOT per 4–6 weeks of consistent training (faster for beginners). Training paces stay on your current fitness.';
 }

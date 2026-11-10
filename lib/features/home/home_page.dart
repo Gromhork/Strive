@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
@@ -27,6 +28,7 @@ import '../session/step_list.dart';
 import '../goals/goals_page.dart';
 import '../session/start_helpers.dart';
 import '../stats/body_page.dart';
+import '../../services/plan_text.dart';
 import '../stats/session_detail_page.dart';
 
 class HomePage extends ConsumerWidget {
@@ -227,7 +229,13 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                     if (p.steps.isNotEmpty) ...[const SizedBox(height: 10), WorkoutProfileBar(steps: p.steps, sport: p.sport, height: 26)],
                     if (p.description.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      Text(p.description, style: Theme.of(context).textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      // The first paragraph in full (the rest – notes, health hints – is on the detail page).
+                      Text(
+                        planDescription(p.description, l).split('\n').first,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ],
                 ),
@@ -330,7 +338,12 @@ class _ComingUp extends ConsumerWidget {
                             height: 28,
                             padding: const EdgeInsets.symmetric(horizontal: 1.5),
                             child: Text(
-                              dayPlans.isEmpty ? l.rest : (dayPlans.length == 1 ? dayPlans.first.title : l.nWorkouts(dayPlans.length)),
+                              // Six days share the row: a short label (the kind of session; gym:
+                              // the program name) – long titles like "Lockerer Lauf + Steigerungen"
+                              // were cut off. The full title is one tap away.
+                              dayPlans.isEmpty
+                                  ? l.rest
+                                  : (dayPlans.length == 1 ? _shortLabel(l, dayPlans.first) : l.nWorkouts(dayPlans.length)),
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -352,6 +365,10 @@ class _ComingUp extends ConsumerWidget {
       ),
     );
   }
+
+  /// Compact label for the week strip.
+  static String _shortLabel(AppLocalizations l, PlannedWorkout p) =>
+      p.sport == Sport.gym || p.intensity.isEmpty || p.intensity == 'moderate' ? p.title : intensityLabel(l, p.intensity);
 
   /// Bottom sheet listing all workouts of a day with several sessions.
   void _showDay(BuildContext context, WidgetRef ref, DateTime d, List<PlannedWorkout> list) {
