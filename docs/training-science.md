@@ -213,6 +213,67 @@ options      : the first later race date (same weekday, ≤ 30 weeks) that passe
                (run 1–10 min as in the last stage, walk 1 min, from the start)
 ```
 
+### 1.12 Goal-driven plans: race date, target time, forecast [M/P]
+
+**Plan length.** With an event date the plan always runs to race day (`PlanGenerator.weeksToEvent`, 2–52 weeks; every
+creation path – setup, "new plan" sheet, goal editor "align plan to this event" – uses it). More than 30 weeks away: the
+first `weeks − 30` weeks are a base **pre-plan** block (easy volume, strides, recovery weeks), then the usual
+base → build → peak → taper of 30 weeks. Shorter than the recommended length: the plan is built anyway and the feasibility
+card warns (§1.8). Rebuilding keeps done workouts (only upcoming *planned* workouts are replaced).
+
+**Improvement model** (`GoalModel`, lib/services/goal_model.dart). Expected VDOT gain after `w` weeks of consistent training:
+
+```text
+gain(w) = cap · (1 − e^(−rate·w / cap))          // slope `rate` at the start, saturating towards `cap`
+beginner      rate 0.45 / week   cap 10
+intermediate  rate 0.22 / week   cap 5            // ≈ 1 VDOT per 4–5 weeks (Daniels [7]: +1 after 4–6 weeks)
+advanced      rate 0.15 / week   cap 3
+× 0.85 EASY · × 1.1 CHALLENGING · × 0.85 age ≥ 50 · × 0.7 age ≥ 65
+weeks counted = weeks to race − 1 (race week; the taper realises, not adds, fitness)
+high responder = 1.6 × gain                         // individual response varies widely (HERITAGE [82])
+```
+
+Evidence: Daniels raises VDOT about one point per 4–6 weeks of consistent training [7]; untrained people gain VO2max
+~10–20 % in 8–12 weeks of endurance training [80], gains shrink with training status [81]; the training response is highly
+individual [82]. **[P]** for the exact rates – they are deliberately conservative and the forecast corrects them with data.
+
+**Target-time check** (part of `PlanGenerator.feasibility`): `realistic = time(VDOT_now + gain)`,
+`optimistic = time(VDOT_now + 1.6·gain)`; target ≥ 0.995 × realistic → ok; ≥ optimistic → `targetAmbitious`; else
+`targetUnrealistic`. Shown with today's and the race-day prediction, a suggested realistic target (rounded up: ≥ 1 h to the
+minute, else 10 s; one tap applies it) and the first later race date at which the target is realistic. Without a race time
+the check is marked as a rough estimate (level default VDOT). Triathlon: only with data (race time, FTP or swim test),
+otherwise finish-oriented; time = swim (CSS + 10 s/100 m) + bike (flat-course power model at 88 / 85 / 77 % FTP for sprint /
+olympic / 70.3, CdA 0.32–0.27, Crr 0.005, × 0.93 course factor; level speed without FTP) + run (VDOT × 1.08, 70.3 × 1.12) +
+transitions; the run's relative improvement is applied to the whole race.
+
+**Paces.** All training paces (E, T, I, R, and M without a target) stay on the **current** VDOT – training at goal pace too
+early is a classic mistake (Daniels [7]); VDOT steps up only through the recalibration (§11, §12.3). Race-specific work in the
+peak phase (HM long-run goal segment, marathon MP segments / MP run) uses the **target pace** when the target is realistic,
+otherwise the realistic race-day pace. `PlanGenerator.outlook` gives each phase's expected VDOT and predicted time (stepwise,
+per phase) – the line the forecast compares with.
+
+**Goal forecast** ("Zielprognose", `GoalForecast`, lib/services/goal_forecast.dart):
+
+```text
+fitness now : planned race / unplanned max effort (RPE ≥ 8 or HR ≥ 88 % HRmax) of the last 60 days → measured VDOT;
+              else the plan line  baseline + gain(weeks since plan start) × min(1, completion / 0.9);
+              quality runs (last 42 days, ≥ 2): median actual/planned avg speed r → r < 0.98 at a real effort pulls
+              towards VDOT_targets · r^1.2, r > 1.02 lifts there; faster non-max efforts only raise
+detraining  : > 10 days without running → −(0.3 + 0.7 / week beyond day 10), ≤ −4 VDOT  (Mujika & Padilla [68])
+race day    : now + [gain(elapsed + left) − gain(elapsed)] × (0.3 + 0.7 · completion_28d / 0.9, ≤ 1)
+range       : ± 1 (max effort) · 1.5 (quality runs) · 2 (race times) · 3.5 (level default) + 0.04 / week left
+status      : forecast / target ≤ 0.97 ahead (suggest faster) · ≤ 1.01 on track · ≤ 1.03 slightly behind · else at risk
+no target   : completion < 50 % or long run < 75 % of the planned so far with ≤ 6 weeks left → at risk
+early       : < 2 done endurance sessions since the plan start → no verdict
+```
+
+**Messages.** At creation: the feasibility card (setup plan step, "new plan" sheet, goal editor). Afterwards: the home card
+"Wo stehe ich" (countdown, phase timeline with the current position, forecast vs. target with delta, status) shows a notice
+when the forecast is *at risk* – with "set target to …" (also moves the upcoming race-pace steps and the race) and
+"Re-plan & recalibrate"; dismissed, it returns at most once a week (no push). The recalibration preview shows the same
+forecast. The detail page adds completion, longest run vs. what the race needs, the VDOT trend vs. the plan line and the
+phase outlook.
+
 ### 1.9 Deload / recovery weeks [P] (no RCT on cycle length)
 
 ```text
@@ -1110,3 +1171,6 @@ Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
 77. Androulakis-Korakakis P, Fisher JP, Steele J. The minimum effective training dose required to increase 1RM strength in resistance-trained men: a systematic review and meta-analysis. *Sports Med.* 2020;50(4):751–765. doi:10.1007/s40279-019-01236-0
 78. Maffetone P. *The Big Book of Endurance Training and Racing.* Skyhorse; 2010 (aerobic base, MAF heart rate, easy days kept easy).
 79. Coyle EF, González-Alonso J. Cardiovascular drift during prolonged exercise: new perspectives. *Exerc Sport Sci Rev.* 2001;29(2):88–92. doi:10.1097/00003677-200104000-00009
+80. Milanović Z, Sporiš G, Weston M. Effectiveness of high-intensity interval training (HIT) and continuous endurance training for VO2max improvements: a systematic review and meta-analysis of controlled trials. *Sports Med.* 2015;45(10):1469–1481. doi:10.1007/s40279-015-0365-0
+81. Bacon AP, Carter RE, Ogle EA, Joyner MJ. VO2max trainability and high intensity interval training in humans: a meta-analysis. *PLoS One.* 2013;8(9):e73182. doi:10.1371/journal.pone.0073182
+82. Bouchard C, An P, Rice T, et al. Familial aggregation of VO2max response to exercise training: results from the HERITAGE Family Study. *J Appl Physiol.* 1999;87(3):1003–1008. doi:10.1152/jappl.1999.87.3.1003

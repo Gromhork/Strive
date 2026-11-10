@@ -38,8 +38,14 @@ String eventDistanceName(AppLocalizations l, String d) => switch (d) {
 /// Short warning when the event goal is not realistic in the time left, with what would
 /// make it work (later date, shorter distance, run/walk). Nothing when the goal is fine.
 class FeasibilityCard extends StatelessWidget {
-  const FeasibilityCard(this.f, {super.key, this.planAnyway = false, this.onClose});
+  const FeasibilityCard(this.f, {super.key, this.planAnyway = false, this.onClose, this.onAdjustTarget, this.showTargetOk = false});
   final PlanFeasibility f;
+
+  /// One tap "set target to the realistic time" (shown with a target-time issue).
+  final ValueChanged<int>? onAdjustTarget;
+
+  /// Also confirm a realistic target time (a small line instead of nothing).
+  final bool showTargetOk;
 
   /// Adds "the plan is created anyway" (where a plan is about to be generated).
   final bool planAnyway;
@@ -51,18 +57,41 @@ class FeasibilityCard extends StatelessWidget {
     'runWalk' => l.feasRunWalk,
     'longRunTime' => l.feasLongRunTime((f.longRunKm ?? 0).floor(), (f.longRunTargetKm ?? 0).round()),
     'longRideTime' => l.feasLongRideTime(f.longRideMin ?? 0, f.longRideTargetMin ?? 0),
+    'targetAmbitious' => l.feasTargetAmbitious(clock(f.target!.targetSec), clock(f.target!.currentSec), clock(f.target!.realisticSec)),
+    'targetUnrealistic' => l.feasTargetUnrealistic(clock(f.target!.targetSec), clock(f.target!.currentSec), clock(f.target!.realisticSec)),
     _ => l.feasTooShort(f.weeks ?? 0),
   };
 
   @override
   Widget build(BuildContext context) {
-    if (f.ok) return const SizedBox.shrink();
     final l = context.l10n;
+    final t = f.target;
+    if (f.ok) {
+      if (!showTargetOk || t == null) return const SizedBox.shrink();
+      return Row(
+        key: const ValueKey('targetOk'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l.feasTargetOkLine(clock(t.targetSec), clock(t.currentSec), clock(t.realisticSec)),
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+        ],
+      );
+    }
     final small = Theme.of(context).textTheme.bodySmall;
+    final df = DateFormat.yMMMd(context.localeName);
+    final targetIssue = f.issues.any((i) => i.startsWith('target')) && t != null;
     final options = [
-      if (f.laterDate != null) l.feasLaterDate(DateFormat.yMMMd(context.localeName).format(f.laterDate!)),
+      if (f.laterDate != null) l.feasLaterDate(df.format(f.laterDate!)),
       if (f.shorterDistance != null) l.feasShorter(eventDistanceName(l, f.shorterDistance!)),
       if (f.runWalkFinish) l.feasRunWalkFinish,
+      if (targetIssue && onAdjustTarget == null) l.feasTargetSuggest(clock(t.suggestedSec)),
+      if (targetIssue && t.laterDate != null) l.feasTargetLater(clock(t.targetSec), df.format(t.laterDate!)),
     ];
     return Container(
       key: const ValueKey('feasibility'),
@@ -78,13 +107,24 @@ class FeasibilityCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l.feasTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(f.onlyTarget ? l.feasTitleTarget : l.feasTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 for (final i in f.issues) Text(issueText(l, f, i), style: const TextStyle(fontSize: 13)),
                 if (options.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(l.feasOptions, style: small?.copyWith(fontWeight: FontWeight.w600)),
                   for (final o in options) Text('• $o', style: const TextStyle(fontSize: 13)),
+                ],
+                if (targetIssue && t.guessed) ...[const SizedBox(height: 4), Text(l.feasEstimated, style: small)],
+                if (targetIssue && onAdjustTarget != null) ...[
+                  const SizedBox(height: 6),
+                  FilledButton.tonalIcon(
+                    key: const ValueKey('adjustTarget'),
+                    style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
+                    onPressed: () => onAdjustTarget!(t.suggestedSec),
+                    icon: const Icon(Icons.flag_rounded, size: 18),
+                    label: Text(l.adjustTargetTo(clock(t.suggestedSec))),
+                  ),
                 ],
                 if (planAnyway) ...[const SizedBox(height: 6), Text(l.feasPlanAnyway, style: small)],
               ],

@@ -5,9 +5,14 @@ import 'package:intl/intl.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../data/default_programs.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
+import '../../services/goal_model.dart';
 import '../../services/insights.dart';
+import '../../services/plan_gaps.dart';
+import '../../services/plan_generator.dart';
+import '../calendar/feasibility_card.dart';
 import '../../services/race_search.dart';
 import '../../widgets/common.dart';
 import '../train/exercise_picker.dart';
@@ -190,6 +195,69 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   late String? _exId = widget.existing?.exId;
   late String? _exName = widget.existing?.exName;
 
+  // Event goal → training plan alignment (new event, or a date that is not the plan's yet).
+  late bool _align = _alignDefault();
+  late int? _targetSec = _initialTarget();
+  final _targetCtl = TextEditingController();
+  final _feasibility = FeasibilityCache();
+
+  bool _alignDefault() {
+    final ex = widget.existing;
+    final a = ref.read(profileOrDefaultProvider).athlete;
+    if (ex == null) return true;
+    return ex.type == GoalType.event && (a.eventDate == null || ex.deadline == null || !sameDay(a.eventDate!, ex.deadline!));
+  }
+
+  int? _initialTarget() {
+    final a = ref.read(profileOrDefaultProvider).athlete;
+    final km = widget.existing?.eventKm ?? widget.existing?.target;
+    return km != null && eventKeyForKm(km) == a.eventDistance ? a.targetTimeSec : null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_targetSec != null) _targetCtl.text = clock(_targetSec!);
+  }
+
+  @override
+  void dispose() {
+    _targetCtl.dispose();
+    super.dispose();
+  }
+
+  /// The profile with this event as the plan's goal (null when it cannot be aligned).
+  UserProfile? _alignedProfile() {
+    final key = eventKeyForKm(parseNum(_target.text) ?? 0);
+    if (_type != GoalType.event || !_align || _deadline == null || key == null) return null;
+    final p = ref.read(profileOrDefaultProvider);
+    return p.copyWith(athlete: p.athlete.merge({'eventDate': _deadline, 'eventDistance': key, 'targetTimeSec': _targetSec}));
+  }
+
+  /// Rebuilds the plan up to race day: completed workouts stay, upcoming planned ones are replaced.
+  void _alignPlan(UserProfile profile) {
+    final l = context.l10n;
+    final repo = ref.read(repoProvider)!;
+
+    var templates = ref.read(templateListProvider);
+    final added = missingBuiltins(
+      templates,
+      repo.newId,
+      de: l.localeName.startsWith('de'),
+      only: PlanGenerator.gymKeysFor(profile).toSet(),
+    );
+    if (added.isNotEmpty) {
+      repo.saveTemplates(added);
+      templates = [...templates, ...added];
+    }
+    final now = DateTime.now();
+    repo.deletePlansFrom(ref.read(planListProvider), dayOnly(now));
+    repo.savePlans(PlanGenerator(l, profile, templates, repo.newId).generate(start: now, weeks: profile.athlete.planWeeks));
+    // Plan start / length, so "Re-plan & recalibrate" can rebuild it (gap filling).
+    repo.saveProfile(withPlanMeta(profile, now, profile.athlete.planWeeks));
+    toast(context, l.planAligned(GoalModel.weeksUntil(profile.athlete.eventDate!, now)));
+  }
+
   void _save() {
     final l = context.l10n;
     final repo = ref.read(repoProvider)!;
@@ -225,6 +293,8 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
         eventKm: _type == GoalType.event ? target : null,
       ),
     );
+    final aligned = _alignedProfile();
+    if (aligned != null) _alignPlan(aligned);
     Navigator.pop(context);
   }
 
@@ -232,6 +302,11 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final u = ref.watch(profileOrDefaultProvider).units;
+    // Keep programs and plans loaded: aligning the plan reads them.
+    ref.watch(templateListProvider);
+    ref.watch(planListProvider);
+    final aligned = _alignedProfile();
+    final eventKey = eventKeyForKm(parseNum(_target.text) ?? 0);
     final types = {
       GoalType.frequency: (l.goalTypeFrequency, Icons.repeat_rounded),
       GoalType.distance: (l.goalTypeDistance, Icons.straighten),
@@ -321,6 +396,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                 ),
               TextField(
                 controller: _target,
+                onChanged: (_) => setState(() {}),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(labelText: _type == GoalType.event ? l.eventDistance : l.target, suffixText: suffix),
               ),
@@ -358,6 +434,45 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                     });
                   },
                 ),
+              if (_type == GoalType.event) ...[
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  key: const ValueKey('alignPlan'),
+                  contentPadding: EdgeInsets.zero,
+                  value: _align,
+                  onChanged: (v) => setState(() => _align = v),
+                  title: Text(l.alignPlanToEvent),
+                  subtitle: Text(l.alignPlanToEventSub),
+                ),
+                if (_align && eventKey == null)
+                  Text(l.alignNeedsDistance, style: Theme.of(context).textTheme.bodySmall)
+                else if (_align) ...[
+                  TextField(
+                    controller: _targetCtl,
+                    keyboardType: TextInputType.datetime,
+                    decoration: InputDecoration(
+                      labelText: l.targetTime,
+                      helperText: l.targetTimeHint,
+                      hintText: 'h:mm:ss',
+                      prefixIcon: const Icon(Icons.timer_outlined, size: 20),
+                    ),
+                    onChanged: (v) => setState(() => _targetSec = parseClock(v)),
+                  ),
+                  if (aligned != null) ...[
+                    const SizedBox(height: 12),
+                    FeasibilityCard(
+                      _feasibility.of(aligned, DateTime.now(), l),
+                      planAnyway: true,
+                      showTargetOk: true,
+                      onAdjustTarget:
+                          (sec) => setState(() {
+                            _targetSec = sec;
+                            _targetCtl.text = clock(sec);
+                          }),
+                    ),
+                  ],
+                ],
+              ],
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: (_type == GoalType.strength && _exId == null) || (_type == GoalType.event && _deadline == null) ? null : _save,
@@ -369,4 +484,14 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
       ),
     );
   }
+}
+
+/// Event distance key of a race distance in km (5 / 10 km, HM, marathon, triathlon distances),
+/// null for other distances.
+String? eventKeyForKm(double km) {
+  const keys = {'5k': 5.0, '10k': 10.0, 'hm': 21.0975, 'm': 42.195, 'sprint': 25.75, 'olympic': 51.5, '70.3': 113.0};
+  for (final e in keys.entries) {
+    if ((km - e.value).abs() <= e.value * 0.03) return e.key;
+  }
+  return null;
 }

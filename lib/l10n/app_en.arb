@@ -2354,5 +2354,227 @@
   "recalGapEnded": "The plan ended earlier – continued here.",
   "recalGapDowngraded": "Easy instead of hard: the day next to it is already hard.",
   "recalGapEased": "Easy, because the plan is lighter right now.",
-  "recalGapShortened": "Shorter, so the week and the long run stay within safe limits."
+  "recalGapShortened": "Shorter, so the week and the long run stay within safe limits.",
+  "feasTitleTarget": "Target time check",
+  "feasTargetAmbitious": "Ambitious: {goal} needs more than the usual progress in the time left (today ~{now}, expected by race day ~{pred}). Possible with very consistent training.",
+  "@feasTargetAmbitious": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "now": {
+        "type": "String"
+      },
+      "pred": {
+        "type": "String"
+      }
+    }
+  },
+  "feasTargetUnrealistic": "{goal} is unlikely by race day: today you are at ~{now}, realistic by race day is ~{pred}.",
+  "@feasTargetUnrealistic": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "now": {
+        "type": "String"
+      },
+      "pred": {
+        "type": "String"
+      }
+    }
+  },
+  "feasTargetOkLine": "Target {goal} is realistic: today ~{now}, expected on race day ~{pred}.",
+  "@feasTargetOkLine": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "now": {
+        "type": "String"
+      },
+      "pred": {
+        "type": "String"
+      }
+    }
+  },
+  "feasTargetLater": "{goal} becomes realistic with a race on or after {date}",
+  "@feasTargetLater": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "feasTargetSuggest": "a target of {goal}",
+  "@feasTargetSuggest": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "feasEstimated": "Rough estimate – enter a race time in the plan settings for a precise check.",
+  "adjustTargetTo": "Set target to {goal}",
+  "@adjustTargetTo": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "targetAdjusted": "Target time set to {goal}",
+  "@targetAdjusted": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "planToEventPre": "{weeks} weeks to race day: {n} weeks of base building first, then the {x}-week race plan.",
+  "@planToEventPre": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      },
+      "x": {
+        "type": "int"
+      }
+    }
+  },
+  "planKeepsDone": "Completed workouts are kept – only upcoming planned workouts are replaced.",
+  "planEventTooFar": "Your event is more than 52 weeks away – the plan uses the length below for now.",
+  "planUntilRace": "The plan runs until race day ({weeks} weeks).",
+  "@planUntilRace": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "alignPlanToEvent": "Align training plan to this event",
+  "alignPlanToEventSub": "The plan runs until race day; completed workouts are kept.",
+  "alignNeedsDistance": "Choose a race distance to align the plan.",
+  "planAligned": "Plan aligned: {weeks} weeks to race day",
+  "@planAligned": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "goalStatusTitle": "Where I stand",
+  "goalCountdown": "{weeks} wk {days} d",
+  "@goalCountdown": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "goalCountdownDays": "{days} days",
+  "@goalCountdownDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "goalToRace": "to race day",
+  "goalForecast": "Forecast",
+  "goalTargetLabel": "Target",
+  "goalToday": "Today",
+  "goalFinish": "Finish",
+  "fcAhead": "Ahead of plan",
+  "fcOnTrack": "On track",
+  "fcSlightlyBehind": "Slightly behind",
+  "fcAtRisk": "Goal at risk",
+  "fcEarly": "Too early to tell",
+  "fcEarlySub": "After your first workouts the forecast uses your training data.",
+  "fcRiskTitle": "Your goal is at risk",
+  "fcRiskBody": "Recent training did not go as planned. Forecast for race day: ~{pred} instead of {goal}.",
+  "@fcRiskBody": {
+    "placeholders": {
+      "pred": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "fcRiskBodyFinish": "Recent training did not go as planned – consistent training now keeps the race comfortable.",
+  "fcAheadBody": "You are faster than planned – {goal} looks realistic.",
+  "@fcAheadBody": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "fcReasonMissed": "{pct} % of the planned training done",
+  "@fcReasonMissed": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "fcReasonSlower": "Quality runs slower than planned",
+  "fcReasonFaster": "Quality runs faster than planned",
+  "fcReasonLongRun": "Long runs shorter than planned",
+  "fcReasonBreak": "Training break – fitness drops after ~10 days without running",
+  "fcRange": "Range {fast} – {slow}",
+  "@fcRange": {
+    "placeholders": {
+      "fast": {
+        "type": "String"
+      },
+      "slow": {
+        "type": "String"
+      }
+    }
+  },
+  "fcConfLow": "rough estimate",
+  "fcConfMedium": "from your sessions",
+  "fcConfHigh": "from a race effort",
+  "fcInRecal": "Goal forecast",
+  "goalPhaseBaseShort": "Base",
+  "goalPhaseBuildShort": "Build",
+  "goalPhasePeakShort": "Peak",
+  "goalPhaseTaperShort": "Taper",
+  "goalCompletion": "Plan completion",
+  "goalLongestRun": "Longest run (6 weeks)",
+  "goalLongRunNeed": "needed before the taper: {km} km",
+  "@goalLongRunNeed": {
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
+  },
+  "goalFitnessTrend": "Fitness trend (VDOT)",
+  "goalTrendPlanned": "Plan",
+  "goalTrendActual": "Your sessions",
+  "goalTrendEmpty": "The trend appears after a few tempo or interval runs.",
+  "goalPhaseOutlook": "Phases & expected fitness",
+  "goalPhaseNow": "now",
+  "goalWeeksN": "{weeks} wk",
+  "@goalWeeksN": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "goalEditPlan": "Plan settings"
 }

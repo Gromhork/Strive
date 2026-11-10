@@ -3999,4 +3999,220 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get recalGapShortened => 'Kürzer, damit Woche und langer Lauf im sicheren Rahmen bleiben.';
+
+  @override
+  String get feasTitleTarget => 'Zielzeit-Check';
+
+  @override
+  String feasTargetAmbitious(String goal, String now, String pred) {
+    return 'Ehrgeizig: $goal braucht mehr als den üblichen Fortschritt bis zum Wettkampf (heute ~$now, erwartet am Wettkampftag ~$pred). Mit sehr konsequentem Training möglich.';
+  }
+
+  @override
+  String feasTargetUnrealistic(String goal, String now, String pred) {
+    return '$goal ist bis zum Wettkampf kaum erreichbar: heute liegst du bei ~$now, realistisch sind am Wettkampftag ~$pred.';
+  }
+
+  @override
+  String feasTargetOkLine(String goal, String now, String pred) {
+    return 'Zielzeit $goal ist realistisch: heute ~$now, erwartet am Wettkampftag ~$pred.';
+  }
+
+  @override
+  String feasTargetLater(String goal, String date) {
+    return '$goal wird mit einem Wettkampf ab $date realistisch';
+  }
+
+  @override
+  String feasTargetSuggest(String goal) {
+    return 'eine Zielzeit von $goal';
+  }
+
+  @override
+  String get feasEstimated => 'Grobe Schätzung – trag in den Planeinstellungen eine Wettkampfzeit ein, dann wird der Check genau.';
+
+  @override
+  String adjustTargetTo(String goal) {
+    return 'Zielzeit auf $goal anpassen';
+  }
+
+  @override
+  String targetAdjusted(String goal) {
+    return 'Zielzeit auf $goal gesetzt';
+  }
+
+  @override
+  String planToEventPre(int weeks, int n, int x) {
+    return '$weeks Wochen bis zum Wettkampf: zuerst $n Wochen Grundlagenaufbau, dann der $x-wöchige Wettkampfplan.';
+  }
+
+  @override
+  String get planKeepsDone => 'Erledigte Einheiten bleiben erhalten – nur kommende geplante Einheiten werden ersetzt.';
+
+  @override
+  String get planEventTooFar => 'Dein Wettkampf ist mehr als 52 Wochen entfernt – der Plan nutzt vorerst die Länge unten.';
+
+  @override
+  String planUntilRace(int weeks) {
+    return 'Der Plan läuft bis zum Wettkampftag ($weeks Wochen).';
+  }
+
+  @override
+  String get alignPlanToEvent => 'Trainingsplan auf dieses Event ausrichten';
+
+  @override
+  String get alignPlanToEventSub => 'Der Plan läuft bis zum Wettkampftag; erledigte Einheiten bleiben erhalten.';
+
+  @override
+  String get alignNeedsDistance => 'Wähle eine Wettkampfdistanz, um den Plan auszurichten.';
+
+  @override
+  String planAligned(int weeks) {
+    return 'Plan ausgerichtet: $weeks Wochen bis zum Wettkampf';
+  }
+
+  @override
+  String get goalStatusTitle => 'Wo stehe ich';
+
+  @override
+  String goalCountdown(int weeks, int days) {
+    return '$weeks Wo. $days T.';
+  }
+
+  @override
+  String goalCountdownDays(int days) {
+    return '$days Tage';
+  }
+
+  @override
+  String get goalToRace => 'bis zum Wettkampf';
+
+  @override
+  String get goalForecast => 'Prognose';
+
+  @override
+  String get goalTargetLabel => 'Ziel';
+
+  @override
+  String get goalToday => 'Heute';
+
+  @override
+  String get goalFinish => 'Ankommen';
+
+  @override
+  String get fcAhead => 'Vor dem Plan';
+
+  @override
+  String get fcOnTrack => 'Im Plan';
+
+  @override
+  String get fcSlightlyBehind => 'Leicht hinter dem Plan';
+
+  @override
+  String get fcAtRisk => 'Ziel gefährdet';
+
+  @override
+  String get fcEarly => 'Noch zu früh';
+
+  @override
+  String get fcEarlySub => 'Nach deinen ersten Einheiten nutzt die Prognose deine Trainingsdaten.';
+
+  @override
+  String get fcRiskTitle => 'Dein Ziel ist gefährdet';
+
+  @override
+  String fcRiskBody(String pred, String goal) {
+    return 'Das Training lief zuletzt nicht wie geplant. Prognose für den Wettkampftag: ~$pred statt $goal.';
+  }
+
+  @override
+  String get fcRiskBodyFinish => 'Das Training lief zuletzt nicht wie geplant – mit konsequentem Training ab jetzt bleibt der Wettkampf machbar.';
+
+  @override
+  String fcAheadBody(String goal) {
+    return 'Du bist schneller als geplant – $goal sieht realistisch aus.';
+  }
+
+  @override
+  String fcReasonMissed(int pct) {
+    return '$pct % des geplanten Trainings erledigt';
+  }
+
+  @override
+  String get fcReasonSlower => 'Tempoläufe langsamer als geplant';
+
+  @override
+  String get fcReasonFaster => 'Tempoläufe schneller als geplant';
+
+  @override
+  String get fcReasonLongRun => 'Lange Läufe kürzer als geplant';
+
+  @override
+  String get fcReasonBreak => 'Trainingspause – nach ~10 Tagen ohne Laufen sinkt die Form';
+
+  @override
+  String fcRange(String fast, String slow) {
+    return 'Spanne $fast – $slow';
+  }
+
+  @override
+  String get fcConfLow => 'grobe Schätzung';
+
+  @override
+  String get fcConfMedium => 'aus deinen Einheiten';
+
+  @override
+  String get fcConfHigh => 'aus einem Wettkampf-Effort';
+
+  @override
+  String get fcInRecal => 'Zielprognose';
+
+  @override
+  String get goalPhaseBaseShort => 'Grundlage';
+
+  @override
+  String get goalPhaseBuildShort => 'Aufbau';
+
+  @override
+  String get goalPhasePeakShort => 'Spitze';
+
+  @override
+  String get goalPhaseTaperShort => 'Tapering';
+
+  @override
+  String get goalCompletion => 'Planerfüllung';
+
+  @override
+  String get goalLongestRun => 'Längster Lauf (6 Wochen)';
+
+  @override
+  String goalLongRunNeed(int km) {
+    return 'nötig vor dem Tapering: $km km';
+  }
+
+  @override
+  String get goalFitnessTrend => 'Formverlauf (VDOT)';
+
+  @override
+  String get goalTrendPlanned => 'Plan';
+
+  @override
+  String get goalTrendActual => 'Deine Einheiten';
+
+  @override
+  String get goalTrendEmpty => 'Der Verlauf erscheint nach ein paar Tempo- oder Intervallläufen.';
+
+  @override
+  String get goalPhaseOutlook => 'Phasen & erwartete Form';
+
+  @override
+  String get goalPhaseNow => 'jetzt';
+
+  @override
+  String goalWeeksN(int weeks) {
+    return '$weeks Wo.';
+  }
+
+  @override
+  String get goalEditPlan => 'Planeinstellungen';
 }
