@@ -69,10 +69,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 Expanded(
                   child: FilledButton.tonalIcon(
                     key: const ValueKey('recalibrate'),
-                    style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+                    style: FilledButton.styleFrom(minimumSize: const Size(0, 44), padding: const EdgeInsets.symmetric(horizontal: 14)),
                     onPressed: () => showRecalibration(context, ref),
                     icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
-                    label: Text(l.recalButton, overflow: TextOverflow.ellipsis),
+                    // Scales down instead of cutting the label off on narrow phones.
+                    label: FittedBox(fit: BoxFit.scaleDown, child: Text(l.recalButton, maxLines: 1)),
                   ),
                 ),
                 // Secondary: a whole new plan, calendar export.
@@ -470,7 +471,7 @@ class PlanCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.title, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(p.title, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
                     Text(
                       [
                         '${p.durationMin} min',
@@ -514,7 +515,7 @@ class _SessionChip extends ConsumerWidget {
                 Icon(s.sport.icon, color: s.sport.color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(s.title, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  child: Text(s.title, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
                 ),
                 Text(
                   s.sport == Sport.gym

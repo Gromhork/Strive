@@ -17,6 +17,7 @@ import '../../widgets/common.dart';
 import '../goals/goals_page.dart';
 import '../onboarding/onboarding_page.dart';
 import '../stats/body_page.dart';
+import '../../widgets/term_info.dart';
 import '../stats/stats_page.dart' show BadgeView;
 
 class ProfilePage extends ConsumerWidget {
@@ -119,9 +120,11 @@ class ProfilePage extends ConsumerWidget {
           SectionCard(
             title: l.badges,
             child: SizedBox(
-              height: 96,
+              height: 108,
               child: ListView(
                 scrollDirection: Axis.horizontal,
+                // The progress ring's stroke reaches past its box – keep it off the clip edge.
+                padding: const EdgeInsets.only(top: 6),
                 children: [
                   for (final b in [...g.badges.where((b) => b.earned), ...g.badges.where((b) => !b.earned)])
                     SizedBox(width: 76, child: BadgeView(badge: b)),
@@ -152,6 +155,13 @@ class ProfilePage extends ConsumerWidget {
                   title: Text(l.goals),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.menu_book_outlined),
+                  title: Text(l.glossary),
+                  subtitle: Text(l.glossaryHint),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GlossaryPage())),
                 ),
                 ListTile(
                   leading: const Icon(Icons.monitor_weight_outlined),

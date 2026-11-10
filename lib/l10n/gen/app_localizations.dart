@@ -7066,6 +7066,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
   String get wGymDeloadNote2;
+
+  /// No description provided for @glossary.
+  ///
+  /// In en, this message translates to:
+  /// **'Glossary'**
+  String get glossary;
+
+  /// No description provided for @glossaryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short explanations of the terms and abbreviations used in the app.'**
+  String get glossaryHint;
+
+  /// No description provided for @termWhatIs.
+  ///
+  /// In en, this message translates to:
+  /// **'What does {term} mean?'**
+  String termWhatIs(String term);
+
+  /// No description provided for @termRpeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'RPE – Rating of Perceived Exertion'**
+  String get termRpeTitle;
+
+  /// No description provided for @termRpeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'How hard a workout or set felt, on a scale from 1 (very easy) to 10 (maximal). 3–4 = easy, you can chat; 6–7 = hard but controlled; 9–10 = all-out.'**
+  String get termRpeBody;
+
+  /// No description provided for @termRpeTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. When you enter it, the plan adapts better – e.g. easy runs that feel too hard lead to a lighter next week.'**
+  String get termRpeTip;
+
+  /// No description provided for @termRirTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'RIR – Reps in Reserve'**
+  String get termRirTitle;
+
+  /// No description provided for @termRirBody.
+  ///
+  /// In en, this message translates to:
+  /// **'How many more reps you could have done at the end of a set. \"2 in the tank\" means you stop two reps before failure.'**
+  String get termRirBody;
+
+  /// No description provided for @termRirTip.
+  ///
+  /// In en, this message translates to:
+  /// **'The effort chips map to it: Easy ≈ 4+, Just right ≈ 2–3, Hard ≈ 1, Limit = 0. Most sets should end with 1–3 in the tank.'**
+  String get termRirTip;
+
+  /// No description provided for @termE1rmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'e1RM – estimated one-rep max'**
+  String get termE1rmTitle;
+
+  /// No description provided for @termE1rmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The weight you could probably lift exactly once, calculated from a set with more reps (e.g. 80 kg × 8 ≈ 101 kg). No need to test a real max.'**
+  String get termE1rmBody;
+
+  /// No description provided for @termE1rmTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Good for comparing progress across different weights and rep counts.'**
+  String get termE1rmTip;
+
+  /// No description provided for @termVdotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'VDOT – running fitness score'**
+  String get termVdotTitle;
+
+  /// No description provided for @termVdotBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A score by coach Jack Daniels derived from your race times. All running paces in your plan (easy, tempo, interval) are calculated from it.'**
+  String get termVdotBody;
+
+  /// No description provided for @termVdotTip.
+  ///
+  /// In en, this message translates to:
+  /// **'+1 VDOT is roughly 1–2 % faster over any distance. It rises with consistent training and is updated when you run faster.'**
+  String get termVdotTip;
+
+  /// No description provided for @termFtpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'FTP – Functional Threshold Power'**
+  String get termFtpTitle;
+
+  /// No description provided for @termFtpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The power (watts) you can hold on the bike for about one hour. Bike zones such as endurance, sweet spot and threshold are percentages of it.'**
+  String get termFtpBody;
+
+  /// No description provided for @termFtpTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Without a power meter the plan uses heart rate and feel instead.'**
+  String get termFtpTip;
+
+  /// No description provided for @termCssTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'CSS – Critical Swim Speed'**
+  String get termCssTitle;
+
+  /// No description provided for @termCssBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your threshold pace in the pool per 100 m, calculated from a 400 m and a 200 m time trial. Swim intervals are set relative to it.'**
+  String get termCssBody;
+
+  /// No description provided for @termCssTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: 400 m in 8:00 and 200 m in 3:40 → CSS ≈ 2:10 /100 m.'**
+  String get termCssTip;
+
+  /// No description provided for @termSupersetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Superset'**
+  String get termSupersetTitle;
+
+  /// No description provided for @termSupersetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Two (or three) exercises done back to back with only a short switch, then the full rest. The app pairs opposing muscles (e.g. press + row), so each recovers while the other works.'**
+  String get termSupersetBody;
+
+  /// No description provided for @termSupersetTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Saves time without losing performance.'**
+  String get termSupersetTip;
+
+  /// No description provided for @termAmrapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AMRAP – as many reps as possible'**
+  String get termAmrapTitle;
+
+  /// No description provided for @termAmrapBody.
+  ///
+  /// In en, this message translates to:
+  /// **'On the last set do as many clean reps as you can – but stop one rep before failure. The app uses the result to correct your weights.'**
+  String get termAmrapBody;
+
+  /// No description provided for @termAmrapTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Only appears when it helps: for new exercises and when you reach the top of the rep range.'**
+  String get termAmrapTip;
+
+  /// No description provided for @termVolumeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get termVolumeTitle;
+
+  /// No description provided for @termVolumeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight × reps of all working sets added up (warm-ups don\'t count). For bodyweight exercises the lifted share of your body weight counts.'**
+  String get termVolumeBody;
+
+  /// No description provided for @termVolumeTip.
+  ///
+  /// In en, this message translates to:
+  /// **'More volume is not automatically better – what matters is progress over weeks.'**
+  String get termVolumeTip;
+
+  /// No description provided for @termPhaseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan phases'**
+  String get termPhaseTitle;
+
+  /// No description provided for @termPhaseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Deload: a lighter week every 3–4 weeks so your body can adapt.'**
+  String get termPhaseBody;
+
+  /// No description provided for @termPhaseTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Deload and taper weeks feel easy on purpose – don\'t make up for them.'**
+  String get termPhaseTip;
+
+  /// No description provided for @termZonesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensity zones'**
+  String get termZonesTitle;
+
+  /// No description provided for @termZonesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Training ranges from very easy to maximal, based on pace, heart rate or power. About 80 % of endurance training should be easy – that\'s what builds your base.'**
+  String get termZonesBody;
+
+  /// No description provided for @termZonesTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a zone in a workout for its exact range.'**
+  String get termZonesTip;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

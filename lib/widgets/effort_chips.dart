@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../data/models.dart';
+import 'term_info.dart';
 import '../l10n/gen/app_localizations.dart';
 
 /// "Leicht / Passend / Schwer / Limit".
@@ -29,7 +30,13 @@ class EffortChips extends StatelessWidget {
       crossAxisAlignment: center ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(title ?? l.effortQuestion, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Row(
+          mainAxisSize: center ? MainAxisSize.min : MainAxisSize.max,
+          children: [
+            Flexible(child: Text(title ?? l.effortQuestion, style: const TextStyle(fontWeight: FontWeight.w600))),
+            const TermInfoButton(Term.rir),
+          ],
+        ),
         Text(l.effortOptional, style: t.bodySmall),
         const SizedBox(height: 6),
         Wrap(
