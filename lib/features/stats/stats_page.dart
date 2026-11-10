@@ -492,7 +492,7 @@ class _History extends ConsumerWidget {
               child: Card(
                 child: ListTile(
                   leading: SportBadge(s.sport),
-                  title: Text(s.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(glueTitle(s.title), style: const TextStyle(fontWeight: FontWeight.w600)),
                   subtitle: Text(
                     [
                       df.format(s.start),

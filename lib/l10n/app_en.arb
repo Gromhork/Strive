@@ -2766,5 +2766,6 @@
   "distSwim1500": "Open water 1.5 km",
   "distSwim3800": "Open water 3.8 km",
   "distSwim5000": "Open water 5 km",
-  "moreDistances": "More distances…"
+  "moreDistances": "More distances…",
+  "backAgainToExit": "Press back again to exit"
 }

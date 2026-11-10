@@ -4475,4 +4475,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get moreDistances => 'Weitere Distanzen…';
+
+  @override
+  String get backAgainToExit => 'Nochmal zurück zum Beenden';
 }

@@ -118,6 +118,8 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         elevation: 4,
+        // Keep "Rückgängig" on the same line (M3 moves actions wider than 25 % below).
+        actionOverflowThreshold: 0.45,
       ),
     );
   }
