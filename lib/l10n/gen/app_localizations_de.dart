@@ -3891,4 +3891,78 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get termZonesTip => 'Tippe in einer Einheit auf eine Zone, um ihren genauen Bereich zu sehen.';
+
+  @override
+  String get raceSearch => 'Wettkämpfe suchen';
+
+  @override
+  String get raceSport => 'Sportart';
+
+  @override
+  String get raceAnyDistance => 'Alle Distanzen';
+
+  @override
+  String get raceRegion => 'Region (Land oder Stadt)';
+
+  @override
+  String get raceRegionHint => 'z. B. Deutschland, München – leer = weltweit';
+
+  @override
+  String get raceWindow => 'Zeitraum';
+
+  @override
+  String raceNextMonths(int n) {
+    return '$n Monate';
+  }
+
+  @override
+  String get raceSearchButton => 'Im Web suchen';
+
+  @override
+  String get raceIntro => 'Sucht mit KI im Web nach kommenden Wettkämpfen – oder öffne direkt einen Wettkampfkalender.';
+
+  @override
+  String get raceSearching => 'Suche im Web nach Wettkämpfen…';
+
+  @override
+  String get raceWebResults => 'Web-Ergebnisse (KI-Suche)';
+
+  @override
+  String get raceDisclaimer => 'Mit KI im Web gefunden – Angaben ohne Gewähr. Prüfe Datum und Details auf der Seite des Veranstalters, bevor du dich anmeldest.';
+
+  @override
+  String get raceOrganiserPage => 'Veranstalterseite';
+
+  @override
+  String get raceSetAsGoal => 'Als Ziel übernehmen';
+
+  @override
+  String get raceGoalSet => 'Wettkampf als Ziel übernommen';
+
+  @override
+  String get raceEmpty => 'Keine Wettkämpfe für diese Filter gefunden. Versuch einen längeren Zeitraum oder eine größere Region – oder stöbere in einem Wettkampfkalender.';
+
+  @override
+  String get raceUnavailable => 'Die KI-Websuche ist gerade nicht verfügbar (Kontingent bzw. Tarif des KI-Dienstes). Stöbere stattdessen in einem Wettkampfkalender.';
+
+  @override
+  String get raceError => 'Die Suche ist fehlgeschlagen. Prüfe die Verbindung und versuch es erneut – oder stöbere in einem Wettkampfkalender.';
+
+  @override
+  String get raceBadResponse => 'Die Suche hat kein verwertbares Ergebnis geliefert. Versuch es erneut – oder stöbere in einem Wettkampfkalender.';
+
+  @override
+  String get raceRetry => 'Erneut versuchen';
+
+  @override
+  String get racePortals => 'Wettkampfkalender';
+
+  @override
+  String get racePortalsHint => 'Öffnet im Browser, wo möglich schon gefiltert.';
+
+  @override
+  String get raceSources => 'Quellen';
+
+  @override
+  String get raceGoogleSuggestions => 'Google-Suchen';
 }

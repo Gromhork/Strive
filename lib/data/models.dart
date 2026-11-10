@@ -200,6 +200,9 @@ class AthleteData {
   final DateTime? eventDate;
   final int? targetTimeSec;
 
+  /// Name of the target event (e.g. taken over from the race search); optional.
+  final String? eventName;
+
   const AthleteData({
     this.setupMode = 'simple',
     this.difficulty = 'balanced',
@@ -232,6 +235,7 @@ class AthleteData {
     this.eventDistance,
     this.eventDate,
     this.targetTimeSec,
+    this.eventName,
   });
 
   bool get advanced => setupMode == 'advanced';
@@ -274,6 +278,7 @@ class AthleteData {
     eventDistance: m['eventDistance'],
     eventDate: m['eventDate'] == null ? null : _date(m['eventDate']),
     targetTimeSec: m['targetTimeSec'],
+    eventName: m['eventName'],
   );
 
   Map<String, dynamic> toMap() => {
@@ -308,6 +313,7 @@ class AthleteData {
     'eventDistance': eventDistance,
     'eventDate': eventDate == null ? null : Timestamp.fromDate(eventDate!),
     'targetTimeSec': targetTimeSec,
+    'eventName': eventName,
   };
 
   /// Copy with some fields replaced (keys as in [toMap]); `null` values clear a field.
