@@ -170,8 +170,9 @@ class ZonesPage extends ConsumerWidget {
           code: z.codes[i],
           sport: s.sport,
           range: switch (z.bounds(i)) {
-            (null, final int slow) => '> ${fmt(slow)}',
-            (final int fast, null) => '< ${fmt(fast)}',
+            // Fastest zone: faster than its slow bound; slowest zone: slower than its fast bound.
+            (null, final int slow) => '< ${fmt(slow)}',
+            (final int fast, null) => '> ${fmt(fast)}',
             (final int fast, final int slow) => '${fmt(fast)}–${fmt(slow)}',
             _ => '',
           },
@@ -182,33 +183,38 @@ class ZonesPage extends ConsumerWidget {
           target: i == target,
         ),
     ];
-    final header = Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 2),
-      child: Row(
-        children: [
-          Expanded(child: Text(l.zoneTimeIn, style: Theme.of(context).textTheme.labelLarge)),
-          Text(clock(total), style: Theme.of(context).textTheme.labelLarge?.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
-        ],
+    const headerH = 24.0;
+    final labelStyle = Theme.of(context).textTheme.labelLarge?.copyWith(height: 1.2);
+    final header = SizedBox(
+      height: headerH,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          children: [
+            Expanded(child: Text(l.zoneTimeIn, maxLines: 1, overflow: TextOverflow.ellipsis, style: labelStyle)),
+            Text(clock(total), style: labelStyle?.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+          ],
+        ),
       ),
     );
 
     return LayoutBuilder(
       builder: (context, box) {
-        const rowMin = 56.0, gap = 6.0, primaryMin = 104.0;
-        final need = primaryMin + 30 + rows.length * (rowMin + gap) + 16;
-        if (box.maxHeight >= need) {
-          // Fill the page: the big number takes the extra height.
+        const rowMin = 44.0, rowMax = 60.0, gap = 6.0, primaryMin = 96.0;
+        // Height left for the big number and the rows (bottom padding, gap, header, row gaps).
+        final avail = box.maxHeight - 8 - 8 - headerH - rows.length * gap;
+        if (avail - rows.length * rowMin >= primaryMin) {
+          // Fill the page: rows grow up to [rowMax], the big number takes the rest.
+          final rowH = ((avail - primaryMin) / rows.length).clamp(rowMin, rowMax);
           return Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(child: primary),
                 const SizedBox(height: 8),
                 header,
-                for (final r in rows) ...[
-                  const SizedBox(height: gap),
-                  SizedBox(height: min(64, rowMin + (box.maxHeight - need) / 12), child: r),
-                ],
+                for (final r in rows) ...[const SizedBox(height: gap), SizedBox(height: rowH, child: r)],
               ],
             ),
           );
@@ -268,33 +274,34 @@ class _ZoneRow extends StatelessWidget {
             ),
             Expanded(
               flex: 5,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          zoneLabel(l, code, sport: sport),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                            height: 1.2,
-                            color: current ? _ink(context, c) : null,
-                          ),
-                        ),
+              // Scales down instead of overflowing on small rows / large text.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(text: zoneLabel(l, code, sport: sport)),
+                          if (target)
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Icon(Icons.flag_rounded, size: 16, color: _ink(context, c), semanticLabel: l.targetBand),
+                              ),
+                            ),
+                        ],
                       ),
-                      if (target) ...[
-                        const SizedBox(width: 4),
-                        Tooltip(message: l.targetBand, child: Icon(Icons.flag_rounded, size: 16, color: _ink(context, c))),
-                      ],
-                    ],
-                  ),
-                  Text(range, maxLines: 1, style: t.bodySmall?.copyWith(height: 1.2, fontFeatures: const [FontFeature.tabularFigures()])),
-                ],
+                      maxLines: 1,
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, height: 1.2, color: current ? _ink(context, c) : null),
+                    ),
+                    Text(range, maxLines: 1, style: t.bodySmall?.copyWith(height: 1.2, fontFeatures: const [FontFeature.tabularFigures()])),
+                  ],
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -315,13 +322,14 @@ class _ZoneRow extends StatelessWidget {
             const SizedBox(width: 8),
             SizedBox(
               width: 58,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
                       clock(sec),
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
@@ -330,9 +338,9 @@ class _ZoneRow extends StatelessWidget {
                         fontFeatures: [FontFeature.tabularFigures()],
                       ),
                     ),
-                  ),
-                  Text('${(share * 100).round()} %', style: t.bodySmall?.copyWith(height: 1.2)),
-                ],
+                    Text('${(share * 100).round()} %', style: t.bodySmall?.copyWith(height: 1.2)),
+                  ],
+                ),
               ),
             ),
           ],
@@ -388,7 +396,9 @@ class PlanPage extends ConsumerWidget {
     final projected = s.elapsed + s.workoutLeftSec;
     final delta = projected - planned;
     final tol = max(60, (planned * 0.03).round());
-    final deltaColor = delta.abs() <= tol ? AppColors.success : (delta > 0 ? AppColors.warning : AppColors.swim);
+    // Ahead of plan because sections were cut short is not "too fast".
+    final shortened = s.stepResults.any((r) => !r.complete && s.steps[r.index].kind != 'recovery');
+    final deltaColor = delta.abs() <= tol ? AppColors.success : (delta > 0 || shortened ? AppColors.warning : AppColors.swim);
     // Intervals on target: work steps with a pace target (else: sections done).
     final paced = [
       for (final r in s.stepResults)
@@ -494,12 +504,23 @@ class _StepRow extends StatelessWidget {
     ].join(' · ');
     // Actual: time, plus distance (time steps) and average pace / speed when measurable.
     final pace = measurable ? resultPace(r, s.sport) : null;
-    final actual = [
-      clock(r.sec),
-      if (measurable && st.distanceM == null && r.distanceM > 0) swim ? '${r.distanceM.round()} m' : u.dist(r.distanceM),
-      if (pace != null && !ride) '${fmtPaceSec(pace, u, swim: swim)}${swim ? ' /100 m' : (u.imperial ? ' /mi' : ' /km')}',
-      if (pace != null && ride) '${u.distOut(3600000 / pace).toStringAsFixed(1)} ${u.imperial ? 'mph' : 'km/h'}',
-    ];
+    String distText(double m) => swim ? '${m.round()} m' : u.dist(m);
+    final paceText =
+        pace == null
+            ? null
+            : ride
+            ? '${u.distOut(3600000 / pace).toStringAsFixed(1)} ${u.imperial ? 'mph' : 'km/h'}'
+            : '${fmtPaceSec(pace, u, swim: swim)}${swim ? ' /100 m' : (u.imperial ? ' /mi' : ' /km')}';
+    // Big value: pace / speed for distance steps and paced steps, else the time.
+    final paceFirst = paceText != null && (st.distanceM != null || st.paceMin != null);
+    final main = paceFirst ? paceText : clock(r.sec);
+    final secondary = [
+      if (paceFirst) clock(r.sec),
+      // Distance: progress of a running distance step, covered distance of a time step.
+      if (measurable && st.distanceM != null && live) '${distText(r.distanceM)} / ${distText(st.distanceM!)}',
+      if (measurable && st.distanceM == null && r.distanceM > 0) distText(r.distanceM),
+      if (!paceFirst && paceText != null) paceText,
+    ].join(' · ');
     final status = live ? null : stepResultStatus(st, r, s.sport, measurable: measurable);
     final statusText = switch (status) {
       null => l.planNow,
@@ -548,26 +569,32 @@ class _StepRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  actual.length > 1 ? actual.last : actual.first,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, fontFeatures: [FontFeature.tabularFigures()]),
-                ),
-                if (actual.length > 1)
-                  Text(
-                    actual.sublist(0, actual.length - 1).join(' · '),
-                    style: t.bodySmall?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      main,
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, fontFeatures: [FontFeature.tabularFigures()]),
+                    ),
                   ),
-                const SizedBox(height: 2),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: sc, borderRadius: BorderRadius.circular(10)),
-                  child: Text(statusText, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 12)),
-                ),
-              ],
+                  if (secondary.isNotEmpty)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(secondary, style: t.bodySmall?.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+                    ),
+                  const SizedBox(height: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: sc, borderRadius: BorderRadius.circular(10)),
+                    child: Text(statusText, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 12)),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

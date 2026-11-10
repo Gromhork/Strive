@@ -242,6 +242,9 @@ void main() {
     expect(find.text(fmtPaceSec(easy, const Units(false))), findsOneWidget);
     expect(find.textContaining('Easy  ·'), findsOneWidget);
     expect(find.byIcon(Icons.flag_rounded), findsWidgets); // target: interval zone
+    // Open ends: the fastest zone is "faster than", the slowest "slower than".
+    expect(find.text('< ${fmtPaceSec(z.cuts.last, const Units(false))}'), findsOneWidget);
+    expect(find.text('> ${fmtPaceSec(z.cuts.first, const Units(false))}'), findsOneWidget);
     expect(find.text('10:00'), findsOneWidget); // 600 s in the easy zone
     expect(find.text('11:00'), findsOneWidget); // total
     expect(tester.takeException(), isNull);
