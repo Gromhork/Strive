@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../core/event_distances.dart';
 import '../core/format.dart';
 import '../data/models.dart';
 import 'zones.dart';
@@ -74,13 +75,23 @@ class GoalModel {
     return v == null ? (Vdot.defaultFor(p.level), true) : (v, false);
   }
 
-  static const _triLegs = {
-    'sprint': (750.0, 20.0, 5000.0, 300),
-    'olympic': (1500.0, 40.0, 10000.0, 360),
-    '70.3': (1900.0, 90.0, 21097.5, 480),
+  /// Multisport race (triathlon / duathlon): the time comes from the legs ([predict]).
+  static bool isTri(String? event) => switch (eventDistanceOf(event)?.sport) {
+    EventSport.triathlon || EventSport.duathlon => true,
+    _ => false,
   };
 
-  static bool isTri(String? event) => _triLegs.containsKey(event);
+  /// Share of FTP held on the bike leg / ride, the run slowdown off the bike and the transitions (s).
+  static (double, double, int) _legModel(String key) => switch (key) {
+    'sprint' => (0.88, 1.08, 300),
+    'olympic' => (0.85, 1.08, 360),
+    '70.3' => (0.77, 1.12, 480),
+    'ironman' => (0.70, 1.25, 600),
+    'du_sprint' => (0.86, 1.08, 180),
+    'du_standard' => (0.82, 1.10, 240),
+    'ride160' => (0.68, 1.0, 0),
+    _ => (0.72, 1.0, 0),
+  };
 
   /// Steady speed (km/h) on a flat course at [frac] × FTP: P·η = v·(Crr·m·g + ½·ρ·CdA·v²),
   /// η 0.975, Crr 0.005, ρ 1.2, CdA 0.32 / 0.30 / 0.27 by level, × 0.93 for turns, hills and wind.
@@ -106,29 +117,41 @@ class GoalModel {
 
   /// Predicted finishing time (s) of [p]'s event at running fitness [vdot]; null for events
   /// without a model. Triathlon uses the profile's CSS / FTP (or level values).
+  ///
+  /// Every catalogue distance has an estimate (the race day's duration): ultra = the road time
+  /// × 1.1 (terrain, aid stations); duathlon run 1 + bike + run 2 off the bike; cycling from FTP
+  /// (68–72 % for 100 / 160 km) or a level speed; open water at CSS + 10 s / 100 m.
   static int? predict(UserProfile p, double vdot) {
     final ev = p.athlete.eventDistance;
     final meters = Vdot.distances[ev];
     if (meters != null) return Vdot.raceTime(vdot, meters);
-    final legs = _triLegs[ev];
-    if (legs == null) return null;
+    final d = eventDistanceOf(ev);
+    if (d == null) return null;
     final a = p.athlete;
-    final (swimM, bikeKm, runM, transition) = legs;
     final css = SwimZones.fromTests(a.swim400Sec, a.swim200Sec) ?? SwimZones.defaultFor(p.level);
+    final (frac, runF, transition) = _legModel(d.key);
     final kmh =
         a.ftp != null
-            ? bikeKmh(a.ftp!, p.weightKg, p.level, switch (ev) {
-              'sprint' => 0.88,
-              'olympic' => 0.85,
-              _ => 0.77,
-            })
-            : switch (p.level) {
-              'advanced' => 33.0,
-              'intermediate' => 29.0,
-              _ => 25.0,
-            };
-    final runF = ev == '70.3' ? 1.12 : 1.08;
-    return (swimM / 100 * (css + 10) + bikeKm / kmh * 3600 + Vdot.raceTime(vdot, runM) * runF + transition).round();
+            ? bikeKmh(a.ftp!, p.weightKg, p.level, frac)
+            // Long rides without power data: a little slower than the short-course level speed.
+            : (switch (p.level) {
+                  'advanced' => 33.0,
+                  'intermediate' => 29.0,
+                  _ => 25.0,
+                }) *
+                (frac < 0.75 ? 0.93 : 1.0);
+    double swim(double km) => km * 10 * (css + 10);
+    double bike(double km) => km / kmh * 3600;
+    double run(double km) => Vdot.raceTime(vdot, km * 1000).toDouble();
+    final legs = d.legs;
+    final t = switch (d.sport) {
+      EventSport.run => run(d.km) * 1.1,
+      EventSport.triathlon => swim(legs[0]) + bike(legs[1]) + run(legs[2]) * runF,
+      EventSport.duathlon => run(legs[0]) * 1.02 + bike(legs[1]) + run(legs[2]) * runF,
+      EventSport.ride => bike(d.km),
+      EventSport.swim => swim(d.km),
+    };
+    return (t + transition).round();
   }
 
   /// Predicted time after a VDOT [gain] from [vdot]: running directly, triathlon by the
@@ -140,8 +163,10 @@ class GoalModel {
     return (base * Vdot.raceTime(vdot + gain, 10000) / Vdot.raceTime(vdot, 10000)).round();
   }
 
-  /// Whether a target-time check makes sense: running events always; triathlon only with
-  /// some real data (race time, FTP or swim test) – otherwise the goal is to finish.
+  /// Whether a target-time check makes sense: road running events (5 km – marathon) always;
+  /// triathlon / duathlon only with some real data (race time, FTP or swim test). Ultra, cycling
+  /// and open-water events are finish-oriented: terrain, weather and pacing dominate there and
+  /// the improvement model is a running (VDOT) model.
   static bool hasModel(UserProfile p) {
     final a = p.athlete;
     if (Vdot.distances.containsKey(a.eventDistance)) return true;

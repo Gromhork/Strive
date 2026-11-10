@@ -4649,4 +4649,138 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get raceNoSource => 'Für diese Sportart und Region gibt es noch keine direkte Suche (angebunden: DLV-Laufkalender, DTU-Kalender, RunSignup für die USA). Stöbere unten in einem Wettkampfkalender.';
+
+  @override
+  String get wShakeoutRide => 'Lockere Vorbelastung (Rad)';
+
+  @override
+  String get wShakeoutRideDesc => '20–30 min ganz locker mit drei kurzen Antritten – Beine lockern, Rad checken. Verpflegung für morgen vorbereiten.';
+
+  @override
+  String get wShakeoutSwim => 'Lockeres Vorschwimmen';
+
+  @override
+  String get wShakeoutSwimDesc => 'Kurz und locker mit ein paar zügigen 50ern und Orientierung – am besten am Wettkampfort im Neoprenanzug.';
+
+  @override
+  String get stepSightingNote => 'Orientierung: alle 6–9 Züge kurz nach vorn schauen, Rhythmus halten';
+
+  @override
+  String wDuLegs(String run, String bike, String run2) {
+    return 'Laufen $run km · Rad $bike km · Laufen $run2 km';
+  }
+
+  @override
+  String get wRaceFuelNote => 'Verpflege dich wie geübt: früh beginnen, 60–90 g Kohlenhydrate pro Stunde, nach Durst trinken – nichts Neues am Wettkampftag.';
+
+  @override
+  String get wFuelPracticeNote => 'Wettkampfverpflegung üben: 60–90 g Kohlenhydrate und 400–800 ml Flüssigkeit pro Stunde – der Darm trainiert mit.';
+
+  @override
+  String get wTrailNote => 'Hat dein Rennen Höhenmeter: im hügeligen Gelände laufen und an steilen Stücken zügiges Gehen üben.';
+
+  @override
+  String get stepClimbNote => 'Im Sitzen, niedrige Trittfrequenz 60–70 U/min – am Anstieg oder mit hohem Widerstand';
+
+  @override
+  String wClimb(int reps, int each) {
+    return 'Bergintervalle $reps × $each min';
+  }
+
+  @override
+  String get wClimbDesc => 'Sweet-Spot-Belastung als Bergintervalle: baut die Kraftausdauer für lange Anstiege auf.';
+
+  @override
+  String wDuRunFirst(int min) {
+    return 'Lauf vor dem Rad $min min';
+  }
+
+  @override
+  String get wDuRunFirstDesc => 'Duathlon-Reihenfolge: zügig im Wettkampfgefühl laufen, schnell aufs Rad wechseln – nach der Ausfahrt folgt der Koppellauf.';
+
+  @override
+  String get wBackToBack => 'Back-to-Back-Lauf';
+
+  @override
+  String get wBackToBackDesc => 'Lockerer mittellanger Lauf auf müden Beinen, am Tag nach dem langen Lauf – Ultra-Ausdauer ohne einen riesigen Einzellauf. Gehpausen sind erlaubt.';
+
+  @override
+  String get stepSwimTestNote => 'Zeitschwimmen: das schnellste gleichmäßige Tempo – Zeit notieren';
+
+  @override
+  String get wSwimCssTest => 'CSS-Test (400 m + 200 m)';
+
+  @override
+  String get wSwimCssTestDesc => 'Du schwimmst jetzt 400 m am Stück: 400 m und nach 5–10 min locker 200 m auf Zeit schwimmen. Trage beide Zeiten in den Planeinstellungen (Schwimmen) ein – dann berechnet Strive deine Schwimmtempi und plant CSS-Serien.';
+
+  @override
+  String get stepSwimNoviceWu => 'Locker, Pausen nach Bedarf';
+
+  @override
+  String get stepSwimKickNote => 'Beinschlag mit Brett, locker aus der Hüfte – unter Wasser ausatmen';
+
+  @override
+  String get stepSwimNoviceNote => 'Locker und ohne anzuhalten – lange Züge, ruhig atmen';
+
+  @override
+  String wSwimBuild(int reps, int meters) {
+    return 'Aufbau $reps × $meters m';
+  }
+
+  @override
+  String get wSwimBuildDesc => 'Am-Stück-Schwimmen aufbauen: jede Wiederholung locker ohne Anhalten schwimmen, am Rand so lange pausieren wie nötig (~30–45 s). Die Strecken werden Woche für Woche länger – Ziel: 400 m am Stück.';
+
+  @override
+  String get wSwimNoviceTechDesc => 'Technik für Schwimmeinsteiger: unter Wasser ausatmen, flache Wasserlage, lockerer Beinschlag – kurze Strecken mit Pausen. Keine Tempovorgaben.';
+
+  @override
+  String wLongSwim(int meters) {
+    return 'Lange Schwimmeinheit $meters m';
+  }
+
+  @override
+  String get wLongSwimDesc => 'Das lange Am-Stück-Schwimmen der Woche – gleichmäßiger Rhythmus, beidseitig atmen, ohne Anhalten. Es wächst in Richtung deiner Wettkampfdistanz.';
+
+  @override
+  String get wOpenWaterNote => 'Wenn möglich im Freiwasser: Neoprenanzug, Orientierung, Schwimmen in der Gruppe (Wasserschatten) und nie allein.';
+
+  @override
+  String get stepSwimTempoNote => 'Tempo – etwas langsamer als CSS, kurze Pausen';
+
+  @override
+  String wSwimTempoSet(int n, int meters) {
+    return 'Tempo-Serie $n × $meters m';
+  }
+
+  @override
+  String get wSwimTempoDesc => 'Lange Wiederholungen knapp unter der Schwelle: ausdauerndes Renntempo für längere Strecken.';
+
+  @override
+  String get feasBeginnerDistance => 'Diese Distanz ist kein Einsteigerziel: Baue erst über eine Saison mit kürzeren Rennen auf.';
+
+  @override
+  String feasLongSwim(int meters, int target) {
+    return 'Bis zum Wettkampf reicht dein Am-Stück-Schwimmen nur für etwa $meters m – dieses Rennen braucht etwa $target m am Stück.';
+  }
+
+  @override
+  String feasRaiseDay(String day, String time) {
+    return 'Erhöhe die Zeit am $day auf $time';
+  }
+
+  @override
+  String feasMoveLongDay(String day, String time) {
+    return 'Lege die lange Einheit auf $day ($time verfügbar)';
+  }
+
+  @override
+  String timeLongDayHint2(String time) {
+    return 'An deinem Tag für lange Einheiten (★) plant Strive für dieses Ziel $time ein, außer du legst den Tag selbst fest.';
+  }
+
+  @override
+  String get abilityTitle => 'Dein aktueller Stand';
+
+  @override
+  String get canSwim400Sub => 'Falls nicht, beginnt der Plan mit Technik und baut bis 400 m am Stück auf – dann legt ein Schwimmtest deine Tempi fest.';
 }

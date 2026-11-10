@@ -129,9 +129,14 @@ done, set default pace targets from RPE only.
 
 Generator (review 2026-11): marathon plans allow 180 min for every non-beginner (the 28–32 km long runs of amateur
 marathon plans take ~3 h); long-run km are planned at the **middle** of the E range (the pace the session duration is
-estimated with), not at its slow end. Default time on the long day when the athlete set none: marathon 180 min, HM and
-olympic 150, 70.3 240 (long ride + brick run), otherwise 120; the triathlon long-run day gets 120 min (70.3) / 90 min
-(olympic).
+estimated with), not at its slow end. Default time on the long day when the athlete set none: from the event table
+(§14, `EventSpec.longDayMin`) – marathon 180 min, HM and olympic 150, 70.3 240 (long ride + brick run), Ironman 360,
+ultra 240, 160 km ride 300, otherwise 120; the second long day (other sport / ultra back-to-back) 90–180 min.
+
+**Day split (fix/plan-pro, user report "4 h a day and still only 120 min").** Two sessions on one day share its time
+evenly – except when one of them is the long session: the short one (swim, easy run, strength) gets a third of the day,
+30–60 min (30 min on the long-ride day of a plan with bricks), the long session the rest. The even split had capped
+the 70.3 long ride of a 4 h Saturday with a swim at 2 h, and the feasibility card then said the day was too short.
 
 ### 1.5 Weekly volume progression and injury risk
 
@@ -186,9 +191,14 @@ Shorter plans shrink base first; build and taper are kept intact. Minimum base: 
 | Duration | Bosquet: **8–14 days** best. Wang 2023 (endurance only): 21 days with −41–60% worked; an overload block before the taper boosted the effect | [S]/[M] |
 
 ```text
-taperDays: 5k 7–10 · 10k 10 · HM 10–14 · Marathon 14–21 (BEGINNER marathon: 14)
-taperWeekFactor (marathon, 3-wk taper): [0.80, 0.65, 0.45 race week incl. race]
-taperWeekFactor (2-wk taper): [0.70, 0.50]
+taperDays: 5k 7–10 · 10k 10 · HM 10–14 · Marathon 14–21 (BEGINNER marathon: 14) – all distances: §14
+taperWeekFactor (3-wk taper: marathon, ultra, Ironman): [0.80, 0.65, 0.45 race week incl. race]
+taperWeekFactor (2-wk taper): [0.65, 0.45]        (fix/plan-pro, was 0.70 / 0.50)
+taperWeekFactor (1-wk taper): [0.50]               (was 0.55)
+long session in the taper (vs. the last loading week): 3 weeks 0.75 / 0.60, 2 weeks 0.65, race week 0.45;
+  recovery week 0.80 – the longest run / ride is the last loading week (marathon / ultra / Ironman ~3 weeks out,
+  HM / 70.3 ~2), never repeated in the taper (Pfitzinger; Mujika & Padilla 2003 [20])
+run/walk and swim-novice sessions taper too: fewer repeats (taper 70 %, race week 45 %), same stage
 ```
 
 **Race-specific intensity in the taper** (coach review 3, Bosquet 2007 [18], Mujika & Padilla 2003 [20]): the taper's
@@ -217,10 +227,19 @@ tooShort     : the plan's longest long run stays below 10k 8 km · HM 15 km · m
                or the long ride below 90 % of olympic 90 min · 70.3 180 min, because there are too few weeks;
                70.3 also needs a long run of ~16 km or 100 min (whichever is shorter at the long-run pace)
 longRunTime / longRideTime : the time on the long day (not the weeks) caps the long session below those minimums
-options      : the first later race date (same weekday, ≤ 30 weeks) that passes · the largest shorter distance that passes
-               by the date · finish with run/walk (5k / 10k / sprint / olympic) – race day then shows a run/walk rhythm
+longSwim     : the longest continuous swim before the taper stays < 90 % of what the race needs (open water: §14
+               longSwim; triathlon: sprint 400 m, olympic / 70.3 800 m, Ironman 1000 m)
+beginnerDistance : ultra 50 km, Ironman, 5 km open water are no beginner goals (like the marathon)
+options      : time-limited long session first: "raise <day> to <time>" (the day's minutes + what the long session
+               lacks, in 15-min steps) and "move the long session to <day> (<time> available)" (a training day with
+               enough time for the long session alone, incl. the brick run) · the first later race date (same
+               weekday, ≤ 30 weeks) that passes · the largest shorter distance that passes by the date · finish with
+               run/walk (5k / 10k / sprint / olympic / duathlon sprint) – race day then shows a run/walk rhythm
                (run 1–10 min as in the last stage, walk 1 min, from the start)
 ```
+
+All distances, targets, caps, ceilings and the recommended plan length come from one table (§14, `EventSpec`). The
+time stepper of the setup goes to 8 h (30-min steps above 3 h) – an Ironman long ride needs 5–6 h plus the brick.
 
 ### 1.12 Goal-driven plans: race date, target time, forecast [M/P]
 
@@ -758,10 +777,39 @@ fallback without a test: CSS_pace ≈ T400/4 + 4 s/100 m (practice) or use RPE
 | Main set | 50–60% | CSS/tempo/endurance reps |
 | Cool-down | ~10% | Easy |
 
-Generator: technique sessions ≤ ~60 min. Endurance swims grow continuous repeats: BEGINNER 50 → 100 → 200 → 400 → 800 m
-(every 3 weeks; 100 m start if 400 m continuous is possible), others 200 → 400 → 800 m (every 4 weeks); 800 m only for
-olympic / 70.3, always ≥ 2 repeats. A single weekly swim alternates technique and endurance. 70.3 with ≤ 5 days gets a
-second swim as a double day (easy-session day far from the first swim, not the long day or the day before it).
+Generator: technique sessions ≤ ~60 min. Endurance swims grow continuous repeats: BEGINNER 100 → 200 → 400 → 800 m
+(every 3 weeks), others 200 → 400 → 800 → 1000 m (every 4 weeks), the longest repeat by race (`swimRepMax`: sprint
+400 m, olympic / 70.3 800 m, Ironman 1000 m), always ≥ 2 whole repeats that fill ≥ 75 % of the main set (rounding
+2.5 × 800 m up made the volume jump +30 %). Build / peak: main set 70 % of the session. A single weekly swim is one
+endurance swim with a drill block (the earlier technique / endurance alternation made the volume jump ±40 %). 70.3 and
+Ironman with ≤ 5 days get a second swim as a double day (easy-session day far from the first swim, not the long day or
+the day before it). Swimmers with ≥ 4 swims a week (swim focus): a second quality swim – tempo repeats 300 → 400 m at
+CSS + 3–6 s. CSS sets are ~35 % of the session (3-swim weeks stay ~80/20 by time).
+
+**Swim novices (fix/plan-pro, user report "13 × 100 m CSS for someone who cannot swim 400 m").** A swim novice is
+anyone who said they cannot swim 400 m freestyle without stopping – *whatever the level in the other sports* – or a
+beginner without swim experience and without a CSS test. The quick setup now asks the question too ("Dein aktueller
+Stand": can run 30 min / can swim 400 m). Novices get:
+
+```text
+volume       : ~800 m per session at the start (§4.4 beginner 800–1500 m with breaks), ≤ 1.4 km per session
+sessions     : warm-up 150 m easy with breaks · 2–6 × 50 m drills (kick with board, catch-up, side kick …, 30 s rest) ·
+               the stage of the continuous-swim ladder · 100 m easy; ≤ 60 min, no pace targets (§4.5)
+ladder       : 8 × 50 → 10 × 50 → 6 × 100 → 7 × 100 → 4 × 200 → 4 × 200 → 3 × 300 → 2 × 400 m, one stage per loading
+               week, rest at the wall 30–45 s; technique days half the repeats; recovery 70 %, taper 65 / 45 %
+CSS test     : after the last stage – 400 m and 200 m time trials (§4.1), the athlete enters the times in the plan
+               settings; afterwards the normal sessions (CSS sets for non-beginners), long swims start at 400 m.
+               Heart / blood pressure or shoulder: no all-out test, the normal sessions simply follow
+no CSS set   : before the test (also for intermediate / advanced runners and cyclists)
+swim zones   : CSS ~150 s / 100 m without a test (the level default 110 s of an intermediate was far too fast)
+no swim experience, no test (can swim 400 m): starts at the beginner volume (1.5 km / session) whatever the level
+```
+
+**Long swim** (swim-focus plans, with or without event): a weekly continuous swim on the long day, starting at ~90 %
+of an average session (former novices 400 m), +12 % (≥ 100 m) per loading week towards the race's continuous
+distance (swim1500 1.5 km, swim3800 3 km, swim5000 4 km; without an event 1.5 / 2.5 / 3 km by level); recovery / taper
+weeks by the long-session factors (§1.7). Open-water races and triathlon: sighting every 6–9 strokes in build / peak
+and an open-water note (wetsuit, group / drafting, never alone).
 
 ### 4.4 Weekly volume by level [P]
 
@@ -895,11 +943,20 @@ Sun  Long run (E)                 | optional: strength (upper / core)
   E/race feel, then goal pace.
 - A brick counts as a key session (H1/H2). Transition practice: ≤ 2 min.
 
-Generator: a run off the bike follows the long ride from the build phase every second loading week, weekly in the peak
-phase (not while on run/walk): sprint 15 → 20 min, olympic 15 → 30, 70.3 15 → 45 (ADVANCED 60), +5 min per brick,
-≤ ~60 % of that week's long run. It shares the long-ride day's time (the ride gets the rest), is part of that day's key
-session (intensity "moderate", not an extra key session), first 5 min easy, then steady race feel. Long ride share of
-the bike hours: 2 rides 60 %, 3 rides 50 %, more 42 %.
+Generator (fix/plan-pro): a run off the bike follows the long ride **every loading week from the build phase** (every
+second week made the run volume jump ±10–50 % week to week), not while on run/walk: sprint 10 → 20 min, olympic 10 →
+30, 70.3 / Ironman 10 → 45 (ADVANCED 60), duathlon 10 → 20 / 10 → 30, +5 min per brick, ≤ ~60 % of that week's long
+run and ≤ ~25 % of the week's run km. The brick counts as run volume: the easy runs shrink first, then the long run by
+≤ 8 %. The long-ride day keeps the longest brick's time free in *every* week (≤ a third of the day), so the long ride
+does not shrink when the bricks start or grow. Duathlon peak: run – bike – run (a 10 → 20 min run before the ride as
+well). Part of that day's key session (intensity "moderate"), first 5 min easy, then steady race feel. Long ride share
+of the bike hours: 2 rides 60 %, 3 rides 50 %, more 42 % – up to 60 % when the race's long ride needs it (§14), never
+beyond the event cap; 5-min steps (15-min steps kept a slowly growing long ride flat for 4 weeks).
+
+Multisport with ≤ 3 runs a week: the run day rotates quality ↔ easy (B7). The easy run is ≤ ~half the long run (minus
+the brick), and a quality run gets the run km left after the long run and the brick (R3: intensity in, volume held) –
+before, the run volume jumped ±25–35 % from week to week. Long runs of multisport races rotate in the peak too (long →
+long → shorter), never with the shorter week right before a recovery / taper week.
 
 ---
 
@@ -1182,6 +1239,73 @@ a change with a preview; nothing is saved until "Apply", and the change is logge
 
 ---
 
+## 14. Race distances: requirements per event (fix/plan-pro, `EventSpec`, lib/services/event_spec.dart) [P/M]
+
+One table drives plan length, phases, taper, long-session targets and caps, volume ceilings and the feasibility check.
+The distances themselves are the shared catalogue (lib/core/event_distances.dart). Targets = what the long session must
+reach before the taper (the feasibility check warns otherwise); km **or** the time at the long-run pace, whichever is
+shorter (slow runners are on their feet long enough sooner).
+
+| Event | Weeks (int/adv · beg) | Taper | Long run target · cap | Long ride target · cap | Long swim | Ceilings run km / bike h / swim km (N/I/A) | Brick | Notes |
+|---|---|---|---|---|---|---|---|---|
+| 5 km | 8–12 · 9–10 | 1 | – · 16 km | | | 15/30/50 | | run/walk finish |
+| 10 km | 8–12 | 1 | 8 km · 18 | | | 25/40/60 | | |
+| HM | 12–16 · 12–14 | 2 | 15 km · 21 km / 150 min | | | 30/50/70 | | |
+| Marathon | 16–18 · 18–20 | 3 (beg 2) | 28 km · 35 km / 180 min | | | 45/65/90 | | not for beginners |
+| Ultra 50 km | 16–24 | 3 | 30 km or 3 h 30 · 38 km / 4 h | | | 55/75/100 | | back-to-back, hills, fuelling; not for beginners |
+| Sprint tri | 8–12 | 1 | – · 12 | 60 min · 2 h | (400 m) | 12/20/30 · 2.5/3.5/4.5 · 3/5/7 | 10→20 | |
+| Olympic | 12–16 | 2 | 10 km or 75 min · 16 | 90 min · 2.5 h | (800 m) | 18/28/40 · 3.5/4.5/6 · 4/6/8 | 10→30 | |
+| 70.3 | 16–20 · 20–24 | 2 | 16 km or 110 min · 21 | 3 h · 4 h | (800 m) | 25/35/50 · 5/6.5/8 · 5/7/9 | 10→45 (60) | race-pace bike tempo in the peak |
+| Ironman | 24–30 | 3 | 26 km or 150 min · 30 km / 165 min | 5 h · 6 h | (1000 m) | 35/45/60 · 8/10/13 · 6/8/10 | 10→45 (60) | not for beginners; 30-week specific block |
+| Duathlon sprint (5/20/2.5) | 8–12 | 1 | 7 km or 50 min · 14 | 60 min · 2 h | | 20/30/45 · 2.5/3.5/4.5 | 10→20 | run–bike–run in the peak |
+| Duathlon standard (10/40/5) | 10–14 | 2 | 12 km or 80 min · 18 | 90 min · 2.5 h | | 25/40/55 · 3.5/4.5/6 | 10→30 | run–bike–run in the peak |
+| 100 km ride | 8–12 · 10–14 | 1 | | 3 h · 4 h 30 | | – · 5/7/9 | | climbing repeats (build), race tempo (peak) |
+| 160 km ride | 12–16 | 2 | | 4 h · 5 h 30 | | – · 6/8/11 | | as 100 km |
+| Open water 1.5 km | 8–12 | 1 | | | 1.5 km | swim 5/8/12 | | sighting, open-water notes |
+| Open water 3.8 km | 12–16 | 2 | | | 3 km | swim 8/12/18 | | |
+| Open water 5 km | 12–20 | 2 | | | 4 km | swim 10/15/22 | | not for beginners |
+
+Rules by discipline (sources in brackets):
+
+```text
+taper        : 3 weeks for marathon / ultra / Ironman (Wang 2023 [19]: ~21 days with −41–60 % for long endurance events;
+               Bosquet 2007 [18]); 2 weeks HM / olympic / 70.3 / standard duathlon / 160 km / long swims; 1 week short races
+specific     : plans longer than max(20, recommended max weeks) start with a base pre-plan (Ironman 30, ultra 24 weeks)
+long run     : per loading week ≤ +10 % of the 30-day longest run (R1, Frandsen 2025 [11]); share of the week: ultra like the
+               marathon (≤ 50 %, 32 km / week km), multisport ≤ 45 % (≥ 3 runs) / ≤ 65 % (2 runs: long + quality)
+ultra        : back-to-back (build / peak, ≥ 4 runs, non-beginners): the day after the long run an easy medium-long run of
+               55 % (peak 60 %) of it, with the second long day's time (≥ 2 h); long runs in build / peak carry a hills /
+               power-hiking note; peak quality = threshold, no VO2max reps (Koop 2016 [85]; Roche)
+Ironman      : long run ≤ 30 km / 2 h 45 (marathon off the bike: recovery cost of longer runs exceeds their benefit –
+               Friel [86]; Fitzgerald 80/20 Triathlon [87]); long ride up to 6 h; bike peak tempo 2 × 30 → 2 × 40 → 3 × 30 min
+               at 75–85 % FTP; one quality ride in the peak is race tempo, a second stays VO2max / threshold
+cycling      : long ride share ≤ 60 % of the bike hours when the target needs it; build: every other week the sweet-spot
+               ride as climbing repeats (seated, 60–70 rpm, 10-min blocks); peak: race-specific tempo (as 70.3)
+open water   : weekly long continuous swim (§4.3), sighting in build / peak, shake-out swim the day before the race
+fuelling     : races ≥ 2.5 h: long runs ≥ 90 min and long rides ≥ 2 h carry "practise race fuelling: 60–90 g
+               carbohydrate / h, 400–800 ml / h" (Jeukendrup 2014 [88]; Thomas et al. ACSM 2016 [89]); race-day note
+race day     : triathlon stored as a swim, duathlon as a run (legs in the description), cycling as a ride, open water as a
+               swim, ultra as a 50 km run; shake-out the day before (ride: 20–30 min with 3 short pick-ups; swim: short
+               with 50s and sighting); expected duration from GoalModel.predict
+forecast     : target-time check / forecast for 5 km – marathon (VDOT) and multisport with data (race time, FTP or swim
+               test; Ironman: bike 70 % FTP, run × 1.25 off the bike, 10 min transitions; duathlon: run 1 × 1.02, bike
+               82–86 % FTP, run 2 × 1.08–1.10). Ultra, cycling and open water are finish-oriented (terrain, weather and
+               pacing dominate; the improvement model is a VDOT model) – the race still gets a realistic duration
+```
+
+**Invariant matrix** (test/plan_matrix_test.dart, 207 plans: 16 distances × 3 levels × 3 time budgets, rotating days
+3–6, health limits, near / far race date, target realistic / unrealistic, swim / run ability, FTP, difficulty, age;
+plus 7 focuses without an event). Checked: race on race day as the right sport · loading weeks ≤ +12 % (+2 km run /
++30 min ride / +1 km swim / +30 min total) over the higher of the two previous loading weeks (plans ≥ 8 weeks) · ≤ 5
+loading weeks in a row, no recovery week right before the taper · taper length and cut (week before race ≤ 80 %, race
+week ≤ 60 % of the last loading week, weeks ≥ 150 min) · long session target reached or the feasibility card warns ·
+long sessions not flat > 2 loading weeks unless at cap / target / volume ceiling, the last long session before the taper
+≥ 90 % of the longest, the longest long run 2–4 weeks before race day · day time caps · time in zone per loading week:
+high (> LT2) ≤ 25 %, high + threshold ≤ 40 %, whole plan high ≤ 20 % (Seiler 2010 [1]; Stöggl & Sperlich 2014 [90]) · no
+3 key days in a row, beginners / masters no 2 hard days of one sport in a row · swim novices / run/walk / health limits ·
+titles "N × M" match the steps · sane values. Before this branch: 740 violations; after: 0 (6 hand-reviewed edge cases
+are listed in the test as accepted residuals).
+
 ## 10. References
 
 Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
@@ -1269,3 +1393,10 @@ Downloaded PDFs in `docs/papers/` are marked **(PDF)**.
 82. Bouchard C, An P, Rice T, et al. Familial aggregation of VO2max response to exercise training: results from the HERITAGE Family Study. *J Appl Physiol.* 1999;87(3):1003–1008. doi:10.1152/jappl.1999.87.3.1003
 83. Eichner ER. Infection, immunity, and exercise: what to tell patients? *Phys Sportsmed.* 1993;21(1):125–135. doi:10.1080/00913847.1993.11710319 (the "above-the-neck" rule)
 84. Primos WA Jr. Sports and exercise during acute illness: recommending the right course for patients. *Phys Sportsmed.* 1996;24(1):44–53. doi:10.3810/psm.1996.01.1195
+
+85. Koop J. *Training Essentials for Ultrarunning.* Boulder: Pursuit Press; 2016 (back-to-back long runs, time on feet, vert-specific training). [P]
+86. Friel J. *The Triathlete's Training Bible.* 4th ed. Boulder: VeloPress; 2016 (long-course long sessions, bricks, taper). [P]
+87. Fitzgerald M, Warden D. *80/20 Triathlon.* Boston: Da Capo; 2018 (intensity distribution and long-session caps for Ironman). [P]
+88. Jeukendrup A. A step towards personalized sports nutrition: carbohydrate intake during exercise. *Sports Med.* 2014;44(Suppl 1):S25–S33. doi:10.1007/s40279-014-0148-z [M]
+89. Thomas DT, Erdman KA, Burke LM. American College of Sports Medicine joint position statement: nutrition and athletic performance. *Med Sci Sports Exerc.* 2016;48(3):543–568. doi:10.1249/MSS.0000000000000852 [S]
+90. Stöggl T, Sperlich B. Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training. *Front Physiol.* 2014;5:33. doi:10.3389/fphys.2014.00033 [M]

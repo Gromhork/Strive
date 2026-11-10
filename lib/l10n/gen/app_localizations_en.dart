@@ -4649,4 +4649,138 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get raceNoSource => 'There is no direct search for this sport and region yet (connected: German running and triathlon calendars, RunSignup for the USA). Browse a race calendar below.';
+
+  @override
+  String get wShakeoutRide => 'Shake-out ride';
+
+  @override
+  String get wShakeoutRideDesc => '20–30 min very easy with three short pick-ups – loosen up, check the bike. Prepare food and drinks for tomorrow.';
+
+  @override
+  String get wShakeoutSwim => 'Shake-out swim';
+
+  @override
+  String get wShakeoutSwimDesc => 'Short and easy with a few faster 50s and sighting – ideally at the race venue in your wetsuit.';
+
+  @override
+  String get stepSightingNote => 'Sighting: lift the eyes briefly every 6–9 strokes, keep the rhythm';
+
+  @override
+  String wDuLegs(String run, String bike, String run2) {
+    return 'Run $run km · Bike $bike km · Run $run2 km';
+  }
+
+  @override
+  String get wRaceFuelNote => 'Fuel as practised: 60–90 g carbohydrate per hour from early on, drink to thirst – nothing new on race day.';
+
+  @override
+  String get wFuelPracticeNote => 'Practise race fuelling: 60–90 g carbohydrate per hour and 400–800 ml fluid per hour – train the gut like the legs.';
+
+  @override
+  String get wTrailNote => 'If your race has climbing: run on hilly terrain and practise power hiking on the steep parts.';
+
+  @override
+  String get stepClimbNote => 'Seated, low cadence 60–70 rpm – on a climb or high resistance';
+
+  @override
+  String wClimb(int reps, int each) {
+    return 'Climbing $reps × $each min';
+  }
+
+  @override
+  String get wClimbDesc => 'Sweet-spot effort as climbing repeats: builds the strength and fatigue resistance long climbs need.';
+
+  @override
+  String wDuRunFirst(int min) {
+    return 'Run before the bike $min min';
+  }
+
+  @override
+  String get wDuRunFirstDesc => 'Duathlon order: run at steady race feel, change quickly to the bike – the brick run follows the ride.';
+
+  @override
+  String get wBackToBack => 'Back-to-back run';
+
+  @override
+  String get wBackToBackDesc => 'Easy medium-long run on tired legs the day after the long run – ultra endurance without one huge run. Walk breaks are fine.';
+
+  @override
+  String get stepSwimTestNote => 'Time trial: fastest pace you can hold evenly – note the time';
+
+  @override
+  String get wSwimCssTest => 'CSS test (400 m + 200 m)';
+
+  @override
+  String get wSwimCssTestDesc => 'You can swim 400 m in one go now: swim 400 m and, after 5–10 min easy, 200 m as time trials. Enter both times in the plan settings (swimming) – Strive then sets your swim paces and plans CSS sets.';
+
+  @override
+  String get stepSwimNoviceWu => 'Easy, with breaks as needed';
+
+  @override
+  String get stepSwimKickNote => 'Kick with a board, relaxed from the hips – breathe out under water';
+
+  @override
+  String get stepSwimNoviceNote => 'Relaxed and without stopping – long strokes, calm breathing';
+
+  @override
+  String wSwimBuild(int reps, int meters) {
+    return 'Build-up $reps × $meters m';
+  }
+
+  @override
+  String get wSwimBuildDesc => 'Building continuous swimming: swim every repeat relaxed without stopping, rest at the wall as long as you need (~30–45 s). The repeats get longer week by week – goal: 400 m in one go.';
+
+  @override
+  String get wSwimNoviceTechDesc => 'Technique for swim starters: breathing out under water, flat body position, relaxed kick – short distances with breaks. No pace targets.';
+
+  @override
+  String wLongSwim(int meters) {
+    return 'Long swim $meters m';
+  }
+
+  @override
+  String get wLongSwimDesc => 'The long continuous swim of the week – even rhythm, bilateral breathing, no stopping. It grows towards your race distance.';
+
+  @override
+  String get wOpenWaterNote => 'Open water when possible: wetsuit, sighting, swimming in a group (drafting) and never alone.';
+
+  @override
+  String get stepSwimTempoNote => 'Tempo – a little slower than CSS, short rests';
+
+  @override
+  String wSwimTempoSet(int n, int meters) {
+    return 'Tempo set $n × $meters m';
+  }
+
+  @override
+  String get wSwimTempoDesc => 'Long repeats just below threshold: sustained race pace for longer distances.';
+
+  @override
+  String get feasBeginnerDistance => 'This distance is not a first goal for beginners: build up over a season with shorter races first.';
+
+  @override
+  String feasLongSwim(int meters, int target) {
+    return 'By race day your continuous swim only reaches about $meters m – this race needs about $target m in one go.';
+  }
+
+  @override
+  String feasRaiseDay(String day, String time) {
+    return 'Increase the time on $day to $time';
+  }
+
+  @override
+  String feasMoveLongDay(String day, String time) {
+    return 'Move the long session to $day ($time available)';
+  }
+
+  @override
+  String timeLongDayHint2(String time) {
+    return 'On your long-session day (★) Strive plans $time for this goal unless you set that day yourself.';
+  }
+
+  @override
+  String get abilityTitle => 'Your current level';
+
+  @override
+  String get canSwim400Sub => 'If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.';
 }

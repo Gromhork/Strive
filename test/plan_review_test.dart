@@ -178,8 +178,12 @@ void main() {
       );
       final r = PlanGenerator.feasibility(shortRide, start: start, l: l);
       expect(r.issues, contains('longRideTime'));
-      expect(r.longRideMin, 150);
+      // fix/plan-pro: the long ride keeps the brick run's time free on its day (150 − 45 min), and
+      // the card proposes the concrete fix – Sunday to 150 + 180 − 105 = 225 min.
+      expect(r.longRideMin, 105);
       expect(r.longRideTargetMin, 180);
+      expect(r.raiseDay, 7);
+      expect(r.raiseDayMin, 225);
     });
   });
 

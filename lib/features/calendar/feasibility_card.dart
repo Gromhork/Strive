@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/event_distances.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
@@ -23,17 +24,11 @@ class FeasibilityCache {
   }
 }
 
-/// Name of an event distance key.
-String eventDistanceName(AppLocalizations l, String d) => switch (d) {
-  '5k' => '5 km',
-  '10k' => '10 km',
-  'hm' => l.halfMarathon,
-  'm' => l.marathon,
-  'sprint' => 'Sprint-Triathlon',
-  'olympic' => l.olympicTri,
-  '70.3' => l.middleDistance,
-  _ => d,
-};
+/// Name of an event distance key (the shared catalogue, [eventDistanceLabel]).
+String eventDistanceName(AppLocalizations l, String d) => eventDistanceLabel(l, d);
+
+/// "3 h 45" / "90 min" for a minute value.
+String _hm(int m) => m < 60 || (m % 60 != 0 && m < 90) ? '$m min' : (m % 60 == 0 ? '${m ~/ 60} h' : '${m ~/ 60} h ${m % 60}');
 
 /// Short warning when the event goal is not realistic in the time left, with what would
 /// make it work (later date, shorter distance, run/walk). Nothing when the goal is fine.
@@ -53,6 +48,8 @@ class FeasibilityCard extends StatelessWidget {
 
   static String issueText(AppLocalizations l, PlanFeasibility f, String issue) => switch (issue) {
     'beginnerMarathon' => l.feasBeginnerMarathon,
+    'beginnerDistance' => l.feasBeginnerDistance,
+    'longSwim' => l.feasLongSwim((f.longSwimM ?? 0).round(), (f.longSwimTargetM ?? 0).round()),
     'runWalkLong' => l.feasRunWalkLong,
     'runWalk' => l.feasRunWalk,
     'longRunTime' => l.feasLongRunTime((f.longRunKm ?? 0).floor(), (f.longRunTargetKm ?? 0).round()),
@@ -86,7 +83,11 @@ class FeasibilityCard extends StatelessWidget {
     final small = Theme.of(context).textTheme.bodySmall;
     final df = DateFormat.yMMMd(context.localeName);
     final targetIssue = f.issues.any((i) => i.startsWith('target')) && t != null;
+    String day(int d) => DateFormat.EEEE(context.localeName).format(DateTime(2024, 1, d)); // 1 Jan 2024 = Monday
     final options = [
+      // The time on the long day is the limit: the concrete fix first.
+      if (f.raiseDay != null && f.raiseDayMin != null) l.feasRaiseDay(day(f.raiseDay!), _hm(f.raiseDayMin!)),
+      if (f.moveDay != null && f.moveDayMin != null) l.feasMoveLongDay(day(f.moveDay!), _hm(f.moveDayMin!)),
       if (f.laterDate != null) l.feasLaterDate(df.format(f.laterDate!)),
       if (f.shorterDistance != null) l.feasShorter(eventDistanceName(l, f.shorterDistance!)),
       if (f.runWalkFinish) l.feasRunWalkFinish,

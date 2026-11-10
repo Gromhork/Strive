@@ -8602,6 +8602,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'There is no direct search for this sport and region yet (connected: German running and triathlon calendars, RunSignup for the USA). Browse a race calendar below.'**
   String get raceNoSource;
+
+  /// No description provided for @wShakeoutRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Shake-out ride'**
+  String get wShakeoutRide;
+
+  /// No description provided for @wShakeoutRideDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'20–30 min very easy with three short pick-ups – loosen up, check the bike. Prepare food and drinks for tomorrow.'**
+  String get wShakeoutRideDesc;
+
+  /// No description provided for @wShakeoutSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'Shake-out swim'**
+  String get wShakeoutSwim;
+
+  /// No description provided for @wShakeoutSwimDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Short and easy with a few faster 50s and sighting – ideally at the race venue in your wetsuit.'**
+  String get wShakeoutSwimDesc;
+
+  /// No description provided for @stepSightingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Sighting: lift the eyes briefly every 6–9 strokes, keep the rhythm'**
+  String get stepSightingNote;
+
+  /// No description provided for @wDuLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'Run {run} km · Bike {bike} km · Run {run2} km'**
+  String wDuLegs(String run, String bike, String run2);
+
+  /// No description provided for @wRaceFuelNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel as practised: 60–90 g carbohydrate per hour from early on, drink to thirst – nothing new on race day.'**
+  String get wRaceFuelNote;
+
+  /// No description provided for @wFuelPracticeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Practise race fuelling: 60–90 g carbohydrate per hour and 400–800 ml fluid per hour – train the gut like the legs.'**
+  String get wFuelPracticeNote;
+
+  /// No description provided for @wTrailNote.
+  ///
+  /// In en, this message translates to:
+  /// **'If your race has climbing: run on hilly terrain and practise power hiking on the steep parts.'**
+  String get wTrailNote;
+
+  /// No description provided for @stepClimbNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Seated, low cadence 60–70 rpm – on a climb or high resistance'**
+  String get stepClimbNote;
+
+  /// No description provided for @wClimb.
+  ///
+  /// In en, this message translates to:
+  /// **'Climbing {reps} × {each} min'**
+  String wClimb(int reps, int each);
+
+  /// No description provided for @wClimbDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweet-spot effort as climbing repeats: builds the strength and fatigue resistance long climbs need.'**
+  String get wClimbDesc;
+
+  /// No description provided for @wDuRunFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Run before the bike {min} min'**
+  String wDuRunFirst(int min);
+
+  /// No description provided for @wDuRunFirstDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Duathlon order: run at steady race feel, change quickly to the bike – the brick run follows the ride.'**
+  String get wDuRunFirstDesc;
+
+  /// No description provided for @wBackToBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back-to-back run'**
+  String get wBackToBack;
+
+  /// No description provided for @wBackToBackDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy medium-long run on tired legs the day after the long run – ultra endurance without one huge run. Walk breaks are fine.'**
+  String get wBackToBackDesc;
+
+  /// No description provided for @stepSwimTestNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Time trial: fastest pace you can hold evenly – note the time'**
+  String get stepSwimTestNote;
+
+  /// No description provided for @wSwimCssTest.
+  ///
+  /// In en, this message translates to:
+  /// **'CSS test (400 m + 200 m)'**
+  String get wSwimCssTest;
+
+  /// No description provided for @wSwimCssTestDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'You can swim 400 m in one go now: swim 400 m and, after 5–10 min easy, 200 m as time trials. Enter both times in the plan settings (swimming) – Strive then sets your swim paces and plans CSS sets.'**
+  String get wSwimCssTestDesc;
+
+  /// No description provided for @stepSwimNoviceWu.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy, with breaks as needed'**
+  String get stepSwimNoviceWu;
+
+  /// No description provided for @stepSwimKickNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick with a board, relaxed from the hips – breathe out under water'**
+  String get stepSwimKickNote;
+
+  /// No description provided for @stepSwimNoviceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Relaxed and without stopping – long strokes, calm breathing'**
+  String get stepSwimNoviceNote;
+
+  /// No description provided for @wSwimBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Build-up {reps} × {meters} m'**
+  String wSwimBuild(int reps, int meters);
+
+  /// No description provided for @wSwimBuildDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Building continuous swimming: swim every repeat relaxed without stopping, rest at the wall as long as you need (~30–45 s). The repeats get longer week by week – goal: 400 m in one go.'**
+  String get wSwimBuildDesc;
+
+  /// No description provided for @wSwimNoviceTechDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Technique for swim starters: breathing out under water, flat body position, relaxed kick – short distances with breaks. No pace targets.'**
+  String get wSwimNoviceTechDesc;
+
+  /// No description provided for @wLongSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'Long swim {meters} m'**
+  String wLongSwim(int meters);
+
+  /// No description provided for @wLongSwimDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The long continuous swim of the week – even rhythm, bilateral breathing, no stopping. It grows towards your race distance.'**
+  String get wLongSwimDesc;
+
+  /// No description provided for @wOpenWaterNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Open water when possible: wetsuit, sighting, swimming in a group (drafting) and never alone.'**
+  String get wOpenWaterNote;
+
+  /// No description provided for @stepSwimTempoNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo – a little slower than CSS, short rests'**
+  String get stepSwimTempoNote;
+
+  /// No description provided for @wSwimTempoSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo set {n} × {meters} m'**
+  String wSwimTempoSet(int n, int meters);
+
+  /// No description provided for @wSwimTempoDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Long repeats just below threshold: sustained race pace for longer distances.'**
+  String get wSwimTempoDesc;
+
+  /// No description provided for @feasBeginnerDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'This distance is not a first goal for beginners: build up over a season with shorter races first.'**
+  String get feasBeginnerDistance;
+
+  /// No description provided for @feasLongSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'By race day your continuous swim only reaches about {meters} m – this race needs about {target} m in one go.'**
+  String feasLongSwim(int meters, int target);
+
+  /// No description provided for @feasRaiseDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase the time on {day} to {time}'**
+  String feasRaiseDay(String day, String time);
+
+  /// No description provided for @feasMoveLongDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Move the long session to {day} ({time} available)'**
+  String feasMoveLongDay(String day, String time);
+
+  /// No description provided for @timeLongDayHint2.
+  ///
+  /// In en, this message translates to:
+  /// **'On your long-session day (★) Strive plans {time} for this goal unless you set that day yourself.'**
+  String timeLongDayHint2(String time);
+
+  /// No description provided for @abilityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current level'**
+  String get abilityTitle;
+
+  /// No description provided for @canSwim400Sub.
+  ///
+  /// In en, this message translates to:
+  /// **'If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.'**
+  String get canSwim400Sub;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
