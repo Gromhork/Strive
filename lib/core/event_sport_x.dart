@@ -30,6 +30,16 @@ extension EventSportX on EventSport {
     _ => Sport.run,
   };
 
+  /// Training focus that plans for a race of this sport (running: keeps a running /
+  /// hybrid / gym focus, see [eventFitsFocus]).
+  TrainingFocus get focus => switch (this) {
+    EventSport.run => TrainingFocus.run,
+    EventSport.triathlon => TrainingFocus.triathlon,
+    EventSport.duathlon => TrainingFocus.duathlon,
+    EventSport.ride => TrainingFocus.ride,
+    EventSport.swim => TrainingFocus.swim,
+  };
+
   /// Race sport for a training focus (gym / hybrid / no focus: running).
   static EventSport fromFocus(TrainingFocus? f) => switch (f) {
     TrainingFocus.triathlon => EventSport.triathlon,

@@ -190,33 +190,39 @@ class StriveTopBar extends ConsumerWidget implements PreferredSizeWidget {
                 ),
               ),
               const Spacer(),
-              InkWell(
-                borderRadius: BorderRadius.circular(24),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    CircleAvatar(
-                      radius: 19,
-                      backgroundColor: AppColors.brand.withValues(alpha: 0.25),
-                      child: Text(
-                        profile.name.isEmpty ? '?' : profile.name[0].toUpperCase(),
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.brand),
-                      ),
-                    ),
-                    Positioned(
-                      right: -4,
-                      bottom: -4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(color: AppColors.brand, borderRadius: BorderRadius.circular(8)),
-                        child: Text(
-                          '${stats.level.level}',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
+              // XP progress as a ring around the avatar – a number badge looked like unread
+              // notifications.
+              Tooltip(
+                message: '${l.profile} · ${l.levelN(stats.level.level)}',
+                child: InkWell(
+                  key: const ValueKey('profileAvatar'),
+                  customBorder: const CircleBorder(),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())),
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox.expand(
+                          child: CircularProgressIndicator(
+                            value: stats.level.progress,
+                            strokeWidth: 2.5,
+                            color: AppColors.brand,
+                            backgroundColor: AppColors.brand.withValues(alpha: 0.15),
+                          ),
                         ),
-                      ),
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor: AppColors.brand.withValues(alpha: 0.25),
+                          child: Text(
+                            profile.name.isEmpty ? '?' : profile.name[0].toUpperCase(),
+                            style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.brand),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],

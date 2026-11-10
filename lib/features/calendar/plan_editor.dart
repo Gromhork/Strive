@@ -13,6 +13,7 @@ import '../../services/goal_model.dart';
 import '../../services/plan_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
+import '../../widgets/plan_amount.dart';
 import '../session/start_helpers.dart';
 import '../session/step_editor.dart';
 import '../../services/zones.dart';
@@ -23,9 +24,12 @@ import 'feasibility_card.dart';
 import 'replace_plan_dialog.dart';
 import '../train/gym_exercise_editor.dart';
 
+/// Result of [showPlanEditor] when the workout was deleted (the page showing it closes too).
+const planDeleted = 'deleted';
+
 /// Add or edit a planned workout (full-screen editor with phases for endurance).
-Future<void> showPlanEditor(BuildContext context, WidgetRef ref, {PlannedWorkout? existing, DateTime? date}) {
-  return Navigator.push(
+Future<Object?> showPlanEditor(BuildContext context, WidgetRef ref, {PlannedWorkout? existing, DateTime? date}) {
+  return Navigator.push<Object?>(
     context,
     MaterialPageRoute(fullscreenDialog: existing == null, builder: (_) => _PlanEditor(existing: existing, date: date ?? DateTime.now())),
   );
@@ -100,19 +104,10 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
   bool get _structured => _sport != Sport.gym && _steps.isNotEmpty;
 
   /// Duration / distance estimate of the structured workout.
+  /// The same estimate every screen shows ([planAmount]).
   (int, double?) _estimate(UserProfile p) {
-    var m = 0.0;
-    final pz = PaceZones(Vdot.of(p.athlete) ?? Vdot.defaultFor(p.level));
-    for (final s in _steps) {
-      if (s.durationSec != null) {
-        if (_sport == Sport.run && s.zone != 'walk') m += s.durationSec! / ((s.paceMin ?? pz.easySlow) + (s.paceMax ?? pz.easySlow)) * 2000;
-        if (_sport == Sport.ride) m += s.durationSec! / 3600 * (s.zone == 'Z1' ? 20000 : 27000);
-      } else if (s.distanceM != null) {
-        m += s.distanceM!;
-      }
-    }
     final sec = estimateStepsSec(_steps, _sport, p);
-    return (max(5, (sec / 60).round()), m <= 0 ? null : double.parse((m / 1000).toStringAsFixed(1)));
+    return (max(5, (sec / 60).round()), stepsKm(_steps, _sport, p));
   }
 
   void _save() {
@@ -374,7 +369,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
                 onPressed: () async {
                   if (!await confirm(context, l.delete, body: ex.title, ok: l.delete, danger: true)) return;
                   ref.read(repoProvider)!.deletePlan(ex.id);
-                  if (context.mounted) Navigator.pop(context);
+                  if (context.mounted) Navigator.pop(context, planDeleted);
                 },
               ),
           ],

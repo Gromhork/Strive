@@ -10,6 +10,7 @@ import '../../providers.dart';
 import '../../services/compliance.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
+import '../../widgets/plan_amount.dart';
 import '../calendar/planned_workout_page.dart';
 import '../stats/fitness_cards.dart';
 import '../stats/session_detail_page.dart';
@@ -103,7 +104,15 @@ class _WeekPageState extends ConsumerState<WeekPage> {
                     day: addDays(_week, i),
                     plans: plans.where((p) => sameDay(p.date, addDays(_week, i))).toList(),
                     linked: linked,
-                    sessions: sessions.where((s) => sameDay(s.start, addDays(_week, i)) && s.planId == null).toList(),
+                    // Sessions not fulfilling a plan of that day (incl. ones started from a workout days away).
+                    sessions:
+                        sessions
+                            .where(
+                              (s) =>
+                                  sameDay(s.start, addDays(_week, i)) &&
+                                  !plans.any((p) => sameDay(p.date, s.start) && linked[p.id]?.id == s.id),
+                            )
+                            .toList(),
                     units: u,
                   ),
               ],
@@ -172,7 +181,7 @@ class _SportRow extends StatelessWidget {
   }
 }
 
-class _DayRow extends StatelessWidget {
+class _DayRow extends ConsumerWidget {
   const _DayRow({required this.day, required this.plans, required this.linked, required this.sessions, required this.units});
   final DateTime day;
   final List<PlannedWorkout> plans;
@@ -181,18 +190,18 @@ class _DayRow extends StatelessWidget {
   final Units units;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
+    final profile = ref.watch(profileOrDefaultProvider);
+    final templates = ref.watch(templateListProvider);
     final today = sameDay(day, DateTime.now());
     final items = <Widget>[
       for (final p in plans)
         _Item(
           sport: p.sport,
           title: p.title,
-          sub: [
-            if (p.durationMin > 0) '${p.durationMin} min',
-            if (p.distanceKm != null && p.distanceKm! > 0) units.dist(p.distanceKm! * 1000, digits: 1),
-          ].join(' · '),
+          sub: planAmountText(p, profile, templates: templates),
+
           compliance: planCompliance(p, linked[p.id]),
           skipped: p.status == 'skipped',
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id))),
@@ -352,7 +361,7 @@ class RecoveryPage extends ConsumerWidget {
                 Text(text),
                 if (r.readiness != Readiness.building) ...[
                   const SizedBox(height: 16),
-                  Text('ACWR ${r.ratio.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Text('ACWR ${Units.fixed(r.ratio, 2)}', style: const TextStyle(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   _AcwrBar(value: ratio),
                 ],

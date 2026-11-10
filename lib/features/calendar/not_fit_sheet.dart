@@ -47,7 +47,7 @@ Future<void> showNotFitSheet(BuildContext context, WidgetRef ref, PlannedWorkout
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => NotFitSheet(plan: p, propose: (k, m) => advisor.propose(p, k, minutes: m, exercises: exercises)),
+    builder: (_) => NotFitSheet(plan: p, propose: (k, m, area) => advisor.propose(p, k, minutes: m, exercises: exercises, painArea: area)),
   );
   final repo = ref.read(repoProvider);
   if (plan == null || plan.isEmpty || repo == null) return;
@@ -65,7 +65,7 @@ Future<void> showNotFitSheet(BuildContext context, WidgetRef ref, PlannedWorkout
 class NotFitSheet extends StatefulWidget {
   const NotFitSheet({super.key, required this.plan, required this.propose});
   final PlannedWorkout plan;
-  final ReadinessPlan Function(Readiness kind, int? minutes) propose;
+  final ReadinessPlan Function(Readiness kind, int? minutes, String? painArea) propose;
 
   @override
   State<NotFitSheet> createState() => _NotFitSheetState();
@@ -74,6 +74,9 @@ class NotFitSheet extends StatefulWidget {
 class _NotFitSheetState extends State<NotFitSheet> {
   Readiness? _kind;
   int? _minutes;
+
+  /// Where it hurts (pain) – asked before a proposal is made.
+  String? _area;
 
   List<int> get _options => [
     for (final m in const [15, 20, 30, 45, 60, 75, 90])
@@ -85,7 +88,17 @@ class _NotFitSheetState extends State<NotFitSheet> {
     final l = context.l10n;
     final t = Theme.of(context).textTheme;
     final k = _kind;
-    final proposal = k == null ? null : widget.propose(k, k == Readiness.time ? _minutes : null);
+    final proposal =
+        k == null || (k == Readiness.pain && _area == null) ? null : widget.propose(k, k == Readiness.time ? _minutes : null, _area);
+    final areas = {
+      'knee': l.limitKnee,
+      'ankle': l.painFoot,
+      'hip': l.limitHip,
+      'back': l.limitBack,
+      'shoulder': l.limitShoulder,
+      'arm': l.painArm,
+      'neck': l.painNeck,
+    };
     final labels = {
       Readiness.sick: (l.notFitSick, Icons.sick_outlined),
       Readiness.pain: (l.notFitPain, Icons.personal_injury_outlined),
@@ -127,6 +140,25 @@ class _NotFitSheetState extends State<NotFitSheet> {
                         ),
                     ],
                   ),
+                  if (k == Readiness.pain) ...[
+                    const SizedBox(height: 14),
+                    Text(l.painWhere, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final e in areas.entries)
+                          ChoiceChip(
+                            key: ValueKey('painArea_${e.key}'),
+                            label: Text(e.value),
+                            selected: _area == e.key,
+                            showCheckmark: false,
+                            onSelected: (_) => setState(() => _area = e.key),
+                          ),
+                      ],
+                    ),
+                  ],
                   if (k == Readiness.time && _options.isNotEmpty) ...[
                     const SizedBox(height: 14),
                     Text(l.notFitMinutes, style: const TextStyle(fontWeight: FontWeight.w700)),

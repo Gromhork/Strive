@@ -165,7 +165,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get muscle => 'Muskel';
 
   @override
-  String get fitnessLevel => 'Leistungsstand';
+  String get fitnessLevel => 'Erfahrung';
 
   @override
   String get fitnessLevelSub => 'Sei ehrlich – der Plan passt sich an, wenn du besser wirst.';
@@ -398,7 +398,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String levelN(int level) {
-    return 'Level $level';
+    return 'XP-Stufe $level';
   }
 
   @override
@@ -578,7 +578,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get newPr => 'Neue Bestleistung!';
 
   @override
-  String get howHard => 'Wie anstrengend war es?';
+  String get howHard => 'Wie anstrengend war\'s?';
 
   @override
   String get notesHint => 'Notizen (Wie hat es sich angefühlt? Schlaf, Ernährung …)';
@@ -1880,13 +1880,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get diffEasy => 'Einfach';
 
   @override
-  String get diffEasySub => '+5 % Umfang/Woche, jede 3. Woche Erholung, fast nur lockere Einheiten.';
+  String get diffEasySub => '+5 % Umfang/Woche, jede 3. Woche eine Entlastungswoche, fast nur lockere Einheiten.';
 
   @override
   String get diffBalanced => 'Ausgewogen';
 
   @override
-  String get diffBalancedSub => '+8 % Umfang/Woche, jede 4. Woche Erholung, ~80/20 locker/hart.';
+  String get diffBalancedSub => '+8 % Umfang/Woche, jede 4. Woche eine Entlastungswoche, ~80/20 locker/hart.';
 
   @override
   String get diffChallenging => 'Herausfordernd';
@@ -2423,7 +2423,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get editPlanSettingsSub => 'Sportarten, Woche, Zeiten, Sportdaten, Ziel – danach neuer Plan';
 
   @override
-  String get editProfileSub => 'Name, Körperdaten, Level, Gesundheit';
+  String get editProfileSub => 'Name, Körperdaten, Erfahrung, Gesundheit';
 
   @override
   String get timeTitle => 'Zeit pro Trainingstag';
@@ -2770,7 +2770,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get keySessionSub => 'Wichtige Einheit der Woche – Strive hält harte Tage auseinander.';
 
   @override
-  String get workoutPhases => 'Phasen';
+  String get workoutPhases => 'Ablauf';
 
   @override
   String get planDone => 'Erledigt';
@@ -3212,17 +3212,17 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String adjustReplaces(String title) {
-    return 'ersetzt $title';
+    return 'Ersetzt $title';
   }
 
   @override
-  String get adjustDropped => 'entfällt – muss nicht nachgeholt werden';
+  String get adjustDropped => 'Entfällt – muss nicht nachgeholt werden';
 
   @override
-  String get adjustNoRoom => 'entfällt – diese Woche kein freier Tag ohne Schlüsseleinheit daneben';
+  String get adjustNoRoom => 'Entfällt – diese Woche kein freier Tag ohne Schlüsseleinheit daneben';
 
   @override
-  String get adjustProtected => 'entfällt – Entlastungs-/Taperwoche bleibt locker';
+  String get adjustProtected => 'Entfällt – Entlastungs-/Taperwoche bleibt locker';
 
   @override
   String get adjustDone => 'Woche angepasst';
@@ -3357,7 +3357,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get recalButton => 'Plan überprüfen';
 
   @override
-  String get recalTitle => 'Plan an dein Training anpassen';
+  String get recalTitle => 'Plan überprüfen';
 
   @override
   String get recalIntro => 'Deine nächsten zwei Wochen, angepasst an die letzten zwei: Anstrengung (RPE), erledigte und verpasste Einheiten, neue Bestleistungen. Erledigte Einheiten bleiben unverändert.';
@@ -3619,7 +3619,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get effortLimit => 'Limit';
 
   @override
-  String get howHardOptional => 'Wie anstrengend war es? (optional)';
+  String get howHardOptional => 'Wie anstrengend war\'s? (optional)';
 
   @override
   String get rpeOptionalHint => 'Hilft, deinen Plan anzupassen – kannst du auch weglassen.';
@@ -3757,7 +3757,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get termRirBody => 'Wie viele Wiederholungen du am Ende eines Satzes noch geschafft hättest. „2 im Tank“ heißt: zwei Wiederholungen vor dem Muskelversagen aufhören.';
 
   @override
-  String get termRirTip => 'Die Effort-Chips entsprechen dem: Leicht ≈ 4+, Passend ≈ 2–3, Schwer ≈ 1, Limit = 0. Die meisten Sätze sollten mit 1–3 im Tank enden.';
+  String get termRirTip => 'Die Bewertungs-Chips entsprechen dem: Leicht ≈ 4+, Passend ≈ 2–3, Schwer ≈ 1, Limit = 0. Die meisten Sätze sollten mit 1–3 im Tank enden.';
 
   @override
   String get termE1rmTitle => 'e1RM – geschätztes Maximalgewicht';
@@ -4110,7 +4110,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get fcConfMedium => 'aus deinen Einheiten';
 
   @override
-  String get fcConfHigh => 'aus einem Wettkampf-Effort';
+  String get fcConfHigh => 'aus einem Wettkampfergebnis';
 
   @override
   String get fcInRecal => 'Zielprognose';
@@ -4254,7 +4254,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get summaryEffortTitle => 'Wie hart war\'s? Dein Plan passt sich daran an.';
+  String get summaryEffortTitle => 'Wie anstrengend war\'s? Dein Plan passt sich daran an.';
 
   @override
   String get summaryEffortHint => 'Optional · 1 = ganz locker, 10 = alles gegeben';
@@ -4303,7 +4303,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get planLogNew => 'neu';
 
   @override
-  String get planLogDropped => 'entfällt';
+  String get planLogDropped => 'Entfällt';
 
   @override
   String get planLogUndoDone => 'Änderung rückgängig gemacht';
@@ -4884,10 +4884,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get progOptRunWalkRace => 'Den Wettkampf mit Lauf/Geh-Wechsel planen';
 
   @override
-  String get targetSuggestBasisRace => 'Auf Basis deiner Wettkampfzeiten';
+  String get targetSuggestBasisRace => 'aus deinen Bestzeiten';
 
   @override
-  String get targetSuggestBasisEfforts => 'Auf Basis deiner letzten Läufe';
+  String get targetSuggestBasisEfforts => 'aus deinen letzten Läufen';
 
   @override
   String get targetSuggestBasisLevel => 'Grobe Schätzung nach deinem Level – eine Wettkampfzeit macht sie genauer';
@@ -4897,7 +4897,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String targetSuggestRange(String time, String fast, String slow) {
-    return 'Vorschlag $time (Spanne $fast – $slow)';
+    return 'Realistisch: $time ($fast–$slow)';
   }
 
   @override
@@ -5158,5 +5158,293 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String programPreviewSets(int sets) {
     return '$sets Sätze';
+  }
+
+  @override
+  String get raceToday => 'heute ist Wettkampftag';
+
+  @override
+  String phaseWeekOf(String phase, int n, int total) {
+    return '$phase (Woche $n/$total)';
+  }
+
+  @override
+  String get raceType => 'Art des Wettkampfs';
+
+  @override
+  String alignChangesFocus(String focus) {
+    return 'Dein Trainingsfokus wird auf $focus umgestellt, damit der Plan zu diesem Wettkampf passt.';
+  }
+
+  @override
+  String get goalNeedsExercise => 'Wähle eine Übung.';
+
+  @override
+  String get goalNeedsDate => 'Wähle das Datum des Wettkampfs.';
+
+  @override
+  String get goalNeedsDistance => 'Wähle eine Distanz oder gib die km ein.';
+
+  @override
+  String get goalNeedsTarget => 'Gib ein Ziel größer als 0 ein.';
+
+  @override
+  String get deleteGoalTitle => 'Ziel löschen?';
+
+  @override
+  String goalDeleted(String title) {
+    return '„$title“ gelöscht';
+  }
+
+  @override
+  String eventSubFor(String examples) {
+    return 'Füge einen Wettkampf hinzu (z. B. $examples) und erhalte einen Countdown. Optional.';
+  }
+
+  @override
+  String get recreatePlan => 'Plan neu erstellen';
+
+  @override
+  String get summaryTitle => 'Prüfen & erstellen';
+
+  @override
+  String get summarySub => 'Dein Plan wird mit diesen Einstellungen neu erstellt.';
+
+  @override
+  String get summaryChanges => 'Das ändert sich:';
+
+  @override
+  String get summaryNoChanges => 'Nichts – der Plan wird mit denselben Einstellungen neu erstellt.';
+
+  @override
+  String get summaryWeek => 'Trainingswoche';
+
+  @override
+  String get summaryRace => 'Wettkampf';
+
+  @override
+  String get noRace => 'kein Wettkampf';
+
+  @override
+  String planWeeksN(int weeks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      weeks,
+      locale: localeName,
+      other: '$weeks Wochen',
+      one: '1 Woche',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get hiddenShort => 'gefiltert';
+
+  @override
+  String get secureGuestTitle => 'Sichere deine Daten';
+
+  @override
+  String get secureGuestBody => 'Du trainierst als Gast – verknüpfe E-Mail oder Google, damit deine Einheiten und dein Plan nicht verloren gehen.';
+
+  @override
+  String get secureGuestButton => 'E-Mail oder Google verknüpfen';
+
+  @override
+  String get guestLogoutTitle => 'Als Gast abmelden?';
+
+  @override
+  String get guestLogoutBody => 'Als Gast abmelden löscht alle Daten auf diesem Gerät.';
+
+  @override
+  String get guestLogoutAnyway => 'Trotzdem abmelden';
+
+  @override
+  String get guestSecureFirst => 'Erst sichern';
+
+  @override
+  String experienceIs(String value) {
+    return 'Erfahrung: $value';
+  }
+
+  @override
+  String get planGone => 'Diese Einheit gibt es nicht mehr.';
+
+  @override
+  String get logAsDone => 'Als erledigt eintragen';
+
+  @override
+  String planMoved(String title, String date) {
+    return '$title auf $date verschoben';
+  }
+
+  @override
+  String get planLogMoved => 'Einheit verschoben';
+
+  @override
+  String planLogCreated(String date) {
+    return 'Plan erstellt – Start am $date';
+  }
+
+  @override
+  String get legendDone => 'erledigt';
+
+  @override
+  String get legendPlanned => 'geplant';
+
+  @override
+  String get legendOnTarget => 'wie geplant';
+
+  @override
+  String get legendPartly => 'teilweise';
+
+  @override
+  String get legendOff => 'stark abweichend';
+
+  @override
+  String get legendMissed => 'verpasst';
+
+  @override
+  String replacesDayWorkout(String day) {
+    return 'ersetzt $day-Einheit';
+  }
+
+  @override
+  String get painWhere => 'Wo tut es weh?';
+
+  @override
+  String get painFoot => 'Fuß / Sprunggelenk';
+
+  @override
+  String get painArm => 'Arm / Hand';
+
+  @override
+  String get painNeck => 'Nacken';
+
+  @override
+  String get yes => 'Ja';
+
+  @override
+  String get no => 'Nein';
+
+  @override
+  String countAsReplacement(String title, String day) {
+    return 'Als Ersatz für $title ($day) werten?';
+  }
+
+  @override
+  String get countAsReplacementSub => 'Du hast sie aus einer Einheit eines anderen Tags gestartet. Ja hakt diese Einheit ab, Nein lässt sie offen.';
+
+  @override
+  String replacementDone(String title) {
+    return '$title zählt als erledigt';
+  }
+
+  @override
+  String plannedLine(String title, String amount) {
+    return 'Geplant: $title · $amount';
+  }
+
+  @override
+  String fulfilledPct(String share) {
+    return '$share erfüllt';
+  }
+
+  @override
+  String coachRpeHigh(String title, int n) {
+    return '$title mit RPE $n – nächste Woche etwas ruhiger?';
+  }
+
+  @override
+  String get coachAsPlanned => 'Wie geplant erledigt – gut gemacht.';
+
+  @override
+  String get coachShorter => 'Kürzer als geplant – kein Problem, nicht nachholen.';
+
+  @override
+  String get coachLonger => 'Länger als geplant – halte die nächste lockere Einheit wirklich locker.';
+
+  @override
+  String maxRepsN(int reps) {
+    String _temp0 = intl.Intl.pluralLogic(
+      reps,
+      locale: localeName,
+      other: '$reps Wdh.',
+      one: '1 Wdh.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String predictionBasis(String dist, String time, String source) {
+    return 'Basierend auf $dist in $time ($source)';
+  }
+
+  @override
+  String get predictionFromProfile => 'Profil';
+
+  @override
+  String predictionFromRun(String date) {
+    return 'Lauf am $date';
+  }
+
+  @override
+  String get recalSubtitle => 'Vorschläge für die nächsten 2 Wochen';
+
+  @override
+  String get termKeyTitle => 'Schlüsseleinheit';
+
+  @override
+  String get termKeyBody => 'Die ein bis zwei Einheiten einer Woche, die deine Form am meisten voranbringen – z. B. Intervalle, ein Tempolauf oder der lange Lauf. Die übrigen Einheiten sind locker und helfen dir, dich dafür zu erholen.';
+
+  @override
+  String get termKeyTip => 'Eine verpasst? „Woche anpassen“ legt sie auf einen freien Tag – nie direkt neben eine andere Schlüsseleinheit.';
+
+  @override
+  String get termLoadWeekTitle => 'Belastungswoche';
+
+  @override
+  String get termLoadWeekBody => 'Eine normale Trainingswoche, in der Umfang oder Intensität etwas steigen. Auf zwei bis vier Belastungswochen folgt eine Entlastungswoche.';
+
+  @override
+  String get termLoadWeekTip => 'Etwas Müdigkeit am Ende einer Belastungswoche ist normal – die Entlastungswoche macht daraus Form.';
+
+  @override
+  String get termDeloadTitle => 'Entlastungswoche';
+
+  @override
+  String get termDeloadBody => 'Alle 3–5 Wochen eine leichtere Woche (etwa 60–70 % des Umfangs, wenig Intensität). In dieser Zeit passt sich dein Körper an das Training an.';
+
+  @override
+  String get termDeloadTip => 'Den fehlenden Umfang nicht nachholen – die Woche soll sich leicht anfühlen.';
+
+  @override
+  String get termStridesTitle => 'Steigerungen';
+
+  @override
+  String get termStridesBody => 'Kurze Beschleunigungen über 15–30 s bis zu einem schnellen, aber lockeren Tempo, dazwischen volle Erholung. Sie verbessern Laufökonomie und Technik, ohne zu ermüden.';
+
+  @override
+  String get termStridesTip => 'Locker bleiben: Schultern entspannt, schnelle Schritte – es ist kein Sprint.';
+
+  @override
+  String get termFartlekTitle => 'Fahrtspiel';
+
+  @override
+  String get termFartlekBody => 'Schnellere und lockere Abschnitte wechseln nach Gefühl oder nach Zeit, ohne feste Strecken. Eine spielerische Art, Tempo in einen Lauf zu bringen.';
+
+  @override
+  String get termFartlekTip => 'Nutze Orientierungspunkte: schneller bis zur nächsten Laterne, locker bis zur nächsten Ecke.';
+
+  @override
+  String get termAcwrTitle => 'ACWR – Akut-chronische Belastung';
+
+  @override
+  String get termAcwrBody => 'Deine Belastung der letzten 7 Tage (akut, ATL) im Vergleich zu deiner Durchschnittswoche der letzten 28 Tage (chronisch, CTL). Zwischen 0,8 und 1,3 baust du Form bei geringem Verletzungsrisiko auf; über 1,5 steigt das Risiko deutlich.';
+
+  @override
+  String get termAcwrTip => 'Hoher Wert? Plane einen lockeren Tag ein, statt noch mehr draufzulegen.';
+
+  @override
+  String daysLeftInline(int days) {
+    return 'noch $days Tage';
   }
 }

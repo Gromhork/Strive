@@ -268,7 +268,7 @@ class _ProgressHeader extends StatelessWidget {
                       ),
                 ),
               ),
-              _MiniStat(label: l.volume, value: '${compactNumber(units.weightOut(w.volume))} ${units.weightUnit}'),
+              _MiniStat(label: l.volume, value: units.volume(w.volume)),
               const SizedBox(width: 18),
               _MiniStat(label: l.sets, value: '${w.doneSets}/${w.totalSets}'),
             ],

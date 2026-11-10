@@ -14,6 +14,7 @@ import '../../widgets/common.dart';
 import '../calendar/auto_adjust.dart' show undoAutoAdjust;
 import '../session/route_map.dart';
 import 'edit_session_page.dart';
+import 'plan_link_card.dart';
 import '../session/gym_session_page.dart' show setLabel;
 import '../../widgets/rpe_picker.dart' show rpeLabel;
 
@@ -116,7 +117,7 @@ class SessionDetailPage extends ConsumerWidget {
               children: [
                 _half(context, StatTile(label: l.duration, value: clock(s.durationSec))),
                 if (s.sport == Sport.gym) ...[
-                  _half(context, StatTile(label: l.volume, value: u.weight(s.volume, digits: 0), color: AppColors.gym)),
+                  _half(context, StatTile(label: l.volume, value: u.volume(s.volume), color: AppColors.gym)),
                   _half(context, StatTile(label: l.sets, value: '${s.setsDone}')),
                 ] else ...[
                   _half(
@@ -147,6 +148,7 @@ class SessionDetailPage extends ConsumerWidget {
               ],
             ),
           ),
+          PlanLinkCard(session: s),
           if (s.source != null) ...[
             const SizedBox(height: 8),
             Row(
@@ -205,8 +207,8 @@ class SessionDetailPage extends ConsumerWidget {
                   if (s.sport == Sport.gym)
                     _CompareRow(
                       l.volume,
-                      u.weight(s.volume, digits: 0),
-                      delta(u.weightOut(s.volume), u.weightOut(prev.volume), fmt: (d) => '${d.round()} ${u.weightUnit}'),
+                      u.volume(s.volume),
+                      delta(u.weightOut(s.volume), u.weightOut(prev.volume), fmt: (d) => '${Units.grouped(d)} ${u.weightUnit}'),
                     )
                   else if (s.distanceM > 0 && prev.distanceM > 0) ...[
                     _CompareRow(
@@ -248,7 +250,7 @@ class SessionDetailPage extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: SectionCard(
                   title: e.name.isEmpty ? '' : e.name[0].toUpperCase() + e.name.substring(1),
-                  trailing: Text(u.weight(e.volume, digits: 0), style: Theme.of(context).textTheme.labelSmall),
+                  trailing: Text(u.volume(e.volume), style: Theme.of(context).textTheme.labelSmall),
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -278,7 +280,7 @@ class SessionDetailPage extends ConsumerWidget {
       '${s.sport.label(l)}: ${s.title}',
       clock(s.durationSec),
       if (s.distanceM > 0) s.sport == Sport.swim ? u.swimDist(s.distanceM) : u.dist(s.distanceM),
-      if (s.volume > 0) u.weight(s.volume, digits: 0),
+      if (s.volume > 0) u.volume(s.volume),
     ];
     return '${parts.join(' · ')}\n${l.sharedFromStrive}';
   }

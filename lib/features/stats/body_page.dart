@@ -46,8 +46,8 @@ class BodyPage extends ConsumerWidget {
                 subtitle: Text(
                   [
                     df.format(b.date),
-                    if (b.fatPct != null) '${l.bodyFat} ${Units.num(b.fatPct!)}%',
-                    if (b.musclePct != null) '${l.muscleMass} ${Units.num(b.musclePct!)}%',
+                    if (b.fatPct != null) '${l.bodyFat} ${Units.num(b.fatPct!)}${Units.pctSign}',
+                    if (b.musclePct != null) '${l.muscleMass} ${Units.num(b.musclePct!)}${Units.pctSign}',
                   ].join(' · '),
                 ),
                 onTap: () => showBodyEntrySheet(context, ref, existing: b),
@@ -101,9 +101,13 @@ class _BodyCompositionCardState extends ConsumerState<BodyCompositionCard> {
           Row(
             children: [
               Expanded(child: StatTile(label: l.weight, value: last == null ? u.weight(p.weightKg) : u.weight(last.weightKg))),
-              Expanded(child: StatTile(label: 'BMI', value: (last == null ? p.bmi : last.weightKg / (h * h)).toStringAsFixed(1))),
-              Expanded(child: StatTile(label: l.bodyFat, value: last?.fatPct == null ? '–' : '${Units.num(last!.fatPct!)}%')),
-              Expanded(child: StatTile(label: l.muscle, value: last?.musclePct == null ? '–' : '${Units.num(last!.musclePct!)}%')),
+              Expanded(child: StatTile(label: 'BMI', value: Units.fixed(last == null ? p.bmi : last.weightKg / (h * h)))),
+              Expanded(
+                child: StatTile(label: l.bodyFat, value: last?.fatPct == null ? '–' : '${Units.num(last!.fatPct!)}${Units.pctSign}'),
+              ),
+              Expanded(
+                child: StatTile(label: l.muscle, value: last?.musclePct == null ? '–' : '${Units.num(last!.musclePct!)}${Units.pctSign}'),
+              ),
             ],
           ),
           const SizedBox(height: 12),

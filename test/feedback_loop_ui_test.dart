@@ -217,7 +217,7 @@ void main() {
                       result = await showModalBottomSheet<ReadinessPlan>(
                         context: context,
                         isScrollControlled: true,
-                        builder: (_) => NotFitSheet(plan: p, propose: (k, m) => advisor.propose(p, k, minutes: m)),
+                        builder: (_) => NotFitSheet(plan: p, propose: (k, m, a) => advisor.propose(p, k, minutes: m, painArea: a)),
                       );
                     },
                     child: const Text('open'),

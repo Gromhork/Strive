@@ -17,7 +17,6 @@ import '../calendar/replace_plan_dialog.dart';
 import '../shell/account.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
-import '../../services/target_suggestion.dart';
 import '../../services/event_spec.dart';
 import '../../services/goal_model.dart';
 import '../../services/plan_generator.dart';
@@ -25,6 +24,9 @@ import '../../services/plan_service.dart';
 import '../../services/schedule_advisor.dart';
 import '../../services/zones.dart';
 import '../../widgets/common.dart';
+import '../../widgets/target_suggestion_line.dart';
+import '../goals/goal_forecast_widgets.dart' show activeEventGoal;
+import '../goals/goals_page.dart' show eventKeyForKm;
 import '../../widgets/event_distance_picker.dart';
 import '../../widgets/term_info.dart';
 import '../../widgets/segments.dart';
@@ -83,10 +85,76 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     p = ref.read(profileProvider).value ?? UserProfile(name: _accountName(), birthYear: DateTime.now().year - 28);
     a = p.athlete;
     _eventName.text = a.eventName ?? '';
+    if (widget.mode == SetupMode.plan) _prefillWeek();
+    _orig = _profile;
+    _origName = _eventName.text;
+    if (widget.mode == SetupMode.plan) {
+      // The goals may still be loading (nothing else listened yet): prefill once they arrive.
+      ref.listenManual(goalsProvider, (_, next) {
+        final goals = next.value;
+        if (_goalPrefilled || goals == null) return;
+        _goalPrefilled = true;
+        _inInit ? _prefillGoal(goals) : setState(() => _prefillGoal(goals));
+      }, fireImmediately: true);
+    }
+    _inInit = false;
     _name.text = p.name;
     _imperial = p.imperial;
     _generatePlan = widget.mode != SetupMode.profile;
   }
+
+  bool _goalPrefilled = false;
+  bool _inInit = true;
+
+  /// Plan settings start from what the current plan is built on: the race of the active
+  /// event goal (name, date, distance – the focus follows a multisport race) and, in the
+  /// detailed setup, the week of the current plan (every sport in it, e.g. its swim session).
+  void _prefillGoal(List<Goal> goals) {
+    final today = dayOnly(DateTime.now());
+    final goal = activeEventGoal(goals, today);
+    if (goal != null) {
+      final key = eventDistanceOf(goal.eventKey) != null ? goal.eventKey : eventKeyForKm(goal.eventKm ?? goal.target);
+      final sameRace = a.eventDate != null && sameDay(a.eventDate!, goal.deadline!);
+      a = a.merge({
+        'eventDate': goal.deadline,
+        if (key != null) 'eventDistance': key,
+        if (key != null && !(sameRace && a.eventDistance == key)) 'targetTimeSec': null,
+        'eventName': goal.title,
+      });
+      if (key != null && !eventFitsFocus(key, p.focus)) p = p.copyWith(focus: eventDistanceOf(key)!.sport.focus);
+      _withEvent = true;
+      _eventName.text = goal.title;
+    }
+  }
+
+  void _prefillWeek() {
+    if (!_advanced) return;
+    // The week the current plan really has (incl. e.g. its swim session) – a stored day plan
+    // can be older than the plan.
+    final week = _currentWeek();
+    if (week.isNotEmpty) {
+      a = a.merge({'dayPlan': week, if (week.values.any((v) => v.length > 1)) 'sessionsPerDay': 2});
+    } else if (a.dayPlan.values.every((v) => v.isEmpty)) {
+      a = a.merge({'dayPlan': PlanGenerator.scheduleOf(_quickProfile)});
+    }
+  }
+
+  /// Weekday → sports of the current plan's next seven days (at most two per day).
+  Map<int, List<Sport>> _currentWeek() {
+    final today = dayOnly(DateTime.now());
+    final end = addDays(today, 7);
+    final out = <int, List<Sport>>{};
+    for (final w in ref.read(planListProvider)) {
+      if (w.status == 'skipped' || w.date.isBefore(today) || !w.date.isBefore(end)) continue;
+      final list = out.putIfAbsent(w.date.weekday, () => []);
+      if (!list.contains(w.sport) && list.length < 2) list.add(w.sport);
+    }
+    return out;
+  }
+
+  /// The settings when the page opened (the summary lists what changed).
+  late UserProfile _orig;
+  late String _origName;
 
   @override
   void dispose() {
@@ -147,6 +215,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       if (profile) ('health', _health),
       if (plan) ('event', _event),
       if (plan) ('plan', _plan),
+      if (widget.mode == SetupMode.plan) ('summary', _summary),
     ];
   }
 
@@ -264,6 +333,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           sport: profile.focus.sports.last,
           target: km ?? 0,
           eventKm: km,
+          eventKey: a.eventDistance,
           created: existing?.created ?? now,
           deadline: a.eventDate,
         ),
@@ -347,7 +417,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   height: 52,
                   child: FilledButton(
                     onPressed: _page == 0 && widget.mode == SetupMode.setup && _name.text.trim().isEmpty ? null : _next,
-                    child: Text(last ? (widget.edit ? l.save : l.letsGo) : l.next),
+                    child: Text(
+                      last ? (widget.mode == SetupMode.plan && _generatePlan ? l.recreatePlan : (widget.edit ? l.save : l.letsGo)) : l.next,
+                    ),
                   ),
                 ),
               ),
@@ -460,13 +532,27 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       );
 
   /// Duration input as "mm:ss" or "h:mm:ss".
-  Widget _timeField(String label, int? seconds, ValueChanged<int?> onChanged, {String hint = 'mm:ss', Key? key}) => TextFormField(
-    key: key,
-    initialValue: seconds == null ? '' : clock(seconds),
-    keyboardType: TextInputType.datetime,
-    decoration: InputDecoration(labelText: label, hintText: hint, prefixIcon: const Icon(Icons.timer_outlined, size: 20)),
-    onChanged: (v) => onChanged(parseClock(v)),
-  );
+  /// [inline]: the label (a short distance like "5 km") stays inside the field as a suffix –
+  /// a floating label sat outside the filled box.
+  Widget _timeField(String label, int? seconds, ValueChanged<int?> onChanged, {String hint = 'mm:ss', Key? key, bool inline = false}) =>
+      TextFormField(
+        key: key,
+        initialValue: seconds == null ? '' : clock(seconds),
+        keyboardType: TextInputType.datetime,
+        decoration: InputDecoration(
+          labelText: inline ? null : label,
+          hintText: hint,
+          prefixIcon: const Icon(Icons.timer_outlined, size: 20),
+          suffixIcon:
+              inline
+                  ? Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Align(widthFactor: 1, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600))),
+                  )
+                  : null,
+        ),
+        onChanged: (v) => onChanged(parseClock(v)),
+      );
 
   // ───────────────────────────── pages ─────────────────────────────
 
@@ -578,7 +664,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           ),
         ],
         const SizedBox(height: 8),
-        Text('BMI ${p.bmi.toStringAsFixed(1)}', style: Theme.of(context).textTheme.bodySmall),
+        Text('BMI ${Units.fixed(p.bmi)}', style: Theme.of(context).textTheme.bodySmall),
         if (widget.mode == SetupMode.profile) ...[_label(l.units), _unitsSwitch(l)],
       ],
     );
@@ -655,7 +741,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             value: a.setupMode,
             onChanged: (v) {
               _setA({'setupMode': v});
-              if (v == 'advanced' && a.dayPlan.values.every((x) => x.isEmpty)) _setA({'dayPlan': PlanGenerator.deriveSchedule(_profile)});
+              if (v == 'advanced' && a.dayPlan.values.every((x) => x.isEmpty)) {
+                final week = _currentWeek();
+                _setA({'dayPlan': week.isNotEmpty ? week : PlanGenerator.scheduleOf(_quickProfile)});
+              }
               _syncDayPlan();
             },
           ),
@@ -994,7 +1083,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           children: [
             const SizedBox(width: 46),
             for (final s in sports)
-              Expanded(child: Center(child: Text(s.label(l), style: TextStyle(fontSize: 11, color: s.color, fontWeight: FontWeight.w600)))),
+              Expanded(
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(s.label(l), maxLines: 1, style: TextStyle(fontSize: 11, color: s.color, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ),
             const SizedBox(width: 40),
           ],
         ),
@@ -1076,17 +1172,17 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _label(l.raceTimesTitle, hint: l.raceTimesHint),
         Row(
           children: [
-            Expanded(child: _timeField('5 km', a.raceTimes['5k'], (v) => _setRace('5k', v))),
+            Expanded(child: _timeField('5 km', a.raceTimes['5k'], (v) => _setRace('5k', v), inline: true)),
             const SizedBox(width: 12),
-            Expanded(child: _timeField('10 km', a.raceTimes['10k'], (v) => _setRace('10k', v))),
+            Expanded(child: _timeField('10 km', a.raceTimes['10k'], (v) => _setRace('10k', v), inline: true)),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _timeField('21,1 km', a.raceTimes['hm'], (v) => _setRace('hm', v), hint: 'h:mm:ss')),
+            Expanded(child: _timeField('21,1 km', a.raceTimes['hm'], (v) => _setRace('hm', v), hint: 'h:mm:ss', inline: true)),
             const SizedBox(width: 12),
-            Expanded(child: _timeField('42,2 km', a.raceTimes['m'], (v) => _setRace('m', v), hint: 'h:mm:ss')),
+            Expanded(child: _timeField('42,2 km', a.raceTimes['m'], (v) => _setRace('m', v), hint: 'h:mm:ss', inline: true)),
           ],
         ),
         if (vdot != null) ...[const SizedBox(height: 12), _ZonesPreview(vdot: vdot)],
@@ -1186,9 +1282,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _label(l.cssTitle, hint: l.cssHint, term: Term.css),
         Row(
           children: [
-            Expanded(child: _timeField('400 m', a.swim400Sec, (v) => _setA({'swim400Sec': v}))),
+            Expanded(child: _timeField('400 m', a.swim400Sec, (v) => _setA({'swim400Sec': v}), inline: true)),
             const SizedBox(width: 12),
-            Expanded(child: _timeField('200 m', a.swim200Sec, (v) => _setA({'swim200Sec': v}))),
+            Expanded(child: _timeField('200 m', a.swim200Sec, (v) => _setA({'swim200Sec': v}), inline: true)),
           ],
         ),
         if (css != null)
@@ -1377,7 +1473,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _h(l.eventQuestion, l.eventSub, icon: Icons.emoji_events_outlined, color: AppColors.warning),
+        // The examples are the races offered for this focus (hybrid: running races only).
+        _h(
+          l.eventQuestion,
+          l.eventSubFor([for (final d in eventDistancesFor(sport).where((d) => d.primary).take(3)) d.label(l)].join(', ')),
+          icon: Icons.emoji_events_outlined,
+          color: AppColors.warning,
+        ),
         // Race goal or just a plan length – both are first-class choices.
         SizedBox(
           width: double.infinity,
@@ -1449,47 +1551,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final key = a.eventDistance;
     final date = a.eventDate;
     if (key == null || date == null) return const SizedBox.shrink();
-    final sug = suggestTargetTime(_advanced ? _profile : _quickProfile, key, date, sessions: ref.read(sessionListProvider));
-    final t = Theme.of(context).textTheme;
-    final basis = switch (sug.basis) {
-      TargetBasis.raceTimes => l.targetSuggestBasisRace,
-      TargetBasis.bestEfforts => l.targetSuggestBasisEfforts,
-      TargetBasis.levelEstimate => l.targetSuggestBasisLevel,
-      TargetBasis.finishOnly => l.targetSuggestFinish,
-    };
-    return Container(
-      key: const ValueKey('targetSuggestion'),
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
-      decoration: BoxDecoration(color: AppColors.run.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
-      child: Row(
-        children: [
-          const Icon(Icons.auto_awesome_outlined, size: 18, color: AppColors.run),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (sug.sec != null)
-                  Text(
-                    l.targetSuggestRange(clock(sug.sec!), clock(sug.fastSec ?? sug.sec!), clock(sug.slowSec ?? sug.sec!)),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                Text(basis, style: t.bodySmall),
-              ],
-            ),
-          ),
-          if (sug.sec != null && a.targetTimeSec != sug.sec)
-            TextButton(
-              key: const ValueKey('takeSuggestion'),
-              onPressed: () {
-                _targetRev++;
-                _setA({'targetTimeSec': sug.sec});
-              },
-              child: Text(l.apply),
-            ),
-        ],
-      ),
+    return TargetSuggestionLine(
+      profile: _advanced ? _profile : _quickProfile,
+      eventKey: key,
+      eventDate: date,
+      sessions: ref.read(sessionListProvider),
+      current: a.targetTimeSec,
+      onApply: (sec) {
+        _targetRev++;
+        _setA({'targetTimeSec': sec});
+      },
     );
   }
 
@@ -1507,9 +1578,24 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             for (final (w, label) in options)
               ChoiceChip(
                 key: ValueKey('weeks$w'),
-                label: Text(label),
+                // The recommended lengths carry the same "Empfohlen" badge as the difficulty
+                // cards (an icon in the avatar slot collided with the selection check).
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(label),
+                    if (w >= rec.$1 && w <= rec.$2) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        key: ValueKey('weeksRec$w'),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(color: AppColors.brand, borderRadius: BorderRadius.circular(8)),
+                        child: Text(l.recommended, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ],
+                ),
                 selected: a.planWeeks == w,
-                avatar: w >= rec.$1 && w <= rec.$2 ? const Icon(Icons.thumb_up_alt_outlined, size: 16) : null,
                 onSelected: (_) => _setA({'planWeeks': w}),
               ),
           ],
@@ -1527,6 +1613,43 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     // No race: the generator's recommendation for focus and level.
     final r = PlanGenerator.recommendedWeeks(_profile);
     return (r.min, r.max);
+  }
+
+  /// Last step of the plan settings: "Das ändert sich: …", then "Plan neu erstellen" (with
+  /// the usual replace confirmation).
+  Widget _summary(AppLocalizations l) {
+    final now = _advanced ? _profile : _quickProfile;
+    final before =
+        _orig.athlete.setupMode == 'advanced'
+            ? _orig
+            : _orig.copyWith(athlete: _orig.athlete.merge({'setupMode': 'simple', 'sessionsPerDay': 1}));
+    final changes = planSettingChanges(l, context.localeName, before, now, nameBefore: _origName, nameAfter: _eventName.text.trim());
+    final t = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _h(l.summaryTitle, l.summarySub, icon: Icons.fact_check_outlined),
+        Text(l.summaryChanges, style: const TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        if (changes.isEmpty)
+          Text(l.summaryNoChanges, key: const ValueKey('summaryNoChanges'), style: t.bodyMedium)
+        else
+          for (final c in changes)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.arrow_right_rounded, size: 20, color: AppColors.brand)),
+                  const SizedBox(width: 4),
+                  Expanded(child: Text(c, style: t.bodyMedium)),
+                ],
+              ),
+            ),
+        const SizedBox(height: 12),
+        if (_generatePlan) Text(l.planKeepsDone, style: t.bodySmall),
+      ],
+    );
   }
 
   Widget _plan(AppLocalizations l) {
@@ -1618,6 +1741,58 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 }
 
+/// What the new plan settings change compared with [before] – one line each (empty: nothing).
+List<String> planSettingChanges(
+  AppLocalizations l,
+  String locale,
+  UserProfile before,
+  UserProfile after, {
+  String? nameBefore,
+  String? nameAfter,
+}) {
+  final b = before.athlete, a = after.athlete;
+  final df = DateFormat.yMMMd(locale);
+  String days(UserProfile p) {
+    final week = PlanGenerator.scheduleOf(p);
+    final names = DateFormat.E(locale);
+    return ([...week.keys]
+      ..sort()).map((d) => '${names.format(DateTime(2024, 1, d))} ${week[d]!.map((s) => s.label(l)).join('+')}').join(', ');
+  }
+
+  String race(AthleteData x, String? name) {
+    if (x.eventDate == null) return l.noRace;
+    return [
+      if (name != null && name.isNotEmpty) name,
+      if (eventDistanceOf(x.eventDistance) != null) eventDistanceLabel(l, x.eventDistance!),
+      df.format(x.eventDate!),
+      if (x.targetTimeSec != null) clock(x.targetTimeSec!),
+    ].join(' · ');
+  }
+
+  String diff(String d) => switch (d) {
+    'easy' => l.diffEasy,
+    'challenging' => l.diffChallenging,
+    _ => l.diffBalanced,
+  };
+  final out = <String>[];
+  void add(String label, String from, String to) {
+    if (from != to) out.add('$label: $from → $to');
+  }
+
+  add(l.focusTitle, before.focus.label(l), after.focus.label(l));
+  add(
+    l.setupModeTitle,
+    b.setupMode == 'advanced' ? l.setupDetailed : l.setupQuick,
+    a.setupMode == 'advanced' ? l.setupDetailed : l.setupQuick,
+  );
+  add(l.summaryWeek, days(before), days(after));
+  add(l.timeTitle, '${b.sessionMinutes} min', '${a.sessionMinutes} min');
+  add(l.summaryRace, race(b, nameBefore), race(a, nameAfter));
+  if (a.eventDate == null) add(l.planLength, l.planWeeksN(b.planWeeks), l.planWeeksN(a.planWeeks));
+  add(l.difficultyTitle, diff(b.difficulty), diff(a.difficulty));
+  return out;
+}
+
 /// Live pace zones preview from the entered race times (VDOT).
 class _ZonesPreview extends StatelessWidget {
   const _ZonesPreview({required this.vdot});
@@ -1645,9 +1820,7 @@ class _ZonesPreview extends StatelessWidget {
         children: [
           Row(
             children: [
-              Flexible(
-                child: Text('${l.yourPaceZones} · VDOT ${vdot.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.w700)),
-              ),
+              Flexible(child: Text('${l.yourPaceZones} · VDOT ${Units.fixed(vdot)}', style: const TextStyle(fontWeight: FontWeight.w700))),
               const TermInfoButton(Term.vdot),
             ],
           ),

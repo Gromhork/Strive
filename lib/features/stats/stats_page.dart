@@ -71,7 +71,9 @@ class _PerformanceState extends ConsumerState<_Performance> {
     for (final x in all) {
       minutesByDay[dayOnly(x.start)] = (minutesByDay[dayOnly(x.start)] ?? 0) + x.minutes;
     }
-    final records = ref.watch(exerciseRecordsProvider).values.toList()..sort((a, b) => b.sessions.compareTo(a.sessions));
+    // e1RM chart: lifts with a load only (no 0-kg core / bodyweight lines), most-trained first.
+    final records =
+        ref.watch(exerciseRecordsProvider).values.where((r) => r.bestE1rm > 0).toList()..sort((a, b) => b.sessions.compareTo(a.sessions));
     final shownRecords = records.take(25).toList();
     // The selection may drop out of the top 25 (or vanish) when sessions change → fall back to the first.
     final exId = shownRecords.any((r) => r.exId == _exId) ? _exId : shownRecords.firstOrNull?.exId;
@@ -100,23 +102,14 @@ class _PerformanceState extends ConsumerState<_Performance> {
                   Expanded(
                     child: StatTile(label: l.distance, value: u.dist(dist, digits: 1), icon: Icons.straighten, color: AppColors.run),
                   ),
-                  Expanded(
-                    child: StatTile(
-                      label: l.volume,
-                      value: '${compactNumber(u.weightOut(vol))} ${u.weightUnit}',
-                      icon: Icons.fitness_center,
-                      color: AppColors.gym,
-                    ),
-                  ),
+                  Expanded(child: StatTile(label: l.volume, value: u.volume(vol), icon: Sport.gym.icon, color: AppColors.gym)),
                 ],
               ),
               if (filter == null || filter == Sport.gym) ...[
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    Expanded(
-                      child: StatTile(label: l.avgGymDays, value: avgGymDaysPerMonth(all).toStringAsFixed(1), icon: Icons.calendar_month),
-                    ),
+                    Expanded(child: StatTile(label: l.avgGymDays, value: Units.fixed(avgGymDaysPerMonth(all)), icon: Icons.calendar_month)),
                     Expanded(
                       child: StatTile(
                         label: l.avgDuration,
@@ -322,7 +315,8 @@ class _Records extends ConsumerWidget {
     final db = ref.watch(exerciseDbProvider).value;
     final recs =
         ref.watch(exerciseRecordsProvider).values.where((r) => r.exId != 'manual').toList()
-          ..sort((a, b) => b.bestE1rm.compareTo(a.bestE1rm));
+          // Loaded lifts by e1RM, then bodyweight / core exercises by their best reps.
+          ..sort((a, b) => b.bestE1rm != a.bestE1rm ? b.bestE1rm.compareTo(a.bestE1rm) : b.maxReps.compareTo(a.maxReps));
 
     Session? best(Sport s, double Function(Session) f) {
       final list = all.where((x) => x.sport == s && x.distanceM > 0).toList();
@@ -376,12 +370,19 @@ class _Records extends ConsumerWidget {
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             dense: true,
-                            leading: const Icon(Icons.emoji_events_outlined, color: AppColors.gym),
+                            // No "e1RM 0 kg" trophy for core / bodyweight exercises: their best reps instead.
+                            leading: Icon(r.bestE1rm > 0 ? Icons.emoji_events_outlined : Icons.repeat_rounded, color: AppColors.gym),
                             title: Text(capFirst(r.name), maxLines: 1, overflow: TextOverflow.ellipsis),
                             subtitle: Text(
-                              '${l.maxWeight} ${u.weight(r.maxWeight)} · ${DateFormat.yMMMd(context.localeName).format(r.date)}',
+                              [
+                                if (r.maxWeight > 0) '${l.maxWeight} ${u.weight(r.maxWeight)}',
+                                DateFormat.yMMMd(context.localeName).format(r.date),
+                              ].join(' · '),
                             ),
-                            trailing: Text('e1RM ${u.weight(r.bestE1rm, digits: 0)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                            trailing: Text(
+                              r.bestE1rm > 0 ? 'e1RM ${u.weight(r.bestE1rm, digits: 0)}' : l.maxRepsN(r.maxReps),
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
                             onTap: () {
                               final e = db?.byId(r.exId);
                               if (e != null) {
@@ -422,7 +423,7 @@ class BadgeView extends StatelessWidget {
     final b = badge;
     final scheme = Theme.of(context).colorScheme;
     return Tooltip(
-      message: '${badgeTitle(context.l10n, b.def.id)} · ${(b.progress * 100).round()}%',
+      message: '${badgeTitle(context.l10n, b.def.id)} · ${Units.pct(b.progress * 100)}',
       child: Column(
         children: [
           Stack(
@@ -497,7 +498,7 @@ class _History extends ConsumerWidget {
                     [
                       df.format(s.start),
                       humanDuration(s.durationSec),
-                      if (s.sport == Sport.gym && s.volume > 0) u.weight(s.volume, digits: 0),
+                      if (s.sport == Sport.gym && s.volume > 0) u.volume(s.volume),
                       if (s.distanceM > 0) s.sport == Sport.swim ? u.swimDist(s.distanceM) : u.dist(s.distanceM, digits: 1),
                     ].join(' · '),
                   ),

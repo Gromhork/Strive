@@ -210,7 +210,7 @@ class GoalStatusView extends StatelessWidget {
             children: [
               _Meter(
                 label: l.goalCompletion,
-                value: f.adherence == null ? '–' : '${((f.adherence!) * 100).round()} %',
+                value: f.adherence == null ? '–' : Units.pct(f.adherence! * 100),
                 progress: f.adherence ?? 0,
                 color:
                     f.adherence == null
@@ -284,7 +284,7 @@ class _PhaseRow extends StatelessWidget {
                   style: TextStyle(fontWeight: current ? FontWeight.w700 : FontWeight.w500, fontSize: 13),
                 ),
                 Text(
-                  ['VDOT ${o.expectedVdot.toStringAsFixed(1)}', if (o.predictedSec != null) '~${clock(o.predictedSec!)}'].join(' · '),
+                  ['VDOT ${Units.fixed(o.expectedVdot)}', if (o.predictedSec != null) '~${clock(o.predictedSec!)}'].join(' · '),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelSmall?.copyWith(

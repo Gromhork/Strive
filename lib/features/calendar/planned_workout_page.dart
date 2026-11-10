@@ -10,7 +10,9 @@ import '../../providers.dart';
 import '../../services/gym_tools.dart' show ProgressionKind;
 import '../../services/plan_text.dart';
 import '../../widgets/common.dart';
+import '../../data/models.dart';
 import '../../widgets/exercise_media.dart';
+import '../../widgets/plan_amount.dart';
 import '../../widgets/prescription.dart';
 import '../session/manual_entry_page.dart';
 import '../session/start_helpers.dart';
@@ -36,11 +38,18 @@ class PlannedWorkoutPage extends ConsumerWidget {
   const PlannedWorkoutPage({super.key, required this.planId});
   final String planId;
 
+  /// Opens the editor; deleting the workout there also closes this page (no blank page).
+  static Future<void> _edit(BuildContext context, WidgetRef ref, PlannedWorkout p) async {
+    final r = await showPlanEditor(context, ref, existing: p);
+    if (r == planDeleted && context.mounted) Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final p = ref.watch(planListProvider).where((x) => x.id == planId).firstOrNull;
-    if (p == null) return Scaffold(appBar: AppBar());
+    // Deleted (e.g. from its editor) or replaced: say so instead of a blank page.
+    if (p == null) return Scaffold(appBar: AppBar(), body: EmptyState(icon: Icons.event_busy_rounded, text: l.planGone));
     final u = ref.watch(profileOrDefaultProvider).units;
     final template = ref.watch(templateListProvider).where((t) => t.id == p.templateId).firstOrNull;
     final t = Theme.of(context).textTheme;
@@ -50,15 +59,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(DateFormat.MMMEd(context.localeName).format(p.date)),
-        actions: [
-          if (!p.isDone)
-            IconButton(
-              tooltip: l.logManually,
-              icon: const Icon(Icons.playlist_add_check_rounded),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ManualEntryPage(plan: p))),
-            ),
-          IconButton(tooltip: l.edit, icon: const Icon(Icons.edit_outlined), onPressed: () => showPlanEditor(context, ref, existing: p)),
-        ],
+        actions: [IconButton(tooltip: l.edit, icon: const Icon(Icons.edit_outlined), onPressed: () => _edit(context, ref, p))],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
@@ -84,8 +85,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
                           const SizedBox(height: 2),
                           Text(
                             [
-                              '${p.durationMin} min',
-                              if (p.distanceKm != null && p.distanceKm! > 0) u.dist(p.distanceKm! * 1000, digits: 1),
+                              planAmountText(p, ref.watch(profileOrDefaultProvider), templates: ref.watch(templateListProvider)),
                               if (p.sport != Sport.gym) intensityLabel(l, p.intensity),
                             ].join(' · '),
                             style: t.bodyMedium,
@@ -105,13 +105,14 @@ class PlannedWorkoutPage extends ConsumerWidget {
                           label: Text(phase),
                           visualDensity: VisualDensity.compact,
                           avatar: const Icon(Icons.timeline, size: 16),
-                          onPressed: () => showTermInfo(context, Term.phases),
+                          onPressed: () => showTermInfo(context, p.phase == 'recovery' ? Term.deloadWeek : Term.phases),
                         ),
                       if (p.isKey)
-                        Chip(
+                        ActionChip(
                           label: Text(l.keySession),
                           visualDensity: VisualDensity.compact,
                           avatar: const Icon(Icons.star_rounded, size: 16, color: AppColors.warning),
+                          onPressed: () => showTermInfo(context, Term.keySession),
                         ),
                     ],
                   ),
@@ -125,6 +126,14 @@ class PlannedWorkoutPage extends ConsumerWidget {
             spacing: 8,
             runSpacing: 4,
             children: [
+              // Labelled – an unlabelled icon in the app bar was not understood.
+              if (!p.isDone)
+                OutlinedButton.icon(
+                  key: const ValueKey('logManuallyButton'),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ManualEntryPage(plan: p))),
+                  icon: const Icon(Icons.playlist_add_check_rounded, size: 18),
+                  label: Text(l.logAsDone),
+                ),
               if (offersNotFit(p, DateTime.now()))
                 OutlinedButton.icon(
                   key: const ValueKey('notFitButton'),
@@ -188,7 +197,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
                   TextButton.icon(
                     icon: const Icon(Icons.tune_rounded, size: 18),
                     label: Text(l.adjustExercises),
-                    onPressed: () => showPlanEditor(context, ref, existing: p),
+                    onPressed: () => _edit(context, ref, p),
                   ),
               ],
             ),

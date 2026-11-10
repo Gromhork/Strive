@@ -96,9 +96,13 @@ Compliance planCompliance(PlannedWorkout p, Session? s, {DateTime? now}) {
 /// Plan id → linked session (via [PlannedWorkout.sessionId] or [Session.planId]).
 Map<String, Session> linkPlanSessions(List<PlannedWorkout> plans, List<Session> sessions) {
   final byId = {for (final s in sessions) s.id: s};
+  final planById = {for (final p in plans) p.id: p};
   final out = <String, Session>{};
   for (final s in sessions) {
-    if (s.planId != null) out[s.planId!] = s;
+    // A session started from a workout days away only fulfils it once confirmed (the plan
+    // then points back at it via sessionId) – see plan_match.replacementCandidate.
+    final p = s.planId == null ? null : planById[s.planId];
+    if (p != null && (p.sessionId == s.id || daysBetween(p.date, s.start).abs() <= 1)) out[p.id] = s;
   }
   for (final p in plans) {
     final s = p.sessionId == null ? null : byId[p.sessionId];

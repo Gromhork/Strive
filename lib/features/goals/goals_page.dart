@@ -8,6 +8,7 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/goal_model.dart';
 import '../../services/insights.dart';
@@ -17,7 +18,9 @@ import '../calendar/replace_plan_dialog.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
 import '../../widgets/event_distance_picker.dart';
+import '../../widgets/target_suggestion_line.dart';
 import '../train/exercise_picker.dart';
+import 'goal_forecast_widgets.dart';
 
 class GoalsPage extends ConsumerWidget {
   const GoalsPage({super.key});
@@ -83,8 +86,13 @@ class GoalsPage extends ConsumerWidget {
       return (cur, p, 'e1RM ${u.weight(cur, digits: 0)} / ${u.weight(g.target, digits: 0)}');
     case GoalType.event:
       final total = g.deadline == null ? 1 : daysBetween(g.created, g.deadline!).clamp(1, 10000);
-      final left = g.deadline == null ? 0 : daysBetween(dayOnly(DateTime.now()), g.deadline!);
-      return (left.toDouble(), (1 - left / total).clamp(0.0, 1.0), left >= 0 ? l.daysLeft(left) : l.eventPassed);
+      final today = dayOnly(DateTime.now());
+      final left = g.deadline == null ? 0 : daysBetween(today, g.deadline!);
+      if (g.deadline == null || left < 0) return (left.toDouble(), 1.0, l.eventPassed);
+      // The plan's phase and week instead of a bare percentage of elapsed days.
+      final e = EventProgress.of(g.deadline!, ref.watch(planListProvider), today);
+      final p = e.week != null && e.weeks != null ? e.week! / e.weeks! : (1 - left / total).clamp(0.0, 1.0);
+      return (left.toDouble(), p, eventProgressText(l, e));
   }
 }
 
@@ -103,7 +111,7 @@ class GoalTile extends ConsumerWidget {
       GoalType.weight => Icons.monitor_weight_outlined,
       GoalType.distance => Icons.straighten,
       GoalType.frequency => Icons.repeat_rounded,
-      GoalType.strength => Icons.fitness_center,
+      GoalType.strength => Sport.gym.icon,
       GoalType.event => Icons.emoji_events_outlined,
     };
     // Dynamic adjustment hint: compare progress with elapsed time.
@@ -133,9 +141,15 @@ class GoalTile extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Text(label, style: Theme.of(context).textTheme.labelSmall),
+                if (g.type != GoalType.event) Text(label, style: Theme.of(context).textTheme.labelSmall),
               ],
             ),
+            // "noch 88 Tage · Grundlagenphase (Woche 2/13)" is too long for the title row.
+            if (g.type == GoalType.event)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(label, key: const ValueKey('eventGoalProgress'), style: Theme.of(context).textTheme.bodySmall),
+              ),
             const SizedBox(height: 6),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
@@ -160,7 +174,8 @@ class GoalTile extends ConsumerWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  Text('  ${(progress * 100).round()}%', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  // Event goals say where the plan stands (phase, week) in the label instead.
+                  if (g.type != GoalType.event) Text('  ${Units.pct(progress * 100)}', style: const TextStyle(fontWeight: FontWeight.w700)),
                 ],
               ),
             ],
@@ -206,38 +221,40 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
 
   int? _initialTarget() {
     final a = ref.read(profileOrDefaultProvider).athlete;
-    final km = widget.existing?.eventKm ?? widget.existing?.target;
-    return km != null && eventKeyForKm(km, prefer: a.eventDistance) == a.eventDistance ? a.targetTimeSec : null;
+    final ex = widget.existing;
+    if (ex == null || ex.type != GoalType.event) return null;
+    final sameRace = a.eventDate != null && ex.deadline != null && sameDay(a.eventDate!, ex.deadline!);
+    return sameRace && _initialKey() == a.eventDistance ? a.targetTimeSec : null;
   }
 
-  /// Race distance picked from the chips (kept while the km field matches it).
+  /// Race distance picked from the presets (kept while the km field matches it exactly).
   late String? _eventKey = _initialKey();
 
+  /// The stored preset, else the plan's race when it is this goal's race, else a preset of
+  /// exactly this length (never a neighbouring one: 51,5 km is not "Ultra 50 km").
   String? _initialKey() {
     final ex = widget.existing;
     if (ex == null || ex.type != GoalType.event) return null;
-    return eventKeyForKm(ex.eventKm ?? ex.target, prefer: ref.read(profileOrDefaultProvider).athlete.eventDistance);
+    if (eventDistanceOf(ex.eventKey) != null) return ex.eventKey;
+    final a = ref.read(profileOrDefaultProvider).athlete;
+    final km = ex.eventKm ?? ex.target;
+    final planRace = eventDistanceOf(a.eventDistance);
+    if (planRace != null && a.eventDate != null && ex.deadline != null && sameDay(a.eventDate!, ex.deadline!) && _sameKm(km, planRace.km)) {
+      return planRace.key;
+    }
+    return eventKeyForKm(km);
   }
 
-  /// Race sports whose distances are offered as chips: the goal's sport, or the focus.
-  List<EventSport> get _eventSports {
-    final focus = EventSportX.fromFocus(ref.read(profileOrDefaultProvider).focus);
-    return [
-      switch (_sport) {
-        Sport.ride => EventSport.ride,
-        Sport.swim => EventSport.swim,
-        Sport.run => focus == EventSport.triathlon || focus == EventSport.duathlon ? focus : EventSport.run,
-        _ => focus,
-      },
-    ];
-  }
+  /// Race type (Laufen / Triathlon / Duathlon / Radfahren / Freiwasser) of an event goal.
+  late EventSport _raceSport = eventDistanceOf(_eventKey)?.sport ?? EventSportX.fromFocus(ref.read(profileOrDefaultProvider).focus);
 
-  /// Event distance key of the current input.
+  /// Event distance key of the current input: the picked preset while the km match it,
+  /// else a preset of the race type with exactly these km – null for any other distance.
   String? get _key {
     final km = parseNum(_target.text) ?? 0;
     final picked = eventDistanceOf(_eventKey);
-    if (picked != null && (km - picked.km).abs() <= picked.km * 0.03) return picked.key;
-    return eventKeyForKm(km, sport: _eventSports.first);
+    if (picked != null && picked.sport == _raceSport && _sameKm(km, picked.km)) return picked.key;
+    return eventKeyForKm(km, sport: _raceSport, only: true);
   }
 
   void _pickDistance(String? key) {
@@ -246,11 +263,20 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
       _eventKey = d?.key;
       if (d != null) {
         _target.text = Units.num(d.km, 2);
+        _raceSport = d.sport;
         _sport = d.sport.sport;
       }
     });
   }
 
+  void _pickRaceSport(EventSport s) => setState(() {
+    if (_raceSport == s) return;
+    _raceSport = s;
+    _sport = s.sport;
+    // The distance of another race type doesn't carry over.
+    _eventKey = null;
+    _target.clear();
+  });
   @override
   void initState() {
     super.initState();
@@ -262,6 +288,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   String _snapshot() => [
     _type.name,
     _sport?.name,
+    _raceSport.name,
     _title.text,
     _target.text,
     _deadline?.millisecondsSinceEpoch,
@@ -284,8 +311,14 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
     final key = _key;
     if (_type != GoalType.event || !_align || _deadline == null || key == null) return null;
     final p = ref.read(profileOrDefaultProvider);
-    return p.copyWith(athlete: p.athlete.merge({'eventDate': _deadline, 'eventDistance': key, 'targetTimeSec': _targetSec}));
+    // Goal and plan stay consistent: a triathlon is planned with the triathlon focus.
+    final focus = _focusFor(key, p.focus);
+    return p.copyWith(focus: focus, athlete: p.athlete.merge({'eventDate': _deadline, 'eventDistance': key, 'targetTimeSec': _targetSec}));
   }
+
+  /// The training focus a race needs (the current one when it fits).
+  static TrainingFocus _focusFor(String key, TrainingFocus current) =>
+      eventFitsFocus(key, current) ? current : (eventDistanceOf(key)?.sport.focus ?? current);
 
   /// Rebuilds the plan up to race day: completed workouts stay, upcoming planned ones are replaced.
   void _alignPlan(UserProfile profile, DateTime start) {
@@ -300,6 +333,32 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
       weeks: profile.athlete.planWeeks,
     );
     toast(context, l.planAligned(GoalModel.weeksUntil(profile.athlete.eventDate!, start)));
+  }
+
+  /// Why the goal can't be saved yet (shown above the disabled button), null when it can.
+  String? _invalidReason(AppLocalizations l) {
+    final v = parseNum(_target.text) ?? 0;
+    return switch (_type) {
+      GoalType.strength when _exId == null => l.goalNeedsExercise,
+      GoalType.event when _deadline == null => l.goalNeedsDate,
+      GoalType.event when v <= 0 => l.goalNeedsDistance,
+      GoalType.frequency when v < 1 => l.goalNeedsTarget,
+      GoalType.distance || GoalType.weight || GoalType.strength when v <= 0 => l.goalNeedsTarget,
+      _ => null,
+    };
+  }
+
+  /// Delete after a confirmation, with undo in the snackbar.
+  Future<void> _delete() async {
+    final l = context.l10n;
+    final g = widget.existing!;
+    if (!await confirm(context, l.deleteGoalTitle, body: g.title, ok: l.delete, danger: true)) return;
+    if (!mounted) return;
+    final repo = ref.read(repoProvider)!;
+    final messenger = ScaffoldMessenger.of(context);
+    repo.deleteGoal(g.id);
+    Navigator.pop(context);
+    undoToast(messenger, text: l.goalDeleted(g.title), undoLabel: l.undo, onUndo: () => repo.saveGoal(g));
   }
 
   /// Set while saving: a double tap must not save the goal / align the plan twice.
@@ -347,7 +406,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
         id: widget.existing?.id ?? repo.newId(),
         type: _type,
         title: title,
-        sport: _sport,
+        sport: _type == GoalType.event ? _raceSport.sport : _sport,
         target: target,
         startValue: widget.existing?.startValue ?? start,
         created: widget.existing?.created ?? DateTime.now(),
@@ -355,6 +414,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
         exId: _exId,
         exName: _exName,
         eventKm: _type == GoalType.event ? target : null,
+        eventKey: _type == GoalType.event ? _key : null,
       ),
     );
     if (aligned != null) _alignPlan(aligned, planStart!);
@@ -374,7 +434,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
       GoalType.frequency: (l.goalTypeFrequency, Icons.repeat_rounded),
       GoalType.distance: (l.goalTypeDistance, Icons.straighten),
       GoalType.weight: (l.goalTypeWeight, Icons.monitor_weight_outlined),
-      GoalType.strength: (l.goalTypeStrength, Icons.fitness_center),
+      GoalType.strength: (l.goalTypeStrength, Sport.gym.icon),
       GoalType.event: (l.goalTypeEvent, Icons.emoji_events_outlined),
     };
     final suffix = switch (_type) {
@@ -400,14 +460,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                       ),
                     ),
-                    if (widget.existing != null)
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () {
-                          ref.read(repoProvider)!.deleteGoal(widget.existing!.id);
-                          Navigator.pop(context);
-                        },
-                      ),
+                    if (widget.existing != null) IconButton(icon: const Icon(Icons.delete_outline), tooltip: l.delete, onPressed: _delete),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -427,7 +480,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                 const SizedBox(height: 16),
                 TextField(controller: _title, decoration: InputDecoration(labelText: l.title, hintText: types[_type]!.$1)),
                 const SizedBox(height: 12),
-                if (_type == GoalType.distance || _type == GoalType.frequency || _type == GoalType.event) ...[
+                if (_type == GoalType.distance || _type == GoalType.frequency) ...[
                   Wrap(
                     spacing: 8,
                     children: [
@@ -446,7 +499,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                 if (_type == GoalType.strength)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.fitness_center),
+                    leading: Icon(Sport.gym.icon),
                     title: Text(_exName ?? l.chooseExercise),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () async {
@@ -460,7 +513,24 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                     },
                   ),
                 if (_type == GoalType.event) ...[
-                  EventDistanceChips(sports: _eventSports, selected: eventKey, onChanged: _pickDistance),
+                  Text(l.raceType, style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final s in EventSport.values)
+                        ChoiceChip(
+                          key: ValueKey('raceType-${s.name}'),
+                          avatar: Icon(s.icon, size: 16),
+                          label: Text(s.label(l)),
+                          selected: _raceSport == s,
+                          onSelected: (_) => _pickRaceSport(s),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  EventDistanceChips(sports: [_raceSport], selected: eventKey, onChanged: _pickDistance),
                   const SizedBox(height: 12),
                 ],
                 TextField(
@@ -501,6 +571,15 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                   if (_align && eventKey == null)
                     Text(l.alignNeedsDistance, style: Theme.of(context).textTheme.bodySmall)
                   else if (_align) ...[
+                    if (!eventFitsFocus(eventKey, ref.watch(profileOrDefaultProvider).focus))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          l.alignChangesFocus(_focusFor(eventKey!, ref.watch(profileOrDefaultProvider).focus).label(l)),
+                          key: const ValueKey('alignFocusHint'),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.brand),
+                        ),
+                      ),
                     TextField(
                       controller: _targetCtl,
                       keyboardType: TextInputType.datetime,
@@ -512,6 +591,19 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                       ),
                       onChanged: (v) => setState(() => _targetSec = parseClock(v)),
                     ),
+                    if (_deadline != null)
+                      TargetSuggestionLine(
+                        profile: ref.watch(profileOrDefaultProvider),
+                        eventKey: eventKey!,
+                        eventDate: _deadline!,
+                        sessions: ref.watch(sessionListProvider),
+                        current: _targetSec,
+                        onApply:
+                            (sec) => setState(() {
+                              _targetSec = sec;
+                              _targetCtl.text = clock(sec);
+                            }),
+                      ),
                     if (aligned != null) ...[
                       const SizedBox(height: 12),
                       FeasibilityCard(
@@ -528,10 +620,16 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                   ],
                 ],
                 const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: (_type == GoalType.strength && _exId == null) || (_type == GoalType.event && _deadline == null) ? null : _save,
-                  child: Text(l.save),
-                ),
+                if (_invalidReason(l) != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      _invalidReason(l)!,
+                      key: const ValueKey('goalInvalid'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ),
+                FilledButton(key: const ValueKey('saveGoal'), onPressed: _invalidReason(l) != null ? null : _save, child: Text(l.save)),
               ],
             ),
           ),
@@ -541,13 +639,19 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   }
 }
 
-/// Event distance key ([eventDistances]) of a race distance in km (± 3 %), null for other
-/// distances. Several distances can share a length (5 km run / 5 km open water): [prefer]
-/// wins, then a distance of [sport], then the catalogue order.
-String? eventKeyForKm(double km, {String? prefer, EventSport? sport}) {
+/// Whether two race lengths are the same distance (the km field shows presets rounded to
+/// two decimals: 21,1 ↔ 21,0975).
+bool _sameKm(double a, double b) => (a - b).abs() < 0.06;
+
+/// Event distance key ([eventDistances]) of a race distance of exactly [km] (rounding aside),
+/// null for other distances – a neighbouring preset is never picked (51,5 km is the olympic
+/// triathlon, not "Ultra 50 km"). Several distances can share a length (5 km run / 5 km open
+/// water): [prefer] wins, then a distance of [sport], then the catalogue order. [only]: a
+/// distance of [sport] or nothing.
+String? eventKeyForKm(double km, {String? prefer, EventSport? sport, bool only = false}) {
   final hits = [
     for (final d in eventDistances)
-      if (km > 0 && (km - d.km).abs() <= d.km * 0.03) d,
+      if (km > 0 && _sameKm(km, d.km) && (!only || d.sport == sport)) d,
   ];
   return (hits.where((d) => d.key == prefer).firstOrNull ?? hits.where((d) => d.sport == sport).firstOrNull ?? hits.firstOrNull)?.key;
 }

@@ -70,7 +70,7 @@ class ProfilePage extends ConsumerWidget {
                     ),
                     Text(user?.isAnonymous == true ? l.guestAccount : (user?.email ?? ''), style: Theme.of(context).textTheme.bodySmall),
                     const SizedBox(height: 4),
-                    Text('${p.focus.label(l)} · ${_level(l, p.level)}', style: Theme.of(context).textTheme.bodySmall),
+                    Text('${p.focus.label(l)} · ${l.experienceIs(_level(l, p.level))}', style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ),
               ),
@@ -81,6 +81,8 @@ class ProfilePage extends ConsumerWidget {
               ),
             ],
           ),
+          // Guests first see how to keep their data – not buried below the settings.
+          if (user?.isAnonymous == true) ...[const SizedBox(height: 16), const SecureGuestCard()],
           const SizedBox(height: 16),
           SectionCard(
             child: Column(
@@ -282,34 +284,11 @@ class ProfilePage extends ConsumerWidget {
           Card(
             child: Column(
               children: [
-                if (user?.isAnonymous == true)
-                  ListTile(
-                    leading: const Icon(Icons.link),
-                    title: Text(l.upgradeAccount),
-                    subtitle: Text(l.upgradeAccountSub),
-                    onTap: () => _linkAccount(context),
-                  ),
-                if (user?.isAnonymous == true)
-                  ListTile(
-                    leading: Image.asset('assets/images/google.png', width: 22, height: 22),
-                    title: Text(l.linkGoogle),
-                    subtitle: Text(l.linkGoogleSub),
-                    onTap: () async {
-                      try {
-                        if (await GoogleAuth.signIn() && context.mounted) toast(context, l.accountLinked);
-                      } catch (e) {
-                        if (context.mounted) toast(context, '${l.authError}: $e');
-                      }
-                    },
-                  ),
                 ListTile(
                   leading: const Icon(Icons.logout, color: AppColors.danger),
                   title: Text(l.logout, style: const TextStyle(color: AppColors.danger)),
                   onTap: () async {
-                    if (user?.isAnonymous == true &&
-                        !await confirm(context, l.logout, body: l.guestLogoutWarning, ok: l.logout, danger: true)) {
-                      return;
-                    }
+                    if (user?.isAnonymous == true && !await confirmGuestLogout(context)) return;
                     if (!context.mounted) return;
                     final out = signOutAndClear(context);
                     Navigator.popUntil(context, (r) => r.isFirst);
@@ -344,38 +323,169 @@ class ProfilePage extends ConsumerWidget {
     'intermediate' => l.intermediate,
     _ => l.beginner,
   };
+}
 
-  Future<void> _linkAccount(BuildContext context) async {
-    final l = context.l10n;
-    final email = TextEditingController();
-    final pw = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder:
-          (c) => AlertDialog(
-            title: Text(l.upgradeAccount),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l.email)),
-                const SizedBox(height: 12),
-                TextField(controller: pw, obscureText: true, decoration: InputDecoration(labelText: l.password)),
-              ],
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l.cancel)),
-              FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(l.save)),
+/// Links the guest account with e-mail + password.
+Future<void> linkGuestWithEmail(BuildContext context) async {
+  final l = context.l10n;
+  final email = TextEditingController();
+  final pw = TextEditingController();
+  final ok = await showDialog<bool>(
+    context: context,
+    builder:
+        (c) => AlertDialog(
+          title: Text(l.upgradeAccount),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l.email)),
+              const SizedBox(height: 12),
+              TextField(controller: pw, obscureText: true, decoration: InputDecoration(labelText: l.password)),
             ],
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l.cancel)),
+            FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(l.save)),
+          ],
+        ),
+  );
+  if (ok != true) return;
+  try {
+    await FirebaseAuth.instance.currentUser!.linkWithCredential(EmailAuthProvider.credential(email: email.text.trim(), password: pw.text));
+    if (context.mounted) toast(context, l.accountLinked);
+  } on FirebaseAuthException catch (e) {
+    if (context.mounted) toast(context, '${l.authError} (${e.code})');
+  }
+}
+
+/// Links the guest account with Google.
+Future<void> linkGuestWithGoogle(BuildContext context) async {
+  final l = context.l10n;
+  try {
+    if (await GoogleAuth.signIn() && context.mounted) toast(context, l.accountLinked);
+  } catch (e) {
+    if (context.mounted) toast(context, '${l.authError}: $e');
+  }
+}
+
+/// Guest logout: "Signing out as a guest deletes all data on this device." with
+/// [Secure first] (opens the linking options) and [Sign out anyway]. True = sign out.
+Future<bool> confirmGuestLogout(BuildContext context) async {
+  final l = context.l10n;
+  final r = await showDialog<String>(
+    context: context,
+    builder:
+        (c) => AlertDialog(
+          icon: const Icon(Icons.warning_amber_rounded, color: AppColors.danger),
+          title: Text(l.guestLogoutTitle),
+          content: Text(l.guestLogoutBody),
+          actions: [
+            TextButton(
+              key: const ValueKey('guestLogoutAnyway'),
+              onPressed: () => Navigator.pop(c, 'out'),
+              child: Text(l.guestLogoutAnyway),
+            ),
+            FilledButton(
+              key: const ValueKey('guestSecureFirst'),
+              onPressed: () => Navigator.pop(c, 'secure'),
+              child: Text(l.guestSecureFirst),
+            ),
+          ],
+        ),
+  );
+  if (r == 'secure' && context.mounted) await showSecureGuestSheet(context);
+  return r == 'out';
+}
+
+/// The two ways to keep a guest's data (e-mail, Google).
+Future<void> showSecureGuestSheet(BuildContext context) {
+  final l = context.l10n;
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder:
+        (c) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Text(l.secureGuestTitle, style: Theme.of(c).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.alternate_email_rounded),
+                title: Text(l.upgradeAccount),
+                subtitle: Text(l.upgradeAccountSub),
+                onTap: () {
+                  Navigator.pop(c);
+                  linkGuestWithEmail(context);
+                },
+              ),
+              ListTile(
+                leading: Image.asset(
+                  'assets/images/google.png',
+                  width: 22,
+                  height: 22,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.login),
+                ),
+                title: Text(l.linkGoogle),
+                subtitle: Text(l.linkGoogleSub),
+                onTap: () {
+                  Navigator.pop(c);
+                  linkGuestWithGoogle(context);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+  );
+}
+
+/// "Secure your data – link e-mail or Google" (profile top, and on Home for guests with
+/// a few sessions).
+class SecureGuestCard extends StatelessWidget {
+  const SecureGuestCard({super.key, this.onDismiss});
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Container(
+      key: const ValueKey('secureGuestCard'),
+      padding: const EdgeInsets.fromLTRB(14, 12, 4, 10),
+      decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.shield_outlined, color: AppColors.warning)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.secureGuestTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(l.secureGuestBody, style: const TextStyle(fontSize: 13)),
+                const SizedBox(height: 6),
+                FilledButton.tonal(
+                  key: const ValueKey('secureGuestButton'),
+                  style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
+                  onPressed: () => showSecureGuestSheet(context),
+                  child: Text(l.secureGuestButton),
+                ),
+              ],
+            ),
+          ),
+          if (onDismiss != null)
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+              icon: const Icon(Icons.close_rounded, size: 18),
+              onPressed: onDismiss,
+            ),
+        ],
+      ),
     );
-    if (ok != true) return;
-    try {
-      await FirebaseAuth.instance.currentUser!.linkWithCredential(
-        EmailAuthProvider.credential(email: email.text.trim(), password: pw.text),
-      );
-      if (context.mounted) toast(context, l.accountLinked);
-    } on FirebaseAuthException catch (e) {
-      if (context.mounted) toast(context, '${l.authError} (${e.code})');
-    }
   }
 }

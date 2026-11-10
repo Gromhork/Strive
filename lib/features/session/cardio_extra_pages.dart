@@ -33,9 +33,21 @@ Color _ink(BuildContext context, Color c) {
 /// Contiguous live pace zones (slow → fast) of a session, or null when the session has no
 /// live pace (rides – no power meter –, treadmill runs).
 class LiveZones {
-  LiveZones._(this.sport, this.codes, this.cuts);
+  LiveZones._(this.sport, this.codes, this.cuts, [this.paces]);
 
   final Sport sport;
+
+  /// Run: the athlete's Daniels zones – the displayed range of a closed zone.
+  final PaceZones? paces;
+
+  /// (fast, slow) range shown for zone [i] – the zone's own pace range (one source with the
+  /// zone info), null for open-ended / non-run zones.
+  (int?, int?)? shown(int i) {
+    final code = codes[i];
+    if (paces == null || code == 'REC' || code == 'R') return null;
+    final r = paces!.range(code);
+    return (r.$1, r.$2);
+  }
 
   /// Zone codes, slowest first (same codes as the workout steps).
   final List<String> codes;
@@ -56,7 +68,7 @@ class LiveZones {
     for (var i = 1; i < c.length; i++) {
       c[i] = min(c[i], c[i - 1] - 1);
     }
-    return LiveZones._(Sport.run, const ['REC', 'E', 'M', 'T', 'I', 'R'], c);
+    return LiveZones._(Sport.run, const ['REC', 'E', 'M', 'T', 'I', 'R'], c, z);
   }
 
   /// CSS zones (drills have no pace zone).
@@ -170,7 +182,9 @@ class ZonesPage extends ConsumerWidget {
         _ZoneRow(
           code: z.codes[i],
           sport: s.sport,
-          range: switch (z.bounds(i)) {
+          // Closed run zones show the same Daniels range as the zone info and the workout
+          // steps ([PaceZones.range]); the cuts in between only classify the live pace.
+          range: switch (z.shown(i) ?? z.bounds(i)) {
             // Fastest zone: faster than its slow bound; slowest zone: slower than its fast bound.
             (null, final int slow) => '< ${fmt(slow)}',
             (final int fast, null) => '> ${fmt(fast)}',

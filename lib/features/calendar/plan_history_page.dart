@@ -50,17 +50,47 @@ class PlanHistoryPage extends ConsumerWidget {
     final current = {for (final p in ref.watch(planListProvider)) p.id: p};
     // Changes of a replaced plan and accidental duplicates are left out.
     final entries = visiblePlanLog(log.value ?? const <PlanLogEntry>[], current);
+    final a = ref.watch(profileOrDefaultProvider).athlete;
+    // Older plans have no stored start: the first workout of the plan stands in.
+    final firstPlan = ref.watch(planListProvider).map((p) => p.date).fold<DateTime?>(null, (m, d) => m == null || d.isBefore(m) ? d : m);
+    final planStart = a.planStart ?? firstPlan;
+    // The oldest entry: when the current plan was created.
+    final created =
+        planStart == null
+            ? null
+            : Card(
+              key: const ValueKey('planCreatedEntry'),
+              margin: const EdgeInsets.only(bottom: 10),
+              child: ListTile(
+                leading: const Icon(Icons.auto_graph_rounded, color: AppColors.brand),
+                title: Text(l.planLogCreated(DateFormat.yMMMd(context.localeName).format(planStart))),
+                subtitle: a.planLength == null ? null : Text(l.planWeeksN(a.planLength!)),
+              ),
+            );
     return Scaffold(
       appBar: AppBar(title: Text(l.planHistory)),
       body:
           log.isLoading && entries.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : entries.isEmpty
-              ? Padding(padding: const EdgeInsets.all(24), child: Center(child: Text(l.planHistoryEmpty, textAlign: TextAlign.center)))
+              ? ListView(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+                children: [
+                  Icon(Icons.history_rounded, size: 56, color: Theme.of(context).colorScheme.outline),
+                  const SizedBox(height: 12),
+                  Text(l.planHistoryEmpty, textAlign: TextAlign.center, key: const ValueKey('planHistoryEmpty')),
+                  const SizedBox(height: 20),
+                  if (created != null) created,
+                ],
+              )
               : ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                itemCount: entries.length,
-                itemBuilder: (_, i) => PlanLogCard(entry: entries[i], current: current, onUndo: () => _undo(context, ref, entries[i])),
+                itemCount: entries.length + (created == null ? 0 : 1),
+                itemBuilder:
+                    (_, i) =>
+                        i == entries.length
+                            ? created!
+                            : PlanLogCard(entry: entries[i], current: current, onUndo: () => _undo(context, ref, entries[i])),
               ),
     );
   }
@@ -82,6 +112,7 @@ class PlanLogCard extends ConsumerWidget {
     'auto' => (Icons.auto_fix_high_rounded, AppColors.brand, l.autoAdjTitle),
     'recal' => (Icons.fact_check_outlined, AppColors.success, l.planLogRecal),
     'week' => (Icons.event_repeat_rounded, AppColors.warning, l.adjustDone),
+    'move' => (Icons.open_with_rounded, AppColors.brand, l.planLogMoved),
     'readiness' => (Icons.healing_rounded, AppColors.danger, l.planLogReadiness(readinessLabel(l, entry.reason))),
     _ => (Icons.edit_calendar_outlined, AppColors.brand, entry.source),
   };

@@ -1065,6 +1065,10 @@ class Goal {
   final String? exName;
   final double? eventKm;
 
+  /// Event goals: the race distance of the catalogue (eventDistances key) – set when the
+  /// distance was picked from the presets, so a triathlon never turns into a 51,5 km run.
+  final String? eventKey;
+
   Goal({
     required this.id,
     required this.type,
@@ -1077,6 +1081,7 @@ class Goal {
     this.exId,
     this.exName,
     this.eventKm,
+    this.eventKey,
   });
 
   factory Goal.fromMap(String id, Map<String, dynamic> m) => Goal(
@@ -1091,6 +1096,7 @@ class Goal {
     exId: _sn(m['exId']),
     exName: _sn(m['exName']),
     eventKm: _dn(m['eventKm']),
+    eventKey: _sn(m['eventKey']),
   );
 
   Map<String, dynamic> toMap() => {
@@ -1104,5 +1110,6 @@ class Goal {
     'exId': exId,
     'exName': exName,
     'eventKm': eventKm,
+    'eventKey': eventKey,
   };
 }

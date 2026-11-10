@@ -10,10 +10,12 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../data/plan_log.dart';
 import '../../providers.dart';
 import '../../services/compliance.dart';
 import '../../services/plan_generator.dart';
 import '../../widgets/common.dart';
+import '../../widgets/plan_amount.dart';
 import '../stats/session_detail_page.dart';
 import 'feasibility_card.dart';
 import 'plan_editor.dart';
@@ -308,30 +310,40 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                             children: [
                               Text(
                                 '${day.day}',
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
+                                  height: 1.2,
                                   fontWeight: today ? FontWeight.w700 : FontWeight.w500,
                                   color: inMonth ? null : Theme.of(context).colorScheme.outline,
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  for (final x in {...s.map((e) => e.sport)})
-                                    Container(
-                                      width: 7,
-                                      height: 7,
-                                      margin: const EdgeInsets.all(1),
-                                      decoration: BoxDecoration(color: x.color, shape: BoxShape.circle),
-                                    ),
-                                  for (final x in p.where((e) => !e.isDone).map((e) => e.sport).toSet())
-                                    Container(
-                                      width: 7,
-                                      height: 7,
-                                      margin: const EdgeInsets.all(1),
-                                      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: x.color, width: 1.5)),
-                                    ),
-                                ],
+                              // Fixed height: the day numbers line up whether a day has dots or not.
+                              SizedBox(
+                                height: 9,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Done: sessions, plus workouts marked done without a recording.
+                                    for (final x in {
+                                      ...s.map((e) => e.sport),
+                                      ...p.where((e) => e.isDone && e.sessionId == null).map((e) => e.sport),
+                                    }.take(4))
+                                      Container(
+                                        width: 7,
+                                        height: 7,
+                                        margin: const EdgeInsets.all(1),
+                                        decoration: BoxDecoration(color: x.color, shape: BoxShape.circle),
+                                      ),
+                                    for (final x in p.where((e) => !e.isDone && e.status != 'skipped').map((e) => e.sport).toSet())
+                                      Container(
+                                        width: 7,
+                                        height: 7,
+                                        margin: const EdgeInsets.all(1),
+                                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: x.color, width: 1.5)),
+                                      ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -342,12 +354,15 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 ),
             ],
           ),
+        const SizedBox(height: 6),
+        const _MonthLegend(),
         const SizedBox(height: 12),
         Text(DateFormat.yMMMMEEEEd(context.localeName).format(_selected), style: const TextStyle(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
         if (dayPlans.isEmpty && daySessions.isEmpty) Text(l.nothingPlanned, style: Theme.of(context).textTheme.bodySmall),
         for (final s in daySessions) _SessionChip(session: s),
-        for (final p in dayPlans.where((p) => !p.isDone)) Padding(padding: const EdgeInsets.only(bottom: 6), child: PlanCard(plan: p)),
+        for (final p in dayPlans.where((p) => !p.isDone || p.sessionId == null))
+          Padding(padding: const EdgeInsets.only(bottom: 6), child: PlanCard(plan: p)),
       ],
     );
   }
@@ -389,12 +404,23 @@ class _DayRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final p = plans.where((x) => sameDay(x.date, day)).toList();
-    final s = sessions.where((x) => sameDay(x.start, day) && !p.any((pl) => pl.sessionId == x.id)).toList();
+    final linked = ref.watch(planSessionsProvider);
+    final byId = {for (final x in plans) x.id: x};
+    // A workout done on another day (early / late, as a replacement) is shown once: as the
+    // session on the day it was done ("ersetzt Sa-Einheit"), not again on its planned day.
+    bool doneElsewhere(PlannedWorkout x) => x.isDone && linked[x.id] != null && !sameDay(linked[x.id]!.start, x.date);
+    final p = plans.where((x) => sameDay(x.date, day) && !doneElsewhere(x)).toList();
+    final s = sessions.where((x) => sameDay(x.start, day) && !p.any((pl) => pl.sessionId == x.id || linked[pl.id]?.id == x.id)).toList();
+    PlannedWorkout? replaced(Session x) {
+      final id = linked.entries.where((e) => e.value.id == x.id).map((e) => e.key).firstOrNull;
+      final pl = id == null ? null : byId[id];
+      return pl != null && !sameDay(pl.date, x.start) ? pl : null;
+    }
+
     final today = sameDay(day, DateTime.now());
     return DragTarget<PlannedWorkout>(
-      onWillAcceptWithDetails: (d) => !sameDay(d.data.date, day),
-      onAcceptWithDetails: (d) => ref.read(repoProvider)!.updatePlan(d.data.id, {'date': dayKey(day), 'status': 'planned'}),
+      onWillAcceptWithDetails: (d) => !sameDay(d.data.date, day) && !d.data.isDone,
+      onAcceptWithDetails: (d) => movePlan(context, ref, d.data, day),
       builder:
           (context, candidates, _) => Container(
             decoration: BoxDecoration(
@@ -420,16 +446,20 @@ class _DayRow extends ConsumerWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      for (final x in s) _SessionChip(session: x),
+                      for (final x in s) _SessionChip(session: x, replaces: replaced(x)),
                       for (final x in p)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 4),
-                          child: LongPressDraggable<PlannedWorkout>(
-                            data: x,
-                            feedback: Material(color: Colors.transparent, child: SizedBox(width: 260, child: PlanCard(plan: x))),
-                            childWhenDragging: Opacity(opacity: 0.3, child: PlanCard(plan: x)),
-                            child: PlanCard(plan: x),
-                          ),
+                          // Done workouts stay where they were done (their session is on that day).
+                          child:
+                              x.isDone
+                                  ? PlanCard(plan: x)
+                                  : LongPressDraggable<PlannedWorkout>(
+                                    data: x,
+                                    feedback: Material(color: Colors.transparent, child: SizedBox(width: 260, child: PlanCard(plan: x))),
+                                    childWhenDragging: Opacity(opacity: 0.3, child: PlanCard(plan: x)),
+                                    child: PlanCard(plan: x),
+                                  ),
                         ),
                       if (p.isEmpty && s.isEmpty)
                         SizedBox(
@@ -465,7 +495,7 @@ class PlanCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final p = plan;
-    final u = ref.watch(profileOrDefaultProvider).units;
+    final profile = ref.watch(profileOrDefaultProvider);
     final c = planCompliance(p, ref.watch(planSessionsProvider)[p.id]);
     return Material(
       color: p.sport.color.withValues(alpha: 0.12),
@@ -494,8 +524,7 @@ class PlanCard extends ConsumerWidget {
                     ),
                     Text(
                       [
-                        '${p.durationMin} min',
-                        if (p.distanceKm != null && p.distanceKm! > 0) u.dist(p.distanceKm! * 1000, digits: 1),
+                        planAmountText(p, profile, templates: ref.watch(templateListProvider)),
                         if (p.sport != Sport.gym) intensityLabel(l, p.intensity),
                       ].join(' · '),
                       style: Theme.of(context).textTheme.bodySmall,
@@ -512,9 +541,29 @@ class PlanCard extends ConsumerWidget {
   }
 }
 
+/// Moves an open planned workout to [day] by drag & drop – logged in the plan history (with
+/// undo there) and undoable right away from the snackbar. Done workouts are not moved.
+void movePlan(BuildContext context, WidgetRef ref, PlannedWorkout p, DateTime day) {
+  final repo = ref.read(repoProvider);
+  if (repo == null || p.isDone || sameDay(p.date, day)) return;
+  final l = context.l10n;
+  final after = PlannedWorkout.fromMap(p.id, {...p.toMap(), 'date': dayKey(day), 'status': 'planned'});
+  repo.updatePlan(p.id, {'date': dayKey(day), 'status': 'planned'});
+  repo.logPlanChange(PlanLogEntry.of('move', [(p, after)]));
+  undoToast(
+    ScaffoldMessenger.of(context),
+    text: l.planMoved(p.title, DateFormat.MMMEd(context.localeName).format(day)),
+    undoLabel: l.undo,
+    onUndo: () => repo.savePlan(p),
+  );
+}
+
 class _SessionChip extends ConsumerWidget {
-  const _SessionChip({required this.session});
+  const _SessionChip({required this.session, this.replaces});
   final Session session;
+
+  /// The planned workout of another day this session fulfils.
+  final PlannedWorkout? replaces;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -535,11 +584,22 @@ class _SessionChip extends ConsumerWidget {
                 Icon(s.sport.icon, color: s.sport.color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    glueTitle(s.title),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        glueTitle(s.title),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (replaces != null)
+                        Text(
+                          context.l10n.replacesDayWorkout(DateFormat.E(context.localeName).format(replaces!.date)),
+                          key: const ValueKey('replacesLabel'),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                    ],
                   ),
                 ),
                 Text(
@@ -555,6 +615,42 @@ class _SessionChip extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// What the dots and check colours of the calendar mean.
+class _MonthLegend extends StatelessWidget {
+  const _MonthLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final t = Theme.of(context).textTheme.bodySmall;
+    final outline = Theme.of(context).colorScheme.outline;
+    Widget dot({required bool filled, required Color color}) => Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: filled ? color : null,
+        border: filled ? null : Border.all(color: color, width: 1.5),
+      ),
+    );
+    Widget item(Widget mark, String text) =>
+        Row(mainAxisSize: MainAxisSize.min, children: [mark, const SizedBox(width: 4), Text(text, style: t)]);
+    return Wrap(
+      key: const ValueKey('monthLegend'),
+      spacing: 12,
+      runSpacing: 4,
+      children: [
+        item(dot(filled: true, color: outline), l.legendDone),
+        item(dot(filled: false, color: outline), l.legendPlanned),
+        item(const Icon(Icons.check_rounded, size: 14, color: AppColors.success), l.legendOnTarget),
+        item(const Icon(Icons.check_rounded, size: 14, color: complianceYellow), l.legendPartly),
+        item(const Icon(Icons.check_rounded, size: 14, color: complianceOrange), l.legendOff),
+        item(const Icon(Icons.close_rounded, size: 14, color: AppColors.danger), l.legendMissed),
+      ],
     );
   }
 }
