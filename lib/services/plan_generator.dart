@@ -834,13 +834,15 @@ class PlanGenerator {
   /// Whole-week rules on the run sessions actually planned (single-sport running, after the time
   /// caps – the volume curve alone did not see them; review C9, IMPORTANT 3 / 12):
   ///
-  /// * The long run ≤ 50 % of the week's run km (marathon 55 %, §1.10; 2 runs 60 %) and ≤ 2 × the
-  ///   next-longest run (marathon / ultra 3 ×: the race-specific long run is 2.5–3 × the midweek runs
-  ///   at amateur volumes, Pfitzinger / Higdon). Loading weeks first let the easy runs grow (their
-  ///   time, ≤ 75 % of the long run, the ceiling), then the long run is shortened – a 120' long run
-  ///   next to 30' runs was 66 % of the week.
+  /// * The long run ≤ 50 % of the week's run km (marathon 55 %, §1.10; 2 runs 60 %) and, in weeks with
+  ///   ≤ 4 runs, ≤ 2 × the next-longest run (not marathon / ultra: their race-specific long run is ~3 ×
+  ///   the midweek runs at amateur volumes, Pfitzinger / Higdon). Loading weeks first let the easy runs
+  ///   grow (their time, ≤ 75 % of the long run, the ceiling; at the ceiling the shortest easy run
+  ///   gives volume to the longest), then the long run is shortened – never below the last loading
+  ///   week's ([minLongKm]) – a 120' long run next to 30' runs was 66 % of the week.
   /// * Loading weeks stay ≤ [ceilingKm] including the long run (R5: 1.5 × the stated volume, the level
-  ///   ceiling): easy runs (≥ [easyFloor]) shrink first, then the quality runs, then the long run.
+  ///   ceiling): easy runs (≥ [easyFloor], marathon −1 km) shrink first, then the quality runs, then the
+  ///   long run.
   /// * A recovery week stays ≤ 75 % (recovery factor + 5 %) of the last loading week's run km
   ///   ([lastLoadKm]) – 3 km easy-run floors left beginner recovery weeks at 83–87 %.
   void _shapeRunWeek(
