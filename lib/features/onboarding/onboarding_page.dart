@@ -16,6 +16,7 @@ import '../calendar/feasibility_card.dart';
 import '../calendar/replace_plan_dialog.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/target_suggestion.dart';
 import '../../services/event_spec.dart';
 import '../../services/goal_model.dart';
 import '../../services/plan_gaps.dart';
@@ -59,6 +60,9 @@ typedef _Step = (String id, Widget Function(AppLocalizations) build);
 class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _pager = PageController();
   int _page = 0;
+
+  /// Bumped when the target time is set from outside the field (suggestion taken).
+  int _targetRev = 0;
 
   /// Race goal (true) or just a plan length in weeks (false).
   late bool _withEvent = a.eventDate != null || a.eventDistance != null;
@@ -423,7 +427,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       );
 
   /// Duration input as "mm:ss" or "h:mm:ss".
-  Widget _timeField(String label, int? seconds, ValueChanged<int?> onChanged, {String hint = 'mm:ss'}) => TextFormField(
+  Widget _timeField(String label, int? seconds, ValueChanged<int?> onChanged, {String hint = 'mm:ss', Key? key}) => TextFormField(
+    key: key,
     initialValue: seconds == null ? '' : clock(seconds),
     keyboardType: TextInputType.datetime,
     decoration: InputDecoration(labelText: label, hintText: hint, prefixIcon: const Icon(Icons.timer_outlined, size: 20)),
@@ -1391,18 +1396,67 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           ),
           if (a.eventDistance != null) ...[
             _label(l.targetTime, hint: l.targetTimeHint),
-            _timeField(l.targetTime, a.targetTimeSec, (v) => _setA({'targetTimeSec': v}), hint: 'h:mm:ss'),
-            if (Vdot.of(a) != null && Vdot.distances[a.eventDistance] != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  l.predictedTime(clock(Vdot.raceTime(Vdot.of(a)!, Vdot.distances[a.eventDistance]!))),
-                  style: const TextStyle(color: AppColors.run, fontWeight: FontWeight.w600),
-                ),
-              ),
+            _timeField(
+              l.targetTime,
+              a.targetTimeSec,
+              (v) => _setA({'targetTimeSec': v}),
+              hint: 'h:mm:ss',
+              key: ValueKey('targetTime$_targetRev'),
+            ),
+            _targetSuggestion(l),
           ],
         ],
       ],
+    );
+  }
+
+  /// Suggested target time for the chosen race (from race times, recent runs or the
+  /// level) with one tap to take it over; "finish" for races without a time model.
+  Widget _targetSuggestion(AppLocalizations l) {
+    final key = a.eventDistance;
+    final date = a.eventDate;
+    if (key == null || date == null) return const SizedBox.shrink();
+    final sug = suggestTargetTime(_advanced ? _profile : _quickProfile, key, date, sessions: ref.read(sessionListProvider));
+    final t = Theme.of(context).textTheme;
+    final basis = switch (sug.basis) {
+      TargetBasis.raceTimes => l.targetSuggestBasisRace,
+      TargetBasis.bestEfforts => l.targetSuggestBasisEfforts,
+      TargetBasis.levelEstimate => l.targetSuggestBasisLevel,
+      TargetBasis.finishOnly => l.targetSuggestFinish,
+    };
+    return Container(
+      key: const ValueKey('targetSuggestion'),
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+      decoration: BoxDecoration(color: AppColors.run.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+      child: Row(
+        children: [
+          const Icon(Icons.auto_awesome_outlined, size: 18, color: AppColors.run),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (sug.sec != null)
+                  Text(
+                    l.targetSuggestRange(clock(sug.sec!), clock(sug.fastSec ?? sug.sec!), clock(sug.slowSec ?? sug.sec!)),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                Text(basis, style: t.bodySmall),
+              ],
+            ),
+          ),
+          if (sug.sec != null && a.targetTimeSec != sug.sec)
+            TextButton(
+              key: const ValueKey('takeSuggestion'),
+              onPressed: () {
+                _targetRev++;
+                _setA({'targetTimeSec': sug.sec});
+              },
+              child: Text(l.apply),
+            ),
+        ],
+      ),
     );
   }
 
@@ -1434,7 +1488,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   /// Recommended plan length (weeks) for the goal and level (training-science §1.8).
-  (int, int) get _recommendedRange => EventSpec.of(a.eventDistance)?.weeksFor(p.level) ?? (6, 12);
+  (int, int) get _recommendedRange {
+    final spec = EventSpec.of(a.eventDistance);
+    if (spec != null) return spec.weeksFor(p.level);
+    // No race: the generator's recommendation for focus and level.
+    final r = PlanGenerator.recommendedWeeks(_profile);
+    return (r.min, r.max);
+  }
 
   Widget _plan(AppLocalizations l) {
     final weeksToEvent = a.eventDate == null ? null : GoalModel.weeksUntil(a.eventDate!, DateTime.now());

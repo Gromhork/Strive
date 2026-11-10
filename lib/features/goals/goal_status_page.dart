@@ -167,6 +167,10 @@ class GoalStatusView extends StatelessWidget {
                   ],
                 ),
               ],
+              for (final line in progressionLines(l, f)) ...[
+                const SizedBox(height: 4),
+                Text(line.startsWith('→') ? line : '• $line', style: const TextStyle(fontSize: 13)),
+              ],
               if (!f.early && f.suggestedSec != null && onAdjustTarget != null && f.status != ForecastStatus.onTrack) ...[
                 const SizedBox(height: 10),
                 Align(
