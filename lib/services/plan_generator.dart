@@ -883,7 +883,7 @@ class PlanGenerator {
   /// Whole-week rules on the run sessions actually planned (single-sport running, after the time
   /// caps – the volume curve alone did not see them; review C9, IMPORTANT 3 / 12):
   ///
-  /// * The long run ≤ 50 % of the week's run km (marathon 55 %, §1.10; 2 runs 60 %) and, in weeks with
+  /// * The long run ≤ 50 % of the week's run km (marathon 55 %, §1.10; not in 2-run weeks) and, in weeks with
   ///   ≤ 4 runs, ≤ 2 × the next-longest run (not marathon / ultra: their race-specific long run is ~3 ×
   ///   the midweek runs at amateur volumes, Pfitzinger / Higdon). Loading weeks first let the easy runs
   ///   grow (their time, ≤ 75 % of the long run, the ceiling; at the ceiling the shortest easy run
@@ -925,13 +925,16 @@ class PlanGenerator {
         if (week[i].intensity == 'tempo' || week[i].intensity == 'intervals') i,
     ];
     final dist = a.eventDistance;
-    // (Runs actually planned this week: a knee runner's swapped easy run is a ride.)
-    final share = runIdx.length >= 3 ? (dist == 'm' ? 0.55 : 0.5) : 0.6;
+    // (Runs actually planned this week: a knee runner's swapped easy run is a ride.) Two-run weeks
+    // (hybrid, a swapped easy run) are one long + one shorter run by design – the volume curve's share
+    // (55 %) decides there; tying the long run to the quality run left it flat for weeks.
+    final twoRuns = runIdx.length < 3;
+    final share = twoRuns ? 1.0 : (dist == 'm' ? 0.55 : 0.5);
     // Marathon / ultra: the share alone – their race-specific long run is ~3–3.5 × the midweek runs at
     // amateur volumes (Pfitzinger / Higdon: 29–32 km next to 8–10 km), a 2 × rule would cap it at ~20 km.
     // With ≥ 5 runs the volume is spread anyway (a 55 km HM runner's 20 km long run next to a 9 km
     // midweek run is normal) – the 2 × rule is for low-frequency weeks.
-    final ratio = dist == 'm' || dist == 'ultra50' || runIdx.length >= 5 ? double.infinity : 2.0;
+    final ratio = twoRuns || dist == 'm' || dist == 'ultra50' || runIdx.length >= 5 ? double.infinity : 2.0;
     bool longOk() => km(week[li]) <= share * total() + 0.25 && km(week[li]) <= ratio * next() + 0.25;
 
     // Trims the week to [limit] km: easy runs (longest first, ≥ [floor]), the quality runs (~10 %
