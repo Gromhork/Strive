@@ -127,7 +127,19 @@ class GoalForecast {
 
     final linked = linkPlanSessions(plans, sessions);
     final hrMax = HrMax.of(p, sessions: sessions, now: now);
-    final (baseline, guessed) = GoalModel.currentVdot(p);
+    final (profileVdot, guessed) = GoalModel.currentVdot(p);
+    // The plan line starts at the fitness the plan was built with. A recalibration that moved
+    // the profile's VDOT since then (it rewrites the race time) must not move the start of the
+    // line too – baseline + gain(weeks) would count the realised gain twice (or a cut twice).
+    // The first quality run of the plan keeps the paces of the plan start.
+    final firstQuality =
+        (plans
+                .where((x) => x.sport == Sport.run && planStart != null && !x.date.isBefore(planStart) && _vdotOfSteps(x.steps) != null)
+                .toList()
+              ..sort((x, y) => x.date.compareTo(y.date)))
+            .firstOrNull;
+    final startVdot = firstQuality == null ? null : _vdotOfSteps(firstQuality.steps);
+    final baseline = startVdot != null && (startVdot - profileVdot).abs() >= 0.75 ? startVdot : profileVdot;
     final runs = sessions.where((s) => s.sport == Sport.run && !s.start.isAfter(now)).toList();
     final planOf = {for (final x in plans) x.id: x};
     PlannedWorkout? planFor(Session s) => s.planId != null ? planOf[s.planId] : plans.where((x) => x.sessionId == s.id).firstOrNull;

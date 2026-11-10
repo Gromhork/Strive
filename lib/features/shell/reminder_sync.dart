@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/sport.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -10,18 +11,12 @@ import '../../services/notification_service.dart';
 final reminderSyncProvider = Provider<void>((ref) {
   final settings = ref.watch(settingsProvider);
   final plans = ref.watch(planListProvider);
+  final prefs = ref.read(prefsProvider);
   final code = settings.locale ?? WidgetsBinding.instance.platformDispatcher.locale.languageCode;
   final l = lookupAppLocalizations(Locale(code == 'de' ? 'de' : 'en'));
   final ns = NotificationService.instance;
   Future(() async {
-    await ns.scheduleHydration(
-      enabled: settings.hydration,
-      fromHour: 8,
-      toHour: 20,
-      intervalHours: settings.hydrationInterval,
-      title: l.hydrationTitle,
-      body: l.hydrationBody,
-    );
+    await clearLegacyHydration(prefs, ns.cancelLegacyHydration);
     await ns.scheduleTraining(
       enabled: settings.trainingReminder,
       hour: settings.reminderHour,
@@ -33,3 +28,17 @@ final reminderSyncProvider = Provider<void>((ref) {
     debugPrint('reminder sync failed: $e');
   });
 });
+
+/// Prefs keys of the removed hydration reminder.
+const legacyHydrationKeys = ['hydration', 'hydrationInterval'];
+
+/// Once after the upgrade that removed the hydration reminder: cancels the reminders an
+/// older version may have scheduled and drops its settings (their absence marks it done).
+Future<bool> clearLegacyHydration(SharedPreferences prefs, Future<void> Function() cancel) async {
+  if (!legacyHydrationKeys.any(prefs.containsKey)) return false;
+  await cancel();
+  for (final k in legacyHydrationKeys) {
+    await prefs.remove(k);
+  }
+  return true;
+}

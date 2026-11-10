@@ -247,6 +247,10 @@ void main() {
       ),
     );
     await _finish(tester);
+    // Replacing planned workouts is confirmed first (shared dialog), then they are replaced.
+    expect(find.text(l.replacePlanKeeps), findsOneWidget);
+    expect(repo.deleted, isEmpty, reason: 'nothing is replaced before the confirmation');
+    await _tap(tester, find.text(l.replacePlanOk));
     expect(repo.deleted, ['old'], reason: 'old planned workouts are replaced');
     expect(repo.savedProfile!.athlete.dayPlan, isEmpty);
     expect(repo.savedPlans, isNotEmpty);

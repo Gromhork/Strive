@@ -165,7 +165,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get muscle => 'Muskel';
 
   @override
-  String get fitnessLevel => 'Fitnesslevel';
+  String get fitnessLevel => 'Leistungsstand';
 
   @override
   String get fitnessLevelSub => 'Sei ehrlich – der Plan passt sich an, wenn du besser wirst.';
@@ -216,7 +216,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get goalHealth => 'Gesundheit';
 
   @override
-  String get goalRace => 'Wettkampf / Event';
+  String get goalRace => 'Wettkampf';
 
   @override
   String get scheduleTitle => 'Trainingstage';
@@ -251,10 +251,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get eventSub => 'Füge einen Wettkampf hinzu (Marathon, Triathlon …) und erhalte einen Countdown. Optional.';
 
   @override
-  String get eventName => 'Name des Events';
+  String get eventName => 'Name des Wettkampfs';
 
   @override
-  String get eventDate => 'Datum des Events';
+  String get eventDate => 'Datum des Wettkampfs';
 
   @override
   String get eventDistance => 'Distanz';
@@ -264,9 +264,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get marathon => 'Marathon';
-
-  @override
-  String get searchMarathonDe => 'Events auf marathon.de suchen';
 
   @override
   String get generatePlanNow => 'Trainingsplan erstellen';
@@ -305,7 +302,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get goodEvening => 'Guten Abend';
 
   @override
-  String get todaysWorkout => 'Heutiges Training';
+  String get todaysWorkout => 'Heutige Einheit';
 
   @override
   String get restDay => 'Ruhetag';
@@ -370,7 +367,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get readyFresh => 'Erholt';
 
   @override
-  String get readyFreshText => 'Deine Belastung ist niedrig – ideal für eine harte Einheit oder mehr Umfang.';
+  String get readyFreshText => 'Deine Belastung ist niedrig – ideal für eine Schlüsseleinheit oder mehr Umfang.';
 
   @override
   String get readyOptimal => 'Optimale Belastung';
@@ -413,16 +410,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get freeWorkout => 'Frei';
 
   @override
-  String get workoutRunning => 'Training läuft';
+  String get workoutRunning => 'Einheit läuft';
 
   @override
-  String get workoutRunningBody => 'Es läuft noch ein anderes Training. Verwerfen und neu starten?';
+  String get workoutRunningBody => 'Es läuft noch eine andere Einheit. Verwerfen und neu starten?';
 
   @override
   String get discardAndStart => 'Verwerfen & starten';
 
   @override
-  String get startTraining => 'Training starten';
+  String get startTraining => 'Einheit starten';
 
   @override
   String get logManually => 'Manuell eintragen';
@@ -458,22 +455,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gpsPermissionDenied => 'Für GPS-Tracking wird die Standortberechtigung benötigt.';
 
   @override
-  String get noActiveWorkout => 'Kein aktives Training.';
+  String get noActiveWorkout => 'Keine aktive Einheit.';
 
   @override
   String get noSetsDone => 'Keine Sätze abgehakt';
 
   @override
-  String get noSetsDoneBody => 'Dieses Training verwerfen?';
+  String get noSetsDoneBody => 'Diese Einheit verwerfen?';
 
   @override
   String get discard => 'Verwerfen';
 
   @override
-  String get finishWorkout => 'Training beenden?';
+  String get finishWorkout => 'Einheit beenden?';
 
   @override
-  String get finishWorkoutBody => 'Dein Training wird nach der Zusammenfassung gespeichert.';
+  String get finishWorkoutBody => 'Deine Einheit wird nach der Zusammenfassung gespeichert.';
 
   @override
   String get finish => 'Beenden';
@@ -485,7 +482,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get rename => 'Umbenennen';
 
   @override
-  String get discardWorkout => 'Training verwerfen';
+  String get discardWorkout => 'Einheit verwerfen';
 
   @override
   String get addExercise => 'Übung hinzufügen';
@@ -572,6 +569,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get exercises => 'Übungen';
 
   @override
+  String get coachBattleWon => 'Coach-Battle gewonnen! Du hast die Prognose aus deiner letzten Einheit geschlagen.';
+
+  @override
+  String get coachBattleLost => 'Coach-Battle: Die Prognose lag diesmal etwas höher – nächstes Mal!';
+
+  @override
   String get newPr => 'Neue Bestleistung!';
 
   @override
@@ -581,10 +584,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get notesHint => 'Notizen (Wie hat es sich angefühlt? Schlaf, Ernährung …)';
 
   @override
-  String get saveWorkout => 'Training speichern';
+  String get saveWorkout => 'Einheit speichern';
 
   @override
-  String get discardSummaryBody => 'Dieses Training wird nicht gespeichert.';
+  String get discardSummaryBody => 'Diese Einheit wird nicht gespeichert.';
 
   @override
   String get rpeVeryEasy => 'sehr leicht';
@@ -602,16 +605,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get rpeMax => 'maximal';
 
   @override
-  String get badgeFirst => 'Erstes Training';
+  String get badgeFirst => 'Erste Einheit';
 
   @override
-  String get badgeTen => '10 Trainings';
+  String get badgeTen => '10 Einheiten';
 
   @override
-  String get badgeFifty => '50 Trainings';
+  String get badgeFifty => '50 Einheiten';
 
   @override
-  String get badgeHundred => '100 Trainings';
+  String get badgeHundred => '100 Einheiten';
 
   @override
   String get badgeTon => '10 t in einer Einheit';
@@ -706,7 +709,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get offlineAction => 'Dafür wird eine Internetverbindung benötigt.';
 
   @override
-  String get emptyWorkout => 'Leeres Training';
+  String get emptyWorkout => 'Leere Einheit';
 
   @override
   String get recordGps => 'Aktivität aufzeichnen';
@@ -783,7 +786,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get description => 'Beschreibung';
 
   @override
-  String get startWorkout => 'Training starten';
+  String get startWorkout => 'Einheit starten';
 
   @override
   String get targetDistance => 'Zieldistanz';
@@ -792,10 +795,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get intensity => 'Intensität';
 
   @override
-  String get planWorkout => 'Training planen';
+  String get planWorkout => 'Einheit planen';
 
   @override
-  String get editWorkout => 'Training bearbeiten';
+  String get editWorkout => 'Einheit bearbeiten';
 
   @override
   String get program => 'Programm';
@@ -815,32 +818,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get weeks => 'Wochen';
-
-  @override
-  String get planLocal => 'Smarte Regeln';
-
-  @override
-  String get planAi => 'KI (Gemini)';
-
-  @override
-  String get planLocalDesc => 'Periodisierter Plan nach sportwissenschaftlichen Prinzipien (80/20, progressive Überlastung, Deload jede 4. Woche). Funktioniert offline.';
-
-  @override
-  String get planAiDesc => 'Gemini erstellt einen individuellen Plan aus deinem Profil und deinem bisherigen Training. Benötigt Internet.';
-
-  @override
-  String get planWishHint => 'Besondere Wünsche? z. B. „Fokus Beine“, „10 km unter 50 min“';
-
-  @override
-  String get replaceExisting => 'Kommende geplante Trainings ersetzen';
-
-  @override
-  String get generate => 'Erstellen';
+  String get planLocalDesc => 'Periodisierter Plan nach sportwissenschaftlichen Prinzipien (80/20, progressive Überlastung, Entlastungswoche alle 3–5 Wochen, je nach Schwierigkeit). Funktioniert offline.';
 
   @override
   String planCreated(int count) {
-    return '$count Trainings geplant';
+    return '$count Einheiten geplant';
   }
 
   @override
@@ -862,16 +844,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get nothingPlanned => 'Nichts geplant.';
 
   @override
-  String get nothingToExport => 'Keine kommenden Trainings zum Exportieren.';
+  String get nothingToExport => 'Keine kommenden Einheiten zum Exportieren.';
 
   @override
   String get icsShareText => 'Mein Strive-Trainingsplan (.ics) – mit einer Kalender-App öffnen, um ihn zu importieren.';
 
   @override
   String get planGymDesc => 'Krafteinheit – progressive Überlastung: Gewicht oder Wdh. steigern, wenn alle Sätze gut laufen.';
-
-  @override
-  String get planDeloadGym => 'Deload-Woche: gleiche Übungen, ~60 % der üblichen Sätze, 3–4 Wdh. im Tank lassen.';
 
   @override
   String get planEasyRun => 'Lockerer Lauf';
@@ -982,7 +961,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get strengthRecords => 'Kraft-Rekorde';
 
   @override
-  String get noRecordsYet => 'Absolviere ein Gym-Training, um deine Rekorde zu sehen.';
+  String get noRecordsYet => 'Absolviere eine Gym-Einheit, um deine Rekorde zu sehen.';
 
   @override
   String get longestDistance => 'Längste Distanz';
@@ -1003,10 +982,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get badges => 'Abzeichen';
 
   @override
-  String get noSessionsYet => 'Noch keine Trainings. Starte dein erstes!';
+  String get noSessionsYet => 'Noch keine Einheiten. Starte deine erste!';
 
   @override
-  String get deleteSession => 'Training löschen?';
+  String get deleteSession => 'Einheit löschen?';
 
   @override
   String get splits => 'Zwischenzeiten';
@@ -1076,7 +1055,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get eventPassed => 'Event vorbei';
+  String get eventPassed => 'Wettkampf vorbei';
 
   @override
   String get onTrack => 'Im Plan';
@@ -1151,14 +1130,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get reminders => 'Erinnerungen';
 
   @override
-  String get hydrationReminder => 'Trink-Erinnerung';
-
-  @override
-  String everyNHours(int hours) {
-    return 'Alle $hours h (8–20 Uhr)';
-  }
-
-  @override
   String get trainingReminder => 'Trainings-Erinnerung';
 
   @override
@@ -1170,16 +1141,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get reminderTime => 'Uhrzeit';
 
   @override
-  String get testNotification => 'Test-Benachrichtigung senden';
-
-  @override
   String get notificationsDenied => 'Benachrichtigungen sind in den Systemeinstellungen blockiert.';
-
-  @override
-  String get hydrationTitle => 'Zeit zu trinken 💧';
-
-  @override
-  String get hydrationBody => 'Ein Glas Wasser hält deine Leistung hoch.';
 
   @override
   String trainingReminderTitle(String sport) {
@@ -1188,9 +1150,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get integrations => 'Integrationen';
-
-  @override
-  String get comingSoon => 'Bald';
 
   @override
   String get googleCalendar => 'Google Kalender';
@@ -1314,11 +1273,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get progAddReps => 'Gewicht halten – je Satz eine Wiederholung mehr';
-
-  @override
-  String progDeload(String value) {
-    return 'Letztes Mal zu schwer – mit $value neu aufbauen';
-  }
 
   @override
   String get progHold => 'Gewicht halten und jede Wdh. sauber';
@@ -1938,7 +1892,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get diffChallenging => 'Herausfordernd';
 
   @override
-  String get diffChallengingSub => '+10 % Umfang/Woche, mehr intensive Einheiten – für Erfahrene.';
+  String get diffChallengingSub => '+10 % Umfang/Woche, mehr Schlüsseleinheiten – für Erfahrene.';
 
   @override
   String get planLength => 'Planlänge';
@@ -2004,7 +1958,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get hcTitle => 'Galaxy Watch verbinden';
 
   @override
-  String get hcSub => 'Deine Uhr synchronisiert mit Samsung Health, Samsung Health teilt mit Health Connect und Strive liest Trainings, Puls, Schlaf und Schritte – und schreibt deine Strive-Trainings zurück.';
+  String get hcSub => 'Deine Uhr synchronisiert mit Samsung Health, Samsung Health teilt mit Health Connect und Strive liest Einheiten, Puls, Schlaf und Schritte – und schreibt deine Strive-Einheiten zurück.';
 
   @override
   String get hcUnavailable => 'Health Connect ist auf diesem Gerät nicht verfügbar.';
@@ -2026,11 +1980,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String hcImported(int n) {
-    return '$n neue Trainings importiert';
+    return '$n neue Einheiten importiert';
   }
 
   @override
-  String get hcConnectedInfo => 'Verbunden. Neue Uhr-Trainings erscheinen automatisch in deinem Verlauf.';
+  String get hcConnectedInfo => 'Verbunden. Neue Uhr-Einheiten erscheinen automatisch in deinem Verlauf.';
 
   @override
   String get hcImportedLabel => 'Importiert';
@@ -2057,7 +2011,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get hcStep3 => 'Oben auf „Verbinden“ tippen und Strive Lesen & Schreiben erlauben.';
 
   @override
-  String get hcStep4 => 'Trainings wie gewohnt auf der Uhr aufzeichnen – Strive importiert sie beim nächsten App-Start.';
+  String get hcStep4 => 'Einheiten wie gewohnt auf der Uhr aufzeichnen – Strive importiert sie beim nächsten App-Start.';
 
   @override
   String get hcOpenSamsung => 'Samsung Health öffnen';
@@ -2066,7 +2020,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get hcWhatSynced => 'Was wird synchronisiert?';
 
   @override
-  String get hcWhatSyncedBody => 'Lesen: Trainings (Laufen, Rad, Schwimmen, Kraft) inkl. Ø/Max-Puls, Distanz und Kalorien, Ruhepuls, HRV, Schlaf, Schritte, Gewicht, Körperfett. Schreiben: Strive-Trainings und Gewichtseinträge.';
+  String get hcWhatSyncedBody => 'Lesen: Einheiten (Laufen, Rad, Schwimmen, Kraft) inkl. Ø/Max-Puls, Distanz und Kalorien, Ruhepuls, HRV, Schlaf, Schritte, Gewicht, Körperfett. Schreiben: Strive-Einheiten und Gewichtseinträge.';
 
   @override
   String get steps => 'Schritte';
@@ -2081,7 +2035,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get linkGoogle => 'Google-Konto verknüpfen';
 
   @override
-  String get guidedWorkout => 'Geführtes Training';
+  String get guidedWorkout => 'Geführte Einheit';
 
   @override
   String get guidedWorkoutSub => 'Abschnitte mit Zielvorgaben und Sprachansagen';
@@ -2266,13 +2220,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get phaseTaper => 'Tapering';
 
   @override
-  String get phaseRecovery => 'Erholungswoche';
+  String get phaseRecovery => 'Entlastungswoche';
 
   @override
   String get keySession => 'Schlüsseleinheit';
 
   @override
-  String get viewSession => 'Training ansehen';
+  String get viewSession => 'Einheit ansehen';
 
   @override
   String get fitnessForm => 'Fitness & Form';
@@ -2287,7 +2241,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get form => 'Form';
 
   @override
-  String get formFresh => 'Frisch – bereit für Wettkampf oder harte Einheit';
+  String get formFresh => 'Frisch – bereit für Wettkampf oder Schlüsseleinheit';
 
   @override
   String get formNeutral => 'Ausgeglichen – Fitness wird gehalten';
@@ -2828,7 +2782,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get recoveryTitle => 'Erholung & Belastung';
 
   @override
-  String get load7d => 'Last 7 Tage';
+  String get load7d => 'Belastung 7 Tage';
 
   @override
   String get load28d => 'Ø Woche (28 T)';
@@ -2856,11 +2810,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get byDay => 'Tag für Tag';
 
   @override
-  String get planExercisesHint => 'Änderungen gelten nur für dieses Training – das Programm bleibt unverändert.';
+  String get planExercisesHint => 'Änderungen gelten nur für diese Einheit – das Programm bleibt unverändert.';
 
   @override
   String planExercisesCustom(String name) {
-    return 'Für dieses Training angepasst (Programm: $name).';
+    return 'Für diese Einheit angepasst (Programm: $name).';
   }
 
   @override
@@ -3108,13 +3062,13 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get loadSrcHistory => 'aus deinem letzten Training';
+  String get loadSrcHistory => 'aus deiner letzten Einheit';
 
   @override
   String get loadSrcIncrease => 'letztes Mal alle Wiederholungen geschafft – mehr Gewicht';
 
   @override
-  String get loadSrcAddReps => 'aus deinem letzten Training – schaff eine Wiederholung mehr';
+  String get loadSrcAddReps => 'aus deiner letzten Einheit – schaff eine Wiederholung mehr';
 
   @override
   String get loadSrcDeload => 'letztes Mal war hart – etwas leichter';
@@ -3220,10 +3174,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get weightPlus => 'Gewicht erhöhen';
 
   @override
-  String get previousWorkout => 'Vorheriges Training';
+  String get previousWorkout => 'Vorherige Einheit';
 
   @override
-  String get nextWorkout => 'Nächstes Training';
+  String get nextWorkout => 'Nächste Einheit';
 
   @override
   String get avgHrShort => 'Ø Puls';
@@ -3254,7 +3208,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adjustWeekTitle => 'Woche anpassen';
 
   @override
-  String get adjustWeekIntro => 'Schlüsseleinheiten wandern auf einen freien Tag dieser Woche – nie direkt neben eine andere harte Einheit. Lockere Einheiten musst du nicht nachholen: aufgestaute Umfänge schaden mehr, als sie bringen.';
+  String get adjustWeekIntro => 'Schlüsseleinheiten wandern auf einen freien Tag dieser Woche – nie direkt neben eine andere Schlüsseleinheit. Lockere Einheiten musst du nicht nachholen: aufgestaute Umfänge schaden mehr, als sie bringen.';
 
   @override
   String adjustReplaces(String title) {
@@ -3265,10 +3219,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adjustDropped => 'entfällt – muss nicht nachgeholt werden';
 
   @override
-  String get adjustNoRoom => 'entfällt – diese Woche kein freier Tag ohne harte Einheit daneben';
+  String get adjustNoRoom => 'entfällt – diese Woche kein freier Tag ohne Schlüsseleinheit daneben';
 
   @override
-  String get adjustProtected => 'entfällt – Erholungs-/Taperwoche bleibt locker';
+  String get adjustProtected => 'entfällt – Entlastungs-/Taperwoche bleibt locker';
 
   @override
   String get adjustDone => 'Woche angepasst';
@@ -3350,7 +3304,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loadSrcHold => 'Gewicht halten und alle Ziel-Wiederholungen schaffen';
 
   @override
-  String get loadSrcStall => '3 Trainings ohne Fortschritt – etwas leichter, dann wieder steigern';
+  String get loadSrcStall => '3 Einheiten ohne Fortschritt – etwas leichter, dann wieder steigern';
 
   @override
   String get loadSrcIncreaseBw => 'alle Wiederholungen geschafft – etwas Zusatzgewicht (Gürtel oder Weste)';
@@ -3400,10 +3354,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get recalNote => 'An dein bisheriges Training angepasst (Anstrengung und erledigte Einheiten).';
 
   @override
-  String get recalButton => 'Neu planen & rekalibrieren';
+  String get recalButton => 'Plan überprüfen';
 
   @override
-  String get recalTitle => 'Neu planen & rekalibrieren';
+  String get recalTitle => 'Plan an dein Training anpassen';
 
   @override
   String get recalIntro => 'Deine nächsten zwei Wochen, angepasst an die letzten zwei: Anstrengung (RPE), erledigte und verpasste Einheiten, neue Bestleistungen. Erledigte Einheiten bleiben unverändert.';
@@ -3418,7 +3372,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get recalWhyRpeHigh => 'Mehrere Einheiten waren anstrengender als geplant – erst mehr Erholung.';
 
   @override
-  String get recalWhyRpeLow => 'Deine harten Einheiten fielen dir leicht – etwas mehr Umfang.';
+  String get recalWhyRpeLow => 'Deine Schlüsseleinheiten fielen dir leicht – etwas mehr Umfang.';
 
   @override
   String recalWhyCompletion(int pct) {
@@ -3479,10 +3433,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get recalApplied => 'Plan rekalibriert';
+  String get recalApplied => 'Plan angepasst';
 
   @override
-  String get recalNewPlan => 'Neuen Plan erstellen';
+  String get recalNewPlan => 'Plan neu aufsetzen…';
 
   @override
   String get recalMore => 'Mehr';
@@ -3533,7 +3487,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String recalWhyRunTrendFaster(String from, String to) {
-    return 'Deine Qualitätsläufe trafen die Zielpaces und fühlten sich leicht an – Paces etwas schneller (VDOT $from → $to).';
+    return 'Deine Schlüsselläufe trafen die Zielpaces und fühlten sich leicht an – Paces etwas schneller (VDOT $from → $to).';
   }
 
   @override
@@ -3600,10 +3554,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get autoAdjEasyTooFast => 'Deine letzte lockere Einheit war schneller als das lockere Tempo – diese ist etwas kürzer. Nimm Tempo raus: Lockere Tage bauen die Grundlage auf (80/20).';
 
   @override
-  String get autoAdjQualityHard => 'Deine letzte Qualitätseinheit war härter als geplant – diese wird nicht gesteigert.';
+  String get autoAdjQualityHard => 'Deine letzte Schlüsseleinheit war härter als geplant – diese wird nicht gesteigert.';
 
   @override
-  String get autoAdjQualityEasy => 'Deine letzte Qualitätseinheit traf die Vorgaben und fühlte sich leicht an – diese ist 5 % länger.';
+  String get autoAdjQualityEasy => 'Deine letzte Schlüsseleinheit traf die Vorgaben und fühlte sich leicht an – diese ist 5 % länger.';
 
   @override
   String get progTopReached => 'alle Sätze am oberen Ende – mehr Gewicht';
@@ -3703,7 +3657,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get recalWhyLongCap => 'Lange Einheiten bleiben bei höchstens +10 % deiner längsten der letzten 30 Tage – darüber steigt das Verletzungsrisiko.';
 
   @override
-  String get recalWhyRpeLowHold => 'Deine harten Einheiten fielen dir leicht – die neuen Zielwerte sind diese Woche die Steigerung, der Umfang bleibt (nie beides gleichzeitig).';
+  String get recalWhyRpeLowHold => 'Deine Schlüsseleinheiten fielen dir leicht – die neuen Zielwerte sind diese Woche die Steigerung, der Umfang bleibt (nie beides gleichzeitig).';
 
   @override
   String wBrickRun(int min) {
@@ -3872,7 +3826,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get termPhaseTitle => 'Planphasen';
 
   @override
-  String get termPhaseBody => 'Grundlage: Ausdauer und Technik aufbauen, überwiegend locker. Aufbau: mehr Intensität. Spitze: wettkampfspezifische Einheiten. Tapering: weniger Umfang vor dem Wettkampf, damit du frisch startest. Entlastung: alle 3–4 Wochen eine leichtere Woche, damit sich der Körper anpasst.';
+  String get termPhaseBody => 'Grundlage: Ausdauer und Technik aufbauen, überwiegend locker. Aufbau: mehr Intensität. Spitze: wettkampfspezifische Einheiten. Tapering: weniger Umfang vor dem Wettkampf, damit du frisch startest. Entlastungswoche: alle 3–5 Wochen eine leichtere Woche, damit sich der Körper anpasst.';
 
   @override
   String get termPhaseTip => 'Entlastungs- und Taperwochen fühlen sich bewusst leicht an – nicht nachholen.';
@@ -4052,7 +4006,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get alignPlanToEvent => 'Trainingsplan auf dieses Event ausrichten';
+  String get alignPlanToEvent => 'Trainingsplan auf diesen Wettkampf ausrichten';
 
   @override
   String get alignPlanToEventSub => 'Der Plan läuft bis zum Wettkampftag; erledigte Einheiten bleiben erhalten.';
@@ -4133,10 +4087,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get fcReasonSlower => 'Tempoläufe langsamer als geplant';
+  String get fcReasonSlower => 'Schlüsselläufe langsamer als geplant';
 
   @override
-  String get fcReasonFaster => 'Tempoläufe schneller als geplant';
+  String get fcReasonFaster => 'Schlüsselläufe schneller als geplant';
 
   @override
   String get fcReasonLongRun => 'Lange Läufe kürzer als geplant';
@@ -4209,6 +4163,95 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get goalEditPlan => 'Planeinstellungen';
+
+  @override
+  String get replacePlanTitle => 'Plan neu aufsetzen?';
+
+  @override
+  String replacePlanBody(String date, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n geplante Einheiten ab $date werden ersetzt.',
+      one: '1 geplante Einheit ab $date wird ersetzt.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get replacePlanKeeps => 'Erledigte Einheiten und Statistik bleiben.';
+
+  @override
+  String get replaceFromToday => 'Ab heute';
+
+  @override
+  String get replaceFromMonday => 'Ab nächstem Montag';
+
+  @override
+  String get replacePlanOk => 'Ersetzen';
+
+  @override
+  String get startOverTitle => 'Plan neu aufsetzen';
+
+  @override
+  String get startOverButton => 'Neu aufsetzen';
+
+  @override
+  String get wRecoveryWeekNote2 => 'Entlastungswoche: Der Umfang ist bewusst reduziert – bleib locker, auch wenn du dich frisch fühlst. Jetzt verarbeitet der Körper die letzten Wochen.';
+
+  @override
+  String get wGymDeloadNote3 => 'Entlastungswoche: Die Gewichte sind etwa 10 % leichter eingetragen, jede Übung behält etwa die Hälfte ihrer Arbeitssätze. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.';
+
+  @override
+  String get eventQuestion => 'Trainierst du für einen Wettkampf?';
+
+  @override
+  String get noPlanYet => 'Noch kein Plan';
+
+  @override
+  String get noPlanYetSub => 'Strive erstellt ihn aus Ziel, Trainingstagen und Zeit.';
+
+  @override
+  String todayNext(String title, String day) {
+    return 'Nächste: $title · $day';
+  }
+
+  @override
+  String todayHiddenByFilter(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n Einheiten durch Filter ausgeblendet',
+      one: '1 Einheit durch Filter ausgeblendet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get todayHiddenByFilterSub => 'Der Sportfilter ist aktiv – heute ist kein Ruhetag.';
+
+  @override
+  String get showAllSports => 'Alle zeigen';
+
+  @override
+  String hintPlannedDry(String sport, String time) {
+    return 'Heute geplant: $sport – trocken bis $time';
+  }
+
+  @override
+  String hintPlannedBest(String sport, String time) {
+    return 'Heute geplant: $sport – am besten um $time';
+  }
+
+  @override
+  String hintPlannedStorm(String sport) {
+    return 'Gewitter – $sport lieber drinnen oder später';
+  }
+
+  @override
+  String hintPlannedNeutral(String sport) {
+    return 'Heute geplant: $sport – passend anziehen';
+  }
 
   @override
   String get summaryEffortTitle => 'Wie hart war\'s? Dein Plan passt sich daran an.';

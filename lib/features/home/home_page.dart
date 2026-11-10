@@ -27,6 +27,7 @@ import '../calendar/plan_editor.dart';
 import '../calendar/planned_workout_page.dart';
 import '../session/step_list.dart';
 import '../goals/goals_page.dart';
+import '../onboarding/onboarding_page.dart';
 import '../session/start_helpers.dart';
 import '../stats/body_page.dart';
 import '../../services/plan_text.dart';
@@ -50,7 +51,7 @@ class HomePage extends ConsumerWidget {
           SizedBox(height: 12),
           AdjustWeekBanner(),
           AutoAdjustedBanner(),
-          _TodayCard(),
+          TodayCard(),
           SizedBox(height: 12),
           GoalStatusCard(),
           _ComingUp(),
@@ -102,13 +103,13 @@ class _Greeting extends ConsumerWidget {
 
 // ───────────────────────────── Today ─────────────────────────────
 
-class _TodayCard extends ConsumerStatefulWidget {
-  const _TodayCard();
+class TodayCard extends ConsumerStatefulWidget {
+  const TodayCard({super.key});
   @override
-  ConsumerState<_TodayCard> createState() => _TodayCardState();
+  ConsumerState<TodayCard> createState() => _TodayCardState();
 }
 
-class _TodayCardState extends ConsumerState<_TodayCard> {
+class _TodayCardState extends ConsumerState<TodayCard> {
   int _i = 0;
 
   @override
@@ -116,53 +117,93 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
     final l = context.l10n;
     final filter = ref.watch(sportFilterProvider);
     final today = dayOnly(DateTime.now());
-    final plans = ref.watch(planListProvider).where((p) => sameDay(p.date, today) && (filter == null || p.sport == filter)).toList();
+    final all = ref.watch(planListProvider);
+    final allToday = all.where((p) => sameDay(p.date, today)).toList();
+    final plans = allToday.where((p) => filter == null || p.sport == filter).toList();
+    // Today's workouts of other sports are not hidden silently.
+    final hidden = allToday.length - plans.length;
     final doneToday = ref.watch(sessionListProvider).where((s) => sameDay(s.start, today)).toList();
     if (_i >= plans.length) _i = 0;
 
     if (plans.isEmpty) {
+      final noPlan = !all.any((p) => !p.date.isBefore(today));
+      final upcoming = all.where((p) => p.status == 'planned' && p.date.isAfter(today)).toList()..sort((a, b) => a.date.compareTo(b.date));
+      final next = upcoming.where((p) => filter == null || p.sport == filter).firstOrNull ?? upcoming.firstOrNull;
+      final small = Theme.of(context).textTheme.bodySmall;
+      final (IconData icon, Color color, String title, String sub) =
+          hidden > 0
+              ? (Icons.filter_alt_outlined, AppColors.brand, l.todayHiddenByFilter(hidden), l.todayHiddenByFilterSub)
+              : doneToday.isNotEmpty
+              ? (Icons.check_circle_rounded, AppColors.success, l.doneToday(doneToday.length), doneToday.map((s) => s.title).join(', '))
+              : noPlan
+              ? (Icons.event_note_rounded, AppColors.brand, l.noPlanYet, l.noPlanYetSub)
+              : (Icons.self_improvement_rounded, AppColors.brand, l.restDay, l.restDaySub);
       return SectionCard(
         title: l.todaysWorkout,
         trailing: IconButton(
           visualDensity: VisualDensity.compact,
+          tooltip: l.planWorkout,
           icon: const Icon(Icons.add_circle_outline),
           onPressed: () => showPlanEditor(context, ref, date: today),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(18)),
-              child: Icon(
-                doneToday.isEmpty ? Icons.self_improvement_rounded : Icons.check_circle_rounded,
-                color: doneToday.isEmpty ? AppColors.brand : AppColors.success,
-                size: 30,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    doneToday.isEmpty ? l.restDay : l.doneToday(doneToday.length),
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(18)),
+                  child: Icon(icon, color: color, size: 30),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, key: const ValueKey('todayTitle'), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                      Text(sub, style: small, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      if (next != null && hidden == 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            l.todayNext(next.title, DateFormat.EEEE(context.localeName).format(next.date)),
+                            key: const ValueKey('todayNext'),
+                            style: small?.copyWith(fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
                   ),
-                  Text(
-                    doneToday.isEmpty ? l.restDaySub : doneToday.map((s) => s.title).join(', '),
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            FilledButton.tonal(
-              style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
-              onPressed: () => showQuickStart(context, ref),
-              child: Text(l.train),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child:
+                  hidden > 0
+                      ? FilledButton.tonal(
+                        style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+                        onPressed: () => ref.read(sportFilterProvider.notifier).set(null),
+                        child: Text(l.showAllSports),
+                      )
+                      : noPlan
+                      ? FilledButton.icon(
+                        key: const ValueKey('todayCreatePlan'),
+                        style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+                        onPressed:
+                            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
+                        icon: const Icon(Icons.auto_graph_rounded, size: 18),
+                        label: Text(l.generatePlan),
+                      )
+                      : FilledButton.tonal(
+                        style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+                        onPressed: () => showQuickStart(context, ref),
+                        child: Text(l.train),
+                      ),
             ),
           ],
         ),
@@ -202,6 +243,15 @@ class _TodayCardState extends ConsumerState<_TodayCard> {
                       children: [
                         Text(l.todaysWorkout, style: Theme.of(context).textTheme.labelMedium),
                         if (plans.length > 1) Text('  ${_i + 1}/${plans.length}', style: Theme.of(context).textTheme.labelSmall),
+                        if (hidden > 0)
+                          Flexible(
+                            child: Text(
+                              '  · ${l.todayHiddenByFilter(hidden)}',
+                              style: Theme.of(context).textTheme.labelSmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 8),

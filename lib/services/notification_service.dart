@@ -11,7 +11,7 @@ import '../data/models.dart';
 /// Android drawable used as small (status-bar) icon by every notification.
 const notificationIcon = 'ic_notification';
 
-/// Local reminders: hydration and upcoming training.
+/// Local reminders for upcoming training.
 class NotificationService {
   NotificationService._();
   static final instance = NotificationService._();
@@ -19,7 +19,7 @@ class NotificationService {
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
 
-  static const _hydrationBase = 100;
+  static const _legacyHydrationBase = 100;
   static const _trainingBase = 1000;
 
   Future<void> init() async {
@@ -59,35 +59,15 @@ class NotificationService {
     iOS: const DarwinNotificationDetails(),
   );
 
-  /// Daily repeating reminders every [intervalHours] between [fromHour] and [toHour].
-  Future<void> scheduleHydration({
-    required bool enabled,
-    required int fromHour,
-    required int toHour,
-    required int intervalHours,
-    required String title,
-    required String body,
-  }) async {
+  /// Removes the hydration reminders older versions scheduled (daily repeating, ids
+  /// 100–123, channel "hydration") – the feature is gone, the alarms would stay forever.
+  Future<void> cancelLegacyHydration() async {
     await init();
     for (var i = 0; i < 24; i++) {
-      await _plugin.cancel(_hydrationBase + i);
+      await _plugin.cancel(_legacyHydrationBase + i);
     }
-    if (!enabled) return;
-    final now = tz.TZDateTime.now(tz.local);
-    var idx = 0;
-    for (var h = fromHour; h <= toHour; h += intervalHours) {
-      var t = tz.TZDateTime(tz.local, now.year, now.month, now.day, h);
-      if (t.isBefore(now)) t = t.add(const Duration(days: 1));
-      await _plugin.zonedSchedule(
-        _hydrationBase + idx++,
-        title,
-        body,
-        t,
-        _details('hydration', 'Hydration'),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
-      );
-    }
+    final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await android?.deleteNotificationChannel('hydration');
   }
 
   /// One reminder at [hour] on the day of each upcoming planned workout (next 14 days).
@@ -123,10 +103,5 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
     }
-  }
-
-  Future<void> showNow(String title, String body) async {
-    await init();
-    await _plugin.show(1, title, body, _details('general', 'General'));
   }
 }

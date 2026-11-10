@@ -233,29 +233,6 @@ class ProfilePage extends ConsumerWidget {
             child: Column(
               children: [
                 SwitchListTile(
-                  secondary: const Icon(Icons.water_drop_outlined, color: AppColors.swim),
-                  title: Text(l.hydrationReminder),
-                  subtitle: Text(l.everyNHours(settings.hydrationInterval)),
-                  value: settings.hydration,
-                  onChanged:
-                      (v) =>
-                          v
-                              ? enableReminder(() async => setN.update(settings.copyWith(hydration: true)))
-                              : setN.update(settings.copyWith(hydration: false)),
-                ),
-                if (settings.hydration)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Slider(
-                      value: settings.hydrationInterval.toDouble(),
-                      min: 1,
-                      max: 4,
-                      divisions: 3,
-                      label: l.everyNHours(settings.hydrationInterval),
-                      onChanged: (v) => setN.update(settings.copyWith(hydrationInterval: v.round())),
-                    ),
-                  ),
-                SwitchListTile(
                   secondary: const Icon(Icons.notifications_active_outlined, color: AppColors.brand),
                   title: Text(l.trainingReminder),
                   subtitle: Text(l.trainingReminderSub('${settings.reminderHour}:00')),
@@ -276,11 +253,6 @@ class ProfilePage extends ConsumerWidget {
                       if (t != null) setN.update(settings.copyWith(reminderHour: t.hour));
                     },
                   ),
-                ListTile(
-                  leading: const Icon(Icons.notification_add_outlined),
-                  title: Text(l.testNotification),
-                  onTap: () => enableReminder(() => NotificationService.instance.showNow('Strive', l.hydrationBody)),
-                ),
               ],
             ),
           ),
@@ -295,16 +267,6 @@ class ProfilePage extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthConnectPage())),
                 ),
-                for (final (name, icon) in [
-                  ('Strava', Icons.route_outlined),
-                  ('Garmin Connect', Icons.watch_outlined),
-                  ('MyFitnessPal / Yazio', Icons.restaurant_outlined),
-                ])
-                  ListTile(
-                    leading: Icon(icon),
-                    title: Text(name),
-                    trailing: Chip(label: Text(l.comingSoon, style: const TextStyle(fontSize: 11)), visualDensity: VisualDensity.compact),
-                  ),
                 ListTile(
                   leading: const Icon(Icons.calendar_month_outlined),
                   title: Text(l.googleCalendar),

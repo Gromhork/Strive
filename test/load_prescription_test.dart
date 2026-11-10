@@ -377,6 +377,6 @@ void main() {
       de,
       const Prescription(weight: 50, reps: 8, source: LoadSource.history, fromHistory: true, phaseAdjusted: true, phase: 'recovery'),
     );
-    expect(reason, 'aus deinem letzten Training · Entlastungswoche');
+    expect(reason, 'aus deiner letzten Einheit · Entlastungswoche');
   });
 }

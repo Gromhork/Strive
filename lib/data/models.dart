@@ -203,9 +203,10 @@ class AthleteData {
 
   /// First day and length (weeks) of the current rule-based plan, written when a plan is
   /// generated (null for plans from before this was stored; [planLength] 0 = the current
-  /// plan is not rule-based, e.g. AI) – lets the recalibration rebuild it to find gaps.
+  /// plan is not rule-based, e.g. an AI plan of an older version) – lets the recalibration rebuild it to find gaps.
   final DateTime? planStart;
   final int? planLength;
+
   /// Name of the target event (e.g. taken over from the race search); optional.
   final String? eventName;
 
