@@ -279,7 +279,7 @@ class LabeledSlider extends StatelessWidget {
   }
 }
 
-Future<bool> confirm(BuildContext context, String title, {String? body, String? ok, bool danger = false}) async {
+Future<bool> confirm(BuildContext context, String title, {String? body, String? ok, String? cancel, bool danger = false}) async {
   final l = context.l10n;
   final r = await showDialog<bool>(
     context: context,
@@ -288,7 +288,7 @@ Future<bool> confirm(BuildContext context, String title, {String? body, String? 
           title: Text(title),
           content: body == null ? null : Text(body),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l.cancel)),
+            TextButton(onPressed: () => Navigator.pop(c, false), child: Text(cancel ?? l.cancel)),
             FilledButton(
               style: danger ? FilledButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white) : null,
               onPressed: () => Navigator.pop(c, true),

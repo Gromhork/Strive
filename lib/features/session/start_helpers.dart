@@ -63,9 +63,35 @@ Future<bool> _ensureNothingRunning(BuildContext context, WidgetRef ref) async {
   return true;
 }
 
-/// Quick start for one sport (empty gym workout or cardio recording).
+/// Today's still open planned workout of [sport] (structured cardio or gym), if any.
+PlannedWorkout? plannedToday(List<PlannedWorkout> plans, Sport sport, DateTime now) =>
+    plans.where((p) => p.sport == sport && p.status == 'planned' && sameDay(p.date, now)).firstOrNull;
+
+/// Quick start for one sport (empty gym workout or cardio recording). When a workout of
+/// that sport is planned for today it is offered first ("Planned today: … – start it
+/// guided?"); dismissing the question starts nothing.
 Future<void> quickStart(BuildContext context, WidgetRef ref, Sport s) async {
   final l = context.l10n;
+  final today = plannedToday(ref.read(planListProvider), s, DateTime.now());
+  if (today != null) {
+    final guided = await showDialog<bool>(
+      context: context,
+      builder:
+          (c) => AlertDialog(
+            key: const ValueKey('plannedTodayDialog'),
+            icon: Icon(s.icon, color: s.color),
+            title: Text(l.todayPlannedTitle),
+            content: Text(l.todayPlannedBody(today.title)),
+            actions: [
+              TextButton(key: const ValueKey('startFree'), onPressed: () => Navigator.pop(c, false), child: Text(l.startFree)),
+              FilledButton(key: const ValueKey('startGuided'), onPressed: () => Navigator.pop(c, true), child: Text(l.startGuided)),
+            ],
+          ),
+    );
+    if (guided == null || !context.mounted) return;
+    if (guided) return startPlanned(context, ref, today);
+  }
+  if (!context.mounted) return;
   if (s == Sport.gym) {
     await startGym(context, ref, title: l.freeWorkout);
   } else {

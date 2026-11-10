@@ -294,7 +294,7 @@ void main() {
       stepIndex: 2,
     ).copyWith(stepResults: const [StepResult(0, 600, 1800, complete: true), StepResult(1, 180, 800, complete: true)]);
     await _pump(tester, s, 'en', tab: CardioTab.plan);
-    expect(find.text('Projected finish'), findsOneWidget);
+    expect(find.text('Expected finish after'), findsOneWidget);
     expect(find.text('Intervals on target'), findsOneWidget);
     expect(find.text('0/1'), findsOneWidget);
     expect(find.text('Too fast'), findsOneWidget);

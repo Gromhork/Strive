@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import 'exercise_names_de.dart';
+
 class Exercise {
   final String id;
   final String name;
@@ -51,27 +53,50 @@ class ExerciseDb {
   List<String> get bodyParts => all.map((e) => e.bodyPart).toSet().toList()..sort();
   List<String> get equipment => all.map((e) => e.equipment).toSet().toList()..sort();
 
-  List<Exercise> search(String q, {String? bodyPart, String? equipment}) {
-    final terms = q.toLowerCase().split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+  /// Search by German and English name, muscles and equipment. Ranking: exact name,
+  /// name prefix, word prefix, then common exercises (curated / built-in programs)
+  /// before the rest, shorter names first.
+  List<Exercise> search(String q, {String? bodyPart, String? equipment, String lang = 'en'}) {
+    final q0 = q.toLowerCase().trim();
+    final terms = q0.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
     final res =
         all.where((e) {
           if (bodyPart != null && e.bodyPart != bodyPart) return false;
           if (equipment != null && e.equipment != equipment) return false;
           if (terms.isEmpty) return true;
-          final hay = '${e.name} ${e.target} ${e.bodyPart} ${e.equipment} ${germanAlias(e)}';
+          final hay =
+              '${e.name} ${exerciseNamesDe[e.id] ?? ''} ${e.target} ${e.bodyPart} ${e.equipment} '
+                      '${term(e.target, 'de')} ${term(e.bodyPart, 'de')} ${term(e.equipment, 'de')} ${germanAlias(e)}'
+                  .toLowerCase();
           return terms.every(hay.contains);
         }).toList();
+    String shown(Exercise e) => exerciseName(e.id, e.name, lang);
     if (terms.isNotEmpty) {
-      // Rank: names starting with the query first, then shorter names.
-      final q0 = q.toLowerCase();
+      final ranks = {for (final e in res) e.id: searchRank(e, q0)};
+      int common(Exercise e) => commonExerciseIds.contains(e.id) ? 0 : 1;
       res.sort((a, b) {
-        final sa = a.name.startsWith(q0) ? 0 : (a.name.contains(q0) ? 1 : 2);
-        final sb = b.name.startsWith(q0) ? 0 : (b.name.contains(q0) ? 1 : 2);
-        return sa != sb ? sa.compareTo(sb) : a.name.length.compareTo(b.name.length);
+        final c = ranks[a.id]!.compareTo(ranks[b.id]!);
+        if (c != 0) return c;
+        final k = common(a).compareTo(common(b));
+        return k != 0 ? k : shown(a).length.compareTo(shown(b).length);
       });
+    } else if (lang != 'en') {
+      res.sort((a, b) => shown(a).toLowerCase().compareTo(shown(b).toLowerCase()));
     }
     return res;
   }
+}
+
+/// Rank of [e] for the lower-case query [q] (lower = better): 0 exact name, 1/2 name
+/// prefix, 3/4 word prefix, 5/6 anything else – common exercises first in each group.
+int searchRank(Exercise e, String q) {
+  final names = [e.name, if (exerciseNamesDe[e.id] case final de?) de.toLowerCase()];
+  final popular = exerciseNamesDe.containsKey(e.id);
+  final bare = RegExp(r'\s*\(.*\)$');
+  if (names.any((n) => n == q || n.replaceAll(bare, '') == q)) return 0;
+  if (names.any((n) => n.startsWith(q))) return popular ? 1 : 2;
+  if (names.any((n) => n.split(RegExp(r'[\s\-/(]+')).any((w) => w.startsWith(q)))) return popular ? 3 : 4;
+  return popular ? 5 : 6;
 }
 
 /// German search aliases so "bankdrücken" or "kniebeuge" find the right lifts.
@@ -153,6 +178,7 @@ const _deTerms = {
 
 /// Translates body parts / muscles / equipment for the German UI.
 String term(String en, String lang) {
+  if (en.isEmpty) return en;
   if (lang != 'de') return en[0].toUpperCase() + en.substring(1);
-  return _deTerms[en] ?? (en[0].toUpperCase() + en.substring(1));
+  return _deTerms[en] ?? muscleNamesDe[en] ?? (en[0].toUpperCase() + en.substring(1));
 }

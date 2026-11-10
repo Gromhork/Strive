@@ -2540,7 +2540,7 @@ abstract class AppLocalizations {
   /// No description provided for @progAddReps.
   ///
   /// In en, this message translates to:
-  /// **'same weight – one more rep per set'**
+  /// **'same weight – one more rep than last time'**
   String get progAddReps;
 
   /// No description provided for @progHold.
@@ -8864,7 +8864,7 @@ abstract class AppLocalizations {
   /// No description provided for @planProjected.
   ///
   /// In en, this message translates to:
-  /// **'Projected finish'**
+  /// **'Expected finish after'**
   String get planProjected;
 
   /// No description provided for @planPlanned.
@@ -8906,7 +8906,7 @@ abstract class AppLocalizations {
   /// No description provided for @planStepsLeft.
   ///
   /// In en, this message translates to:
-  /// **'{n} more after this one'**
+  /// **'{n, plural, =1{then 1 more section} other{then {n} more sections}}'**
   String planStepsLeft(int n);
 
   /// No description provided for @zoneWaiting.
@@ -9376,6 +9376,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sessions felt harder than intended recently'**
   String get fcReasonFatigue;
+
+  /// No description provided for @summaryPlanDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan done – great work!'**
+  String get summaryPlanDone;
+
+  /// No description provided for @summaryPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Short and sweet – every session counts.'**
+  String get summaryPartial;
+
+  /// No description provided for @summaryFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice work – session done.'**
+  String get summaryFree;
+
+  /// No description provided for @summaryTooShortTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Too short to save?'**
+  String get summaryTooShortTitle;
+
+  /// No description provided for @summaryTooShortBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than a minute or no distance recorded.'**
+  String get summaryTooShortBody;
+
+  /// No description provided for @saveAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Save anyway'**
+  String get saveAnyway;
+
+  /// No description provided for @finishOpenSets.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} of {total} sets still open.'**
+  String finishOpenSets(int n, int total);
+
+  /// No description provided for @keepTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep training'**
+  String get keepTraining;
+
+  /// No description provided for @planBehind.
+  ///
+  /// In en, this message translates to:
+  /// **'behind plan'**
+  String get planBehind;
+
+  /// No description provided for @planAhead.
+  ///
+  /// In en, this message translates to:
+  /// **'ahead of plan'**
+  String get planAhead;
+
+  /// No description provided for @planOnPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'on plan'**
+  String get planOnPlan;
+
+  /// No description provided for @todayPlannedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned today'**
+  String get todayPlannedTitle;
+
+  /// No description provided for @todayPlannedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} – start it guided?'**
+  String todayPlannedBody(String title);
+
+  /// No description provided for @startGuided.
+  ///
+  /// In en, this message translates to:
+  /// **'Start guided'**
+  String get startGuided;
+
+  /// No description provided for @startFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free session'**
+  String get startFree;
+
+  /// No description provided for @rxToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: {sets} × {reps} @ {load}'**
+  String rxToday(int sets, int reps, String load);
+
+  /// No description provided for @rxTodayList.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: {list} reps @ {load}'**
+  String rxTodayList(String list, String load);
+
+  /// No description provided for @amrapLastSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Last set: as many reps as possible – stop 1 rep before failure.'**
+  String get amrapLastSet;
+
+  /// No description provided for @programPreviewSets.
+  ///
+  /// In en, this message translates to:
+  /// **'{sets} sets'**
+  String programPreviewSets(int sets);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

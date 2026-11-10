@@ -1551,13 +1551,17 @@ class _Controls extends ConsumerWidget {
                     child: Icon(s.paused ? Icons.play_arrow_rounded : Icons.pause_rounded, size: 44),
                   ),
                 ),
-                _RoundButton(
-                  icon: Icons.skip_next_rounded,
-                  label: l.skipStep,
-                  onTap: s.step == null ? null : n.skipStep,
-                  // Structured rides/swims: make "next section" stand out.
-                  highlight: s.structured && s.sport != Sport.run ? s.sport.color : null,
-                ),
+                // Free sessions have no sections – no disabled "next section" button.
+                if (s.structured)
+                  _RoundButton(
+                    icon: Icons.skip_next_rounded,
+                    label: l.skipStep,
+                    onTap: s.step == null ? null : n.skipStep,
+                    // Structured rides/swims: make "next section" stand out.
+                    highlight: s.sport != Sport.run ? s.sport.color : null,
+                  )
+                else
+                  const SizedBox(key: ValueKey('noSkipStep'), width: 92),
               ],
             ),
           ],

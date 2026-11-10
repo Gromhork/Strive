@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,9 +25,42 @@ import 'route_map.dart';
 ///
 /// The draft (incl. rating and notes) is kept in [WorkoutStore] until it is saved or
 /// discarded, so a finished workout survives the app being killed on this page.
+/// What the finished session achieved – picks the headline on the summary.
+enum SummaryOutcome { planDone, partial, free, tooShort }
+
+/// [SummaryOutcome] of [s]: under a minute, or no distance outdoors (or in the pool) →
+/// too short; gym: ≥ 90 % of the sets of the program / plan ([plannedSets] = sets of the
+/// workout when it was finished, incl. exercises without a done set); cardio: ≥ 90 % of the
+/// planned distance (duration indoors / without a distance) of [plan]. Free sessions (no
+/// program, no plan) get a neutral-positive message.
+SummaryOutcome summaryOutcome(Session s, {PlannedWorkout? plan, int? plannedSets}) {
+  final noDistance = s.sport != Sport.gym && s.distanceM <= 0 && (!s.indoor || s.sport == Sport.swim);
+  if (s.durationSec < 60 || noDistance) return SummaryOutcome.tooShort;
+  if (s.sport == Sport.gym) {
+    final total = max(plannedSets ?? 0, s.exercises.fold<int>(0, (a, e) => a + e.sets.length));
+    if ((s.templateId == null && s.planId == null) || total == 0) return SummaryOutcome.free;
+    return s.setsDone >= 0.9 * total ? SummaryOutcome.planDone : SummaryOutcome.partial;
+  }
+  if (plan == null) return SummaryOutcome.free;
+  final km = plan.distanceKm;
+  final double ratio;
+  if (km != null && km > 0 && (!s.indoor || s.sport == Sport.swim)) {
+    ratio = s.distanceM / 1000 / km;
+  } else if (plan.durationMin > 0) {
+    ratio = s.durationSec / 60 / plan.durationMin;
+  } else {
+    return SummaryOutcome.free;
+  }
+  return ratio >= 0.9 ? SummaryOutcome.planDone : SummaryOutcome.partial;
+}
+
 class SessionSummaryPage extends ConsumerStatefulWidget {
-  const SessionSummaryPage({super.key, required this.draft, this.restored = false});
+  const SessionSummaryPage({super.key, required this.draft, this.restored = false, this.plannedSets});
   final Session draft;
+
+  /// Gym: all sets of the workout when it was finished (exercises without a done set are
+  /// not part of the draft) – for the "plan done / partial" headline.
+  final int? plannedSets;
 
   /// Reopened after a restart: rating and notes come from the stored draft.
   final bool restored;
@@ -116,6 +150,20 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     Navigator.pop(context);
   }
 
+  Future<void> _confirmDiscard() async {
+    final l = context.l10n;
+    final discard = await confirm(context, l.discardWorkout, body: l.discardSummaryBody, ok: l.discard, danger: true);
+    if (!discard || !mounted) return;
+    _discard();
+  }
+
+  void _discard() {
+    _discarded = true;
+    _notesDebounce?.cancel();
+    _store.clearSummary();
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -130,17 +178,17 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     final after = GameStats.compute([s, ...history.where((h) => h.id != s.id)], target, plans: plans);
     final newBadges = after.badges.where((b) => b.earned && !before.badges.firstWhere((x) => x.def.id == b.def.id).earned).toList();
     final levelUp = after.level.level > before.level.level;
+    final outcome = summaryOutcome(s, plan: plans.where((p) => p.id == s.planId).firstOrNull, plannedSets: widget.plannedSets);
+    final headline = switch (outcome) {
+      SummaryOutcome.planDone => l.summaryPlanDone,
+      SummaryOutcome.partial => l.summaryPartial,
+      SummaryOutcome.free || SummaryOutcome.tooShort => l.summaryFree,
+    };
 
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        final discard = await confirm(context, l.discardWorkout, body: l.discardSummaryBody, ok: l.discard, danger: true);
-        if (!discard || !context.mounted) return;
-        _discarded = true;
-        _notesDebounce?.cancel();
-        _store.clearSummary();
-        Navigator.pop(context);
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmDiscard();
       },
       child: Scaffold(
         appBar: AppBar(title: Text(l.summary), automaticallyImplyLeading: false),
@@ -153,10 +201,12 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                   SportBadge(s.sport, size: 64, filled: true),
                   const SizedBox(height: 10),
                   Text(glueTitle(s.title), style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                  Text(l.greatJob, style: Theme.of(context).textTheme.bodyMedium),
+                  if (outcome != SummaryOutcome.tooShort)
+                    Text(headline, key: const ValueKey('summaryHeadline'), style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
             ),
+            if (outcome == SummaryOutcome.tooShort) ...[const SizedBox(height: 12), _TooShortCard(onDiscard: _discard, onSave: _save)],
             const SizedBox(height: 16),
             SectionCard(
               child: Wrap(
@@ -164,9 +214,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                 children: [
                   _cell(StatTile(label: l.duration, value: clock(s.durationSec), icon: Icons.timer_outlined)),
                   if (s.sport == Sport.gym) ...[
-                    _cell(
-                      StatTile(label: l.volume, value: u.weight(s.volume, digits: 0), icon: Icons.fitness_center, color: AppColors.gym),
-                    ),
+                    _cell(StatTile(label: l.volume, value: u.weight(s.volume, digits: 0), icon: Sport.gym.icon, color: AppColors.gym)),
                     _cell(StatTile(label: l.sets, value: '${s.setsDone}', icon: Icons.check_circle_outline)),
                     _cell(StatTile(label: l.exercises, value: '${s.exercises.length}', icon: Icons.list)),
                   ] else ...[
@@ -268,7 +316,15 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
             ),
             const SizedBox(height: 20),
             FilledButton.icon(onPressed: _save, icon: const Icon(Icons.save_alt_rounded), label: Text(l.saveWorkout)),
-            const SizedBox(height: 24),
+            const SizedBox(height: 4),
+            // Discarding is visible here, not only behind the system back gesture.
+            TextButton(
+              key: const ValueKey('summaryDiscard'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+              onPressed: _confirmDiscard,
+              child: Text(l.discardWorkout),
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -276,6 +332,53 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
   }
 
   Widget _cell(Widget c) => SizedBox(width: (MediaQuery.sizeOf(context).width - 64) / 2, child: c);
+}
+
+/// "Too short to save?" with [Verwerfen] [Trotzdem speichern].
+class _TooShortCard extends StatelessWidget {
+  const _TooShortCard({required this.onDiscard, required this.onSave});
+  final VoidCallback onDiscard, onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Container(
+      key: const ValueKey('summaryTooShort'),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.timer_off_outlined, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Expanded(child: Text(l.summaryTooShortTitle, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(l.summaryTooShortBody, style: Theme.of(context).textTheme.bodySmall),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            children: [
+              TextButton(
+                key: const ValueKey('tooShortDiscard'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                onPressed: onDiscard,
+                child: Text(l.discard),
+              ),
+              FilledButton.tonal(key: const ValueKey('tooShortSave'), onPressed: onSave, child: Text(l.saveAnyway)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 String badgeTitle(AppLocalizations l, String id) => switch (id) {

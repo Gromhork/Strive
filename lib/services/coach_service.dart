@@ -1,8 +1,11 @@
 import 'package:firebase_ai/firebase_ai.dart';
+import 'package:flutter/foundation.dart';
 
+import '../core/event_distances.dart';
 import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/models.dart';
+import 'goal_forecast.dart';
 import 'insights.dart';
 import 'zones.dart';
 
@@ -10,17 +13,88 @@ import 'zones.dart';
 class CoachService {
   static const model = 'gemini-3.5-flash-lite';
 
-  CoachService({required this.profile, required this.sessions, required this.plans, required this.lang});
+  CoachService({required this.profile, required this.sessions, required this.plans, required this.lang, this.goals = const []});
   final UserProfile profile;
   final List<Session> sessions;
   final List<PlannedWorkout> plans;
   final String lang;
 
+  /// The athlete's saved goals (Goals page) – the coach must name the real goal.
+  final List<Goal> goals;
+
+  /// Days of history the load ratio (ACWR) and fitness/fatigue (CTL/ATL) need before
+  /// they mean anything – the same rule as [RecoveryInfo.compute] / the Home card.
+  static const baselineDays = 21;
+
   ChatSession? _chat;
 
-  String _context() {
+  /// The training history is long enough for ACWR / fitness / fatigue numbers.
+  static bool baselineReady(List<Session> sessions, DateTime now) {
+    if (sessions.isEmpty) return false;
+    final oldest = sessions.map((s) => s.start).reduce((a, b) => a.isBefore(b) ? a : b);
+    return daysBetween(oldest, now) >= baselineDays;
+  }
+
+  /// The main goal in plain words: the event (sport, distance, date, target, forecast)
+  /// first, then saved goals; profile interests only as a hint.
+  String _goalText(DateTime now) {
     final p = profile;
-    final now = DateTime.now();
+    final a = p.athlete;
+    final lines = <String>[];
+    final ev = eventDistanceOf(a.eventDistance);
+    if (a.eventDate != null && !a.eventDate!.isBefore(dayOnly(now))) {
+      final sport = ev?.sport.name ?? p.focus.name;
+      final dist =
+          ev == null
+              ? (a.eventDistance ?? 'unknown distance')
+              : '${a.eventDistance} (${ev.legs.isNotEmpty ? '${ev.legs.join(' / ')} km' : '${ev.km} km'})';
+      lines.add(
+        '- MAIN GOAL: $sport race${a.eventName == null ? '' : ' "${a.eventName}"'}, distance $dist, on ${dayKey(a.eventDate!)} '
+        '(${daysBetween(dayOnly(now), a.eventDate!)} days away)${a.targetTimeSec != null ? ', target time ${clock(a.targetTimeSec!)}' : ', no target time'}. '
+        'This is an endurance goal - never call it a strength goal.',
+      );
+      GoalForecast? f;
+      try {
+        f = GoalForecast.of(p, plans: plans, sessions: sessions, now: now);
+      } catch (_) {
+        f = null;
+      }
+      if (f != null) {
+        lines.add(
+          f.early
+              ? '- goal forecast: too early to judge (not enough completed training yet) - do not predict a race time.'
+              : '- goal forecast: ${f.status.name}${f.raceDaySec != null ? ', predicted race time ~${clock(f.raceDaySec!)}' : ''}'
+                  '${f.reasons.isEmpty ? '' : ' (reasons: ${f.reasons.map((r) => r.name).join(', ')})'}',
+        );
+      }
+    } else {
+      lines.add('- main training focus: ${p.focus.name} (no race planned)');
+    }
+    for (final g in goals.take(5)) {
+      lines.add(
+        '- saved goal: ${g.type.name}${g.sport == null ? '' : ' (${g.sport!.name})'} "${g.title}", target ${g.target}'
+        '${g.deadline == null ? '' : ' by ${dayKey(g.deadline!)}'}',
+      );
+    }
+    if (p.focus.sports.contains(Sport.gym)) lines.add('- gym goal: ${a.gymGoal}');
+    if (p.goals.isNotEmpty) lines.add('- general interests (secondary): ${p.goals.join(', ')}');
+    // Plan week / phase from the stored plan frame.
+    final phase = plans.where((x) => !x.date.isBefore(dayOnly(now))).firstOrNull?.phase;
+    final start = a.planStart;
+    final len = a.planLength ?? 0;
+    final week = start == null || len <= 0 ? null : (daysBetween(start, dayOnly(now)) ~/ 7 + 1).clamp(1, len);
+    lines.add('- plan: ${week == null ? 'no week info' : 'week $week of $len'}, current phase: ${phase ?? 'none'}');
+    return lines.join('\n');
+  }
+
+  @visibleForTesting
+  String contextText({DateTime? now}) => _context(now ?? DateTime.now());
+
+  @visibleForTesting
+  String systemText({DateTime? now}) => _systemFor(now ?? DateTime.now());
+
+  String _context(DateTime now) {
+    final p = profile;
     final recent = sessions.where((s) => now.difference(s.start).inDays < 28).toList(); // time span
     final bySport = <Sport, List<Session>>{};
     for (final s in recent) {
@@ -36,6 +110,7 @@ class CoachService {
         })
         .join('\n');
     final rec = RecoveryInfo.compute(sessions);
+    final ready = baselineReady(sessions, now);
     final prs = exerciseRecords(sessions).values.toList()..sort((a, b) => b.bestE1rm.compareTo(a.bestE1rm));
     final upcoming = plans
         .where((x) => x.status == 'planned' && !x.date.isBefore(dayOnly(now)))
@@ -62,44 +137,59 @@ class CoachService {
             ? 'none'
             : '${a.eventDistance ?? '?'} on ${dayKey(a.eventDate!)} (${daysBetween(dayOnly(now), a.eventDate!)} days away)'
                 '${a.targetTimeSec != null ? ', target ${clock(a.targetTimeSec!)}' : ''}';
-    final fit = fitnessSeries(sessions);
+    final fit = ready ? fitnessSeries(sessions) : null;
     final form =
-        fit.isEmpty
+        fit == null || fit.isEmpty
             ? 'no data'
-            : 'fitness (CTL) ${fit.last.fitness.toStringAsFixed(0)}, fatigue (ATL) ${fit.last.fatigue.toStringAsFixed(0)}, form (TSB) ${fit.last.form.toStringAsFixed(0)}';
+            : 'fitness ${fit.last.fitness.toStringAsFixed(0)}, fatigue ${fit.last.fatigue.toStringAsFixed(0)}, form ${fit.last.form.toStringAsFixed(0)}';
+    // Before 3 weeks of history the load numbers are meaningless - the app itself says
+    // "building your baseline", so the coach must not quote a ratio or call the base long-standing.
+    final load =
+        ready
+            ? 'Training load (7 days vs. 28-day average): ratio ${rec.ratio.toStringAsFixed(2)} (${rec.readiness.name}); fitness/form: $form'
+            : 'BASELINE NOT READY: less than $baselineDays days of training history. Do NOT quote any load ratio, fitness, fatigue or form numbers '
+                'and do not describe the training base as long-standing; say the app is still learning the athlete\'s baseline.';
     final past = plans.where((x) => !x.date.isBefore(addDays(dayOnly(now), -14)) && x.date.isBefore(dayOnly(now)));
     final missed = past.where((x) => x.status == 'planned').map((x) => '${dayKey(x.date)} ${x.sport.name} "${x.title}"').take(6).join('; ');
     final done = past.where((x) => x.status == 'done').length;
-    final phase = plans.where((x) => !x.date.isBefore(dayOnly(now))).firstOrNull?.phase;
     return '''
 Athlete profile:
 - name: ${p.name}, age: ${p.age ?? 'unknown'}, gender: ${p.gender}, height ${p.heightCm} cm, weight ${p.weightKg} kg${p.fatPct != null ? ', body fat ${p.fatPct}%' : ''}
-- level: ${p.level}, focus: ${p.focus.name}, goals: ${p.goals.join(', ')}
+- level: ${p.level}, training focus: ${p.focus.name}
 - training days per week: ${p.weeklyTarget}
+Goal:
+${_goalText(now)}
 Last 28 days:
 ${summary.isEmpty ? '- no sessions logged yet' : summary}
-Acute:chronic workload ratio: ${rec.ratio.toStringAsFixed(2)} (${rec.readiness.name}), consecutive training days: ${rec.daysSinceRest}
-Top strength estimates (e1RM): ${prs.take(5).map((r) => '${r.name} ${r.bestE1rm.round()} kg').join('; ')}
-Thresholds: $thresholds
+$load
+Consecutive training days: ${rec.daysSinceRest}
+${prs.isEmpty ? '' : 'Top strength estimates (e1RM): ${prs.take(5).map((r) => '${r.name} ${r.bestE1rm.round()} kg').join('; ')}\n'}Thresholds: $thresholds
 Target event: $event
-Fitness/form (Banister): $form
 Plan adherence last 14 days: $done of ${past.length} planned workouts done${missed.isEmpty ? '' : '; missed: $missed'}
-Current plan phase: ${phase ?? 'none'}
 Upcoming plan:
 ${upcoming.isEmpty ? '- nothing planned' : upcoming}
 Today: ${dayKey(now)}''';
   }
 
-  String get _system => '''
+  /// Abbreviations the app explains in its glossary (lib/widgets/term_info.dart) - the
+  /// only ones the coach may use, each explained on first use.
+  static const glossaryTerms = ['RPE', 'RIR', 'e1RM', 'VDOT', 'FTP', 'CSS', 'AMRAP'];
+
+  String _systemFor(DateTime now) => '''
 You are "Strive Coach", an evidence-based personal coach for strength training, running, cycling and swimming inside the Strive app.
-- Base advice on the current scientific consensus (e.g. ACSM guidelines, progressive overload, 80/20 polarized endurance training, sleep and protein recommendations). Mention the underlying principle briefly when helpful.
-- Personalise using the athlete data below. Be concise, practical and motivating. Use short paragraphs or bullet points, no tables.
+- Base advice on the current scientific consensus (progressive overload, mostly easy endurance training, sleep and protein recommendations).
+- Personalise using the athlete data below. The athlete's MAIN GOAL is stated there - refer to it correctly (sport, distance, date) and never invent a different goal.
+- Keep answers SHORT: at most about 120 words, 2-4 short bullet points or short paragraphs, no tables, no headings.
+- Use plain, everyday ${lang == 'de' ? 'German (du-form) - write like a friendly trainer, no English sports jargon' : 'English'}. No scientific jargon or study names (e.g. no "CNS", "ZNS", "interference effect", "ATL", "CTL", "TSB", "ACWR", "supercompensation").
+- The only abbreviations allowed are the ones the app explains in its glossary: ${glossaryTerms.join(', ')}. Explain each one in a few words the first time you use it (e.g. ${lang == 'de' ? '"RPE (wie anstrengend, 1-10)"' : '"RPE (how hard, 1-10)"'}).
+- Never contradict the app: if the data says the baseline is not ready, say the app is still learning the athlete's baseline. Use the app's words ${lang == 'de' ? '"Einheit", "Schlüsseleinheit", "Entlastungswoche"' : '"session", "key session", "deload week"'}.
 - You are not a doctor: for pain, injuries or medical conditions recommend seeing a professional.
 - Answer in ${lang == 'de' ? 'German (du-form)' : 'English'}.
 
-${_context()}''';
+${_context(now)}''';
 
-  GenerativeModel _model() => FirebaseAI.googleAI().generativeModel(model: model, systemInstruction: Content.system(_system));
+  GenerativeModel _model() =>
+      FirebaseAI.googleAI().generativeModel(model: model, systemInstruction: Content.system(_systemFor(DateTime.now())));
 
   Stream<String> ask(String message) async* {
     _chat ??= _model().startChat();

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../data/exercise_names_de.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/exercise_class.dart' show offersBodyweightMode;
@@ -55,10 +56,15 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
       }
       return;
     }
-    final ok = await confirm(context, l.finishWorkout, body: l.finishWorkoutBody, ok: l.finish);
-    if (!ok || !mounted) return;
+    // "Finish workout? 11 of 15 sets still open." – only worth a question when sets are open.
+    final open = w.totalSets - w.doneSets;
+    if (open > 0) {
+      final ok = await confirm(context, l.finishWorkout, body: l.finishOpenSets(open, w.totalSets), ok: l.finish, cancel: l.keepTraining);
+      if (!ok || !mounted) return;
+    }
+    final total = w.totalSets;
     final session = n.finish(ref.read(repoProvider)!.newId());
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SessionSummaryPage(draft: session)));
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SessionSummaryPage(draft: session, plannedSets: total)));
   }
 
   Future<void> _addExercises() async {
@@ -96,6 +102,7 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 0,
         leading: IconButton(
           icon: const Icon(Icons.keyboard_arrow_down_rounded),
           tooltip: l.minimize,
@@ -106,26 +113,43 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
             final t = await askText(context, l.rename, initial: w.title);
             if (t != null && t.isNotEmpty) n.rename(t);
           },
-          child: Text(w.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          // Two lines, and small enough that a single long word ("Ganzkörper") is not split.
+          child: Text(w.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, height: 1.15)),
         ),
         actions: [
           MusicButton(plan: () => gymMusicPlan(l, ref.read(activeGymProvider))),
-          IconButton(
-            tooltip: _table ? l.viewFocus : l.viewTable,
-            icon: Icon(_table ? Icons.view_agenda_outlined : Icons.table_rows_outlined),
-            onPressed: () {
-              setState(() => _table = !_table);
-              ref.read(prefsProvider).setBool('gymTableView', _table);
-            },
-          ),
+          // The view switch lives in the menu so a long workout title keeps its room.
           PopupMenuButton<String>(
             onSelected: (v) async {
-              if (v == 'discard' && await confirm(context, l.discardWorkout, ok: l.discard, danger: true)) {
+              if (v == 'view') {
+                setState(() => _table = !_table);
+                ref.read(prefsProvider).setBool('gymTableView', _table);
+              } else if (v == 'discard' && await confirm(context, l.discardWorkout, ok: l.discard, danger: true)) {
                 n.discard();
                 if (context.mounted) Navigator.pop(context);
               }
             },
-            itemBuilder: (_) => [PopupMenuItem(value: 'discard', child: Text(l.discardWorkout))],
+            itemBuilder:
+                (_) => [
+                  PopupMenuItem(
+                    value: 'view',
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(_table ? Icons.view_agenda_outlined : Icons.table_rows_outlined),
+                      title: Text(_table ? l.viewFocus : l.viewTable),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'discard',
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.delete_outline, color: AppColors.danger),
+                      title: Text(l.discardWorkout, style: const TextStyle(color: AppColors.danger)),
+                    ),
+                  ),
+                ],
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -313,7 +337,7 @@ class _UpNextCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      capitalize(e.name),
+                      exName(context, e.exId, e.name),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, height: 1.2),
@@ -460,7 +484,7 @@ class _ExerciseTile extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        capitalize(e.name),
+                        exName(context, e.exId, e.name),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -617,7 +641,7 @@ class _ExerciseCard extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '${exercise.group != null ? '${exercise.group} · ' : ''}${capitalize(exercise.name)}',
+                      '${exercise.group != null ? '${exercise.group} · ' : ''}${exName(context, exercise.exId, exercise.name)}',
                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.gym),
                     ),
                   ),
@@ -627,7 +651,12 @@ class _ExerciseCard extends ConsumerWidget {
               if (rx != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 8, top: 2),
-                  child: PrescriptionHint(prescription: rx, units: units, dense: true),
+                  child: PrescriptionHint(
+                    prescription: rx,
+                    units: units,
+                    dense: true,
+                    sets: exercise.sets.where((s) => !s.warmup && s.type != SetType.drop).length,
+                  ),
                 ),
               Padding(
                 padding: const EdgeInsets.only(right: 8, bottom: 4, top: 4),

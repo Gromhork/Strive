@@ -7,6 +7,7 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/step_progress.dart';
 import '../../services/tracker.dart';
@@ -381,6 +382,15 @@ Color _statusColor(int status) => switch (status) {
   _ => AppColors.warning,
 };
 
+/// Label and colour of the projected-vs-planned difference [delta] (s): later than
+/// planned → "behind plan" (orange), earlier → "ahead of plan" (green; orange when
+/// sections were cut short), equal → "on plan".
+(String, Color) planDeltaLabel(AppLocalizations l, int delta, {bool shortened = false}) {
+  if (delta > 0) return (l.planBehind, AppColors.warning);
+  if (delta < 0) return (l.planAhead, shortened ? AppColors.warning : AppColors.success);
+  return (l.planOnPlan, AppColors.success);
+}
+
 /// Summary (projected finish vs. plan, intervals on target) and the current plus every
 /// finished section with planned and actual values – newest first.
 class PlanPage extends ConsumerWidget {
@@ -395,10 +405,9 @@ class PlanPage extends ConsumerWidget {
     final planned = s.steps.fold<int>(0, (a, st) => a + approxStepSec(st, s.sport));
     final projected = s.elapsed + s.workoutLeftSec;
     final delta = projected - planned;
-    final tol = max(60, (planned * 0.03).round());
-    // Ahead of plan because sections were cut short is not "too fast".
+    // Ahead of plan because sections were cut short is not "faster" – shown as a warning.
     final shortened = s.stepResults.any((r) => !r.complete && s.steps[r.index].kind != 'recovery');
-    final deltaColor = delta.abs() <= tol ? AppColors.success : (delta > 0 || shortened ? AppColors.warning : AppColors.swim);
+    final (deltaLabel, deltaColor) = planDeltaLabel(l, delta, shortened: shortened);
     // Intervals on target: work steps with a pace target (else: sections done).
     final paced = [
       for (final r in s.stepResults)
@@ -410,7 +419,7 @@ class PlanPage extends ConsumerWidget {
     final summary = <Widget>[
       _Stat(clock(projected), l.planProjected),
       _Stat(clock(planned), l.planPlanned),
-      _Stat('${delta < 0 ? '−' : '+'}${clock(delta.abs())}', l.planDelta, color: deltaColor),
+      _Stat(delta == 0 ? '±0:00' : '${delta < 0 ? '−' : '+'}${clock(delta.abs())}', deltaLabel, color: deltaColor),
       anyPaced ? _Stat('$onTarget/${paced.length}', l.planOnTarget) : _Stat('$done/${s.steps.length}', l.planDone),
     ];
     final left = max(0, s.steps.length - s.stepIndex - 1);

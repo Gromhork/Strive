@@ -115,27 +115,31 @@ class _WorkoutRestoreGateState extends ConsumerState<WorkoutRestoreGate> {
     return DateFormat.MMMd(context.localeName).format(d);
   }
 
-  /// true = continue, false = discard, null = dismissed with back (asked again next start).
+  /// true = continue, false = discard. Back does not dismiss the question – a dismissed
+  /// workout would hang in limbo (not running, not offered again until the next start).
   Future<bool?> _ask({required String title, required String body, required Sport sport, required String resume}) {
     final l = context.l10n;
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder:
-          (c) => AlertDialog(
-            key: const ValueKey('restoreDialog'),
-            icon: Icon(sport.icon, color: sport.color),
-            title: Text(title),
-            content: Text(body),
-            actions: [
-              TextButton(
-                key: const ValueKey('restoreDiscard'),
-                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-                onPressed: () => Navigator.pop(c, false),
-                child: Text(l.discard),
-              ),
-              FilledButton(key: const ValueKey('restoreResume'), onPressed: () => Navigator.pop(c, true), child: Text(resume)),
-            ],
+          (c) => PopScope(
+            canPop: false,
+            child: AlertDialog(
+              key: const ValueKey('restoreDialog'),
+              icon: Icon(sport.icon, color: sport.color),
+              title: Text(title),
+              content: Text(body),
+              actions: [
+                TextButton(
+                  key: const ValueKey('restoreDiscard'),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                  onPressed: () => Navigator.pop(c, false),
+                  child: Text(l.discard),
+                ),
+                FilledButton(key: const ValueKey('restoreResume'), onPressed: () => Navigator.pop(c, true), child: Text(resume)),
+              ],
+            ),
           ),
     );
   }

@@ -1272,7 +1272,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get progAddReps => 'Gewicht halten – je Satz eine Wiederholung mehr';
+  String get progAddReps => 'Gewicht halten – eine Wiederholung mehr als letztes Mal';
 
   @override
   String get progHold => 'Gewicht halten und jede Wdh. sauber';
@@ -4800,7 +4800,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabPlan => 'Soll/Ist';
 
   @override
-  String get planProjected => 'Voraussichtl. Ende';
+  String get planProjected => 'Voraussichtlich fertig nach';
 
   @override
   String get planPlanned => 'Geplant';
@@ -4822,7 +4822,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String planStepsLeft(int n) {
-    return 'danach noch $n';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'danach noch $n Abschnitte',
+      one: 'danach noch 1 Abschnitt',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5086,4 +5092,71 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get fcReasonFatigue => 'Einheiten zuletzt härter als geplant';
+
+  @override
+  String get summaryPlanDone => 'Plan erfüllt – stark!';
+
+  @override
+  String get summaryPartial => 'Kurz und knapp – jede Einheit zählt.';
+
+  @override
+  String get summaryFree => 'Gut gemacht – Einheit erledigt.';
+
+  @override
+  String get summaryTooShortTitle => 'Zu kurz zum Speichern?';
+
+  @override
+  String get summaryTooShortBody => 'Weniger als eine Minute oder keine Strecke aufgezeichnet.';
+
+  @override
+  String get saveAnyway => 'Trotzdem speichern';
+
+  @override
+  String finishOpenSets(int n, int total) {
+    return '$n von $total Sätzen offen.';
+  }
+
+  @override
+  String get keepTraining => 'Weiter trainieren';
+
+  @override
+  String get planBehind => 'hinter Plan';
+
+  @override
+  String get planAhead => 'vor Plan';
+
+  @override
+  String get planOnPlan => 'im Plan';
+
+  @override
+  String get todayPlannedTitle => 'Heute geplant';
+
+  @override
+  String todayPlannedBody(String title) {
+    return '$title – geführt starten?';
+  }
+
+  @override
+  String get startGuided => 'Geführt starten';
+
+  @override
+  String get startFree => 'Frei starten';
+
+  @override
+  String rxToday(int sets, int reps, String load) {
+    return 'Heute: $sets × $reps @ $load';
+  }
+
+  @override
+  String rxTodayList(String list, String load) {
+    return 'Heute: $list Wdh. @ $load';
+  }
+
+  @override
+  String get amrapLastSet => 'Letzter Satz: so viele Wdh. wie möglich – 1 vor dem Versagen aufhören.';
+
+  @override
+  String programPreviewSets(int sets) {
+    return '$sets Sätze';
+  }
 }

@@ -13,6 +13,7 @@ import '../session/start_helpers.dart';
 import '../session/step_text.dart';
 import '../../services/zones.dart' show templateMinutes;
 import 'exercise_picker.dart';
+import 'program_preview_page.dart';
 import 'template_editor_page.dart';
 
 /// Train tab: quick start, exercise library and the program library (folders).
@@ -29,6 +30,26 @@ class TrainPage extends ConsumerStatefulWidget {
 class _TrainPageState extends ConsumerState<TrainPage> {
   final _open = <String>{};
   bool _sorting = false;
+
+  /// The "New program" button shrinks to an icon once the list scrolls, so it does not
+  /// cover the menus of the folders and programs below it.
+  final _scroll = ScrollController();
+  bool _fabExtended = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(() {
+      final ext = !_scroll.hasClients || _scroll.offset < 24;
+      if (ext != _fabExtended) setState(() => _fabExtended = ext);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   /// Folder names in display order ('' = programs without folder, always last).
   List<String> _folders(List<WorkoutTemplate> all, UserProfile p, bool filtered) {
@@ -54,12 +75,16 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'newTemplate',
+        isExtended: _fabExtended,
+        tooltip: l.newProgram,
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TemplateEditorPage(sport: filter ?? Sport.gym))),
         icon: const Icon(Icons.add),
         label: Text(l.newProgram),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+        controller: _scroll,
+        // Room below the last folder so its menu can be scrolled clear of the button.
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 140),
         children: [
           Text(l.quickStart, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
@@ -76,21 +101,23 @@ class _TrainPageState extends ConsumerState<TrainPage> {
             ],
           ),
           const SizedBox(height: 10),
+          // Same style as the quick-start tiles; one line each (no wrapping label).
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManualEntryPage())),
-                  icon: const Icon(Icons.edit_note_rounded),
-                  label: Text(l.logManually),
+                child: _ActionTile(
+                  key: const ValueKey('logManuallyTile'),
+                  icon: Icons.edit_note_rounded,
+                  label: l.logManually,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManualEntryPage())),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryPage())),
-                  icon: const Icon(Icons.menu_book_rounded),
-                  label: Text(l.exercises),
+                child: _ActionTile(
+                  icon: Icons.menu_book_rounded,
+                  label: l.exercises,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryPage())),
                 ),
               ),
             ],
@@ -462,6 +489,45 @@ class _FolderCard extends StatelessWidget {
   }
 }
 
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({super.key, required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainer,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: SizedBox(
+          height: 48,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Icon(icon, color: scheme.primary, size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(label, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _QuickTile extends StatelessWidget {
   const _QuickTile({required this.sport, required this.onTap});
   final Sport sport;
@@ -571,8 +637,9 @@ class _TemplateTile extends ConsumerWidget {
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
+          // Tapping opens the read-only preview (big "Start"); editing sits behind its pencil.
           onTap:
-              dragIndex != null ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => TemplateEditorPage(template: t))),
+              dragIndex != null ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProgramPreviewPage(template: t))),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
             child: Row(
@@ -588,7 +655,7 @@ class _TemplateTile extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(t.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(t.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
                       Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),

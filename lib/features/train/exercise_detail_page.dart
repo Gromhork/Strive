@@ -6,7 +6,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/format.dart';
 import '../../core/theme.dart';
+import '../../core/sport.dart';
 import '../../data/exercise_db.dart';
+import '../../data/exercise_names_de.dart';
 import '../../providers.dart';
 import '../../services/insights.dart';
 import '../../services/translate_service.dart';
@@ -29,11 +31,16 @@ class ExerciseDetailPage extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: Text(exercise.displayName, maxLines: 2)),
+      appBar: AppBar(title: Text(exerciseName(exercise.id, exercise.name, lang), maxLines: 2)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           AspectRatio(aspectRatio: 1.3, child: ExerciseMedia(exId: exercise.id, radius: 24)),
+          // English name as an alias (e.g. for videos and other apps).
+          if (exerciseName(exercise.id, exercise.name, lang) != exercise.displayName) ...[
+            const SizedBox(height: 8),
+            Text(exercise.displayName, style: t.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
+          ],
           const SizedBox(height: 14),
           Wrap(
             spacing: 8,
@@ -41,7 +48,7 @@ class ExerciseDetailPage extends ConsumerWidget {
             children: [
               Chip(avatar: const Icon(Icons.accessibility_new, size: 16), label: Text(term(exercise.bodyPart, lang))),
               Chip(avatar: const Icon(Icons.adjust, size: 16, color: AppColors.gym), label: Text(term(exercise.target, lang))),
-              Chip(avatar: const Icon(Icons.fitness_center, size: 16), label: Text(term(exercise.equipment, lang))),
+              Chip(avatar: Icon(Sport.gym.icon, size: 16), label: Text(term(exercise.equipment, lang))),
             ],
           ),
           if (exercise.secondary.isNotEmpty) ...[

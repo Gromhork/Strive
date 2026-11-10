@@ -175,14 +175,14 @@ void main() {
       expect(find.text('home'), findsOneWidget);
     });
 
-    testWidgets('back on the prompt keeps the workout for the next start', (t) async {
+    testWidgets('back on the prompt does not dismiss it (no workout in limbo), the workout is kept', (t) async {
       _platformCalls(t);
       final store = MemoryWorkoutStore();
       await store.saveGym(_gym());
       await _pump(t, const WorkoutRestoreGate(child: Scaffold(body: Text('home'))), _overrides(await _prefs(), store));
       await t.pumpAndSettle();
       await _back(t);
-      expect(find.byKey(const ValueKey('restoreDialog')), findsNothing);
+      expect(find.byKey(const ValueKey('restoreDialog')), findsOneWidget);
       expect(store.active, isNotNull);
     });
 
