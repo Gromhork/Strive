@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +15,7 @@ import '../calendar/replace_plan_dialog.dart';
 import '../goals/race_search_page.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/event_spec.dart';
 import '../../services/goal_model.dart';
 import '../../services/plan_gaps.dart';
 import '../../services/plan_generator.dart';
@@ -773,6 +776,28 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           ),
         ],
         _timeSection(l, days: used),
+        // What the athlete can do today decides how the plan starts (run/walk, swim technique ladder).
+        if (_sports.contains(Sport.run) || _sports.contains(Sport.swim)) ...[
+          _label(l.abilityTitle),
+          if (_sports.contains(Sport.run))
+            SwitchListTile(
+              key: const ValueKey('quickCanRun30'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(l.canRun30),
+              subtitle: Text(l.canRun30Sub),
+              value: a.canRun30,
+              onChanged: (v) => _setA({'canRun30': v}),
+            ),
+          if (_sports.contains(Sport.swim))
+            SwitchListTile(
+              key: const ValueKey('quickCanSwim400'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(l.canSwim400),
+              subtitle: Text(l.canSwim400Sub),
+              value: a.canSwim400,
+              onChanged: (v) => _setA({'canSwim400': v}),
+            ),
+        ],
         if (widget.mode == SetupMode.setup) ...[_label(l.units), _unitsSwitch(l)],
       ],
     );
@@ -790,7 +815,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _label(l.timeTitle, hint: l.timeHint),
         _MinutesStepper(value: a.sessionMinutes, onChanged: (v) => _setA({'sessionMinutes': v}), big: true),
         if (longDay != null && !a.dayMinutes.containsKey(longDay))
-          Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.timeLongDayHint, style: Theme.of(context).textTheme.bodySmall)),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              l.timeLongDayHint2(_MinutesStepper.fmt(max(a.sessionMinutes, PlanGenerator.longDayDefault(profile)))),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
         Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
@@ -1091,6 +1122,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(l.canSwim400),
+          subtitle: Text(l.canSwim400Sub),
           value: a.canSwim400,
           onChanged: (v) => _setA({'canSwim400': v}),
         ),
@@ -1369,19 +1401,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   /// Recommended plan length (weeks) for the goal and level (training-science §1.8).
-  (int, int) get _recommendedRange => switch ((a.eventDistance, p.level)) {
-    ('5k', 'beginner') => (8, 10),
-    ('5k', _) => (8, 12),
-    ('10k', _) => (8, 12),
-    ('hm', 'advanced') => (12, 16),
-    ('hm', _) => (12, 14),
-    ('m', 'beginner' || 'intermediate') => (16, 20),
-    ('m', _) => (16, 18),
-    ('sprint', _) => (8, 12),
-    ('olympic', _) => (12, 16),
-    ('70.3', _) => (16, 20),
-    _ => (6, 12),
-  };
+  (int, int) get _recommendedRange => EventSpec.of(a.eventDistance)?.weeksFor(p.level) ?? (6, 12);
 
   Widget _plan(AppLocalizations l) {
     final weeksToEvent = a.eventDate == null ? null : GoalModel.weeksUntil(a.eventDate!, DateTime.now());
@@ -1705,13 +1725,14 @@ class _MinutesStepper extends StatelessWidget {
       children: [
         IconButton.filledTonal(
           visualDensity: big ? VisualDensity.standard : VisualDensity.compact,
-          onPressed: value > 20 ? () => onChanged(value <= 30 ? 20 : value - 15) : null,
+          onPressed: value > 20 ? () => onChanged(value <= 30 ? 20 : value - (value > 180 ? 30 : 15)) : null,
           icon: const Icon(Icons.remove_rounded),
         ),
         big ? Expanded(child: text) : SizedBox(width: 74, child: text),
         IconButton.filledTonal(
           visualDensity: big ? VisualDensity.standard : VisualDensity.compact,
-          onPressed: value < 240 ? () => onChanged(value < 30 ? 30 : value + 15) : null,
+          // Up to 8 h (Ironman long rides 5–6 h + brick run); 30-min steps above 3 h.
+          onPressed: value < 480 ? () => onChanged(value < 30 ? 30 : value + (value >= 180 ? 30 : 15)) : null,
           icon: const Icon(Icons.add_rounded),
         ),
       ],

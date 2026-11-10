@@ -2766,5 +2766,137 @@
   "distSwim1500": "Open water 1.5 km",
   "distSwim3800": "Open water 3.8 km",
   "distSwim5000": "Open water 5 km",
-  "moreDistances": "More distances…"
+  "moreDistances": "More distances…",
+  "wShakeoutRide": "Shake-out ride",
+  "wShakeoutRideDesc": "20–30 min very easy with three short pick-ups – loosen up, check the bike. Prepare food and drinks for tomorrow.",
+  "wShakeoutSwim": "Shake-out swim",
+  "wShakeoutSwimDesc": "Short and easy with a few faster 50s and sighting – ideally at the race venue in your wetsuit.",
+  "stepSightingNote": "Sighting: lift the eyes briefly every 6–9 strokes, keep the rhythm",
+  "wDuLegs": "Run {run} km · Bike {bike} km · Run {run2} km",
+  "@wDuLegs": {
+    "placeholders": {
+      "run": {
+        "type": "String"
+      },
+      "bike": {
+        "type": "String"
+      },
+      "run2": {
+        "type": "String"
+      }
+    }
+  },
+  "wRaceFuelNote": "Fuel as practised: 60–90 g carbohydrate per hour from early on, drink to thirst – nothing new on race day.",
+  "wFuelPracticeNote": "Practise race fuelling: 60–90 g carbohydrate per hour and 400–800 ml fluid per hour – train the gut like the legs.",
+  "wTrailNote": "If your race has climbing: run on hilly terrain and practise power hiking on the steep parts.",
+  "stepClimbNote": "Seated, low cadence 60–70 rpm – on a climb or high resistance",
+  "wClimb": "Climbing {reps} × {each} min",
+  "@wClimb": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "each": {
+        "type": "int"
+      }
+    }
+  },
+  "wClimbDesc": "Sweet-spot effort as climbing repeats: builds the strength and fatigue resistance long climbs need.",
+  "wDuRunFirst": "Run before the bike {min} min",
+  "@wDuRunFirst": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "wDuRunFirstDesc": "Duathlon order: run at steady race feel, change quickly to the bike – the brick run follows the ride.",
+  "wBackToBack": "Back-to-back run",
+  "wBackToBackDesc": "Easy medium-long run on tired legs the day after the long run – ultra endurance without one huge run. Walk breaks are fine.",
+  "stepSwimTestNote": "Time trial: fastest pace you can hold evenly – note the time",
+  "wSwimCssTest": "CSS test (400 m + 200 m)",
+  "wSwimCssTestDesc": "You can swim 400 m in one go now: swim 400 m and, after 5–10 min easy, 200 m as time trials. Enter both times in the plan settings (swimming) – Strive then sets your swim paces and plans CSS sets.",
+  "stepSwimNoviceWu": "Easy, with breaks as needed",
+  "stepSwimKickNote": "Kick with a board, relaxed from the hips – breathe out under water",
+  "stepSwimNoviceNote": "Relaxed and without stopping – long strokes, calm breathing",
+  "wSwimBuild": "Build-up {reps} × {meters} m",
+  "@wSwimBuild": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "wSwimBuildDesc": "Building continuous swimming: swim every repeat relaxed without stopping, rest at the wall as long as you need (~30–45 s). The repeats get longer week by week – goal: 400 m in one go.",
+  "wSwimNoviceTechDesc": "Technique for swim starters: breathing out under water, flat body position, relaxed kick – short distances with breaks. No pace targets.",
+  "wLongSwim": "Long swim {meters} m",
+  "@wLongSwim": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "wLongSwimDesc": "The long continuous swim of the week – even rhythm, bilateral breathing, no stopping. It grows towards your race distance.",
+  "wOpenWaterNote": "Open water when possible: wetsuit, sighting, swimming in a group (drafting) and never alone.",
+  "stepSwimTempoNote": "Tempo – a little slower than CSS, short rests",
+  "wSwimTempoSet": "Tempo set {n} × {meters} m",
+  "@wSwimTempoSet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "wSwimTempoDesc": "Long repeats just below threshold: sustained race pace for longer distances.",
+  "feasBeginnerDistance": "This distance is not a first goal for beginners: build up over a season with shorter races first.",
+  "feasLongSwim": "By race day your continuous swim only reaches about {meters} m – this race needs about {target} m in one go.",
+  "@feasLongSwim": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "feasRaiseDay": "Increase the time on {day} to {time}",
+  "@feasRaiseDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "feasMoveLongDay": "Move the long session to {day} ({time} available)",
+  "@feasMoveLongDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLongDayHint2": "On your long-session day (★) Strive plans {time} for this goal unless you set that day yourself.",
+  "@timeLongDayHint2": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "abilityTitle": "Your current level",
+  "canSwim400Sub": "If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces."
 }
