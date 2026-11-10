@@ -19,7 +19,6 @@ import '../calendar/replace_plan_dialog.dart';
 import '../../widgets/common.dart';
 import '../../widgets/event_distance_picker.dart';
 import '../train/exercise_picker.dart';
-import 'race_search_page.dart';
 
 class GoalsPage extends ConsumerWidget {
   const GoalsPage({super.key});
@@ -31,9 +30,6 @@ class GoalsPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.goals),
-        actions: [
-          IconButton(tooltip: l.raceSearch, icon: const Icon(Icons.travel_explore_rounded), onPressed: () => openRaceSearch(context)),
-        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showGoalEditor(context, ref),
@@ -470,27 +466,6 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                       initialDate: _deadline ?? DateTime.now().add(const Duration(days: 60)),
                     );
                     if (d != null) setState(() => _deadline = d);
-                  },
-                ),
-              if (_type == GoalType.event)
-                TextButton.icon(
-                  icon: const Icon(Icons.travel_explore_rounded),
-                  label: Text(l.raceSearch),
-                  onPressed: () async {
-                    // Prefilled with this goal's distance / sport.
-                    final cur = eventDistanceOf(eventKey);
-                    final r = await openRaceSearch(context, sport: cur?.sport ?? _eventSports.first, distance: cur?.key);
-                    if (r == null || !mounted) return;
-                    final d = eventDistanceOf(r.distance);
-                    setState(() {
-                      _deadline = r.date;
-                      _title.text = r.name;
-                      _sport = r.sport.sport;
-                      if (d != null) {
-                        _eventKey = d.key;
-                        _target.text = Units.num(d.km, 2);
-                      }
-                    });
                   },
                 ),
               if (_type == GoalType.event) ...[

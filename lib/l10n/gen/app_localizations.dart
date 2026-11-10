@@ -8830,6 +8830,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.'**
   String get canSwim400Sub;
+
+  /// No description provided for @goalKindRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Race'**
+  String get goalKindRace;
+
+  /// No description provided for @goalKindWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan length only'**
+  String get goalKindWeeks;
+
+  /// No description provided for @goalKindWeeksHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No race – a plan that builds your fitness over the chosen number of weeks, with recovery weeks and without taper.'**
+  String get goalKindWeeksHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

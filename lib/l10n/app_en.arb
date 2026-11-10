@@ -3003,5 +3003,8 @@
     }
   },
   "abilityTitle": "Your current level",
-  "canSwim400Sub": "If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces."
+  "canSwim400Sub": "If not, the plan starts with technique and builds up to 400 m in one go – then a swim test sets your paces.",
+  "goalKindRace": "Race",
+  "goalKindWeeks": "Plan length only",
+  "goalKindWeeksHint": "No race – a plan that builds your fitness over the chosen number of weeks, with recovery weeks and without taper."
 }
