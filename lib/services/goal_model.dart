@@ -93,6 +93,14 @@ class GoalModel {
     _ => (0.72, 1.0, 0),
   };
 
+  /// Share of FTP held on the bike leg of [event] (70.3 0.77, Ironman 0.70 …) – the race power of the
+  /// race-pace blocks in long rides.
+  static double raceFtpShare(String? event) => _legModel(event ?? '').$1;
+
+  /// Slowdown of the run off the bike in [event] (× the stand-alone pace; Ironman 1.25) – the pace of
+  /// race-specific brick runs.
+  static double runOffBikeFactor(String? event) => _legModel(event ?? '').$2;
+
   /// Steady speed (km/h) on a flat course at [frac] × FTP: P·η = v·(Crr·m·g + ½·ρ·CdA·v²),
   /// η 0.975, Crr 0.005, ρ 1.2, CdA 0.32 / 0.30 / 0.27 by level, × 0.93 for turns, hills and wind.
   static double bikeKmh(int ftp, double weightKg, String level, double frac) {

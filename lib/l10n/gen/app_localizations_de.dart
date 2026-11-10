@@ -4895,6 +4895,63 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get wTriOpenWaterNote => 'Wettkampfvorbereitung: Orientierung im Becken üben (alle 6–9 Züge kurz nach vorn schauen); sobald es das Wasser zulässt, einige Einheiten im Freiwasser mit Neoprenanzug – in der Gruppe, nie allein.';
+
+  @override
+  String get stepSwimRaceFinishNote => 'Letztes Drittel im Renntempo – gleichmäßig, Technik halten';
+
+  @override
+  String get wLongSwimRaceDesc => 'Diese Woche schwimmst du das letzte Drittel der langen Einheit im Renntempo: üben, das Tempo zu halten, wenn du schon müde bist.';
+
+  @override
+  String wLongRideRacePace(int reps, int each) {
+    return 'Lange Ausfahrt mit $reps × $each min Renntempo';
+  }
+
+  @override
+  String get wLongRideRacePaceDesc => 'Lange Zone-2-Ausfahrt mit Blöcken in der Leistung, die du im Wettkampf fahren willst: gleichmäßig, aerodynamisch, essen und trinken wie im Rennen (alle 20–30 min).';
+
+  @override
+  String get stepRacePowerNote => 'Renntempo – gleichmäßig, wie im Wettkampf';
+
+  @override
+  String get wRideTempoDescIm => 'Wettkampfspezifisches Tempo bei 75–85 % FTP – die Belastung einer Ironman-Radstrecke: gleichmäßig, aerodynamisch, mit Verpflegung.';
+
+  @override
+  String get wRideTempoDescFondo => 'Wettkampfspezifisches Tempo bei 75–85 % FTP – die Dauerbelastung langer Anstiege und einer schnellen Gruppe: gleichmäßig einteilen, mit Verpflegung.';
+
+  @override
+  String get wRideTempoBaseDesc => 'Tempo bei 76–90 % FTP: aerobe Kraft für lange Belastungen – kontrolliert, eine Stufe unter dem Sweet Spot.';
+
+  @override
+  String get stepThresholdNote2 => 'Schwelle – 91–100 % FTP, kontrolliert';
+
+  @override
+  String wHillReps(int reps, int sec) {
+    return 'Bergläufe $reps × $sec s';
+  }
+
+  @override
+  String get wHillRepsDesc => 'Bergaufläufe an einem gleichmäßigen Anstieg (5–8 %): kräftig, kurze Schritte, aufrecht; locker hinunter traben oder gehen. Baut die Kraft für die Anstiege deines Ultras auf.';
+
+  @override
+  String get stepHillNote => 'Bergauf – hart, aber kontrolliert, nach Gefühl (ohne Tempovorgabe)';
+
+  @override
+  String get stepHillDownNote => 'Locker hinunter traben oder gehen';
+
+  @override
+  String wGymLoadDescNoDeload(int rir) {
+    return 'Beende jeden Arbeitssatz mit etwa $rir Wdh. im Tank. Sätze, Wiederholungsbereich und Gewichtsvorschlag stehen bei jeder Übung.';
+  }
+
+  @override
+  String get wGymRegressionNote => 'Erste Wochen: leichtere Varianten der technisch anspruchsvollen Übungen (Latziehen statt Klimmzügen, Rumänisches Kreuzheben mit Kurzhanteln statt Kreuzheben mit der Langhantel, Reverse Crunches statt hängendem Beinheben) – die vollen Übungen folgen, sobald die Technik sitzt.';
+
+  @override
+  String get wMastersStrengthNote => 'Kraft-Tipp: Hänge an diese Einheit 15–20 min Kraft an (Kniebeugen, Ausfallschritte, Wadenheben, Unterarmstütz) – zweimal pro Woche erhält das mit zunehmendem Alter Muskeln, Knochen und Sehnen.';
+
+  @override
   String get recalWhyFatigueRecovery => 'Seit zwei Wochen fühlen sich die Einheiten härter an als geplant: Die nächsten 7 Tage sind eine Erholungswoche (weniger Umfang, keine Intensität). Danach kommen die Qualitätseinheiten mit weniger Wiederholungen zurück.';
 
   @override
