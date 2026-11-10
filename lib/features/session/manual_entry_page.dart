@@ -10,6 +10,7 @@ import '../../services/plan_match.dart';
 import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
 import '../../widgets/common.dart';
+import '../../widgets/discard_guard.dart';
 import '../../widgets/rpe_picker.dart';
 import '../../widgets/segments.dart';
 
@@ -50,6 +51,25 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
   final _volume = TextEditingController();
   final _notes = TextEditingController();
   int? _rpe; // optional – null = not rated
+
+  /// Entered values (for the unsaved-changes prompt on back).
+  String _snapshot() =>
+      [_sport.name, _start.millisecondsSinceEpoch, _minutes, _title.text, _distance.text, _volume.text, _notes.text, _rpe].join('\u0000');
+  late final String _initial;
+
+  @override
+  void initState() {
+    super.initState();
+    _initial = _snapshot();
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_title, _distance, _volume, _notes]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
 
   void _save() {
     final l = context.l10n;
@@ -100,60 +120,63 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
     final l = context.l10n;
     final u = ref.watch(profileOrDefaultProvider).units;
     final df = DateFormat.yMMMEd(context.localeName).add_Hm();
-    return Scaffold(
-      appBar: AppBar(title: Text(l.logManually)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Segments<Sport>(
-            segments: [for (final s in Sport.values) Seg(s, icon: s.icon)],
-            value: _sport,
-            onChanged: (v) => setState(() => _sport = v),
-          ),
-          const SizedBox(height: 16),
-          TextField(controller: _title, decoration: InputDecoration(labelText: l.title, hintText: _sport.label(l))),
-          const SizedBox(height: 12),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.event),
-            title: Text(df.format(_start)),
-            onTap: () async {
-              final d = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2015), lastDate: DateTime.now());
-              if (d == null || !context.mounted) return;
-              final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_start));
-              setState(() => _start = DateTime(d.year, d.month, d.day, t?.hour ?? _start.hour, t?.minute ?? _start.minute));
-            },
-          ),
-          LabeledSlider(
-            label: l.duration,
-            value: _minutes.toDouble(),
-            min: 5,
-            max: 360,
-            divisions: 71,
-            format: (v) => humanDuration(v.round() * 60),
-            onChanged: (v) => setState(() => _minutes = v.round()),
-          ),
-          if (_sport != Sport.gym)
-            TextField(
-              controller: _distance,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: l.distance, suffixText: _sport == Sport.swim ? 'm' : u.distUnit),
-            )
-          else
-            TextField(
-              controller: _volume,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: l.totalVolume, suffixText: u.weightUnit),
+    return DiscardGuard(
+      isDirty: () => _snapshot() != _initial,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l.logManually)),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Segments<Sport>(
+              segments: [for (final s in Sport.values) Seg(s, icon: s.icon)],
+              value: _sport,
+              onChanged: (v) => setState(() => _sport = v),
             ),
-          const SizedBox(height: 16),
-          Text(l.howHardOptional, style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 4),
-          RpePicker(value: _rpe, onChanged: (v) => setState(() => _rpe = v)),
-          const SizedBox(height: 8),
-          TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
-          const SizedBox(height: 24),
-          FilledButton(onPressed: _save, child: Text(l.save)),
-        ],
+            const SizedBox(height: 16),
+            TextField(controller: _title, decoration: InputDecoration(labelText: l.title, hintText: _sport.label(l))),
+            const SizedBox(height: 12),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.event),
+              title: Text(df.format(_start)),
+              onTap: () async {
+                final d = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2015), lastDate: DateTime.now());
+                if (d == null || !context.mounted) return;
+                final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_start));
+                setState(() => _start = DateTime(d.year, d.month, d.day, t?.hour ?? _start.hour, t?.minute ?? _start.minute));
+              },
+            ),
+            LabeledSlider(
+              label: l.duration,
+              value: _minutes.toDouble(),
+              min: 5,
+              max: 360,
+              divisions: 71,
+              format: (v) => humanDuration(v.round() * 60),
+              onChanged: (v) => setState(() => _minutes = v.round()),
+            ),
+            if (_sport != Sport.gym)
+              TextField(
+                controller: _distance,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(labelText: l.distance, suffixText: _sport == Sport.swim ? 'm' : u.distUnit),
+              )
+            else
+              TextField(
+                controller: _volume,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(labelText: l.totalVolume, suffixText: u.weightUnit),
+              ),
+            const SizedBox(height: 16),
+            Text(l.howHardOptional, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 4),
+            RpePicker(value: _rpe, onChanged: (v) => setState(() => _rpe = v)),
+            const SizedBox(height: 8),
+            TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
+            const SizedBox(height: 24),
+            FilledButton(onPressed: _save, child: Text(l.save)),
+          ],
+        ),
       ),
     );
   }

@@ -817,9 +817,13 @@ class _TrendFooter extends StatelessWidget {
 
 /// Route outline without map tiles (offline, cheap) with the current position.
 class RouteSketchPainter extends CustomPainter {
-  RouteSketchPainter(this.points, this.color);
+  RouteSketchPainter(this.points, this.color) : count = points.length;
   final List<LatLng> points;
   final Color color;
+
+  /// Route length when painted: [points] may be the tracker's live (growing) list, so the
+  /// length is captured here to detect new points.
+  final int count;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -856,7 +860,7 @@ class RouteSketchPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(RouteSketchPainter o) => o.points.length != points.length;
+  bool shouldRepaint(RouteSketchPainter o) => o.count != count || o.color != color;
 }
 
 /// Current step: "INTERVAL 3/6 · 650 m left · 4:05–4:15 /km · Zone 4" + next step.
@@ -1172,6 +1176,19 @@ class _PaceChart extends ConsumerWidget {
 
 // ───────────────────────────── Map & splits ─────────────────────────────
 
+/// Fixed copy of the live route for the map's polyline (flutter_map compares polylines by
+/// their point lists, so a list that grows in place would not repaint). Copied only when
+/// new points arrived and only while the map is shown – not on every timer tick.
+List<LatLng> routeSnapshot(CardioState s) {
+  final c = _routeSnap;
+  if (c != null && c.$1 == s.start && c.$2.length == s.pointCount) return c.$2;
+  final snap = List<LatLng>.unmodifiable(s.points.take(s.pointCount));
+  _routeSnap = (s.start, snap);
+  return snap;
+}
+
+(DateTime, List<LatLng>)? _routeSnap;
+
 class _MapPage extends StatelessWidget {
   const _MapPage({required this.s, required this.controller, required this.follow, required this.onFollow});
   final CardioState s;
@@ -1201,7 +1218,8 @@ class _MapPage extends StatelessWidget {
               ),
               children: [
                 TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.gromhork.strive'),
-                if (s.points.length > 1) PolylineLayer(polylines: [Polyline(points: s.points, strokeWidth: 5, color: s.sport.color)]),
+                if (s.points.length > 1)
+                  PolylineLayer(polylines: [Polyline(points: routeSnapshot(s), strokeWidth: 5, color: s.sport.color)]),
                 if (last != null)
                   MarkerLayer(
                     markers: [

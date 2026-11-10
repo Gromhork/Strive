@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/discard_guard.dart';
 import '../../widgets/segments.dart';
 import '../session/start_helpers.dart';
 import '../session/step_editor.dart';
@@ -41,6 +42,14 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
 
   bool get _isNew => widget.template == null;
 
+  @override
+  void dispose() {
+    for (final c in [_name, _folder, _desc, _km]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
   void _touch(VoidCallback f) => setState(() {
     f();
     _dirty = true;
@@ -68,8 +77,7 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
 
   Future<bool> _confirmLeave() async {
     if (!_dirty) return true;
-    final l = context.l10n;
-    return confirm(context, l.discardChanges, ok: l.discard, danger: true);
+    return confirmDiscard(context);
   }
 
   Future<void> _share() async {

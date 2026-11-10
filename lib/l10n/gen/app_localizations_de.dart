@@ -4893,4 +4893,35 @@ class AppLocalizationsDe extends AppLocalizations {
   String targetSuggestRange(String time, String fast, String slow) {
     return 'Vorschlag $time (Spanne $fast – $slow)';
   }
+
+  @override
+  String get restoreWorkoutTitle => 'Einheit fortsetzen?';
+
+  @override
+  String restoreWorkoutBody(String title, String day, String time) {
+    return '$title – gestartet $day um $time. Die App wurde während der Einheit beendet; mach dort weiter, wo du aufgehört hast, oder verwirf sie.';
+  }
+
+  @override
+  String get restoreWorkoutResume => 'Fortsetzen';
+
+  @override
+  String get restoreSummaryTitle => 'Einheit speichern?';
+
+  @override
+  String restoreSummaryBody(String title, String day, String time) {
+    return '$title ($day, $time) wurde beendet, aber noch nicht gespeichert.';
+  }
+
+  @override
+  String get restoreSummaryOpen => 'Zusammenfassung öffnen';
+
+  @override
+  String get restoreToday => 'heute';
+
+  @override
+  String get restoreYesterday => 'gestern';
+
+  @override
+  String get workoutRunsInBackground => 'Deine Einheit läuft im Hintergrund weiter.';
 }
