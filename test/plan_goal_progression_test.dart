@@ -111,8 +111,10 @@ void main() {
     final swims = gen(p).where((w) => w.sport == Sport.swim && w.phase != 'taper');
     final longest = swims.expand((w) => w.steps).where((s) => s.isWork && s.zone == 'EN').fold(0.0, (x, s) => max(x, s.distanceM ?? 0));
     // Before: 400 m (the end of the ladder) and a "longSwim" warning. After: 800 m, no warning.
-    expect(longest, greaterThanOrEqualTo(800));
-    expect(swims.where((w) => w.title == l.wSwimContinuous(800)), isNotEmpty);
+    // Review 2026-11 C7: the target is what the race needs in one go (olympic ~1.2 km of the 1.5 km leg),
+    // reached with up to +200 m a week – no longer the 800 m longest repeat.
+    expect(longest, greaterThanOrEqualTo(1000));
+    expect(swims.where((w) => w.title == l.wSwimContinuous(longest.round())), isNotEmpty);
     expect(PlanGenerator.feasibility(p, start: start, l: l).issues, isNot(contains('longSwim')));
   });
 

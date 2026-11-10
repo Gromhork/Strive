@@ -4893,4 +4893,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String targetSuggestRange(String time, String fast, String slow) {
     return 'Suggested $time (range $fast – $slow)';
   }
+
+  @override
+  String get wTriOpenWaterNote => 'Race preparation: practise sighting in the pool (look forward every 6–9 strokes); once the water allows, swim some sessions in open water in your wetsuit – in a group, never alone.';
+
+  @override
+  String get stepSwimRaceFinishNote => 'Last third at race pace – steady, keep your technique';
+
+  @override
+  String get wLongSwimRaceDesc => 'This week the last third of the long swim is at race pace: practise holding the pace when you are already tired.';
+
+  @override
+  String wLongRideRacePace(int reps, int each) {
+    return 'Long ride with $reps × $each min at race power';
+  }
+
+  @override
+  String get wLongRideRacePaceDesc => 'Long Z2 ride with blocks at the power you want to hold on race day: steady, aero, and eat and drink as in the race (every 20–30 min).';
+
+  @override
+  String get stepRacePowerNote => 'Race power – steady, as on race day';
+
+  @override
+  String get wRideTempoDescIm => 'Race-specific tempo at 75–85 % FTP – the effort of an Ironman bike leg: steady, aero, with fuelling.';
+
+  @override
+  String get wRideTempoDescFondo => 'Race-specific tempo at 75–85 % FTP – the steady effort of long climbs and a fast group ride: even pacing, with fuelling.';
+
+  @override
+  String get wRideTempoBaseDesc => 'Tempo at 76–90 % FTP: aerobic strength for long efforts – controlled, a step below sweet spot.';
+
+  @override
+  String get stepThresholdNote2 => 'Threshold – 91–100 % FTP, controlled';
+
+  @override
+  String wHillReps(int reps, int sec) {
+    return 'Hill repeats $reps × $sec s';
+  }
+
+  @override
+  String get wHillRepsDesc => 'Uphill repeats on a steady climb (5–8 %): strong, short steps, upright posture; jog or walk down easily. Builds the climbing strength your ultra needs.';
+
+  @override
+  String get stepHillNote => 'Uphill – hard but controlled, by feel (no pace)';
+
+  @override
+  String get stepHillDownNote => 'Jog or walk down easily';
+
+  @override
+  String wGymLoadDescNoDeload(int rir) {
+    return 'Finish every work set with about $rir reps in reserve. Sets, rep range and suggested weight are shown with each exercise.';
+  }
+
+  @override
+  String get wGymRegressionNote => 'First weeks: easier variants of the technically demanding lifts (lat pulldown instead of pull-ups, dumbbell Romanian deadlift instead of the barbell deadlift, reverse crunches instead of hanging leg raises) – the full lifts follow once the technique is solid.';
+
+  @override
+  String get wMastersStrengthNote => 'Strength tip: add 15–20 min of strength after this session (squats, lunges, calf raises, a plank) – twice a week it keeps muscle, bones and tendons strong as you get older.';
 }

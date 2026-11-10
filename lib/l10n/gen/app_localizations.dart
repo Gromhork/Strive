@@ -9034,6 +9034,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suggested {time} (range {fast} – {slow})'**
   String targetSuggestRange(String time, String fast, String slow);
+
+  /// No description provided for @wTriOpenWaterNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Race preparation: practise sighting in the pool (look forward every 6–9 strokes); once the water allows, swim some sessions in open water in your wetsuit – in a group, never alone.'**
+  String get wTriOpenWaterNote;
+
+  /// No description provided for @stepSwimRaceFinishNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Last third at race pace – steady, keep your technique'**
+  String get stepSwimRaceFinishNote;
+
+  /// No description provided for @wLongSwimRaceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This week the last third of the long swim is at race pace: practise holding the pace when you are already tired.'**
+  String get wLongSwimRaceDesc;
+
+  /// No description provided for @wLongRideRacePace.
+  ///
+  /// In en, this message translates to:
+  /// **'Long ride with {reps} × {each} min at race power'**
+  String wLongRideRacePace(int reps, int each);
+
+  /// No description provided for @wLongRideRacePaceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Long Z2 ride with blocks at the power you want to hold on race day: steady, aero, and eat and drink as in the race (every 20–30 min).'**
+  String get wLongRideRacePaceDesc;
+
+  /// No description provided for @stepRacePowerNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Race power – steady, as on race day'**
+  String get stepRacePowerNote;
+
+  /// No description provided for @wRideTempoDescIm.
+  ///
+  /// In en, this message translates to:
+  /// **'Race-specific tempo at 75–85 % FTP – the effort of an Ironman bike leg: steady, aero, with fuelling.'**
+  String get wRideTempoDescIm;
+
+  /// No description provided for @wRideTempoDescFondo.
+  ///
+  /// In en, this message translates to:
+  /// **'Race-specific tempo at 75–85 % FTP – the steady effort of long climbs and a fast group ride: even pacing, with fuelling.'**
+  String get wRideTempoDescFondo;
+
+  /// No description provided for @wRideTempoBaseDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo at 76–90 % FTP: aerobic strength for long efforts – controlled, a step below sweet spot.'**
+  String get wRideTempoBaseDesc;
+
+  /// No description provided for @stepThresholdNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold – 91–100 % FTP, controlled'**
+  String get stepThresholdNote2;
+
+  /// No description provided for @wHillReps.
+  ///
+  /// In en, this message translates to:
+  /// **'Hill repeats {reps} × {sec} s'**
+  String wHillReps(int reps, int sec);
+
+  /// No description provided for @wHillRepsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uphill repeats on a steady climb (5–8 %): strong, short steps, upright posture; jog or walk down easily. Builds the climbing strength your ultra needs.'**
+  String get wHillRepsDesc;
+
+  /// No description provided for @stepHillNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Uphill – hard but controlled, by feel (no pace)'**
+  String get stepHillNote;
+
+  /// No description provided for @stepHillDownNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Jog or walk down easily'**
+  String get stepHillDownNote;
+
+  /// No description provided for @wGymLoadDescNoDeload.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish every work set with about {rir} reps in reserve. Sets, rep range and suggested weight are shown with each exercise.'**
+  String wGymLoadDescNoDeload(int rir);
+
+  /// No description provided for @wGymRegressionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'First weeks: easier variants of the technically demanding lifts (lat pulldown instead of pull-ups, dumbbell Romanian deadlift instead of the barbell deadlift, reverse crunches instead of hanging leg raises) – the full lifts follow once the technique is solid.'**
+  String get wGymRegressionNote;
+
+  /// No description provided for @wMastersStrengthNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength tip: add 15–20 min of strength after this session (squats, lunges, calf raises, a plank) – twice a week it keeps muscle, bones and tendons strong as you get older.'**
+  String get wMastersStrengthNote;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
