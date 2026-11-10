@@ -318,9 +318,11 @@ per phase) – the line the forecast compares with.
 ```text
 fitness now : planned race / unplanned max effort (RPE ≥ 8 or HR ≥ 88 % HRmax) of the last 60 days → measured VDOT;
               else the plan line  baseline + gain(weeks since plan start) × min(1, completion / 0.9);
-              quality runs (last 42 days, ≥ 2): median actual/planned avg speed r → r < 0.98 at a real effort pulls
-              towards VDOT_targets · r^1.2, r > 1.02 lifts there only with ≥ 3 quality runs over ≥ 14 days (or a max
-              effort) – the same evidence the recalibration needs for VDOT +1; faster non-max efforts only raise
+              quality runs (last 42 days, ≥ 3 – review C1): actual / planned avg speed vs the step estimate, ± 5 %
+              dead band (= 1.0; a session that took the plan's displayed, rounded duration ± 2 % is on plan as well);
+              median r < 0.98 at a real effort pulls towards VDOT_targets · r^1.2, r > 1.02 lifts there only with ≥ 3
+              quality runs over ≥ 14 days (or a max effort) – the same evidence the recalibration needs for VDOT +1;
+              faster non-max efforts only raise
 detraining  : the longest gap without running of the last 28 days (> 10 days; open gap up to today, or a finished one that
               started after the plan start) → −(0.3 + 0.7 / week beyond day 10), ≤ −4 VDOT (Mujika & Padilla [68]);
               a finished gap fades linearly over 2 × its length after the return (one easy run no longer erases it)
@@ -330,8 +332,18 @@ plan line   : starts at the VDOT of the plan's first quality run (the plan-start
 range       : ± 1 (max effort) · 1.5 (quality runs) · 2 (race times) · 3.5 (level default) + 0.04 / week left
 status      : forecast / target ≤ 0.97 ahead (suggest faster; running: needs the evidence above, triathlon: also when the
               target is ≥ 3 % slower than what FTP / CSS / race time predict today) · ≤ 1.01 on track · ≤ 1.03 slightly
-              behind · else at risk
-no target   : completion < 50 % or long run < 75 % of the planned so far with ≤ 6 weeks left → at risk
+              behind · else at risk. Persistence (C1): this pace status only shows when the forecast of a week ago
+              (sessions until then) was on the same side – otherwise on track; two "behind" weeks show the milder one.
+              Missed training / a break and a measured max effort count at once.
+floors      : completion < 50 % (≥ 3 weeks in) → at risk, < 70 % → slightly behind (with or without a target);
+              long runs behind (longest of 6 weeks < 75 % of the longest planned, or ≥ 2 of the last 3 weeks' long runs
+              missed / < 75 %) → ≥ slightly behind, at risk with ≤ 10 weeks left for HM and longer (≤ 6 otherwise);
+              fatigue (the recalibration's too-hard score ≥ 2 over 14 days, reason "fatigue") → ≥ slightly behind
+no ahead    : never "ahead" with long runs behind, missed training, a break or fatigue, nor with < 85 % of the last 4
+              weeks done (the Monday after a sick week said "ahead – set 3:33")
+finish-only : run/walk beginners (PlanGenerator.runWalkStartFor ≠ null, no race times) without a measured max effort:
+              no time today / on race day / target (the level default VDOT 33 predicted a 1:54 HM for someone whose
+              easy pace is ~7:40/km) – status from adherence, long runs, fatigue and the progression check
 early       : < 2 done endurance sessions since the plan start → no verdict
 ```
 
@@ -1167,9 +1179,9 @@ best effort:           fastest 5 km / 10 km / HM / M of the last 90 days (km spl
 | ≥ 2 sessions cut short | long sessions of the next 14 days −10 % | the planned duration was not sustainable |
 | ≥ 2 quality sessions at RPE ≤ 4, no fatigue signal, completion ≥ 90 % | easy + long sessions of loading weeks, days 1–7, +5 % – not when a threshold (VDOT / FTP / CSS) rises in the same recalibration, and not on a workout the AutoAdjuster reduced in the last 7 days | within the 5–10 %/week growth rule (§1.5); R3: never raise volume and intensity together (the new paces are the step up) |
 | return after a break: a planned sport with no session for ≥ 10 days (or < 15 % of its due training in the 14 days), trained before | days 1–7 at 60 % of the plan (50 % after ≥ 21 days off), days 8–14 at 70 %; all quality of days 1–7 → easy (the easy replacement scaled the same way); missed key sessions dropped | R4: restart at 50–70 % of the pre-break volume [68]; the plan is the pre-break reference |
-| every long session of the 14 days (run, ride, swim) | ≤ 1.1 × the longest session of that sport in the 30 days before it (× 1.1 per earlier long session of the horizon, which counts as done); none in those 30 days → ≤ 0.6 × the longest in the 120 days before | R1, Frandsen 2025 [11] – applied as a cap, not only when increasing. Runs / swims by distance (sessions without one, e.g. a treadmill without a foot pod, by time), rides by time |
+| every long session of the 14 days (run, ride, swim) | ≤ 1.1 × the longest session of that sport in the 30 days before it (× 1.1 per earlier long session of the horizon, which counts as done); none in those 30 days → ≤ 0.6 × the longest in the 120 days before. When every long session of those 30 days was done at ≥ 90 %, the generator's own growth is the reference (longest done × the plan's step to this one – a goal-directed build grows +10 min / up to +25 %); a long session the AutoAdjuster capped after a hard cut-short long run is not lowered again; run/walk by time | R1, Frandsen 2025 [11] – applied as a cap, not only when increasing. Runs / swims by distance (sessions without one, e.g. a treadmill without a foot pod, by time), rides by time |
 | missed key session in the last 3 days | moved to a free day of the same week (the missed workout's week – never into the next one), never next to another hard day; missed easy sessions dropped; with completion < 50 % (re-entry) key sessions are dropped, not made up | same rules as "adjust my week" (plan_adjuster) |
-| faster best effort | run pace targets follow the new VDOT: with race times only upwards and ≤ +2 points at once; without race times the level default is replaced (downwards only by a real effort: race, RPE ≥ 8 or HR ≥ 88 % HRmax – not by the fastest 5 km of an easy run); the profile's race time is updated | Daniels [7]: update VDOT from races / time trials, small steps |
+| faster best effort | run pace targets follow the new VDOT: with race times only upwards and ≤ +2 points at once; without race times the level default is replaced (downwards only by a real effort: race, RPE ≥ 8 or HR ≥ 88 % HRmax – not by the fastest 5 km of an easy run); the new VDOT is stored as the profile's `vdotEstimate` (never as a race time, §11.2) | Daniels [7]: update VDOT from races / time trials, small steps |
 
 Reductions never stack beyond the strongest rule (the minimum factor wins); an increase only happens without any reduction
 reason. Reductions are computed from the workout's **original** volume (the generator's, kept in the change record), so they
@@ -1224,6 +1236,30 @@ Applying writes the refills as new planned workouts with the rebuilt phase, so a
 **Limits.** Matching is by count per sport and week: a session moved into another week leaves a "gap" in its own week (shown
 as a proposal, can be unticked); a session deleted on a day that now holds a moved workout of that sport is not detected.
 After a profile change (training days, focus) without a new plan, the rebuilt week follows the new profile.
+
+### 11.2 Coherence of the adaptation layer (review 2026-11, `test/adaptation_sim_test.dart`) [P]
+
+An independent review ran 12 day-by-day simulations (the athlete accepts every "Plan überprüfen" each Monday, the
+AutoAdjuster runs after every session) and found that the adaptation layer contradicted the generator. The scenarios are now a
+committed test (`test/adaptation_sim_test.dart`, `STRIVE_SIM_OUT=<dir>` writes a log per scenario) with these invariants:
+
+| Invariant | Rule that guarantees it |
+|---|---|
+| An athlete who trains exactly to plan hears nothing negative: no rpeHigh / longCap / cuts / auto reductions, forecast on track every week (marathon, 10 km, run/walk HM beginner) | forecast dead band + ≥ 3 quality runs + 2-week persistence (§1.12); R1 cap with the generator's reference (§11); easy / long runs at the plan's own duration / distance are on pace (§12.1) |
+| Long runs falling short or missed are noticed and never contradicted: no "ahead" with longRunBehind, ≥ slightly behind, HM / M at risk with ≤ 10 weeks left; no ratchet below the AutoAdjuster's cap | §1.12 floors; `_longCapped` |
+| Missed long runs (rest done ≥ 90 %): the easy runs keep their volume; the next long run moves to a training day of its week with more time (swap with an easy run, not next to a hard day) – reason `moveLong` | I14 |
+| The race goal is re-checked on the actual training: `PlanGenerator.feasibility` from today with the longest run of 30 days and the weekly volume of 3 weeks (≥ 80 % of the stated one); a new timing issue (too short / long day / run/walk) → reason `goalAtRisk` with the options (`Recalibration.feasibility`). Only after evidence: ≥ 2 long runs of 3 weeks missed / short, a break, < 50 % done, or a run/walk stage held twice | C3 |
+| Fatigue doesn't remove quality for months: week 1 as rule 1; the too-hard score ≥ 2 on two consecutive Mondays (and still ≥ 1 in the last 7 days) → **one recovery week** (days 1–7 ≈ 70 %, no intensity; days 8–14 quality back at ~75 % of its repeats); still too hard after it → quality stays at ~75 % with "check sleep, illness, stress – consider a slower target" (`fatigueCheck`), another recovery week at the earliest 3 weeks later. Before: quality → easy for 7–11 weeks in a row | Meeusen 2013 [67] (overreaching: reduce load, then resume; persistent → look for causes) |
+| Floors: no reduction takes a run below 25 min and 4 km (beginners / run/walk 20 min); a planned session already below stays as it is | C4 / I15 – 15-minute returns and 2.7 km "easy runs" are no training stimulus |
+| VDOT moves in Daniels-sized steps: training-derived steps ≥ 21 days apart, total rise ≤ 1.6 × `GoalModel.gain` of the weeks since the plan start; stored as `athlete.vdotEstimate` (+ date, + the race-time VDOT it was derived from – new race times entered by the athlete win); race times written by older versions for a VDOT step (the exact time of a one-decimal VDOT at the event distance, next to another race time) are migrated | Daniels [7] ~1 point / 4–6 weeks; before: 40.4 → 48.4 in 8 weeks with a synthetic 3:15 marathon in the profile |
+| Run/walk: ≥ 2 run/walk sessions of 3 weeks at RPE > 5 or < 80 % → the coming run/walk sessions repeat the stage of a week earlier (`repeatStage`); trimmed sessions change by whole repeats / minutes and their "N × M min" title follows | §1.10 Couch-to-5K: progress only at RPE ≤ 5 |
+| Run/walk beginners get no finish-time prediction | §1.12 finish-only |
+
+Measured (`STRIVE_SIM_OUT`), before → after: 10 km perfect athlete "at risk / slower than planned" W4–W9 → on track every
+week; marathon perfect athlete ahead / at risk flips → on track; beginner HM perfect athlete longCap 16 of 17 Mondays (long run
+15.5 → 10.0 km) → 0, long runs as generated (15.5 km); fatigue: quality → easy 7 (highRpe) / 11 (slower) consecutive weeks →
+≤ 2; marathon VDOT 40.4 → 48.4 in 8 weeks → 40.4 → 43.5 in 11 weeks (steps W3, W6, W9, W12), race times unchanged; eight
+skipped long runs "on track" until W12 → slightly behind from W6, at risk from W8, goalAtRisk.
 
 ---
 
