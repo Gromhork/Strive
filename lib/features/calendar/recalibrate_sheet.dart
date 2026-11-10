@@ -334,7 +334,7 @@ class _GapTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(glueTitle(p.title), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                     Text('${df.format(p.date)} · $amount', style: theme.textTheme.bodySmall),
                     const SizedBox(height: 2),
                     Text(

@@ -2762,6 +2762,7 @@
   "distSwim3800": "Open water 3.8 km",
   "distSwim5000": "Open water 5 km",
   "moreDistances": "More distances…",
+  "backAgainToExit": "Press back again to exit",
   "raceRadius": "Radius",
   "raceResultsCount": "Races found: {n}",
   "@raceResultsCount": {

@@ -4462,6 +4462,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moreDistances => 'More distances…';
 
   @override
+  String get backAgainToExit => 'Press back again to exit';
+
+  @override
   String get raceRadius => 'Radius';
 
   @override

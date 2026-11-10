@@ -118,7 +118,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                 children: [
                   SportBadge(s.sport, size: 64, filled: true),
                   const SizedBox(height: 10),
-                  Text(s.title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(glueTitle(s.title), style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                   Text(l.greatJob, style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),

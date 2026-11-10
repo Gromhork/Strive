@@ -8249,6 +8249,12 @@ abstract class AppLocalizations {
   /// **'More distances…'**
   String get moreDistances;
 
+  /// No description provided for @backAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again to exit'**
+  String get backAgainToExit;
+
   /// No description provided for @raceRadius.
   ///
   /// In en, this message translates to:

@@ -1359,6 +1359,7 @@
   "distSwim3800": "Freiwasser 3,8 km",
   "distSwim5000": "Freiwasser 5 km",
   "moreDistances": "Weitere Distanzen…",
+  "backAgainToExit": "Nochmal zurück zum Beenden",
   "raceRadius": "Umkreis",
   "raceResultsCount": "Gefundene Wettkämpfe: {n}",
   "raceSourceOf": "Quelle: {name}",

@@ -1315,6 +1315,7 @@ const l10nPairs = <(String, String)>[
   ('Open water 3.8 km', 'Freiwasser 3,8 km'),
   ('Open water 5 km', 'Freiwasser 5 km'),
   ('More distances…', 'Weitere Distanzen…'),
+  ('Press back again to exit', 'Nochmal zurück zum Beenden'),
   ('Radius', 'Umkreis'),
   ('Races found: {n}', 'Gefundene Wettkämpfe: {n}'),
   ('Source: {name}', 'Quelle: {name}'),

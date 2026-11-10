@@ -4462,6 +4462,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get moreDistances => 'Weitere Distanzen…';
 
   @override
+  String get backAgainToExit => 'Nochmal zurück zum Beenden';
+
+  @override
   String get raceRadius => 'Umkreis';
 
   @override
