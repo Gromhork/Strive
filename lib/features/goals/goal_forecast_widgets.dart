@@ -9,6 +9,7 @@ import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/goal_forecast.dart';
+import '../../services/progression_check.dart';
 import '../calendar/feasibility_card.dart' show eventDistanceName;
 
 /// Goal forecast of the signed-in athlete (null without an upcoming event).
@@ -30,6 +31,29 @@ void applyTargetTime(BuildContext context, WidgetRef ref, int sec) {
   if (updates.isNotEmpty) repo.updateMany(plans: updates);
   repo.saveProfile(p.copyWith(athlete: p.athlete.merge({'targetTimeSec': sec})));
   ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(context.l10n.targetAdjusted(clock(sec)))));
+}
+
+/// Beginner progression findings (what fell behind, then what to do) – empty when the
+/// build-up is on track or the check doesn't apply.
+List<String> progressionLines(AppLocalizations l, GoalForecast f) {
+  final c = f.progression;
+  if (c == null || !c.behind) return const [];
+  return [
+    for (final i in c.issues)
+      switch (i) {
+        ProgressionIssue.longSessionsShort => l.progLongShort(((c.longAchievedShare ?? 0) * 100).round()),
+        ProgressionIssue.longSessionsMissed => l.progLongMissed,
+        ProgressionIssue.runWalkNotAchieved => l.progRunWalkNotAchieved,
+        ProgressionIssue.highEffort => l.progHighEffort,
+      },
+    for (final o in c.options)
+      '→ ${switch (o) {
+        ProgressionOption.repeatWeek => l.progOptRepeatWeek,
+        ProgressionOption.laterRace => l.progOptLaterRace,
+        ProgressionOption.shorterDistance => l.progOptShorter,
+        ProgressionOption.runWalkRace => l.progOptRunWalkRace,
+      }}',
+  ];
 }
 
 /// Colour, icon and label of a forecast status.
@@ -317,6 +341,10 @@ class ForecastSummary extends StatelessWidget {
           for (final r in f.reasons) ...[
             const SizedBox(height: 4),
             Text('• ${forecastReasonText(l, f, r)}', style: const TextStyle(fontSize: 12)),
+          ],
+          for (final line in progressionLines(l, f)) ...[
+            const SizedBox(height: 4),
+            Text(line.startsWith('→') ? line : '• $line', style: const TextStyle(fontSize: 12)),
           ],
           if (f.suggestedSec != null && onAdjustTarget != null && !f.early && f.status != ForecastStatus.onTrack) ...[
             const SizedBox(height: 8),

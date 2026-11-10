@@ -201,6 +201,8 @@ class _RiskNotice extends StatelessWidget {
                   style: const TextStyle(fontSize: 13),
                 ),
                 for (final r in f.reasons) Text('• ${forecastReasonText(l, f, r)}', style: const TextStyle(fontSize: 12)),
+                for (final line in progressionLines(l, f))
+                  Text(line.startsWith('→') ? line : '• $line', style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
