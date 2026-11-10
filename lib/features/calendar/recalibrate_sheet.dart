@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../data/plan_log.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/goal_forecast.dart';
@@ -54,6 +55,14 @@ Future<void> showRecalibration(BuildContext context, WidgetRef ref) {
             if (r.updates.isNotEmpty) repo.updateMany(plans: r.updates);
             // Refilled gaps the athlete kept ticked.
             if (r.additions.isNotEmpty) repo.savePlans(r.additions);
+            // Plan history: what changed, with the findings as they were shown.
+            repo.logPlanChange(
+              PlanLogEntry.of('recal', [
+                for (final c in r.changes)
+                  if (c.kind == RecalKind.added || r.updates.containsKey(c.before.id))
+                    (c.kind == RecalKind.added ? null : c.before, c.after),
+              ], note: [for (final x in r.reasons) RecalibrationSheet._reason(context.l10n, x, r.stats)].join('\n')),
+            );
             if (r.raceTimes != null || r.athlete.isNotEmpty) {
               repo.saveProfile(
                 profile.copyWith(athlete: profile.athlete.merge({if (r.raceTimes != null) 'raceTimes': r.raceTimes, ...r.athlete})),

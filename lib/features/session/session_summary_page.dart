@@ -10,13 +10,14 @@ import '../../providers.dart';
 import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
 import '../../services/plan_match.dart';
+import '../../services/gym_tools.dart' show sessionRpeFromEfforts;
 import '../../services/insights.dart';
 import 'gym_session_page.dart' show capitalize;
 import '../../widgets/common.dart';
 import '../../widgets/rpe_picker.dart';
 import 'route_map.dart';
 
-/// Shown after finishing a session: rate effort, see XP / PRs / coach battle, then save.
+/// Shown after finishing a session: rate effort first (it adapts the plan), see XP / PRs, then save.
 class SessionSummaryPage extends ConsumerStatefulWidget {
   const SessionSummaryPage({super.key, required this.draft});
   final Session draft;
@@ -27,6 +28,16 @@ class SessionSummaryPage extends ConsumerStatefulWidget {
 
 class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
   int? _rpe; // optional – null = not rated
+
+  /// Gym: preselected from the exercises' effort chips (visible and editable, not a silent default).
+  late final int? _prefill = widget.draft.sport == Sport.gym ? sessionRpeFromEfforts(widget.draft.exercises) : null;
+
+  @override
+  void initState() {
+    super.initState();
+    _rpe = _prefill;
+  }
+
   final _notes = TextEditingController();
   bool _saved = false;
 
@@ -83,27 +94,12 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     final u = ref.watch(profileOrDefaultProvider).units;
     final xp = xpForSession(s);
     final prs = s.sport == Sport.gym ? newPrs(s, history) : <String>[];
-    final prev = previousComparable(s, history);
     final target = ref.watch(profileOrDefaultProvider).weeklyTarget;
     final plans = ref.watch(planListProvider);
     final before = GameStats.compute(history.where((h) => h.id != s.id).toList(), target, plans: plans);
     final after = GameStats.compute([s, ...history.where((h) => h.id != s.id)], target, plans: plans);
     final newBadges = after.badges.where((b) => b.earned && !before.badges.firstWhere((x) => x.def.id == b.def.id).earned).toList();
     final levelUp = after.level.level > before.level.level;
-
-    // "Coach battle": beat the coach's prediction (previous session + 2.5 %).
-    double? predicted;
-    double? actual;
-    if (prev != null) {
-      if (s.sport == Sport.gym && prev.volume > 0) {
-        predicted = prev.volume * 1.025;
-        actual = s.volume;
-      } else if (prev.distanceM > 0 && s.distanceM > 0) {
-        predicted = prev.durationSec / prev.distanceM * 0.985; // seconds per meter (lower is better)
-        actual = s.durationSec / s.distanceM;
-      }
-    }
-    final battleWon = predicted != null && actual != null && (s.sport == Sport.gym ? actual >= predicted : actual <= predicted);
 
     return PopScope(
       canPop: false,
@@ -160,6 +156,19 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+            SectionCard(
+              key: const ValueKey('summaryEffort'),
+              title: l.summaryEffortTitle,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RpePicker(value: _rpe, hint: l.summaryEffortHint, onChanged: (v) => setState(() => _rpe = v)),
+                  if (_prefill != null && _rpe == _prefill)
+                    Text(l.summaryEffortPrefilled, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
+                ],
+              ),
+            ),
             if (s.route.length > 1) ...[
               const SizedBox(height: 12),
               ClipRRect(borderRadius: BorderRadius.circular(20), child: SizedBox(height: 200, child: RouteMap(session: s))),
@@ -182,16 +191,6 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                         ),
                     ],
                   ),
-                  if (predicted != null) ...[
-                    const Divider(height: 24),
-                    Row(
-                      children: [
-                        Icon(battleWon ? Icons.emoji_events_rounded : Icons.sports_mma_rounded, color: battleWon ? AppColors.ride : null),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text(battleWon ? l.coachBattleWon : l.coachBattleLost)),
-                      ],
-                    ),
-                  ],
                   if (prs.isNotEmpty) ...[
                     const Divider(height: 24),
                     for (final p in prs)
@@ -217,17 +216,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
               ),
             ),
             const SizedBox(height: 12),
-            SectionCard(
-              title: l.howHardOptional,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RpePicker(value: _rpe, onChanged: (v) => setState(() => _rpe = v)),
-                  const SizedBox(height: 12),
-                  TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
-                ],
-              ),
-            ),
+            TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
             const SizedBox(height: 20),
             FilledButton.icon(onPressed: _save, icon: const Icon(Icons.save_alt_rounded), label: Text(l.saveWorkout)),
             const SizedBox(height: 24),

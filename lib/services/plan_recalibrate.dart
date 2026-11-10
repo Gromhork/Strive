@@ -659,6 +659,10 @@ class Recalibrator {
     );
   }
 
+  /// [_toEasy] with the current thresholds – also used by "Not feeling 100 %?" (readiness.dart).
+  /// Endurance sports only.
+  PlannedWorkout toEasy(PlannedWorkout p) => _toEasy(p, null);
+
   /// Quality session → easy session of the same sport, ~80 % of the time.
   PlannedWorkout _toEasy(PlannedWorkout p, PaceZones? newPz) {
     final minutes = max(20, (p.durationMin * swapFactor / 5).round() * 5);

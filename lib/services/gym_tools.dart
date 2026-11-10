@@ -130,3 +130,16 @@ List<GymSet> warmupSets(double workWeight, {double bar = 20}) {
   }
   return (out, side * 2);
 }
+
+/// Session RPE suggested from the per-exercise effort chips (easy → 4, right → 6, hard → 8,
+/// limit → 10), rounded mean; null when no exercise was rated. Only a preselection on the
+/// summary – the athlete sees and can change it.
+int? sessionRpeFromEfforts(List<GymExercise> exercises) {
+  const map = {Effort.easy: 4, Effort.right: 6, Effort.hard: 8, Effort.limit: 10};
+  final v = [
+    for (final e in exercises)
+      if (e.effort != null) map[e.effort]!,
+  ];
+  if (v.isEmpty) return null;
+  return (v.reduce((a, b) => a + b) / v.length).round().clamp(1, 10);
+}

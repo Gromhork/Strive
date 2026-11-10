@@ -572,12 +572,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exercises => 'Exercises';
 
   @override
-  String get coachBattleWon => 'Coach battle won! You beat the prediction based on your last session.';
-
-  @override
-  String get coachBattleLost => 'Coach battle: the prediction was a bit higher this time – next time!';
-
-  @override
   String get newPr => 'New personal record!';
 
   @override
@@ -1048,7 +1042,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachQ1 => 'How is my training going? What should I improve?';
 
   @override
-  String get coachQ2 => 'How much protein do I need per day?';
+  String get coachQ2 => 'Why does my week look like this?';
 
   @override
   String get coachQ3 => 'How do I get faster over 10 km?';
@@ -1057,7 +1051,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachQ4 => 'I slept badly – should I still train today?';
 
   @override
-  String get coachQ5 => 'What should I eat before a long run?';
+  String get coachQ5 => 'I\'m sick/tired – what should I change?';
 
   @override
   String get coachDisclaimer => 'AI answers can be wrong and do not replace medical advice.';
@@ -4215,4 +4209,144 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goalEditPlan => 'Plan settings';
+
+  @override
+  String get summaryEffortTitle => 'How hard was it? Your plan adapts to it.';
+
+  @override
+  String get summaryEffortHint => 'Optional · 1 = very easy, 10 = all-out';
+
+  @override
+  String get summaryEffortPrefilled => 'Preselected from your exercise ratings – tap to change.';
+
+  @override
+  String autoAdjBanner(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n workouts adapted automatically – review',
+      one: '1 workout adapted automatically – review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get autoAdjSheetIntro => 'After your last workouts the plan adapted these sessions. Keep them or undo single changes.';
+
+  @override
+  String get planHistory => 'Plan history';
+
+  @override
+  String get planHistoryEmpty => 'No plan changes yet. Automatic adjustments, “Review plan”, “Adjust week” and “Not feeling 100%?” show up here.';
+
+  @override
+  String get planLogRecal => 'Plan reviewed';
+
+  @override
+  String planLogReadiness(String why) {
+    return 'Not feeling 100%: $why';
+  }
+
+  @override
+  String get planLogWeekReason => 'Missed workouts moved within the week or dropped.';
+
+  @override
+  String get planLogUndone => 'Undone';
+
+  @override
+  String get planLogChanged => 'Changed since – no undo';
+
+  @override
+  String get planLogNew => 'new';
+
+  @override
+  String get planLogDropped => 'dropped';
+
+  @override
+  String get planLogUndoDone => 'Change undone';
+
+  @override
+  String get notFitButton => 'Not feeling 100%?';
+
+  @override
+  String get notFitIntro => 'Tell the plan how you feel – it suggests a safe change. Nothing changes until you apply it.';
+
+  @override
+  String get notFitSick => 'Sick';
+
+  @override
+  String get notFitPain => 'Pain';
+
+  @override
+  String get notFitTired => 'Tired';
+
+  @override
+  String get notFitTime => 'Short on time';
+
+  @override
+  String get notFitMinutes => 'Time available';
+
+  @override
+  String get notFitNoChange => 'No change needed – the workout fits as planned.';
+
+  @override
+  String get notFitPreview => 'Suggested change';
+
+  @override
+  String get notFitApplied => 'Plan adjusted';
+
+  @override
+  String get notFitHintAboveNeck => 'Above-the-neck rule: only a runny nose or a mild sore throat and no fever – rest or at most a short, easy session. Fever, aching muscles, chest or stomach symptoms: no training until you are well.';
+
+  @override
+  String get notFitHintReturn => 'Back after being sick: hard sessions of the next two days become easy. After 10 days or more off, use “Review plan” – it rebuilds at 50–70 % of your previous volume.';
+
+  @override
+  String get notFitHintPainRule => 'Pain up to 3/10 that has settled by the next morning is acceptable. Stop if it gets worse during the session.';
+
+  @override
+  String get notFitHintDoctor => 'If the pain lasts more than a few days or keeps coming back, have it checked by a doctor or physiotherapist.';
+
+  @override
+  String get notFitHintSwapped => 'Swapped for low-impact cross-training: it keeps your endurance without the impact of running.';
+
+  @override
+  String get notFitHintKeyEasy => 'Tired: the key workout becomes an easy session (about 20 % shorter). Quality on tired legs adds fatigue, not fitness.';
+
+  @override
+  String get notFitHintShorter => 'Tired: the easy session is about 25 % shorter – keep it truly easy.';
+
+  @override
+  String get notFitHintGymLighter => 'About a third fewer sets with the same weights; end each set with 2–3 reps in reserve. Leave out exercises that hurt.';
+
+  @override
+  String get notFitHintGymShorter => 'Fewer sets to fit your time – main lifts first. A few hard sets keep most of the effect.';
+
+  @override
+  String get notFitHintTime => 'Shortened to your time: warm-up and cool-down stay, the main part gets shorter.';
+
+  @override
+  String get askCoachAbout => 'Ask the coach';
+
+  @override
+  String coachExplainWorkout(String title, String date) {
+    return 'Explain the workout “$title” on $date to me';
+  }
+
+  @override
+  String get reserveLabel => 'Reserve';
+
+  @override
+  String reserveN(String value) {
+    return 'Reserve $value';
+  }
+
+  @override
+  String get reserveHint => 'reps in the tank';
+
+  @override
+  String get logRirSetting => 'Log reserve per set';
+
+  @override
+  String get logRirSettingSub => 'Reps left in the tank after each set (RIR). The rating per exercise stays.';
 }

@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../data/models.dart';
+import '../../data/plan_log.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/plan_adjuster.dart';
 import '../../widgets/common.dart';
+
+const adjustWeekDismissedKey = 'adjustWeekDismissed';
+
+/// Whether [AdjustWeekBanner] shows: missed workouts to absorb and not dismissed today.
+bool adjustWeekBannerVisible(SharedPreferences prefs, List<PlannedWorkout> plans, DateTime now) =>
+    prefs.getString(adjustWeekDismissedKey) != dayKey(now) && proposeWeekAdjustment(plans, now).isNotEmpty;
+
+/// Before / after of every workout "adjust my week" changes (for the plan history).
+List<(PlannedWorkout, PlannedWorkout)> weekChangeLog(List<PlanChange> changes) {
+  PlannedWorkout edit(PlannedWorkout p, Map<String, dynamic> m) => PlannedWorkout.fromMap(p.id, {...p.toMap(), ...m});
+  return [
+    for (final c in changes) ...[
+      (c.plan, edit(c.plan, c.isMove ? {'date': dayKey(c.to!)} : {'status': 'skipped'})),
+      if (c.replaces != null) (c.replaces!, edit(c.replaces!, {'status': 'skipped'})),
+    ],
+  ];
+}
 
 /// Home banner when planned workouts of the last days were missed: proposes how to fit
 /// the key sessions into the rest of the week (see [proposeWeekAdjustment]).
@@ -20,7 +40,7 @@ class AdjustWeekBanner extends ConsumerStatefulWidget {
 }
 
 class _AdjustWeekBannerState extends ConsumerState<AdjustWeekBanner> {
-  static const _key = 'adjustWeekDismissed';
+  static const _key = adjustWeekDismissedKey;
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +48,8 @@ class _AdjustWeekBannerState extends ConsumerState<AdjustWeekBanner> {
     final plans = ref.watch(planListProvider);
     final now = DateTime.now();
     final prefs = ref.read(prefsProvider);
-    if (prefs.getString(_key) == dayKey(now)) return const SizedBox.shrink();
+    if (!adjustWeekBannerVisible(prefs, plans, now)) return const SizedBox.shrink();
     final changes = proposeWeekAdjustment(plans, now);
-    if (changes.isEmpty) return const SizedBox.shrink();
     final c = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -68,7 +87,9 @@ class _AdjustWeekBannerState extends ConsumerState<AdjustWeekBanner> {
       builder: (_) => _AdjustSheet(changes: changes),
     );
     if (ok != true || !mounted) return;
-    ref.read(repoProvider)?.updateMany(plans: planChangeUpdates(changes));
+    final repo = ref.read(repoProvider);
+    repo?.updateMany(plans: planChangeUpdates(changes));
+    repo?.logPlanChange(PlanLogEntry.of('week', weekChangeLog(changes)));
     toast(context, context.l10n.adjustDone);
   }
 }

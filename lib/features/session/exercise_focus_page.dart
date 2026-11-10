@@ -19,7 +19,6 @@ import '../../widgets/effort_chips.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart';
 import '../train/exercise_detail_page.dart';
-import '../../widgets/term_info.dart';
 import 'gym_session_page.dart';
 
 /// One exercise per screen (swipe between exercises): demo animation, sets,
@@ -443,7 +442,7 @@ class _SetLine extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        setLabel(set, units, bw: bw) + (set.rpe != null ? '  ·  RPE ${Units.num(set.rpe!)}' : ''),
+                        setLabel(set, units, bw: bw) + (set.rpe != null ? '  ·  ${l.reserveN(reserveLabel(set.rpe!))}' : ''),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -565,33 +564,10 @@ class _SetEditor extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Text('RPE', style: Theme.of(context).textTheme.labelLarge),
-                  const TermInfoButton(Term.rpe),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          for (final r in const [6.0, 7.0, 8.0, 9.0, 10.0])
-                            Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: ChoiceChip(
-                                label: Text(Units.num(r)),
-                                visualDensity: VisualDensity.compact,
-                                selected: s.rpe == r,
-                                onSelected: (v) => n.updateSet(index, set, rpe: v ? r : null, clearRpe: !v),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              if (ref.watch(settingsProvider).logRir) ...[
+                const SizedBox(height: 10),
+                ReservePicker(rpe: s.rpe, onChanged: (v) => n.updateSet(index, set, rpe: v, clearRpe: v == null)),
+              ],
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../data/models.dart';
+import '../../data/plan_log.dart';
 import '../../data/repository.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../services/cardio_progression.dart';
@@ -43,6 +44,14 @@ List<AutoChange> autoAdjustAfterSessions({
   if (applied.isEmpty) return const [];
   final list = applied.values.toList();
   repo.updateMany(plans: {for (final c in list) c.after.id: c.update});
+  repo.logPlanChange(
+    PlanLogEntry(
+      at: now,
+      source: 'auto',
+      reason: list.first.reason,
+      items: [for (final c in list) PlanLogItem(planId: c.after.id, before: c.before.toMap(), after: c.after.toMap(), reason: c.reason)],
+    ),
+  );
   if (notify) {
     final c = list.first;
     final text =
