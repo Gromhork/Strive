@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import '../../core/sport.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/discard_guard.dart';
 import '../../widgets/rpe_picker.dart';
 
 /// Corrects a recorded workout (wrong GPS distance, forgotten stop, mistyped weight …).
@@ -34,6 +37,21 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   late final _notes = TextEditingController(text: s.notes);
   late int? _rpe = s.rpe;
   late final List<GymExercise> _exercises = s.exercises.map((e) => e.copy()).toList();
+
+  /// Editable values (for the unsaved-changes prompt on back).
+  String _snapshot() => jsonEncode([
+    _start.millisecondsSinceEpoch,
+    for (final c in [_title, _duration, _distance, _elevation, _avgHr, _maxHr, _calories, _notes]) c.text,
+    _rpe,
+    [for (final e in _exercises) e.toMap()],
+  ]);
+  late final String _initial;
+
+  @override
+  void initState() {
+    super.initState();
+    _initial = _snapshot();
+  }
 
   String _distText(double m) => s.sport == Sport.swim ? m.round().toString() : Units.num(u.distOut(m), 2);
 
@@ -93,82 +111,85 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
         ],
       ),
     );
-    return Scaffold(
-      appBar: AppBar(title: Text(l.editSession), actions: [TextButton(onPressed: _save, child: Text(l.save))]),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(l.editSessionHint, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 12),
-          TextField(controller: _title, decoration: InputDecoration(labelText: l.title)),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.event),
-            title: Text(df.format(_start)),
-            onTap: () async {
-              final d = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2015), lastDate: DateTime.now());
-              if (d == null || !context.mounted) return;
-              final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_start));
-              setState(() => _start = DateTime(d.year, d.month, d.day, t?.hour ?? _start.hour, t?.minute ?? _start.minute));
-            },
-          ),
-          row([
-            TextField(controller: _duration, keyboardType: TextInputType.datetime, decoration: InputDecoration(labelText: l.durationHms)),
-            if (cardio)
-              TextField(
-                controller: _distance,
-                keyboardType: num,
-                decoration: InputDecoration(labelText: l.distance, suffixText: s.sport == Sport.swim ? 'm' : u.distUnit),
-              ),
-          ]),
-          if (cardio)
+    return DiscardGuard(
+      isDirty: () => _snapshot() != _initial,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l.editSession), actions: [TextButton(onPressed: _save, child: Text(l.save))]),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(l.editSessionHint, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 12),
+            TextField(controller: _title, decoration: InputDecoration(labelText: l.title)),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.event),
+              title: Text(df.format(_start)),
+              onTap: () async {
+                final d = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2015), lastDate: DateTime.now());
+                if (d == null || !context.mounted) return;
+                final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_start));
+                setState(() => _start = DateTime(d.year, d.month, d.day, t?.hour ?? _start.hour, t?.minute ?? _start.minute));
+              },
+            ),
             row([
-              TextField(controller: _elevation, keyboardType: num, decoration: InputDecoration(labelText: l.elevation, suffixText: 'm')),
-              TextField(
-                controller: _calories,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: l.caloriesLabel, suffixText: 'kcal'),
-              ),
-            ]),
-          row([
-            TextField(
-              controller: _avgHr,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.avgHrShort, suffixText: 'bpm'),
-            ),
-            TextField(
-              controller: _maxHr,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l.maxHr, suffixText: 'bpm'),
-            ),
-            if (!cardio)
-              TextField(
-                controller: _calories,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: l.caloriesLabel, suffixText: 'kcal'),
-              ),
-          ]),
-          Text(l.howHardOptional, style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 4),
-          RpePicker(value: _rpe, onChanged: (v) => setState(() => _rpe = v)),
-          const SizedBox(height: 8),
-          TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
-          if (!cardio) ...[
-            const SizedBox(height: 16),
-            for (final e in _exercises)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _ExerciseEditor(
-                  exercise: e,
-                  units: u,
-                  onChanged: () => setState(() {}),
-                  onBodyweight: (on) => setState(() => ref.read(loadPrescriberProvider).switchBodyweight(e, on)),
+              TextField(controller: _duration, keyboardType: TextInputType.datetime, decoration: InputDecoration(labelText: l.durationHms)),
+              if (cardio)
+                TextField(
+                  controller: _distance,
+                  keyboardType: num,
+                  decoration: InputDecoration(labelText: l.distance, suffixText: s.sport == Sport.swim ? 'm' : u.distUnit),
                 ),
+            ]),
+            if (cardio)
+              row([
+                TextField(controller: _elevation, keyboardType: num, decoration: InputDecoration(labelText: l.elevation, suffixText: 'm')),
+                TextField(
+                  controller: _calories,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: l.caloriesLabel, suffixText: 'kcal'),
+                ),
+              ]),
+            row([
+              TextField(
+                controller: _avgHr,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: l.avgHrShort, suffixText: 'bpm'),
               ),
+              TextField(
+                controller: _maxHr,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: l.maxHr, suffixText: 'bpm'),
+              ),
+              if (!cardio)
+                TextField(
+                  controller: _calories,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: l.caloriesLabel, suffixText: 'kcal'),
+                ),
+            ]),
+            Text(l.howHardOptional, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 4),
+            RpePicker(value: _rpe, onChanged: (v) => setState(() => _rpe = v)),
+            const SizedBox(height: 8),
+            TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
+            if (!cardio) ...[
+              const SizedBox(height: 16),
+              for (final e in _exercises)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _ExerciseEditor(
+                    exercise: e,
+                    units: u,
+                    onChanged: () => setState(() {}),
+                    onBodyweight: (on) => setState(() => ref.read(loadPrescriberProvider).switchBodyweight(e, on)),
+                  ),
+                ),
+            ],
+            const SizedBox(height: 24),
+            FilledButton(onPressed: _save, child: Text(l.save)),
           ],
-          const SizedBox(height: 24),
-          FilledButton(onPressed: _save, child: Text(l.save)),
-        ],
+        ),
       ),
     );
   }

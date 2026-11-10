@@ -15,6 +15,7 @@ import '../../services/plan_service.dart';
 import '../calendar/feasibility_card.dart';
 import '../calendar/replace_plan_dialog.dart';
 import '../../widgets/common.dart';
+import '../../widgets/discard_guard.dart';
 import '../../widgets/event_distance_picker.dart';
 import '../train/exercise_picker.dart';
 
@@ -254,10 +255,26 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   void initState() {
     super.initState();
     if (_targetSec != null) _targetCtl.text = clock(_targetSec!);
+    _initial = _snapshot();
   }
+
+  /// Entered values (for the unsaved-changes prompt on back).
+  String _snapshot() => [
+    _type.name,
+    _sport?.name,
+    _title.text,
+    _target.text,
+    _deadline?.millisecondsSinceEpoch,
+    _exId,
+    _align,
+    _targetCtl.text,
+  ].join('\u0000');
+  late final String _initial;
 
   @override
   void dispose() {
+    _title.dispose();
+    _target.dispose();
     _targetCtl.dispose();
     super.dispose();
   }
@@ -365,155 +382,158 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
       GoalType.distance || GoalType.event => 'km',
       GoalType.frequency => l.perWeek,
     };
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.existing == null ? l.newGoal : l.editGoal,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  if (widget.existing != null)
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () {
-                        ref.read(repoProvider)!.deleteGoal(widget.existing!.id);
-                        Navigator.pop(context);
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final t in types.entries)
-                    ChoiceChip(
-                      avatar: Icon(t.value.$2, size: 16),
-                      label: Text(t.value.$1),
-                      selected: _type == t.key,
-                      onSelected: widget.existing != null ? null : (_) => setState(() => _type = t.key),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextField(controller: _title, decoration: InputDecoration(labelText: l.title, hintText: types[_type]!.$1)),
-              const SizedBox(height: 12),
-              if (_type == GoalType.distance || _type == GoalType.frequency || _type == GoalType.event) ...[
-                Wrap(
-                  spacing: 8,
+    return DiscardGuard(
+      isDirty: () => _snapshot() != _initial,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
-                    ChoiceChip(label: Text(l.allSports), selected: _sport == null, onSelected: (_) => setState(() => _sport = null)),
-                    for (final s in Sport.values.where((s) => _type != GoalType.distance || s != Sport.gym))
-                      ChoiceChip(
-                        avatar: Icon(s.icon, size: 16, color: s.color),
-                        label: Text(s.label(l)),
-                        selected: _sport == s,
-                        onSelected: (_) => setState(() => _sport = s),
+                    Expanded(
+                      child: Text(
+                        widget.existing == null ? l.newGoal : l.editGoal,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    if (widget.existing != null)
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () {
+                          ref.read(repoProvider)!.deleteGoal(widget.existing!.id);
+                          Navigator.pop(context);
+                        },
                       ),
                   ],
                 ),
                 const SizedBox(height: 12),
-              ],
-              if (_type == GoalType.strength)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.fitness_center),
-                  title: Text(_exName ?? l.chooseExercise),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    final picked = await pickExercises(context);
-                    if (picked.isNotEmpty) {
-                      setState(() {
-                        _exId = picked.first.id;
-                        _exName = picked.first.name;
-                      });
-                    }
-                  },
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final t in types.entries)
+                      ChoiceChip(
+                        avatar: Icon(t.value.$2, size: 16),
+                        label: Text(t.value.$1),
+                        selected: _type == t.key,
+                        onSelected: widget.existing != null ? null : (_) => setState(() => _type = t.key),
+                      ),
+                  ],
                 ),
-              if (_type == GoalType.event) ...[
-                EventDistanceChips(sports: _eventSports, selected: eventKey, onChanged: _pickDistance),
+                const SizedBox(height: 16),
+                TextField(controller: _title, decoration: InputDecoration(labelText: l.title, hintText: types[_type]!.$1)),
                 const SizedBox(height: 12),
-              ],
-              TextField(
-                controller: _target,
-                onChanged: (_) => setState(() {}),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: _type == GoalType.event ? l.eventDistance : l.target, suffixText: suffix),
-              ),
-              const SizedBox(height: 12),
-              if (_type != GoalType.frequency)
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.event),
-                  label: Text(
-                    _deadline == null
-                        ? (_type == GoalType.event ? l.eventDate : l.deadlineOptional)
-                        : DateFormat.yMMMd(context.localeName).format(_deadline!),
+                if (_type == GoalType.distance || _type == GoalType.frequency || _type == GoalType.event) ...[
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(label: Text(l.allSports), selected: _sport == null, onSelected: (_) => setState(() => _sport = null)),
+                      for (final s in Sport.values.where((s) => _type != GoalType.distance || s != Sport.gym))
+                        ChoiceChip(
+                          avatar: Icon(s.icon, size: 16, color: s.color),
+                          label: Text(s.label(l)),
+                          selected: _sport == s,
+                          onSelected: (_) => setState(() => _sport = s),
+                        ),
+                    ],
                   ),
-                  onPressed: () async {
-                    final d = await showDatePicker(
-                      context: context,
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 1095)), // time span
-                      initialDate: _deadline ?? DateTime.now().add(const Duration(days: 60)), // time span
-                    );
-                    if (d != null) setState(() => _deadline = d);
-                  },
-                ),
-              if (_type == GoalType.event) ...[
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  key: const ValueKey('alignPlan'),
-                  contentPadding: EdgeInsets.zero,
-                  value: _align,
-                  onChanged: (v) => setState(() => _align = v),
-                  title: Text(l.alignPlanToEvent),
-                  subtitle: Text(l.alignPlanToEventSub),
-                ),
-                if (_align && eventKey == null)
-                  Text(l.alignNeedsDistance, style: Theme.of(context).textTheme.bodySmall)
-                else if (_align) ...[
-                  TextField(
-                    controller: _targetCtl,
-                    keyboardType: TextInputType.datetime,
-                    decoration: InputDecoration(
-                      labelText: l.targetTime,
-                      helperText: l.targetTimeHint,
-                      hintText: 'h:mm:ss',
-                      prefixIcon: const Icon(Icons.timer_outlined, size: 20),
-                    ),
-                    onChanged: (v) => setState(() => _targetSec = parseClock(v)),
+                  const SizedBox(height: 12),
+                ],
+                if (_type == GoalType.strength)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.fitness_center),
+                    title: Text(_exName ?? l.chooseExercise),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final picked = await pickExercises(context);
+                      if (picked.isNotEmpty) {
+                        setState(() {
+                          _exId = picked.first.id;
+                          _exName = picked.first.name;
+                        });
+                      }
+                    },
                   ),
-                  if (aligned != null) ...[
-                    const SizedBox(height: 12),
-                    FeasibilityCard(
-                      _feasibility.of(aligned, DateTime.now(), l),
-                      planAnyway: true,
-                      showTargetOk: true,
-                      onAdjustTarget:
-                          (sec) => setState(() {
-                            _targetSec = sec;
-                            _targetCtl.text = clock(sec);
-                          }),
+                if (_type == GoalType.event) ...[
+                  EventDistanceChips(sports: _eventSports, selected: eventKey, onChanged: _pickDistance),
+                  const SizedBox(height: 12),
+                ],
+                TextField(
+                  controller: _target,
+                  onChanged: (_) => setState(() {}),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(labelText: _type == GoalType.event ? l.eventDistance : l.target, suffixText: suffix),
+                ),
+                const SizedBox(height: 12),
+                if (_type != GoalType.frequency)
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.event),
+                    label: Text(
+                      _deadline == null
+                          ? (_type == GoalType.event ? l.eventDate : l.deadlineOptional)
+                          : DateFormat.yMMMd(context.localeName).format(_deadline!),
                     ),
+                    onPressed: () async {
+                      final d = await showDatePicker(
+                        context: context,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 1095)), // time span
+                        initialDate: _deadline ?? DateTime.now().add(const Duration(days: 60)), // time span
+                      );
+                      if (d != null) setState(() => _deadline = d);
+                    },
+                  ),
+                if (_type == GoalType.event) ...[
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    key: const ValueKey('alignPlan'),
+                    contentPadding: EdgeInsets.zero,
+                    value: _align,
+                    onChanged: (v) => setState(() => _align = v),
+                    title: Text(l.alignPlanToEvent),
+                    subtitle: Text(l.alignPlanToEventSub),
+                  ),
+                  if (_align && eventKey == null)
+                    Text(l.alignNeedsDistance, style: Theme.of(context).textTheme.bodySmall)
+                  else if (_align) ...[
+                    TextField(
+                      controller: _targetCtl,
+                      keyboardType: TextInputType.datetime,
+                      decoration: InputDecoration(
+                        labelText: l.targetTime,
+                        helperText: l.targetTimeHint,
+                        hintText: 'h:mm:ss',
+                        prefixIcon: const Icon(Icons.timer_outlined, size: 20),
+                      ),
+                      onChanged: (v) => setState(() => _targetSec = parseClock(v)),
+                    ),
+                    if (aligned != null) ...[
+                      const SizedBox(height: 12),
+                      FeasibilityCard(
+                        _feasibility.of(aligned, DateTime.now(), l),
+                        planAnyway: true,
+                        showTargetOk: true,
+                        onAdjustTarget:
+                            (sec) => setState(() {
+                              _targetSec = sec;
+                              _targetCtl.text = clock(sec);
+                            }),
+                      ),
+                    ],
                   ],
                 ],
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: (_type == GoalType.strength && _exId == null) || (_type == GoalType.event && _deadline == null) ? null : _save,
+                  child: Text(l.save),
+                ),
               ],
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: (_type == GoalType.strength && _exId == null) || (_type == GoalType.event && _deadline == null) ? null : _save,
-                child: Text(l.save),
-              ),
-            ],
+            ),
           ),
         ),
       ),

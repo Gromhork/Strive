@@ -30,6 +30,13 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
   @override
   bool get wantKeepAlive => true;
 
+  @override
+  void dispose() {
+    _input.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
   CoachService _service() =>
       _coach ??= CoachService(
         profile: ref.read(profileOrDefaultProvider),
@@ -51,15 +58,17 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
     _toBottom();
     try {
       await for (final chunk in _service().ask(text.trim())) {
-        setState(() => answer.text += chunk);
+        // The page can be gone mid-stream (logout); the answer object is updated anyway.
+        answer.text += chunk;
+        if (!mounted) continue;
+        setState(() {});
         _toBottom();
       }
       if (answer.text.isEmpty) answer.text = '…';
     } catch (e) {
-      setState(() {
-        answer.error = true;
-        answer.text = '${l.aiUnavailable}\n\n$e';
-      });
+      answer.error = true;
+      answer.text = '${l.aiUnavailable}\n\n$e';
+      if (mounted) setState(() {});
       _coach = null;
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -67,7 +76,7 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
   }
 
   void _toBottom() => WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (_scroll.hasClients) {
+    if (mounted && _scroll.hasClients) {
       _scroll.animateTo(_scroll.position.maxScrollExtent, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
     }
   });

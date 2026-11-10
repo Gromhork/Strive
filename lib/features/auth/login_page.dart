@@ -20,6 +20,13 @@ class _LoginPageState extends State<LoginPage> {
   bool _busy = false;
   String? _error;
 
+  @override
+  void dispose() {
+    _email.dispose();
+    _pw.dispose();
+    super.dispose();
+  }
+
   Future<void> _run(Future<void> Function() f) async {
     setState(() {
       _busy = true;
@@ -30,9 +37,10 @@ class _LoginPageState extends State<LoginPage> {
     } on FirebaseAuthException catch (e) {
       final code = (e.message ?? '').contains('CONFIGURATION_NOT_FOUND') ? 'configuration-not-found' : e.code;
       debugPrint('Auth error ${e.code}: ${e.message}');
-      setState(() => _error = code == 'unknown' ? '${_message(code)}\n${e.message ?? ''}' : _message(code));
+      // A successful sign-in replaces this page – only show errors while it is there.
+      if (mounted) setState(() => _error = code == 'unknown' ? '${_message(code)}\n${e.message ?? ''}' : _message(code));
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _busy = false);
     }

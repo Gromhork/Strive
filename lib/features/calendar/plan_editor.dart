@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import '../../providers.dart';
 import '../../services/goal_model.dart';
 import '../../services/plan_service.dart';
 import '../../widgets/common.dart';
+import '../../widgets/discard_guard.dart';
 import '../session/start_helpers.dart';
 import '../session/step_editor.dart';
 import '../../services/zones.dart';
@@ -63,6 +65,38 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
 
   int _editorGen = 0; // forces a fresh StepEditor when steps are replaced from outside
 
+  /// Everything the editor can change – compared with the initial value for the
+  /// unsaved-changes prompt on back.
+  String _snapshot() => jsonEncode([
+    _sport.name,
+    dayKey(_date),
+    _title.text,
+    _desc.text,
+    _km.text,
+    _min,
+    _intensity,
+    _templateId,
+    [for (final s in _steps) s.toMap()],
+    _isKey,
+    [for (final e in _gymEx) e.toMap()],
+    _customEx,
+  ]);
+  late String _initial; // last saved state
+
+  @override
+  void initState() {
+    super.initState();
+    _initial = _snapshot();
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _desc.dispose();
+    _km.dispose();
+    super.dispose();
+  }
+
   bool get _structured => _sport != Sport.gym && _steps.isNotEmpty;
 
   /// Duration / distance estimate of the structured workout.
@@ -109,6 +143,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
       exercises: _sport == Sport.gym && _customEx ? _gymEx : const [],
     );
     repo.savePlan(plan);
+    _initial = _snapshot();
     return plan;
   }
 
@@ -177,167 +212,173 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
     final templates = ref.watch(templateListProvider).where((t) => t.sport == _sport).toList();
     final profile = ref.watch(profileOrDefaultProvider);
     final ex = widget.existing;
-    return Scaffold(
-      appBar: AppBar(title: Text(ex == null ? l.planWorkout : l.editWorkout), actions: [TextButton(onPressed: _save, child: Text(l.save))]),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          Segments<Sport>(
-            segments: [for (final s in Sport.values) Seg(s, icon: s.icon, color: s.color, tooltip: s.label(l))],
-            value: _sport,
-            onChanged:
-                (v) => setState(() {
-                  if (v == _sport) return;
-                  _sport = v;
-                  _templateId = null;
-                  _steps = [];
-                  _gymEx = [];
-                  _customEx = false;
-                  _editorGen++;
-                }),
-          ),
-          const SizedBox(height: 8),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.event),
-            title: Text(DateFormat.yMMMMEEEEd(context.localeName).format(_date)),
-            trailing: const Icon(Icons.edit_calendar_outlined, size: 20),
-            onTap: () async {
-              final d = await showDatePicker(
-                context: context,
-                initialDate: _date,
-                firstDate: DateTime.now().subtract(const Duration(days: 365)), // time span
-                lastDate: DateTime.now().add(const Duration(days: 730)), // time span
-              );
-              if (d != null) setState(() => _date = d);
-            },
-          ),
-          if (templates.isNotEmpty) ...[
-            DropdownButtonFormField<String?>(
-              value: templates.any((t) => t.id == _templateId) ? _templateId : null,
-              isExpanded: true,
-              decoration: InputDecoration(labelText: l.program, prefixIcon: const Icon(Icons.folder_copy_outlined)),
-              items: [
-                DropdownMenuItem(value: null, child: Text(l.none)),
-                for (final t in templates) DropdownMenuItem(value: t.id, child: Text(t.name, overflow: TextOverflow.ellipsis)),
-              ],
-              onChanged: (v) {
-                final t = templates.where((t) => t.id == v).firstOrNull;
-                if (t == null) {
-                  setState(() {
+    return DiscardGuard(
+      isDirty: () => _snapshot() != _initial,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(ex == null ? l.planWorkout : l.editWorkout),
+          actions: [TextButton(onPressed: _save, child: Text(l.save))],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          children: [
+            Segments<Sport>(
+              segments: [for (final s in Sport.values) Seg(s, icon: s.icon, color: s.color, tooltip: s.label(l))],
+              value: _sport,
+              onChanged:
+                  (v) => setState(() {
+                    if (v == _sport) return;
+                    _sport = v;
                     _templateId = null;
-                    if (!_customEx) _gymEx = [];
-                  });
-                } else {
-                  _applyTemplate(t);
-                }
+                    _steps = [];
+                    _gymEx = [];
+                    _customEx = false;
+                    _editorGen++;
+                  }),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.event),
+              title: Text(DateFormat.yMMMMEEEEd(context.localeName).format(_date)),
+              trailing: const Icon(Icons.edit_calendar_outlined, size: 20),
+              onTap: () async {
+                final d = await showDatePicker(
+                  context: context,
+                  initialDate: _date,
+                  firstDate: DateTime.now().subtract(const Duration(days: 365)), // time span
+                  lastDate: DateTime.now().add(const Duration(days: 730)), // time span
+                );
+                if (d != null) setState(() => _date = d);
               },
             ),
+            if (templates.isNotEmpty) ...[
+              DropdownButtonFormField<String?>(
+                value: templates.any((t) => t.id == _templateId) ? _templateId : null,
+                isExpanded: true,
+                decoration: InputDecoration(labelText: l.program, prefixIcon: const Icon(Icons.folder_copy_outlined)),
+                items: [
+                  DropdownMenuItem(value: null, child: Text(l.none)),
+                  for (final t in templates) DropdownMenuItem(value: t.id, child: Text(t.name, overflow: TextOverflow.ellipsis)),
+                ],
+                onChanged: (v) {
+                  final t = templates.where((t) => t.id == v).firstOrNull;
+                  if (t == null) {
+                    setState(() {
+                      _templateId = null;
+                      if (!_customEx) _gymEx = [];
+                    });
+                  } else {
+                    _applyTemplate(t);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+            TextField(controller: _title, decoration: InputDecoration(labelText: l.title)),
             const SizedBox(height: 12),
-          ],
-          TextField(controller: _title, decoration: InputDecoration(labelText: l.title)),
-          const SizedBox(height: 12),
-          TextField(controller: _desc, minLines: 1, maxLines: 4, decoration: InputDecoration(labelText: l.description)),
-          if (_sport != Sport.gym) ...[
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              secondary: const Icon(Icons.star_outline_rounded),
-              title: Text(l.keySession),
-              subtitle: Text(l.keySessionSub),
-              value: _isKey,
-              onChanged: (v) => setState(() => _isKey = v),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(l.workoutPhases, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            TextField(controller: _desc, minLines: 1, maxLines: 4, decoration: InputDecoration(labelText: l.description)),
+            if (_sport != Sport.gym) ...[
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.star_outline_rounded),
+                title: Text(l.keySession),
+                subtitle: Text(l.keySessionSub),
+                value: _isKey,
+                onChanged: (v) => setState(() => _isKey = v),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(l.workoutPhases, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  ),
+                  ZoneInfoButton(sport: _sport, profile: profile),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(l.structuredWorkoutSub, style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 10),
+              StepEditor(
+                key: ValueKey('$_sport-$_editorGen'),
+                steps: _steps,
+                sport: _sport,
+                profile: profile,
+                onChanged: (s) => setState(() => _steps = s),
+              ),
+            ],
+            if (_sport == Sport.gym) ..._gymSection(),
+            if (!_structured && !(_sport == Sport.gym && _gymEx.isNotEmpty)) ...[
+              const SizedBox(height: 8),
+              LabeledSlider(
+                label: l.duration,
+                value: _min.toDouble(),
+                min: 10,
+                max: 300,
+                divisions: 58,
+                format: (v) => humanDuration(v.round() * 60),
+                onChanged: (v) => setState(() => _min = v.round()),
+              ),
+              if (_sport != Sport.gym)
+                TextField(
+                  controller: _km,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(labelText: l.targetDistance, suffixText: 'km'),
                 ),
-                ZoneInfoButton(sport: _sport, profile: profile),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(l.structuredWorkoutSub, style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 10),
-            StepEditor(
-              key: ValueKey('$_sport-$_editorGen'),
-              steps: _steps,
-              sport: _sport,
-              profile: profile,
-              onChanged: (s) => setState(() => _steps = s),
-            ),
-          ],
-          if (_sport == Sport.gym) ..._gymSection(),
-          if (!_structured && !(_sport == Sport.gym && _gymEx.isNotEmpty)) ...[
-            const SizedBox(height: 8),
-            LabeledSlider(
-              label: l.duration,
-              value: _min.toDouble(),
-              min: 10,
-              max: 300,
-              divisions: 58,
-              format: (v) => humanDuration(v.round() * 60),
-              onChanged: (v) => setState(() => _min = v.round()),
-            ),
-            if (_sport != Sport.gym)
-              TextField(
-                controller: _km,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: l.targetDistance, suffixText: 'km'),
+            ],
+            if (_sport != Sport.gym && !_structured) ...[
+              const SizedBox(height: 16),
+              Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final i in intensitiesFor(_sport))
+                    ChoiceChip(
+                      label: Text(intensityLabel(l, i)),
+                      selected: _intensity == i,
+                      onSelected: (_) => setState(() => _intensity = i),
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 24),
+            if (ex != null && !ex.isDone)
+              FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: _sport.color, foregroundColor: Colors.black),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: Text(l.start),
+                onPressed: () async {
+                  final route = ModalRoute.of(context);
+                  await startPlanned(context, ref, _persist());
+                  // The session runs on top now – drop the editor underneath it.
+                  if (route != null && route.isActive && !route.isCurrent && context.mounted) Navigator.removeRoute(context, route);
+                },
+              ),
+            if (ex != null && ex.status == 'planned') ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () {
+                  ref.read(repoProvider)!.updatePlan(ex.id, {'status': 'skipped'});
+                  Navigator.pop(context);
+                },
+                child: Text(l.markSkipped),
+              ),
+            ],
+            if (ex != null)
+              TextButton.icon(
+                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                icon: const Icon(Icons.delete_outline),
+                label: Text(l.delete),
+                onPressed: () async {
+                  if (!await confirm(context, l.delete, body: ex.title, ok: l.delete, danger: true)) return;
+                  ref.read(repoProvider)!.deletePlan(ex.id);
+                  if (context.mounted) Navigator.pop(context);
+                },
               ),
           ],
-          if (_sport != Sport.gym && !_structured) ...[
-            const SizedBox(height: 16),
-            Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final i in intensitiesFor(_sport))
-                  ChoiceChip(
-                    label: Text(intensityLabel(l, i)),
-                    selected: _intensity == i,
-                    onSelected: (_) => setState(() => _intensity = i),
-                  ),
-              ],
-            ),
-          ],
-          const SizedBox(height: 24),
-          if (ex != null && !ex.isDone)
-            FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: _sport.color, foregroundColor: Colors.black),
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: Text(l.start),
-              onPressed: () async {
-                final route = ModalRoute.of(context);
-                await startPlanned(context, ref, _persist());
-                // The session runs on top now – drop the editor underneath it.
-                if (route != null && route.isActive && !route.isCurrent && context.mounted) Navigator.removeRoute(context, route);
-              },
-            ),
-          if (ex != null && ex.status == 'planned') ...[
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () {
-                ref.read(repoProvider)!.updatePlan(ex.id, {'status': 'skipped'});
-                Navigator.pop(context);
-              },
-              child: Text(l.markSkipped),
-            ),
-          ],
-          if (ex != null)
-            TextButton.icon(
-              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-              icon: const Icon(Icons.delete_outline),
-              label: Text(l.delete),
-              onPressed: () async {
-                if (!await confirm(context, l.delete, body: ex.title, ok: l.delete, danger: true)) return;
-                ref.read(repoProvider)!.deletePlan(ex.id);
-                if (context.mounted) Navigator.pop(context);
-              },
-            ),
-        ],
+        ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,15 +14,22 @@ import '../shell/health_sync.dart';
 import '../../services/plan_match.dart';
 import '../../services/gym_tools.dart' show sessionRpeFromEfforts;
 import '../../services/insights.dart';
+import '../../services/workout_store.dart';
 import 'gym_session_page.dart' show capitalize;
 import '../../widgets/common.dart';
 import '../../widgets/rpe_picker.dart';
 import 'route_map.dart';
 
 /// Shown after finishing a session: rate effort first (it adapts the plan), see XP / PRs, then save.
+///
+/// The draft (incl. rating and notes) is kept in [WorkoutStore] until it is saved or
+/// discarded, so a finished workout survives the app being killed on this page.
 class SessionSummaryPage extends ConsumerStatefulWidget {
-  const SessionSummaryPage({super.key, required this.draft});
+  const SessionSummaryPage({super.key, required this.draft, this.restored = false});
   final Session draft;
+
+  /// Reopened after a restart: rating and notes come from the stored draft.
+  final bool restored;
 
   @override
   ConsumerState<SessionSummaryPage> createState() => _SessionSummaryPageState();
@@ -32,14 +41,33 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
   /// Gym: preselected from the exercises' effort chips (visible and editable, not a silent default).
   late final int? _prefill = widget.draft.sport == Sport.gym ? sessionRpeFromEfforts(widget.draft.exercises) : null;
 
+  late final WorkoutStore _store = ref.read(workoutStoreProvider);
+  Timer? _notesDebounce;
+
   @override
   void initState() {
     super.initState();
-    _rpe = _prefill;
+    _rpe = widget.restored ? widget.draft.rpe : _prefill;
+    if (widget.restored) _notes.text = widget.draft.notes;
+    _persist();
+  }
+
+  @override
+  void dispose() {
+    _notesDebounce?.cancel();
+    if (!_saved && !_discarded) _persist();
+    _notes.dispose();
+    super.dispose();
+  }
+
+  void _persist() {
+    _notesDebounce?.cancel();
+    _store.saveSummary(_session);
   }
 
   final _notes = TextEditingController();
   bool _saved = false;
+  bool _discarded = false;
 
   Session get _session => Session(
     id: widget.draft.id,
@@ -67,6 +95,8 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     final repo = ref.read(repoProvider)!;
     final s = _session;
     repo.saveSession(s);
+    // Firestore keeps the write offline – the local draft is no longer needed.
+    _store.clearSummary();
     ref.read(healthServiceProvider).writeSession(s);
     // Mark the matching planned workout as done.
     final plans = ref.read(planListProvider);
@@ -106,7 +136,11 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final discard = await confirm(context, l.discardWorkout, body: l.discardSummaryBody, ok: l.discard, danger: true);
-        if (discard && context.mounted) Navigator.pop(context);
+        if (!discard || !context.mounted) return;
+        _discarded = true;
+        _notesDebounce?.cancel();
+        _store.clearSummary();
+        Navigator.pop(context);
       },
       child: Scaffold(
         appBar: AppBar(title: Text(l.summary), automaticallyImplyLeading: false),
@@ -163,7 +197,14 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RpePicker(value: _rpe, hint: l.summaryEffortHint, onChanged: (v) => setState(() => _rpe = v)),
+                  RpePicker(
+                    value: _rpe,
+                    hint: l.summaryEffortHint,
+                    onChanged: (v) {
+                      setState(() => _rpe = v);
+                      _persist();
+                    },
+                  ),
                   if (_prefill != null && _rpe == _prefill)
                     Text(l.summaryEffortPrefilled, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
                 ],
@@ -216,7 +257,15 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
+            TextField(
+              controller: _notes,
+              maxLines: 3,
+              decoration: InputDecoration(hintText: l.notesHint),
+              onChanged: (_) {
+                _notesDebounce?.cancel();
+                _notesDebounce = Timer(const Duration(seconds: 2), _persist);
+              },
+            ),
             const SizedBox(height: 20),
             FilledButton.icon(onPressed: _save, icon: const Icon(Icons.save_alt_rounded), label: Text(l.saveWorkout)),
             const SizedBox(height: 24),

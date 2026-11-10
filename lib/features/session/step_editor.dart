@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../services/zones.dart';
+import '../../widgets/discard_guard.dart';
 import '../../widgets/segments.dart';
 import 'step_list.dart';
 import 'step_text.dart';
@@ -431,6 +432,21 @@ class _StepSheetState extends State<_StepSheet> {
 
   late final _note = TextEditingController(text: widget.step.note);
 
+  String _snapshot() => [_kind, _byDistance, _sec, _m, _zone, _note.text].join('\u0000');
+  late final String _initial;
+
+  @override
+  void initState() {
+    super.initState();
+    _initial = _snapshot();
+  }
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
   List<double> get _distances =>
       widget.sport == Sport.swim
           ? const [25, 50, 75, 100, 150, 200, 300, 400, 500, 800, 1000, 1500]
@@ -441,97 +457,103 @@ class _StepSheetState extends State<_StepSheet> {
     final l = context.l10n;
     final kinds = widget.inRepeat ? const ['work', 'recovery'] : const ['warmup', 'steady', 'work', 'recovery', 'cooldown'];
     final dIdx = _distances.indexWhere((d) => d >= _m);
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(l.editSection, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final k in kinds)
-                    ChoiceChip(label: Text(kindLabel(l, k)), selected: _kind == k, onSelected: (_) => setState(() => _kind = k)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Segments<bool>(
-                segments: [Seg(false, label: l.byTime, icon: Icons.timer_outlined), Seg(true, label: l.byDistance, icon: Icons.straighten)],
-                value: _byDistance,
-                onChanged: (v) => setState(() => _byDistance = v),
-              ),
-              const SizedBox(height: 12),
-              if (_byDistance)
-                Row(
+    return DiscardGuard(
+      isDirty: () => _snapshot() != _initial,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(l.editSection, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    IconButton.filledTonal(
-                      onPressed: dIdx > 0 ? () => setState(() => _m = _distances[max(0, dIdx - 1)]) : null,
-                      icon: const Icon(Icons.remove_rounded),
-                    ),
-                    Expanded(
-                      child: Text(
-                        _m >= 1000 && widget.sport != Sport.swim ? '${Units.num(_m / 1000, 2)} km' : '${_m.round()} m',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    IconButton.filledTonal(
-                      onPressed:
-                          dIdx >= 0 && dIdx < _distances.length - 1
-                              ? () => setState(() => _m = _distances[_m == _distances[dIdx] ? dIdx + 1 : dIdx])
-                              : null,
-                      icon: const Icon(Icons.add_rounded),
-                    ),
-                  ],
-                )
-              else
-                Row(
-                  children: [
-                    IconButton.filledTonal(
-                      onPressed: _sec > 10 ? () => setState(() => _sec = max(10, _sec - _secStep)) : null,
-                      icon: const Icon(Icons.remove_rounded),
-                    ),
-                    Expanded(
-                      child: Text(
-                        clock(_sec),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    IconButton.filledTonal(onPressed: () => setState(() => _sec += _secStep), icon: const Icon(Icons.add_rounded)),
+                    for (final k in kinds)
+                      ChoiceChip(label: Text(kindLabel(l, k)), selected: _kind == k, onSelected: (_) => setState(() => _kind = k)),
                   ],
                 ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(child: Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600))),
-                  ZoneInfoButton(sport: widget.sport, profile: widget.profile, highlight: _zone),
-                ],
-              ),
-              for (final z in zonesFor(widget.sport)) _zoneOption(z),
-              const SizedBox(height: 12),
-              TextField(controller: _note, decoration: InputDecoration(labelText: l.note)),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed:
-                    () => Navigator.pop(
-                      context,
-                      WorkoutStep(
-                        kind: _kind,
-                        zone: _zone,
-                        durationSec: _byDistance ? null : _sec,
-                        distanceM: _byDistance ? _m : null,
-                        note: _note.text.trim(),
+                const SizedBox(height: 16),
+                Segments<bool>(
+                  segments: [
+                    Seg(false, label: l.byTime, icon: Icons.timer_outlined),
+                    Seg(true, label: l.byDistance, icon: Icons.straighten),
+                  ],
+                  value: _byDistance,
+                  onChanged: (v) => setState(() => _byDistance = v),
+                ),
+                const SizedBox(height: 12),
+                if (_byDistance)
+                  Row(
+                    children: [
+                      IconButton.filledTonal(
+                        onPressed: dIdx > 0 ? () => setState(() => _m = _distances[max(0, dIdx - 1)]) : null,
+                        icon: const Icon(Icons.remove_rounded),
                       ),
-                    ),
-                child: Text(l.apply),
-              ),
-            ],
+                      Expanded(
+                        child: Text(
+                          _m >= 1000 && widget.sport != Sport.swim ? '${Units.num(_m / 1000, 2)} km' : '${_m.round()} m',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      IconButton.filledTonal(
+                        onPressed:
+                            dIdx >= 0 && dIdx < _distances.length - 1
+                                ? () => setState(() => _m = _distances[_m == _distances[dIdx] ? dIdx + 1 : dIdx])
+                                : null,
+                        icon: const Icon(Icons.add_rounded),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    children: [
+                      IconButton.filledTonal(
+                        onPressed: _sec > 10 ? () => setState(() => _sec = max(10, _sec - _secStep)) : null,
+                        icon: const Icon(Icons.remove_rounded),
+                      ),
+                      Expanded(
+                        child: Text(
+                          clock(_sec),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      IconButton.filledTonal(onPressed: () => setState(() => _sec += _secStep), icon: const Icon(Icons.add_rounded)),
+                    ],
+                  ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: Text(l.intensity, style: const TextStyle(fontWeight: FontWeight.w600))),
+                    ZoneInfoButton(sport: widget.sport, profile: widget.profile, highlight: _zone),
+                  ],
+                ),
+                for (final z in zonesFor(widget.sport)) _zoneOption(z),
+                const SizedBox(height: 12),
+                TextField(controller: _note, decoration: InputDecoration(labelText: l.note)),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed:
+                      () => Navigator.pop(
+                        context,
+                        WorkoutStep(
+                          kind: _kind,
+                          zone: _zone,
+                          durationSec: _byDistance ? null : _sec,
+                          distanceM: _byDistance ? _m : null,
+                          note: _note.text.trim(),
+                        ),
+                      ),
+                  child: Text(l.apply),
+                ),
+              ],
+            ),
           ),
         ),
       ),
