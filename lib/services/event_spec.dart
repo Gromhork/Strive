@@ -233,7 +233,7 @@ class EventSpec {
       brick: (10, 45, 60),
       shorter: ['olympic', 'sprint'],
     ),
-    // Ironman: long ride 5–6 h, long run ≤ 30 km / 2 h 45 (Friel; Fitzgerald), 3-week taper.
+    // Ironman: long ride 5–6 h, long run 28–32 km / ≤ 3 h (Friel; Fitzgerald), 3-week taper.
     'ironman': EventSpec(
       'ironman',
       weeks: (24, 30),
@@ -241,8 +241,9 @@ class EventSpec {
       beginnerOk: false,
       longRunKm: 26,
       longRunMin: 150,
-      longRunCapKm: 30,
-      longRunCapMin: 165,
+      longRunCapKm: 32,
+      // ≤ 3 h like the marathon long run – 28–32 km for most age-groupers (Friel; Fitzgerald).
+      longRunCapMin: 180,
       runKm: [35, 45, 60],
       longRideMin: 300,
       longRideCapMin: 360,

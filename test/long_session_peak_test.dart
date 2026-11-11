@@ -8,6 +8,7 @@ import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/services/event_spec.dart';
 import 'package:strive/services/plan_generator.dart';
+import 'package:strive/services/zones.dart';
 
 /// Peak long sessions per race distance and level (user report 2026-11: "longest marathon run 22.5 km",
 /// "raise Saturday to 8 h 45"): with time enough the peak long session reaches what the race needs
@@ -31,11 +32,11 @@ const _minRunKm = {
   '5k': 10.0,
   '10k': 13.0,
   'hm': 18.0,
-  'm': 27.5,
+  'm': 29.5,
   'ultra50': 30.0,
   'olympic': 10.0,
   '70.3': 16.0,
-  'ironman': 25.0,
+  'ironman': 27.5,
   'du_sprint': 7.0,
   'du_standard': 12.0,
 };
@@ -146,6 +147,63 @@ void main() {
             if (f.issues.contains('longRunTime') && f.raiseDay == null && f.moveDay == null) {
               // A day-time issue always says which day needs how much (unless the long day was not found).
               if (PlanGenerator.longSessionDays(p)[Sport.run] != null) fails.add('$tag – longRunTime without a day option');
+            }
+          }
+        }
+      }
+    }
+    expect(fails, isEmpty, reason: fails.join('\n'));
+  });
+
+  test('marathon / Ironman: peak 30–34 km (or 3 h on the feet) with 2–3 runs ≥ 28 km before the taper', () {
+    // Long-run pace (s/km) as the generator plans it: the middle of the easy range.
+    int pace(UserProfile p) {
+      final pz = PaceZones(Vdot.of(p.athlete) ?? Vdot.defaultFor(p.level));
+      return (pz.easyFast + pz.easySlow) ~/ 2;
+    }
+
+    final fails = <String>[];
+    for (final ev in const ['m', 'ironman']) {
+      for (final level in const ['intermediate', 'advanced']) {
+        for (final tenK in const [0, 52, 48, 44, 40]) {
+          for (final focus in ev == 'm' ? const [TrainingFocus.run, TrainingFocus.hybrid] : const [TrainingFocus.triathlon]) {
+            for (final longest in const <double?>[null, 18]) {
+              final spec = EventSpec.of(ev)!;
+              // Recommended weeks; with a stated 18 km longest run also the user's 15 weeks (marathon).
+              final weeks = longest != null && ev == 'm' ? 15 : spec.weeksFor(level).$2;
+              final p = UserProfile(
+                level: level,
+                focus: focus,
+                birthYear: DateTime.now().year - 35,
+                experience: {...focus.sports},
+                trainingDays: const [1, 2, 3, 4, 6, 7],
+                goals: const ['race'],
+                athlete: AthleteData(
+                  setupMode: 'advanced',
+                  sessionMinutes: 75,
+                  dayMinutes: const {6: 420, 7: 240},
+                  raceTimes: tenK == 0 ? const {} : {'10k': tenK * 60},
+                  longestRunKm: longest,
+                  runWeeklyKm: longest == null ? null : 40,
+                  ftp: 220,
+                  eventDistance: ev,
+                  eventDate: _race(weeks),
+                ),
+              );
+              final plan = PlanGenerator(l, p, const [], id).generate(start: _start);
+              final longs = plan.where((w) => w.sport == Sport.run && w.intensity == 'long').map((w) => w.distanceKm ?? 0).toList();
+              final peak = longs.fold(0.0, max);
+              // What 3 h at the long-run pace covers (slower runners: time on feet decides).
+              final byTime = 180 * 60 / pace(p);
+              final want = ev == 'm' ? (level == 'advanced' ? 32.0 : 30.0) : (level == 'advanced' ? 30.0 : 28.0);
+              final need = min(want, byTime) - 1.0;
+              final big = min(28.0, byTime - 1.0);
+              final nBig = longs.where((k) => k >= big).length;
+              final tag =
+                  '$ev/$level/${focus.name}/10k$tenK/${longest ?? '-'}km/${weeks}w: peak $peak (3 h ≈ ${byTime.toStringAsFixed(1)}), $nBig ≥ ${big.toStringAsFixed(1)}';
+              if (peak < need) fails.add('$tag – peak below ${need.toStringAsFixed(1)}');
+              if (nBig < 2) fails.add('$tag – fewer than 2 long runs ≥ ${big.toStringAsFixed(1)} km');
+              if (peak > spec.longRunCapKm) fails.add('$tag – beyond the cap');
             }
           }
         }

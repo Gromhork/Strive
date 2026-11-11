@@ -290,6 +290,21 @@ class PlanGenerator {
     };
   }
 
+  /// Peak long run (km) a marathon / Ironman build aims at once the race's minimum ([EventSpec.longRunKm])
+  /// is reached – established practice: marathon intermediate 30–32, advanced 32–35 km (2–3 runs ≥ 28 km in
+  /// the last weeks before the taper; Pfitzinger, Higdon), Ironman 28–32 km (Friel) – never beyond the
+  /// run's time cap ([_longRunMaxMin]) at the long-run pace (slower runners: time on feet). Null otherwise.
+  double? get _peakLongKm {
+    final want = switch (a.eventDistance) {
+      'm' => level == 'advanced' ? 34.0 : (level == 'intermediate' ? 32.0 : 28.0),
+      'ironman' => level == 'advanced' ? 30.0 : (level == 'intermediate' ? 28.0 : 26.0),
+      _ => null,
+    };
+    if (want == null) return null;
+    final byTime = _floorHalf(_longRunMaxMin * 60 / _longPace);
+    return max(spec!.longRunKm ?? 0, min(min(want, spec!.longRunCapKm), byTime));
+  }
+
   /// Longest a single long run may take (min), whatever the time on its day: the event's cap
   /// ([EventSpec.longRunCapMin]: marathon / Ironman ~3 h, ultra 3.5 h; else 150), beginners ≤ 150.
   int get _longRunMaxMin => beginner ? min(150, spec?.longRunCapMin ?? 150) : (spec?.longRunCapMin ?? 150);
@@ -321,7 +336,12 @@ class PlanGenerator {
     // Goal-directed build (fix/plan-goal-progression): an event with a long-run target and an athlete
     // who starts far below it (run/walk, beginner, low km) – the long session grows towards the
     // target ([_goalLongKm]) as fast as is still safe, not only by +10 % of a tiny base.
-    final goalKm = runPerWeek > 0 ? _goalLongKm : null;
+    // Marathon / Ironman (not run/walk starters, not the gentle builds): the build aims at the level's peak
+    // long run ([_peakLongKm], e.g. 32 km), so 2–3 runs ≥ 28 km fit before the taper – not one at 27.5.
+    final goalKm =
+        runPerWeek > 0
+            ? (_goalLongKm == null || runWalkStartFor(profile) != null || _gentleGoal ? _goalLongKm : max(_goalLongKm!, _peakLongKm ?? 0))
+            : null;
     final rwGoal = goalKm != null && rwStart != null;
     var ladder = [for (var s = rwStart ?? 0; s < _runWalkTable.length; s++) s];
     var phases = _phases(total, noRecoveryBefore: rwStart != null && pureRun ? ladder.length : 0);
@@ -389,6 +409,9 @@ class PlanGenerator {
     // Multisport / Ironman: one long run among 2–3 runs a week – up to 45 % (≥ 3 runs) or 65 %
     // (2 runs: long + a short quality run) when the race-specific long run needs it.
     final runTarget = spec?.longRunKm;
+    // Peak long run the build aims at ([_peakLongKm]: marathon 32 / 34 km, Ironman 28 / 30 km by level,
+    // never beyond the run's time cap at the long-run pace).
+    final peakKm = _peakLongKm;
     // Runs actually planned: knee / hip / ankle swap one easy run for a ride when there are ≥ 3.
     final runsActual = hf.lowImpactRun && runPerWeek >= 3 ? runPerWeek - 1 : runPerWeek;
     double longShare(double wk, int w) {
@@ -398,10 +421,16 @@ class PlanGenerator {
           baseShare(wk),
           max(max(0.32, min(0.40, 20 / wk)), min(runsActual == 3 ? threeRunLongShare : 0.5, 15 / wk)),
         ),
-        'm' when runPerWeek >= 3 => max(baseShare(wk), max(max(0.33, min(0.42, 29.4 / wk)), min(0.55, 30 / wk))),
+        'm' when runPerWeek >= 3 => max(baseShare(wk), max(max(0.33, min(0.42, peakKm! * 0.98 / wk)), min(0.55, peakKm / wk))),
         'ultra50' when runPerWeek >= 3 => max(baseShare(wk), max(max(0.33, min(0.42, 32 / wk)), min(0.5, 32 / wk))),
-        _ when runTarget != null && runPerWeek >= 3 && spec!.sport != EventSport.run => max(baseShare(wk), min(0.45, runTarget / wk)),
-        _ when runTarget != null && runPerWeek == 2 && spec!.sport != EventSport.run => max(baseShare(wk), min(0.65, runTarget / wk)),
+        _ when runTarget != null && runPerWeek >= 3 && spec!.sport != EventSport.run => max(
+          baseShare(wk),
+          min(0.45, max(runTarget, peakKm ?? 0) / wk),
+        ),
+        _ when runTarget != null && runPerWeek == 2 && spec!.sport != EventSport.run => max(
+          baseShare(wk),
+          min(0.65, max(runTarget, peakKm ?? 0) / wk),
+        ),
         _ => baseShare(wk),
       };
       // Goal-directed build: the goal's long run may take up to half of a low-volume week (3+ runs;
