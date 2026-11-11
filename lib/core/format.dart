@@ -52,7 +52,7 @@ class Units {
     if (meters <= 0 || seconds <= 0) return '–';
     if (sport == Sport.swim) {
       final secPer100 = seconds / (meters / 100);
-      return '${clock(secPer100.round())} /100m';
+      return '${clock(secPer100.round())} /100 m';
     }
     if (sport == Sport.run) {
       final perUnit = seconds / distOut(meters);

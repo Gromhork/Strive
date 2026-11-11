@@ -114,12 +114,16 @@ class PlanLogCard extends ConsumerWidget {
     'week' => (Icons.event_repeat_rounded, AppColors.warning, l.adjustDone),
     'move' => (Icons.open_with_rounded, AppColors.brand, l.planLogMoved),
     'readiness' => (Icons.healing_rounded, AppColors.danger, l.planLogReadiness(readinessLabel(l, entry.reason))),
+    'replace' => (Icons.swap_horiz_rounded, AppColors.success, l.planLogReplace),
+    'unlink' => (Icons.link_off_rounded, AppColors.warning, l.planLogUnlink),
     _ => (Icons.edit_calendar_outlined, AppColors.brand, entry.source),
   };
 
   String _reason(AppLocalizations l) => switch (entry.source) {
     'auto' => autoAdjustReason(l, entry.reason),
     'week' => l.planLogWeekReason,
+    'replace' => l.planLogReplaceReason,
+    'unlink' => l.planLogUnlinkReason,
     _ => entry.note,
   };
 
@@ -188,6 +192,8 @@ class _ItemLine extends StatelessWidget {
     } else {
       if (!sameDay(a.date, b.date)) parts.add('${df.format(b.date)} → ${df.format(a.date)}');
       if (a.status == 'skipped' && b.status != 'skipped') parts.add(l.planLogDropped);
+      if (a.isDone && !b.isDone) parts.add(l.planLogTickedOff);
+      if (!a.isDone && b.isDone) parts.add(l.planLogReopened);
       if (a.sport != b.sport) parts.add('${b.sport.label(l)} → ${a.sport.label(l)}');
       if (a.title != b.title && a.sport == b.sport) parts.add('${b.title} → ${a.title}');
       final ba = amountLabel(b, profile), aa = amountLabel(a, profile);

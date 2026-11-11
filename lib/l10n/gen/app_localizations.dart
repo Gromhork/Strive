@@ -10096,6 +10096,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How do I swim more efficiently?'**
   String get coachQSwim;
+
+  /// No description provided for @planLogReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Counted as replacement'**
+  String get planLogReplace;
+
+  /// No description provided for @planLogReplaceReason.
+  ///
+  /// In en, this message translates to:
+  /// **'A session from another day ticked this workout off.'**
+  String get planLogReplaceReason;
+
+  /// No description provided for @planLogUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link reopened'**
+  String get planLogUnlink;
+
+  /// No description provided for @planLogUnlinkReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Older versions ticked workouts off with sessions more than a day away. They are open again – on the session you can count it as a replacement.'**
+  String get planLogUnlinkReason;
+
+  /// No description provided for @planLogTickedOff.
+  ///
+  /// In en, this message translates to:
+  /// **'ticked off'**
+  String get planLogTickedOff;
+
+  /// No description provided for @planLogReopened.
+  ///
+  /// In en, this message translates to:
+  /// **'open again'**
+  String get planLogReopened;
+
+  /// No description provided for @replacementUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer count as replacement'**
+  String get replacementUndo;
+
+  /// No description provided for @replacementUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} is open again'**
+  String replacementUndone(String title);
+
+  /// No description provided for @coachMuchShorter.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {share} of the plan – it counts as partly done. Feeling good? Add a bit on an easy day; otherwise just carry on.'**
+  String coachMuchShorter(String share);
+
+  /// No description provided for @partlyDone.
+  ///
+  /// In en, this message translates to:
+  /// **'partly done ({share})'**
+  String partlyDone(String share);
+
+  /// No description provided for @doneOnDay.
+  ///
+  /// In en, this message translates to:
+  /// **'done on {day}'**
+  String doneOnDay(String day);
+
+  /// No description provided for @beforePlanStart.
+  ///
+  /// In en, this message translates to:
+  /// **'before the plan'**
+  String get beforePlanStart;
+
+  /// No description provided for @workoutsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Workouts done'**
+  String get workoutsDone;
+
+  /// No description provided for @extraSessionsN.
+  ///
+  /// In en, this message translates to:
+  /// **'+{n} extra'**
+  String extraSessionsN(int n);
+
+  /// No description provided for @planCompletionMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan {pct} % done (of the planned minutes due so far)'**
+  String planCompletionMinutes(int pct);
+
+  /// No description provided for @noXpTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'No XP – too short for a workout'**
+  String get noXpTooShort;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

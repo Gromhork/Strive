@@ -1666,5 +1666,21 @@
   "coachQTri": "Wie kombiniere ich Schwimmen, Radfahren und Laufen in einer Woche?",
   "coachQGym": "Wie werde ich stärker, ohne zu stagnieren?",
   "coachQRide": "Wie werde ich auf dem Rad schneller?",
-  "coachQSwim": "Wie schwimme ich ökonomischer?"
+  "coachQSwim": "Wie schwimme ich ökonomischer?",
+  "planLogReplace": "Als Ersatz gewertet",
+  "planLogReplaceReason": "Eine Einheit von einem anderen Tag hat diese Einheit abgehakt.",
+  "planLogUnlink": "Verknüpfung gelöst",
+  "planLogUnlinkReason": "Ältere Versionen haben Einheiten mit Trainings abgehakt, die mehr als einen Tag entfernt lagen. Sie sind wieder offen – bei der Einheit kannst du sie als Ersatz werten.",
+  "planLogTickedOff": "abgehakt",
+  "planLogReopened": "wieder offen",
+  "replacementUndo": "Nicht mehr als Ersatz werten",
+  "replacementUndone": "{title} ist wieder offen",
+  "coachMuchShorter": "Nur {share} des Plans – das zählt als teilweise erledigt. Fühlst du dich gut, ergänze etwas an einem lockeren Tag; sonst einfach weitermachen.",
+  "partlyDone": "teilweise erledigt ({share})",
+  "doneOnDay": "erledigt am {day}",
+  "beforePlanStart": "vor Planstart",
+  "workoutsDone": "Einheiten erledigt",
+  "extraSessionsN": "+{n} extra",
+  "planCompletionMinutes": "Plan zu {pct} % erfüllt (fällige geplante Minuten)",
+  "noXpTooShort": "Keine XP – zu kurz für ein Training"
 }

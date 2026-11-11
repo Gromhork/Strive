@@ -253,6 +253,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final names = DateFormat.E(context.localeName);
     final dayPlans = plans.where((p) => sameDay(p.date, _selected)).toList();
     final daySessions = sessions.where((s) => sameDay(s.start, _selected)).toList();
+    final now = ref.watch(todayProvider);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
       children: [
@@ -275,6 +276,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             ),
           ],
         ),
+        // Legend above the grid: below it the add button covered it.
+        const _MonthLegend(),
+        const SizedBox(height: 8),
         Row(
           children: [
             for (var i = 0; i < 7; i++)
@@ -335,13 +339,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                         margin: const EdgeInsets.all(1),
                                         decoration: BoxDecoration(color: x.color, shape: BoxShape.circle),
                                       ),
-                                    for (final x in p.where((e) => !e.isDone && e.status != 'skipped').map((e) => e.sport).toSet())
+                                    // Open: hollow dot; a day passed without it: × (as in the legend).
+                                    for (final x in p.where((e) => e.status == 'planned' && !e.isMissedOn(now)).map((e) => e.sport).toSet())
                                       Container(
                                         width: 7,
                                         height: 7,
                                         margin: const EdgeInsets.all(1),
                                         decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: x.color, width: 1.5)),
                                       ),
+                                    if (p.any((e) => e.status == 'planned' && e.isMissedOn(now)))
+                                      const Icon(Icons.close_rounded, key: ValueKey('monthMissed'), size: 9, color: AppColors.danger),
                                   ],
                                 ),
                               ),
@@ -354,8 +361,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 ),
             ],
           ),
-        const SizedBox(height: 6),
-        const _MonthLegend(),
         const SizedBox(height: 12),
         Text(DateFormat.yMMMMEEEEd(context.localeName).format(_selected), style: const TextStyle(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -363,6 +368,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         for (final s in daySessions) _SessionChip(session: s),
         for (final p in dayPlans.where((p) => !p.isDone || p.sessionId == null))
           Padding(padding: const EdgeInsets.only(bottom: 6), child: PlanCard(plan: p)),
+        for (final p in dayPlans.where((p) => p.isDone && p.sessionId != null))
+          if (ref.watch(planSessionsProvider)[p.id] case final s? when !sameDay(s.start, p.date)) DoneElsewhereLine(plan: p, session: s),
       ],
     );
   }
@@ -396,6 +403,52 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 }
 
+/// First day of any plan (the earliest planned workout) – days before it are no rest days.
+final planFirstDayProvider = Provider<DateTime?>((ref) {
+  DateTime? first;
+  for (final p in ref.watch(planListProvider)) {
+    if (first == null || p.date.isBefore(first)) first = dayOnly(p.date);
+  }
+  return first;
+});
+
+/// A planned workout that was done on another day, on its own day: "Fahrtspiel · erledigt am
+/// Mo" (tap: the session) – the calendar and Home's "Demnächst" show the day the same way.
+class DoneElsewhereLine extends StatelessWidget {
+  const DoneElsewhereLine({super.key, required this.plan, required this.session});
+  final PlannedWorkout plan;
+  final Session session;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = planCompliance(plan, session);
+    final t = Theme.of(context).textTheme.bodySmall;
+    return InkWell(
+      key: ValueKey('doneElsewhere_${plan.id}'),
+      borderRadius: BorderRadius.circular(10),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: session.id))),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        child: Row(
+          children: [
+            Icon(Icons.check_rounded, size: 16, color: c.color(context)),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                '${glueTitle(plan.title)} · ${l.doneOnDay(DateFormat.E(context.localeName).format(session.start))}',
+                style: t?.copyWith(color: Theme.of(context).colorScheme.outline),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DayRow extends ConsumerWidget {
   const _DayRow({required this.day, required this.plans, required this.sessions});
   final DateTime day;
@@ -410,6 +463,9 @@ class _DayRow extends ConsumerWidget {
     // session on the day it was done ("ersetzt Sa-Einheit"), not again on its planned day.
     bool doneElsewhere(PlannedWorkout x) => x.isDone && linked[x.id] != null && !sameDay(linked[x.id]!.start, x.date);
     final p = plans.where((x) => sameDay(x.date, day) && !doneElsewhere(x)).toList();
+    // … but its own day says where it went ("erledigt am Mo") instead of "Pause".
+    final elsewhere = plans.where((x) => sameDay(x.date, day) && doneElsewhere(x)).toList();
+    final first = ref.watch(planFirstDayProvider);
     final s = sessions.where((x) => sameDay(x.start, day) && !p.any((pl) => pl.sessionId == x.id || linked[pl.id]?.id == x.id)).toList();
     PlannedWorkout? replaced(Session x) {
       final id = linked.entries.where((e) => e.value.id == x.id).map((e) => e.key).firstOrNull;
@@ -461,15 +517,20 @@ class _DayRow extends ConsumerWidget {
                                     child: PlanCard(plan: x),
                                   ),
                         ),
-                      if (p.isEmpty && s.isEmpty)
+                      for (final x in elsewhere) DoneElsewhereLine(plan: x, session: linked[x.id]!),
+                      if (p.isEmpty && s.isEmpty && elsewhere.isEmpty)
                         SizedBox(
                           height: 36,
                           child: Align(
                             alignment: Alignment.centerLeft,
-                            child: Text(
-                              context.l10n.rest,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
-                            ),
+                            // No "Pause" before the plan existed – there was nothing to rest from.
+                            child:
+                                first == null || day.isBefore(first)
+                                    ? const SizedBox.shrink()
+                                    : Text(
+                                      context.l10n.rest,
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
+                                    ),
                           ),
                         ),
                     ],
@@ -554,6 +615,8 @@ void movePlan(BuildContext context, WidgetRef ref, PlannedWorkout p, DateTime da
     ScaffoldMessenger.of(context),
     text: l.planMoved(p.title, DateFormat.MMMEd(context.localeName).format(day)),
     undoLabel: l.undo,
+    icon: Icons.open_with_rounded,
+    duration: const Duration(seconds: 6),
     onUndo: () => repo.savePlan(p),
   );
 }

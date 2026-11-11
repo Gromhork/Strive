@@ -5530,4 +5530,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachQSwim => 'How do I swim more efficiently?';
+
+  @override
+  String get planLogReplace => 'Counted as replacement';
+
+  @override
+  String get planLogReplaceReason => 'A session from another day ticked this workout off.';
+
+  @override
+  String get planLogUnlink => 'Link reopened';
+
+  @override
+  String get planLogUnlinkReason => 'Older versions ticked workouts off with sessions more than a day away. They are open again – on the session you can count it as a replacement.';
+
+  @override
+  String get planLogTickedOff => 'ticked off';
+
+  @override
+  String get planLogReopened => 'open again';
+
+  @override
+  String get replacementUndo => 'No longer count as replacement';
+
+  @override
+  String replacementUndone(String title) {
+    return '$title is open again';
+  }
+
+  @override
+  String coachMuchShorter(String share) {
+    return 'Only $share of the plan – it counts as partly done. Feeling good? Add a bit on an easy day; otherwise just carry on.';
+  }
+
+  @override
+  String partlyDone(String share) {
+    return 'partly done ($share)';
+  }
+
+  @override
+  String doneOnDay(String day) {
+    return 'done on $day';
+  }
+
+  @override
+  String get beforePlanStart => 'before the plan';
+
+  @override
+  String get workoutsDone => 'Workouts done';
+
+  @override
+  String extraSessionsN(int n) {
+    return '+$n extra';
+  }
+
+  @override
+  String planCompletionMinutes(int pct) {
+    return 'Plan $pct % done (of the planned minutes due so far)';
+  }
+
+  @override
+  String get noXpTooShort => 'No XP – too short for a workout';
 }

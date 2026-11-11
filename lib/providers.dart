@@ -265,3 +265,44 @@ class Today extends Notifier<DateTime> {
 bool get _underTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
 final todayProvider = NotifierProvider<Today, DateTime>(Today.new);
+
+/// The current hour (0–23): changes on the hour and when the app comes back to the
+/// foreground – the greeting ("Guten Morgen" / "Guten Abend") follows the local time even
+/// when the app stays open.
+class HourTick extends Notifier<int> {
+  Timer? _timer;
+
+  @override
+  int build() {
+    AppLifecycleListener? listener;
+    try {
+      listener = AppLifecycleListener(onResume: refresh);
+    } catch (_) {}
+    ref.onDispose(() {
+      _timer?.cancel();
+      listener?.dispose();
+    });
+    _schedule();
+    return DateTime.now().hour;
+  }
+
+  void _schedule() {
+    _timer?.cancel();
+    if (_underTest) return;
+    final now = DateTime.now();
+    final next = DateTime(now.year, now.month, now.day, now.hour + 1);
+    _timer = Timer(next.difference(now) + const Duration(seconds: 1), refresh);
+  }
+
+  void refresh() {
+    final h = DateTime.now().hour;
+    if (h != state) state = h;
+    _schedule();
+  }
+}
+
+final hourProvider = NotifierProvider<HourTick, int>(HourTick.new);
+
+/// "Guten Morgen" until 11, "Guten Tag" until 18, then "Guten Abend" (by local [hour]).
+String greetingFor(int hour, {required String morning, required String afternoon, required String evening}) =>
+    hour >= 4 && hour < 11 ? morning : (hour >= 11 && hour < 18 ? afternoon : evening);

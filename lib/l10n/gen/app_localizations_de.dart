@@ -5530,4 +5530,64 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coachQSwim => 'Wie schwimme ich ökonomischer?';
+
+  @override
+  String get planLogReplace => 'Als Ersatz gewertet';
+
+  @override
+  String get planLogReplaceReason => 'Eine Einheit von einem anderen Tag hat diese Einheit abgehakt.';
+
+  @override
+  String get planLogUnlink => 'Verknüpfung gelöst';
+
+  @override
+  String get planLogUnlinkReason => 'Ältere Versionen haben Einheiten mit Trainings abgehakt, die mehr als einen Tag entfernt lagen. Sie sind wieder offen – bei der Einheit kannst du sie als Ersatz werten.';
+
+  @override
+  String get planLogTickedOff => 'abgehakt';
+
+  @override
+  String get planLogReopened => 'wieder offen';
+
+  @override
+  String get replacementUndo => 'Nicht mehr als Ersatz werten';
+
+  @override
+  String replacementUndone(String title) {
+    return '$title ist wieder offen';
+  }
+
+  @override
+  String coachMuchShorter(String share) {
+    return 'Nur $share des Plans – das zählt als teilweise erledigt. Fühlst du dich gut, ergänze etwas an einem lockeren Tag; sonst einfach weitermachen.';
+  }
+
+  @override
+  String partlyDone(String share) {
+    return 'teilweise erledigt ($share)';
+  }
+
+  @override
+  String doneOnDay(String day) {
+    return 'erledigt am $day';
+  }
+
+  @override
+  String get beforePlanStart => 'vor Planstart';
+
+  @override
+  String get workoutsDone => 'Einheiten erledigt';
+
+  @override
+  String extraSessionsN(int n) {
+    return '+$n extra';
+  }
+
+  @override
+  String planCompletionMinutes(int pct) {
+    return 'Plan zu $pct % erfüllt (fällige geplante Minuten)';
+  }
+
+  @override
+  String get noXpTooShort => 'Keine XP – zu kurz für ein Training';
 }

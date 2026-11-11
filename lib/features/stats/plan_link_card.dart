@@ -6,6 +6,8 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../data/plan_log.dart';
+import '../../data/repository.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/compliance.dart';
@@ -22,6 +24,54 @@ int expectedRpe(String intensity) => switch (intensity) {
   'moderate' => 5,
   _ => 4, // easy, long, technique, recovery
 };
+
+/// "Ja" to "Als Ersatz für … werten?": ticks [plan] off with session [s], records it in the
+/// plan history ("Planverlauf", undoable there) and offers undo in a snack bar.
+void confirmReplacement(Repository repo, AppLocalizations l, Session s, PlannedWorkout plan, {ScaffoldMessengerState? messenger}) {
+  final after = PlannedWorkout.fromMap(plan.id, {...plan.toMap(), 'status': 'done', 'sessionId': s.id});
+  repo.updatePlan(plan.id, {'status': 'done', 'sessionId': s.id});
+  repo.logPlanChange(PlanLogEntry.of('replace', [(plan, after)]));
+  if (messenger != null) {
+    undoToast(
+      messenger,
+      text: l.replacementDone(plan.title),
+      undoLabel: l.undo,
+      icon: Icons.swap_horiz_rounded,
+      onUndo: () => undoReplacement(repo, plan.id),
+    );
+  }
+}
+
+/// Undoes [confirmReplacement]: the workout is open again; the session keeps its plan
+/// reference, so the question comes back on its detail page.
+void undoReplacement(Repository repo, String planId) => repo.updatePlan(planId, {'status': 'planned', 'sessionId': null});
+
+/// "Als Ersatz für Langer Lauf (Sa) werten?" as a dialog – right after saving a session that
+/// was started from a workout days away (the summary closes after saving). True = yes.
+Future<void> askReplacement(BuildContext context, Repository repo, Session s, PlannedWorkout candidate) async {
+  final l = context.l10n;
+  final messenger = ScaffoldMessenger.of(context);
+  final yes = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder:
+        (c) => AlertDialog(
+          key: const ValueKey('replacementDialog'),
+          icon: Icon(Icons.swap_horiz_rounded, color: candidate.sport.color),
+          title: Text(l.countAsReplacement(candidate.title, DateFormat.E(l.localeName).format(candidate.date))),
+          content: Text(l.countAsReplacementSub),
+          actions: [
+            TextButton(key: const ValueKey('replacementNo'), onPressed: () => Navigator.pop(c, false), child: Text(l.no)),
+            FilledButton(key: const ValueKey('replacementYes'), onPressed: () => Navigator.pop(c, true), child: Text(l.yes)),
+          ],
+        ),
+  );
+  if (yes == true) {
+    confirmReplacement(repo, l, s, candidate, messenger: messenger);
+  } else if (yes == false) {
+    repo.updateSession(s.id, {'planId': null});
+  }
+}
 
 /// What a session did to the plan, on the session detail page:
 /// * fulfils a planned workout: "Geplant: Langer Lauf · 45 min · 7,5 km → 78 % erfüllt", a
@@ -79,8 +129,8 @@ class PlanLinkCard extends ConsumerWidget {
                   FilledButton(
                     key: const ValueKey('replacementYes'),
                     onPressed: () {
-                      ref.read(repoProvider)?.updatePlan(candidate.id, {'status': 'done', 'sessionId': s.id});
-                      toast(context, l.replacementDone(candidate.title));
+                      final repo = ref.read(repoProvider);
+                      if (repo != null) confirmReplacement(repo, l, s, candidate, messenger: ScaffoldMessenger.of(context));
                     },
                     child: Text(l.yes),
                   ),
@@ -131,6 +181,22 @@ class PlanLinkCard extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(coach, key: const ValueKey('planLinkCoach'), style: theme.textTheme.bodyMedium),
+            // A replacement (session days away from the workout) can be taken back here too.
+            if (!withinLinkDays(p.date, s.start))
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: const ValueKey('replacementUndo'),
+                  onPressed: () {
+                    final repo = ref.read(repoProvider);
+                    if (repo == null) return;
+                    undoReplacement(repo, p.id);
+                    toast(context, l.replacementUndone(p.title));
+                  },
+                  icon: const Icon(Icons.undo_rounded, size: 18),
+                  label: Text(l.replacementUndo),
+                ),
+              ),
             if (hard) ...[
               const SizedBox(height: 8),
               Align(
@@ -152,6 +218,8 @@ class PlanLinkCard extends ConsumerWidget {
   static String _coachLine(AppLocalizations l, PlannedWorkout p, Session s, double? ratio, bool hard) {
     if (hard) return l.coachRpeHigh(p.title, s.rpe!);
     if (ratio == null || (ratio >= 0.8 && ratio <= 1.2)) return l.coachAsPlanned;
+    // 100 m of a 1500 m swim is not "a bit shorter – no problem": say honestly how much it was.
+    if (ratio < 0.5) return l.coachMuchShorter(Units.pct(ratio * 100));
     return ratio < 0.8 ? l.coachShorter : l.coachLonger;
   }
 }

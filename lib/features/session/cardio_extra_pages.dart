@@ -154,7 +154,7 @@ class ZonesPage extends ConsumerWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                pace == null ? '–:––' : fmt(pace),
+                pace == null ? '–' : fmt(pace),
                 style: TextStyle(
                   fontSize: 110,
                   height: 1,

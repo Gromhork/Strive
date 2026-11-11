@@ -3631,5 +3631,63 @@
   "coachQTri": "How do I combine swimming, cycling and running in one week?",
   "coachQGym": "How do I get stronger without stalling?",
   "coachQRide": "How do I get faster on the bike?",
-  "coachQSwim": "How do I swim more efficiently?"
+  "coachQSwim": "How do I swim more efficiently?",
+  "planLogReplace": "Counted as replacement",
+  "planLogReplaceReason": "A session from another day ticked this workout off.",
+  "planLogUnlink": "Link reopened",
+  "planLogUnlinkReason": "Older versions ticked workouts off with sessions more than a day away. They are open again – on the session you can count it as a replacement.",
+  "planLogTickedOff": "ticked off",
+  "planLogReopened": "open again",
+  "replacementUndo": "No longer count as replacement",
+  "replacementUndone": "{title} is open again",
+  "@replacementUndone": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "coachMuchShorter": "Only {share} of the plan – it counts as partly done. Feeling good? Add a bit on an easy day; otherwise just carry on.",
+  "@coachMuchShorter": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "partlyDone": "partly done ({share})",
+  "@partlyDone": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "doneOnDay": "done on {day}",
+  "@doneOnDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePlanStart": "before the plan",
+  "workoutsDone": "Workouts done",
+  "extraSessionsN": "+{n} extra",
+  "@extraSessionsN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "planCompletionMinutes": "Plan {pct} % done (of the planned minutes due so far)",
+  "@planCompletionMinutes": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "noXpTooShort": "No XP – too short for a workout"
 }

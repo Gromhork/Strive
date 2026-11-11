@@ -12,7 +12,8 @@ class PlanLogEntry {
   final String id;
   final DateTime at;
 
-  /// auto | recal | week | readiness
+  /// auto | recal | week | readiness | move | replace (a session counted as replacement for a
+  /// workout days away) | unlink (old links > ±1 day reopened by the one-off cleanup)
   final String source;
 
   /// Source-specific code: the AutoAdjuster reason, the readiness kind (sick, pain, tired, time).
@@ -109,8 +110,10 @@ PlanLogState planLogItemState(PlanLogItem i, Map<String, PlannedWorkout> current
   final cur = current[i.planId];
   final before = i.beforePlan;
   if (cur == null) return before == null ? PlanLogState.undone : PlanLogState.changed;
-  if (cur.isDone) return PlanLogState.changed;
-  if (samePlanState(cur, i.afterPlan)) return PlanLogState.undoable;
+  final after = i.afterPlan;
+  // Done since the change – unless the change itself ticked it off ("count as replacement").
+  if (cur.isDone && !after.isDone) return PlanLogState.changed;
+  if (samePlanState(cur, after) && (!after.isDone || cur.sessionId == after.sessionId)) return PlanLogState.undoable;
   if (before != null && samePlanState(cur, before)) return PlanLogState.undone;
   return PlanLogState.changed;
 }
