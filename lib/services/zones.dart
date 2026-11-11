@@ -213,8 +213,33 @@ int estimateStepSec(WorkoutStep s, Sport sport, {required int easyPace, required
   return switch (sport) {
     Sport.swim => (d / 100 * (s.paceMax ?? css + 12)).round() + 10,
     Sport.ride => (d / 1000 * 133).round(),
+    _ when s.zone == 'walk' => (d / 1000 * walkPaceSecPerKm).round(),
     _ => (d / 1000 * ((s.paceMin ?? easyPace) + (s.paceMax ?? easyPace)) / 2).round(),
   };
+}
+
+/// Brisk walking pace (s/km) of the walk steps in a run – run/walk warm-ups, walk breaks, the walk
+/// recoveries of strides: ~9:30 /km (brisk walking 5.5–7 km/h; Couch-to-5K "brisk walk").
+const walkPaceSecPerKm = 570;
+
+/// Metres a run step covers by time ([WorkoutStep.durationSec] without a distance): walk steps at
+/// [walkPaceSecPerKm], running steps at their pace target, else at [easyPace]. 0 for distance steps.
+double timedRunStepM(WorkoutStep s, int easyPace) {
+  if (s.distanceM != null || s.durationSec == null) return 0;
+  if (s.zone == 'walk') return s.durationSec! / walkPaceSecPerKm * 1000;
+  return s.durationSec! / ((s.paceMin ?? easyPace) + (s.paceMax ?? easyPace)) * 2000;
+}
+
+/// Running km of a planned run: its distance without the walking ([walkPaceSecPerKm] × the walk
+/// steps' time – run/walk walks, walk breaks of a long run). The plan's progression rules (10 % long
+/// run, week km, longest run) are about running, the session's distance ([PlannedWorkout.distanceKm])
+/// is what the athlete covers – walking included, as the watch records it.
+double runningKm(PlannedWorkout p) {
+  final km = p.distanceKm ?? 0;
+  if (p.sport != Sport.run || km <= 0) return km;
+  final walkM = p.steps.where((s) => s.zone == 'walk').fold<double>(0, (x, s) => x + (s.distanceM ?? timedRunStepM(s, 0)));
+  if (walkM <= 0) return km;
+  return max(0.0, double.parse((km - walkM / 1000).toStringAsFixed(1)));
 }
 
 /// Total duration of [steps] for [p] (see [estimateStepSec]).

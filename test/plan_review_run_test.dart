@@ -216,7 +216,8 @@ void main() {
     return m;
   }
 
-  double runKm(List<PlannedWorkout> ws) => ws.where((w) => w.sport == Sport.run).fold(0.0, (x, w) => x + (w.distanceKm ?? 0));
+  // Running km ([runningKm]: walk breaks / stride walks are part of the distance, not of the run volume).
+  double runKm(List<PlannedWorkout> ws) => ws.where((w) => w.sport == Sport.run).fold(0.0, (x, w) => x + runningKm(w));
   bool raceWeek(List<PlannedWorkout> ws) => ws.any((w) => w.intensity == 'race');
 
   test('C1 / IMPORTANT 10: run durations equal their step estimate (±3 %) and easy runs imply an E pace', () {

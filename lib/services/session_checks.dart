@@ -18,11 +18,12 @@ class SessionCheck {
     return SessionCheck(endsInFuture: future, implausiblePace: !paceIsPlausible(sport, durationSec, distanceM));
   }
 
-  /// Run 2:30–40:00 min/km (run/walk with long walks included), ride 3–70 km/h, swim 0:55–6:00 min/100 m; no distance or no time: true.
+  /// Run 2:30–20:00 min/km (a run/walk with its walks is ~9–10 min/km, a slow walk ~12–15), ride 3–70 km/h,
+  /// swim 0:55–6:00 min/100 m; no distance or no time: true.
   static bool paceIsPlausible(Sport sport, int durationSec, double distanceM) {
     if (distanceM <= 0 || durationSec <= 0 || sport == Sport.gym) return true;
     return switch (sport) {
-      Sport.run => _between(durationSec / (distanceM / 1000), 150, 2400),
+      Sport.run => _between(durationSec / (distanceM / 1000), 150, 1200),
       Sport.ride => _between(distanceM / 1000 / (durationSec / 3600), 3, 70),
       Sport.swim => _between(durationSec / (distanceM / 100), 55, 360),
       Sport.gym => true,

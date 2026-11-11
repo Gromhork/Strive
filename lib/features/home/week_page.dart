@@ -153,8 +153,10 @@ class _SportRow extends ConsumerWidget {
     final l = context.l10n;
     final sec = done.fold<int>(0, (a, s) => a + s.durationSec);
     final km = done.fold<double>(0, (a, s) => a + s.distanceM);
-    final planKm = planned.fold<double>(0, (a, p) => a + (p.distanceKm ?? 0));
-    final c = planCounts(planned, linked, profile: ref.watch(profileOrDefaultProvider));
+    final profile = ref.watch(profileOrDefaultProvider);
+    // The week's planned km as the session cards show them ([planAmount] – a run/walk with its walks).
+    final planKm = planned.fold<double>(0, (a, p) => a + (planAmount(p, profile).km ?? 0));
+    final c = planCounts(planned, linked, profile: profile);
     final extra = extraSessions(done, planned, linked);
     final target = c.planned;
     final progress = target == 0 ? (done.isEmpty ? 0.0 : 1.0) : (c.done / target).clamp(0.0, 1.0);
