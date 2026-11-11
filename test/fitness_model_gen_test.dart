@@ -221,9 +221,9 @@ void main() {
         final brick = plan.any((w) => w.intensity == 'moderate' && w.sport == Sport.run && dayOnly(w.date) == dayOnly(ride.date));
         if (!brick) continue;
         final next = plan.where((w) => w.sport == Sport.run && w.intensity == 'long' && dayOnly(w.date) == addDays(dayOnly(ride.date), 1));
-        // Before: 300' + brick, then 30 km. After: ≤ 75 % / ~2 h (22.5 km).
+        // Before: 300' + brick, then 30 km. After: ≤ 75 % of the long run (peak ≤ 32 km → 24 km) / ~2 h.
         for (final r in next) {
-          expect(r.distanceKm!, lessThanOrEqualTo(22.5), reason: '${r.date}');
+          expect(r.distanceKm!, lessThanOrEqualTo(24), reason: '${r.date}');
           expect(r.durationMin, lessThanOrEqualTo(120), reason: '${r.date}');
         }
       }

@@ -658,6 +658,18 @@ class Session {
   /// Average power in watts (bike with a power meter), if known.
   final int? avgPower;
 
+  /// Logged as done without recording: exercises / sets / distance were taken over from the
+  /// planned workout ("aus Plan übernommen", lib/services/plan_fill.dart). Counts for volume,
+  /// set and muscle statistics and the plan, but is no measurement – no records (PRs, best
+  /// efforts) and no pace / power signal for the plan adaptation. Cleared when the athlete
+  /// corrects the performance data (edit page).
+  final bool fromPlan;
+
+  /// Gym: work sets the workout had when it was finished / taken over (incl. exercises
+  /// without a done set, which are not stored) – the plan compliance compares the done sets
+  /// against it. Null for older sessions and free workouts.
+  final int? plannedSets;
+
   Session({
     required this.id,
     required this.sport,
@@ -683,7 +695,12 @@ class Session {
     this.calories,
     this.maxHr,
     this.avgPower,
+    this.fromPlan = false,
+    this.plannedSets,
   });
+
+  /// Real measurement (recorded, imported or entered by hand) – not taken over from the plan.
+  bool get measured => !fromPlan;
 
   double get volume => exercises.fold(0, (a, e) => a + e.volume);
   int get setsDone => exercises.fold(0, (a, e) => a + e.doneSets);
@@ -726,6 +743,8 @@ class Session {
       calories: _in(m['calories']),
       maxHr: _in(m['maxHr']),
       avgPower: _in(m['avgPower']),
+      fromPlan: _b(m['fromPlan']),
+      plannedSets: _in(m['plannedSets']),
     );
   }
 
@@ -755,6 +774,8 @@ class Session {
     if (calories != null) 'calories': calories,
     if (maxHr != null) 'maxHr': maxHr,
     if (avgPower != null) 'avgPower': avgPower,
+    if (fromPlan) 'fromPlan': true,
+    if (plannedSets != null) 'plannedSets': plannedSets,
   };
 }
 

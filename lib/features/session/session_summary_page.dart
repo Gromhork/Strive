@@ -15,6 +15,7 @@ import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
 import '../stats/plan_link_card.dart' show askReplacement;
 import '../../services/plan_match.dart';
+import '../../services/compliance.dart' show ComplianceScale, plannedKm;
 import '../../services/gym_tools.dart' show sessionRpeFromEfforts;
 import '../../services/insights.dart';
 import '../../services/workout_store.dart';
@@ -27,32 +28,36 @@ import 'route_map.dart';
 /// The draft (incl. rating and notes) is kept in [WorkoutStore] until it is saved or
 /// discarded, so a finished workout survives the app being killed on this page.
 /// What the finished session achieved – picks the headline on the summary.
-enum SummaryOutcome { planDone, partial, free, tooShort }
+enum SummaryOutcome { planDone, partial, tooLittle, free, tooShort }
 
 /// [SummaryOutcome] of [s]: under a minute, or no distance outdoors (or in the pool) →
-/// too short; gym: ≥ 90 % of the sets of the program / plan ([plannedSets] = sets of the
-/// workout when it was finished, incl. exercises without a done set); cardio: ≥ 90 % of the
+/// too short. Against the program / plan the bands of the one compliance scale apply
+/// ([ComplianceScale]): ≥ 80 % → plan done, below 10 % → too little to count, else partial.
+/// Gym compares the done work sets with [plannedSets] (all work sets of the workout when it
+/// was finished, incl. exercises without a done set; else [Session.plannedSets]); cardio the
 /// planned distance (duration indoors / without a distance) of [plan]. Free sessions (no
 /// program, no plan) get a neutral-positive message.
 SummaryOutcome summaryOutcome(Session s, {PlannedWorkout? plan, int? plannedSets}) {
   final noDistance = s.sport != Sport.gym && s.distanceM <= 0 && (!s.indoor || s.sport == Sport.swim);
   if (s.durationSec < 60 || noDistance) return SummaryOutcome.tooShort;
-  if (s.sport == Sport.gym) {
-    final total = max(plannedSets ?? 0, s.exercises.fold<int>(0, (a, e) => a + e.sets.length));
-    if ((s.templateId == null && s.planId == null) || total == 0) return SummaryOutcome.free;
-    return s.setsDone >= 0.9 * total ? SummaryOutcome.planDone : SummaryOutcome.partial;
-  }
-  if (plan == null) return SummaryOutcome.free;
-  final km = plan.distanceKm;
   final double ratio;
-  if (km != null && km > 0 && (!s.indoor || s.sport == Sport.swim)) {
-    ratio = s.distanceM / 1000 / km;
-  } else if (plan.durationMin > 0) {
-    ratio = s.durationSec / 60 / plan.durationMin;
+  if (s.sport == Sport.gym) {
+    final total = max(plannedSets ?? s.plannedSets ?? 0, s.exercises.fold<int>(0, (a, e) => a + e.workSets.length));
+    if ((s.templateId == null && s.planId == null) || total == 0) return SummaryOutcome.free;
+    ratio = s.setsDone / total;
   } else {
-    return SummaryOutcome.free;
+    if (plan == null) return SummaryOutcome.free;
+    final km = plannedKm(plan);
+    if (km > 0 && (!s.indoor || s.sport == Sport.swim)) {
+      ratio = s.distanceM / 1000 / km;
+    } else if (plan.durationMin > 0) {
+      ratio = s.durationSec / 60 / plan.durationMin;
+    } else {
+      return SummaryOutcome.free;
+    }
   }
-  return ratio >= 0.9 ? SummaryOutcome.planDone : SummaryOutcome.partial;
+  if (ratio >= ComplianceScale.greenMin) return SummaryOutcome.planDone;
+  return ratio < ComplianceScale.countMin ? SummaryOutcome.tooLittle : SummaryOutcome.partial;
 }
 
 class SessionSummaryPage extends ConsumerStatefulWidget {
@@ -122,6 +127,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     indoor: widget.draft.indoor,
     templateId: widget.draft.templateId,
     planId: widget.draft.planId,
+    plannedSets: widget.draft.plannedSets ?? widget.plannedSets,
   );
 
   Future<void> _save() async {
@@ -186,6 +192,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     final headline = switch (outcome) {
       SummaryOutcome.planDone => l.summaryPlanDone,
       SummaryOutcome.partial => l.summaryPartial,
+      SummaryOutcome.tooLittle => l.summaryTooLittle,
       SummaryOutcome.free || SummaryOutcome.tooShort => l.summaryFree,
     };
 
@@ -210,7 +217,10 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                 ],
               ),
             ),
-            if (outcome == SummaryOutcome.tooShort) ...[const SizedBox(height: 12), _TooShortCard(onDiscard: _discard, onSave: _save)],
+            if (outcome == SummaryOutcome.tooShort) ...[
+              const SizedBox(height: 12),
+              _TooShortCard(session: s, onDiscard: _discard, onSave: _save),
+            ],
             const SizedBox(height: 16),
             SectionCard(
               child: Wrap(
@@ -344,14 +354,25 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
   Widget _cell(Widget c) => SizedBox(width: (MediaQuery.sizeOf(context).width - 64) / 2, child: c);
 }
 
+/// Title and text of the "too short" card, naming what is missing for this sport: gym only
+/// knows time (a workout without a done set is discarded before the summary), run / ride
+/// outdoors the GPS distance, the pool the counted laps.
+(String, String) tooShortTexts(AppLocalizations l, Session s) {
+  if (s.durationSec < 60) return (l.summaryTooShortTitle, s.sport == Sport.gym ? l.summaryTooShortGym : l.summaryTooShortTime);
+  if (s.sport == Sport.swim) return (l.summaryNoLapsTitle, l.summaryNoLapsBody);
+  return (l.summaryNoDistanceTitle, l.summaryNoDistanceBody);
+}
+
 /// "Too short to save?" with [Verwerfen] [Trotzdem speichern].
 class _TooShortCard extends StatelessWidget {
-  const _TooShortCard({required this.onDiscard, required this.onSave});
+  const _TooShortCard({required this.session, required this.onDiscard, required this.onSave});
+  final Session session;
   final VoidCallback onDiscard, onSave;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final (title, body) = tooShortTexts(l, session);
     return Container(
       key: const ValueKey('summaryTooShort'),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
@@ -365,13 +386,18 @@ class _TooShortCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.timer_off_outlined, color: AppColors.warning),
+              Icon(
+                session.durationSec < 60
+                    ? Icons.timer_off_outlined
+                    : (session.sport == Sport.swim ? Icons.pool_rounded : Icons.location_off_outlined),
+                color: AppColors.warning,
+              ),
               const SizedBox(width: 8),
-              Expanded(child: Text(l.summaryTooShortTitle, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
+              Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
             ],
           ),
           const SizedBox(height: 4),
-          Text(l.summaryTooShortBody, style: Theme.of(context).textTheme.bodySmall),
+          Text(body, key: const ValueKey('summaryTooShortBody'), style: Theme.of(context).textTheme.bodySmall),
           Wrap(
             alignment: WrapAlignment.end,
             spacing: 8,

@@ -109,6 +109,7 @@ class FeasibilityCard extends StatelessWidget {
     final options = [
       // The time on the long day is the limit: the concrete fix first.
       if (f.raiseDay != null && f.raiseDayMin != null) l.feasRaiseDay(day(f.raiseDay!), _hm(f.raiseDayMin!)),
+      if (f.raiseDay2 != null && f.raiseDay2Min != null) l.feasRaiseDay(day(f.raiseDay2!), _hm(f.raiseDay2Min!)),
       if (f.moveDay != null && f.moveDayMin != null) l.feasMoveLongDay(day(f.moveDay!), _hm(f.moveDayMin!)),
       if (f.laterDate != null) l.feasLaterDate(df.format(f.laterDate!)),
       if (f.shorterDistance != null) l.feasShorter(eventDistanceName(l, f.shorterDistance!)),
@@ -130,7 +131,10 @@ class FeasibilityCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(f.onlyTarget ? l.feasTitleTarget : l.feasTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(
+                  f.onlyTarget ? l.feasTitleTarget : (f.onlyNotes ? l.feasTitleNote : l.feasTitle),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 const SizedBox(height: 4),
                 for (final i in issues) Text(issueText(l, f, i), style: const TextStyle(fontSize: 13)),
                 if (options.isNotEmpty) ...[

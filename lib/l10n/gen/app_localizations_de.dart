@@ -5300,7 +5300,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get legendOff => 'stark abweichend';
 
   @override
-  String get legendMissed => 'verpasst';
+  String get legendMissed => 'verpasst / zu wenig';
 
   @override
   String replacesDayWorkout(String day) {
@@ -5606,7 +5606,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String coachMuchShorter(String share) {
-    return 'Nur $share des Plans – das zählt als teilweise erledigt. Fühlst du dich gut, ergänze etwas an einem lockeren Tag; sonst einfach weitermachen.';
+    return 'Nur $share des Plans – stark abweichend, zählt aber als erledigt. Fühlst du dich gut, ergänze etwas an einem lockeren Tag; sonst einfach weitermachen.';
   }
 
   @override
@@ -5657,6 +5657,125 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coachQSwim => 'Wie schwimme ich ökonomischer?';
+
+  @override
+  String get fromPlanTitle => 'Aus dem Plan übernommen';
+
+  @override
+  String fromPlanGymLine(int count, int sets, String volume) {
+    return '$count Übungen · $sets Sätze · $volume';
+  }
+
+  @override
+  String get fromPlanHintGym => 'Gespeichert mit den Übungen, Sätzen und Gewichten aus dem Plan. Weicht etwas ab? Danach in der Einheit unter „Bearbeiten“ korrigieren.';
+
+  @override
+  String get fromPlanHintCardio => 'Dauer und Strecke kommen aus dem Plan – trag ein, was du wirklich gemacht hast.';
+
+  @override
+  String get fromPlanBadge => 'Aus Plan übernommen';
+
+  @override
+  String get fromPlanNoteGym => 'nicht aufgezeichnet: zählt für Volumen, Sätze, Statistik und Plan, setzt aber keine Rekorde. Über „Bearbeiten“ trägst du ein, was du wirklich bewegt hast.';
+
+  @override
+  String get fromPlanNoteCardio => 'nicht aufgezeichnet: zählt für Strecke, Zeit und Plan, setzt aber keine Bestleistungen und passt keine Tempovorgaben an. Über „Bearbeiten“ trägst du deine echten Werte ein.';
+
+  @override
+  String get summaryTooShortGym => 'Weniger als eine Minute trainiert.';
+
+  @override
+  String get summaryTooShortTime => 'Weniger als eine Minute aufgezeichnet.';
+
+  @override
+  String get summaryNoDistanceTitle => 'Keine Strecke aufgezeichnet';
+
+  @override
+  String get summaryNoDistanceBody => 'Das GPS hat keine Strecke erfasst. Speichere trotzdem und trag die Distanz danach unter „Bearbeiten“ ein – oder verwirf die Einheit.';
+
+  @override
+  String get summaryNoLapsTitle => 'Keine Bahnen gezählt';
+
+  @override
+  String get summaryNoLapsBody => 'Es wurden keine Bahnen gezählt. Speichere trotzdem und trag Bahnen oder Strecke danach unter „Bearbeiten“ ein – oder verwirf die Einheit.';
+
+  @override
+  String get summaryTooLittle => 'Weniger als 10 % des Plans – das zählt noch nicht als erledigt.';
+
+  @override
+  String get editSessionHintGym => 'Korrigiere Gewichte, Wiederholungen und Sätze, füge Übungen hinzu oder entferne sie.';
+
+  @override
+  String get editSessionHintCardio => 'Korrigiere fehlerhafte Messungen oder Eingaben.';
+
+  @override
+  String get editSessionHintSwim => 'Korrigiere Bahnen, Beckenlänge oder Strecke – Bahnen × Beckenlänge ergeben die Distanz.';
+
+  @override
+  String get removeExercise => 'Übung entfernen';
+
+  @override
+  String exerciseRemoved(String name) {
+    return '$name entfernt';
+  }
+
+  @override
+  String get moreActions => 'Mehr';
+
+  @override
+  String complianceNotCounted(int pct) {
+    return 'Nicht gewertet – nur $pct % vom Plan';
+  }
+
+  @override
+  String notCountedShort(String share) {
+    return 'nicht gewertet ($share)';
+  }
+
+  @override
+  String setsOfPlanned(int done, int total) {
+    return '$done von $total Sätzen';
+  }
+
+  @override
+  String coachNotCounted(String share) {
+    return 'Nur $share des Plans – zu wenig, um als erledigt zu zählen. Hast du mehr gemacht, korrigiere die Einheit; sonst ist die Einheit noch offen.';
+  }
+
+  @override
+  String coachNotCountedSets(String share) {
+    return 'Nur $share der geplanten Sätze – zu wenig, um als erledigt zu zählen. Hast du mehr Sätze gemacht, trag sie in der Einheit nach; sonst ist die Einheit noch offen.';
+  }
+
+  @override
+  String coachMuchFewerSets(String share) {
+    return 'Nur $share der geplanten Sätze – stark abweichend, zählt aber als erledigt. Nicht nachholen – die nächste Krafteinheit startet wieder normal.';
+  }
+
+  @override
+  String get coachFewerSets => 'Weniger Sätze als geplant – kein Problem, nicht nachholen.';
+
+  @override
+  String get coachMoreSets => 'Mehr Sätze als geplant – gönn dir bis zur nächsten Krafteinheit genug Erholung.';
+
+  @override
+  String get termComplianceTitle => 'Plan-Erfüllung – so wird eine Einheit gewertet';
+
+  @override
+  String termComplianceBody(String greenMin, String greenMax, String yellowMin, String yellowMax, String countMin) {
+    return 'Verglichen wird die Strecke (Ausdauer mit Distanz), die erledigten Arbeitssätze (Kraft) oder sonst die Dauer – mit dem Plan.\n\n✓ grün, wie geplant: $greenMin–$greenMax\n✓ gelb, teilweise: $yellowMin bis unter $greenMin oder bis $yellowMax\n✓ orange, stark abweichend: unter $yellowMin oder über $yellowMax\n✕ rot: verpasst, oder unter $countMin – ein abgebrochener Start zählt nicht als erledigt.';
+  }
+
+  @override
+  String get termComplianceTip => 'Teilweise oder stark abweichend zählt trotzdem als erledigt – der Plan passt sich erst an, wenn es sich wiederholt.';
+
+  @override
+  String get feasTitleNote => 'Hinweis zu deinem Plan';
+
+  @override
+  String feasLongRunTimeCap(String time, String have, String race) {
+    return 'Deine langen Läufe enden bei $time – bei deinem lockeren Tempo sind das etwa $have km (viele Pläne gehen bis $race km). Länger am Stück bringt mehr Verletzungsrisiko und Erholungsbedarf als Fitness. Daher: Ankommen ist das Ziel – ruhig loslaufen und von Beginn an kurze Gehpausen einplanen (z. B. 1 min alle 10 min).';
+  }
 
   @override
   String durationRange(String from, String to) {

@@ -109,13 +109,14 @@ void main() {
       expect(taper.every((k) => k <= (peak.distanceKm ?? 0) * 0.7 + 0.5), isTrue);
     });
 
-    test('Ironman: 3-week taper, long ride ~5 h, long run ≤ 30 km / 165 min', () {
+    test('Ironman: 3-week taper, long ride ~5 h, long run ≤ 32 km / 3 h', () {
       final p = tri('ironman', level: 'advanced', minutes: 90, days: const {6: 360, 7: 180}, weeks: 28);
       final plan = gen(p);
       expect(plan.where((w) => w.phase == 'taper').map((w) => startOfWeek(w.date)).toSet().length, 3);
       expect(longest(plan, Sport.ride, min: true), greaterThanOrEqualTo(270));
-      expect(longest(plan, Sport.run), lessThanOrEqualTo(30));
-      expect(plan.where((w) => w.sport == Sport.run && w.intensity == 'long').every((w) => w.durationMin <= 170), isTrue);
+      // 28–32 km (Friel; coordinator review 2026-11), ≤ 3 h.
+      expect(longest(plan, Sport.run), inInclusiveRange(28, 32));
+      expect(plan.where((w) => w.sport == Sport.run && w.intensity == 'long').every((w) => w.durationMin <= 185), isTrue);
       // Fuelling practice on the long sessions of a long race.
       expect(plan.where((w) => w.intensity == 'long' && w.description.contains(l.wFuelPracticeNote)), isNotEmpty);
     });

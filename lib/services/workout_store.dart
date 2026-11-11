@@ -177,6 +177,7 @@ Map<String, dynamic> sessionDraftToJson(Session s) => {
   'indoor': s.indoor,
   'templateId': s.templateId,
   'planId': s.planId,
+  if (s.plannedSets != null) 'plannedSets': s.plannedSets,
 };
 
 Session sessionDraftFromJson(Map m) => Session(
@@ -197,6 +198,7 @@ Session sessionDraftFromJson(Map m) => Session(
   indoor: m['indoor'] == true,
   templateId: m['templateId'] as String?,
   planId: m['planId'] as String?,
+  plannedSets: m['plannedSets'] as int?,
 );
 
 // ───────────────────────────── Store ─────────────────────────────

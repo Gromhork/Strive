@@ -255,15 +255,28 @@ void main() {
       expect(repo.planUpdates['sat'], {'status': 'planned', 'sessionId': null});
     });
 
-    testWidgets('a 100 m swim of a 1500 m workout is shown as partial, not "no problem"', (t) async {
+    testWidgets('a 400 m swim of a 1500 m workout is shown as far off, not "no problem"', (t) async {
       final p = plan('p', 0, Sport.swim, status: 'done', sessionId: 's', km: 1.5);
-      final s = session('s', 0, Sport.swim, planId: 'p', m: 100, sec: 120);
+      final s = session('s', 0, Sport.swim, planId: 'p', m: 400, sec: 600);
       expect(planCompliance(p, s).level, ComplianceLevel.orange);
       final o = await _overrides(_FakeRepo(), plans: [p], sessions: [s]);
       await t.pumpWidget(_app(Scaffold(body: ListView(children: [PlanLinkCard(session: s)])), o));
       await t.pumpAndSettle();
-      expect(find.text(de.coachMuchShorter(Units.pct(100 / 1500 * 100))), findsOneWidget);
+      expect(find.text(de.coachMuchShorter(Units.pct(400 / 1500 * 100))), findsOneWidget);
       expect(find.text(de.coachShorter), findsNothing);
+    });
+
+    testWidgets('a 100 m swim of a 1500 m workout (< 10 %) does not count', (t) async {
+      final p = plan('p', 0, Sport.swim, status: 'done', sessionId: 's', km: 1.5);
+      final s = session('s', 0, Sport.swim, planId: 'p', m: 100, sec: 120);
+      final c = planCompliance(p, s);
+      expect(c.level, ComplianceLevel.red);
+      expect(c.notCounted, isTrue);
+      expect(planCompleted(p, {'p': s}), isFalse);
+      final o = await _overrides(_FakeRepo(), plans: [p], sessions: [s]);
+      await t.pumpWidget(_app(Scaffold(body: ListView(children: [PlanLinkCard(session: s)])), o));
+      await t.pumpAndSettle();
+      expect(find.text(de.coachNotCounted(Units.pct(100 / 1500 * 100))), findsOneWidget);
     });
 
     testWidgets('a confirmed replacement can be taken back on the session', (t) async {

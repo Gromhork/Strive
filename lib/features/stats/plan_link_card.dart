@@ -148,7 +148,8 @@ class PlanLinkCard extends ConsumerWidget {
     final c = planCompliance(p, s);
     final moved = !sameDay(p.date, s.start);
     final hard = s.rpe != null && s.rpe! >= expectedRpe(p.intensity) + 3;
-    final coach = _coachLine(l, p, s, ratio, hard);
+    final coach = coachLine(l, p, s, c, hard: hard);
+    final sets = p.sport == Sport.gym ? plannedGymSets(p, s) : 0;
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: SectionCard(
@@ -168,6 +169,7 @@ class PlanLinkCard extends ConsumerWidget {
                       Text(
                         [
                           l.plannedLine(p.title, planAmountText(p, profile, templates: ref.watch(templateListProvider))),
+                          if (sets > 0) l.setsOfPlanned(s.setsDone, sets),
                           if (ratio != null) l.fulfilledPct(Units.pct(ratio * 100)),
                         ].join(' → '),
                         style: const TextStyle(fontWeight: FontWeight.w600),
@@ -215,11 +217,23 @@ class PlanLinkCard extends ConsumerWidget {
     );
   }
 
-  static String _coachLine(AppLocalizations l, PlannedWorkout p, Session s, double? ratio, bool hard) {
+  /// The coach sentence under "Geplant: … → 78 % erfüllt", by the band of the one compliance
+  /// scale ([ComplianceScale]) – the ring next to it, the calendar and Home use the same bands –
+  /// and in the sport's terms (gym: sets, endurance: shorter / longer).
+  static String coachLine(AppLocalizations l, PlannedWorkout p, Session s, Compliance c, {bool hard = false}) {
     if (hard) return l.coachRpeHigh(p.title, s.rpe!);
-    if (ratio == null || (ratio >= 0.8 && ratio <= 1.2)) return l.coachAsPlanned;
-    // 100 m of a 1500 m swim is not "a bit shorter – no problem": say honestly how much it was.
-    if (ratio < 0.5) return l.coachMuchShorter(Units.pct(ratio * 100));
-    return ratio < 0.8 ? l.coachShorter : l.coachLonger;
+    final r = c.ratio;
+    if (r == null) return l.coachAsPlanned;
+    final share = Units.pct(r * 100);
+    final sets = p.sport == Sport.gym && plannedGymSets(p, s) > 0;
+    return switch (c.level) {
+      // 0:29 of 56 min (or 1 of 15 sets) is an aborted start, not a workout.
+      ComplianceLevel.red => sets ? l.coachNotCountedSets(share) : l.coachNotCounted(share),
+      // 100 m of a 1500 m swim is not "a bit shorter – no problem": say honestly how much it was.
+      ComplianceLevel.orange when r < 1 => sets ? l.coachMuchFewerSets(share) : l.coachMuchShorter(share),
+      ComplianceLevel.orange ||
+      ComplianceLevel.yellow => r < 1 ? (sets ? l.coachFewerSets : l.coachShorter) : (sets ? l.coachMoreSets : l.coachLonger),
+      _ => l.coachAsPlanned,
+    };
   }
 }

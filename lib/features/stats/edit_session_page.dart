@@ -9,14 +9,20 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../data/models.dart';
 import '../../data/exercise_names_de.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
 import '../../widgets/duration_picker.dart';
 import '../../widgets/rpe_picker.dart';
+import '../session/gym_session_page.dart' show exerciseFromLibrary;
+import '../train/exercise_picker.dart';
 
 /// Corrects a recorded workout (wrong GPS distance, forgotten stop, mistyped weight …).
-/// Only the editable fields are written back; route, splits, laps and links stay.
+/// Only the editable fields are written back; route, splits and links stay. Gym: sets can be
+/// edited, added and removed, exercises added (library picker), removed (with undo) and
+/// reordered; volume and set counts are recomputed on save, records follow from the sessions.
+/// Swim: laps × pool length give the distance.
 class EditSessionPage extends ConsumerStatefulWidget {
   const EditSessionPage({super.key, required this.session});
   final Session session;
@@ -33,6 +39,8 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   late int _durationSec = s.durationSec;
   late final _distance = TextEditingController(text: s.distanceM <= 0 ? '' : _distText(s.distanceM));
   late final _elevation = TextEditingController(text: s.elevationM <= 0 ? '' : s.elevationM.round().toString());
+  late final _laps = TextEditingController(text: s.laps <= 0 ? '' : '${s.laps}');
+  late final _pool = TextEditingController(text: '${s.poolLengthM}');
   late final _avgHr = TextEditingController(text: s.avgHr?.toString() ?? '');
   late final _maxHr = TextEditingController(text: s.maxHr?.toString() ?? '');
   late final _calories = TextEditingController(text: s.calories?.toString() ?? '');
@@ -40,31 +48,47 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   late int? _rpe = s.rpe;
   late final List<GymExercise> _exercises = s.exercises.map((e) => e.copy()).toList();
 
+  List<TextEditingController> get _controllers => [_title, _distance, _elevation, _laps, _pool, _avgHr, _maxHr, _calories, _notes];
+
   /// Editable values (for the unsaved-changes prompt on back).
-  String _snapshot() => jsonEncode([
-    _start.millisecondsSinceEpoch,
-    for (final c in [_title, _distance, _elevation, _avgHr, _maxHr, _calories, _notes]) c.text,
+  String _snapshot() => jsonEncode([_start.millisecondsSinceEpoch, for (final c in _controllers) c.text, _rpe, _performance()]);
+
+  /// The performance data (what a session "taken over from the plan" took from it): changing it
+  /// makes the session the athlete's own numbers.
+  String _performance() => jsonEncode([
     _durationSec,
-    _rpe,
+    _distance.text,
+    _laps.text,
+    _pool.text,
     [for (final e in _exercises) e.toMap()],
   ]);
   late final String _initial;
+  late final String _initialPerformance;
 
   @override
   void initState() {
     super.initState();
     _initial = _snapshot();
+    _initialPerformance = _performance();
   }
 
   String _distText(double m) => s.sport == Sport.swim ? m.round().toString() : Units.num(u.distOut(m), 2);
 
   int? _int(TextEditingController c) => c.text.trim().isEmpty ? null : int.tryParse(c.text.trim());
 
+  /// Swim: laps or pool length changed → distance = laps × pool length.
+  void _lapsChanged() {
+    final laps = _int(_laps), pool = _int(_pool);
+    if (laps != null && laps > 0 && pool != null && pool > 0) _distance.text = '${laps * pool}';
+    setState(() {});
+  }
+
   void _save() {
     final l = context.l10n;
     final sec = _durationSec;
     final d = parseNum(_distance.text);
     final cardio = s.sport != Sport.gym;
+    final swim = s.sport == Sport.swim;
     final elev = parseNum(_elevation.text);
     final update = <String, dynamic>{
       'title': _title.text.trim().isEmpty ? s.sport.label(l) : _title.text.trim(),
@@ -75,32 +99,84 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
       'avgHr': _int(_avgHr),
       'maxHr': _int(_maxHr),
       'calories': _int(_calories),
-      if (cardio) 'distanceM': d == null ? 0.0 : (s.sport == Sport.swim ? d : u.distIn(d)),
-      if (cardio) 'elevationM': elev ?? 0.0,
+      if (cardio) 'distanceM': d == null ? 0.0 : (swim ? d : u.distIn(d)),
+      if (cardio && !swim) 'elevationM': elev ?? 0.0,
+      if (swim) 'laps': _int(_laps) ?? 0,
+      if (swim && (_int(_pool) ?? 0) > 0) 'poolLengthM': _int(_pool),
     };
     if (!cardio) {
       final ex = _exercises.where((e) => e.sets.isNotEmpty).toList();
       update['exercises'] = ex.map((e) => e.toMap()).toList();
       update['volume'] = ex.fold<double>(0, (a, e) => a + e.volume);
     }
+    // Corrected performance data are the athlete's own numbers – no longer "from the plan".
+    if (s.fromPlan && _performance() != _initialPerformance) update['fromPlan'] = false;
     ref.read(repoProvider)?.updateMany(sessions: {s.id: update});
     toast(context, l.sessionCorrected);
     Navigator.pop(context);
   }
 
+  Future<void> _addExercises() async {
+    final picked = await pickExercises(context);
+    if (!mounted || picked.isEmpty) return;
+    final history = ref.read(sessionListProvider).where((x) => x.id != s.id).toList();
+    final prescriber = ref.read(loadPrescriberProvider);
+    final phase = planPhaseOf(ref.read(planListProvider), s.planId);
+    setState(() {
+      for (final e in picked) {
+        final ex = exerciseFromLibrary(e, history: history, prescriber: prescriber, phase: phase);
+        // Logged after the fact: the sets were done (untick or delete what wasn't).
+        for (final set in ex.sets) {
+          set
+            ..done = true
+            ..amrap = false;
+        }
+        _exercises.add(ex);
+      }
+    });
+  }
+
+  void _removeExercise(int i) {
+    final l = context.l10n;
+    final removed = _exercises[i];
+    setState(() => _exercises.removeAt(i));
+    undoToast(
+      ScaffoldMessenger.of(context),
+      text: l.exerciseRemoved(exName(context, removed.exId, removed.name)),
+      undoLabel: l.undo,
+      onUndo: () {
+        if (!mounted) return;
+        setState(() => _exercises.insert(i.clamp(0, _exercises.length), removed));
+      },
+    );
+  }
+
+  void _move(int i, int by) {
+    final j = i + by;
+    if (j < 0 || j >= _exercises.length) return;
+    setState(() => _exercises.insert(j, _exercises.removeAt(i)));
+  }
+
   @override
   void dispose() {
-    for (final c in [_title, _distance, _elevation, _avgHr, _maxHr, _calories, _notes]) {
+    for (final c in _controllers) {
       c.dispose();
     }
     super.dispose();
   }
+
+  String _hint(AppLocalizations l) => switch (s.sport) {
+    Sport.gym => l.editSessionHintGym,
+    Sport.swim => l.editSessionHintSwim,
+    _ => s.route.isNotEmpty || s.splits.isNotEmpty ? l.editSessionHint : l.editSessionHintCardio,
+  };
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final df = DateFormat.yMMMEd(context.localeName).add_Hm();
     final cardio = s.sport != Sport.gym;
+    final swim = s.sport == Sport.swim;
     const num = TextInputType.numberWithOptions(decimal: true);
     Widget row(List<Widget> children) => Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -117,7 +193,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(l.editSessionHint, style: Theme.of(context).textTheme.bodySmall),
+            Text(_hint(l), key: const ValueKey('editSessionHint'), style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 12),
             TextField(controller: _title, decoration: InputDecoration(labelText: l.title)),
             ListTile(
@@ -143,14 +219,37 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
               ),
               if (cardio)
                 TextField(
+                  key: const ValueKey('editDistance'),
                   controller: _distance,
                   keyboardType: num,
-                  decoration: InputDecoration(labelText: l.distance, suffixText: s.sport == Sport.swim ? 'm' : u.distUnit),
+                  decoration: InputDecoration(labelText: l.distance, suffixText: swim ? 'm' : u.distUnit),
                 ),
             ]),
+            if (swim)
+              row([
+                TextField(
+                  key: const ValueKey('editLaps'),
+                  controller: _laps,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: l.laps),
+                  onChanged: (_) => _lapsChanged(),
+                ),
+                TextField(
+                  key: const ValueKey('editPool'),
+                  controller: _pool,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: l.poolLength, suffixText: 'm'),
+                  onChanged: (_) => _lapsChanged(),
+                ),
+              ]),
             if (cardio)
               row([
-                TextField(controller: _elevation, keyboardType: num, decoration: InputDecoration(labelText: l.elevation, suffixText: 'm')),
+                if (!swim)
+                  TextField(
+                    controller: _elevation,
+                    keyboardType: num,
+                    decoration: InputDecoration(labelText: l.elevation, suffixText: 'm'),
+                  ),
                 TextField(
                   controller: _calories,
                   keyboardType: TextInputType.number,
@@ -182,16 +281,26 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
             TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
             if (!cardio) ...[
               const SizedBox(height: 16),
-              for (final e in _exercises)
+              for (var i = 0; i < _exercises.length; i++)
                 Padding(
+                  key: ObjectKey(_exercises[i]),
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _ExerciseEditor(
-                    exercise: e,
+                    exercise: _exercises[i],
                     units: u,
                     onChanged: () => setState(() {}),
-                    onBodyweight: (on) => setState(() => ref.read(loadPrescriberProvider).switchBodyweight(e, on)),
+                    onBodyweight: (on) => setState(() => ref.read(loadPrescriberProvider).switchBodyweight(_exercises[i], on)),
+                    onMoveUp: i > 0 ? () => _move(i, -1) : null,
+                    onMoveDown: i < _exercises.length - 1 ? () => _move(i, 1) : null,
+                    onRemove: () => _removeExercise(i),
                   ),
                 ),
+              OutlinedButton.icon(
+                key: const ValueKey('editAddExercise'),
+                onPressed: _addExercises,
+                icon: const Icon(Icons.add),
+                label: Text(l.addExercise),
+              ),
             ],
             const SizedBox(height: 24),
             FilledButton(onPressed: _save, child: Text(l.save)),
@@ -202,14 +311,25 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   }
 }
 
-/// Weight × reps of every set of one exercise; sets can be removed or added. In
-/// bodyweight mode the weight is the added load (negative = assistance).
+/// Weight × reps of every set of one exercise; sets can be removed or added, the exercise
+/// moved or removed (menu). In bodyweight mode the weight is the added load (negative =
+/// assistance).
 class _ExerciseEditor extends StatelessWidget {
-  const _ExerciseEditor({required this.exercise, required this.units, required this.onChanged, required this.onBodyweight});
+  const _ExerciseEditor({
+    required this.exercise,
+    required this.units,
+    required this.onChanged,
+    required this.onBodyweight,
+    required this.onRemove,
+    this.onMoveUp,
+    this.onMoveDown,
+  });
   final GymExercise exercise;
   final Units units;
   final VoidCallback onChanged;
   final ValueChanged<bool> onBodyweight;
+  final VoidCallback onRemove;
+  final VoidCallback? onMoveUp, onMoveDown;
 
   @override
   Widget build(BuildContext context) {
@@ -218,15 +338,50 @@ class _ExerciseEditor extends StatelessWidget {
     final bw = e.bw == true;
     return SectionCard(
       title: exName(context, e.exId, e.name),
-      trailing: FilterChip(
-        key: const ValueKey('edit-bw'),
-        avatar: const Icon(Icons.accessibility_new_rounded, size: 16),
-        showCheckmark: false,
-        visualDensity: VisualDensity.compact,
-        label: Text(l.bodyweightShort),
-        tooltip: l.bodyweightHint,
-        selected: bw,
-        onSelected: onBodyweight,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (e.exId != 'manual')
+            FilterChip(
+              key: const ValueKey('edit-bw'),
+              avatar: const Icon(Icons.accessibility_new_rounded, size: 16),
+              showCheckmark: false,
+              visualDensity: VisualDensity.compact,
+              label: Text(l.bodyweightShort),
+              tooltip: l.bodyweightHint,
+              selected: bw,
+              onSelected: onBodyweight,
+            ),
+          PopupMenuButton<String>(
+            key: ValueKey('editExerciseMenu-${e.exId}'),
+            tooltip: l.moreActions,
+            icon: const Icon(Icons.more_vert, size: 20),
+            onSelected:
+                (v) => switch (v) {
+                  'up' => onMoveUp?.call(),
+                  'down' => onMoveDown?.call(),
+                  _ => onRemove(),
+                },
+            itemBuilder:
+                (_) => [
+                  PopupMenuItem(
+                    value: 'up',
+                    enabled: onMoveUp != null,
+                    child: ListTile(leading: const Icon(Icons.arrow_upward_rounded), title: Text(l.moveUp)),
+                  ),
+                  PopupMenuItem(
+                    value: 'down',
+                    enabled: onMoveDown != null,
+                    child: ListTile(leading: const Icon(Icons.arrow_downward_rounded), title: Text(l.moveDown)),
+                  ),
+                  PopupMenuItem(
+                    key: const ValueKey('editRemoveExercise'),
+                    value: 'remove',
+                    child: ListTile(leading: const Icon(Icons.delete_outline), title: Text(l.removeExercise)),
+                  ),
+                ],
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -251,7 +406,10 @@ class _ExerciseEditor extends StatelessWidget {
                         suffixText: bw ? null : units.weightUnit,
                         floatingLabelBehavior: FloatingLabelBehavior.always,
                       ),
-                      onChanged: (v) => e.sets[i].weight = units.weightIn(parseNum(v) ?? 0),
+                      onChanged: (v) {
+                        e.sets[i].weight = units.weightIn(parseNum(v) ?? 0);
+                        onChanged();
+                      },
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -260,7 +418,10 @@ class _ExerciseEditor extends StatelessWidget {
                       initialValue: e.sets[i].reps == 0 ? '' : '${e.sets[i].reps}',
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(isDense: true, labelText: l.reps, floatingLabelBehavior: FloatingLabelBehavior.always),
-                      onChanged: (v) => e.sets[i].reps = int.tryParse(v.trim()) ?? 0,
+                      onChanged: (v) {
+                        e.sets[i].reps = int.tryParse(v.trim()) ?? 0;
+                        onChanged();
+                      },
                     ),
                   ),
                   Checkbox(
