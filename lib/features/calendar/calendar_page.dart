@@ -24,6 +24,7 @@ import 'plan_history_page.dart';
 import 'planned_workout_page.dart';
 import 'recalibrate_sheet.dart';
 import '../../widgets/segments.dart';
+import '../../widgets/term_info.dart';
 
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
@@ -675,7 +676,8 @@ class _SessionChip extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  s.sport == Sport.gym
+                  // Gym (and cardio without a distance, e.g. indoors): the time, never "0,0 km".
+                  s.sport == Sport.gym || s.distanceM <= 0
                       ? humanDuration(s.durationSec)
                       : (s.sport == Sport.swim ? u.swimDist(s.distanceM) : u.dist(s.distanceM, digits: 1)),
                   style: Theme.of(context).textTheme.bodySmall,
@@ -722,6 +724,8 @@ class _MonthLegend extends StatelessWidget {
         item(const Icon(Icons.check_rounded, size: 14, color: complianceYellow), l.legendPartly),
         item(const Icon(Icons.check_rounded, size: 14, color: complianceOrange), l.legendOff),
         item(const Icon(Icons.close_rounded, size: 14, color: AppColors.danger), l.legendMissed),
+        // What "teilweise" / "stark abweichend" mean in numbers (the one compliance scale).
+        const TermInfoButton(Term.compliance, key: ValueKey('legendInfo')),
       ],
     );
   }

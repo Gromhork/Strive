@@ -4,8 +4,11 @@ import 'package:intl/intl.dart';
 
 import '../../core/format.dart';
 import '../../core/sport.dart';
+import '../../core/theme.dart';
+import '../../data/exercise_names_de.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
+import '../../services/plan_fill.dart';
 import '../../services/plan_match.dart';
 import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
@@ -13,14 +16,16 @@ import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
 import '../../widgets/rpe_picker.dart';
 import '../../widgets/segments.dart';
+import 'gym_session_page.dart' show setLabelOf;
 
 /// Log a past activity (e.g. a treadmill run or a swim without the phone).
 class ManualEntryPage extends ConsumerStatefulWidget {
   const ManualEntryPage({super.key, this.sport, this.plan});
   final Sport? sport;
 
-  /// Planned workout done without recording: pre-fills sport, date, duration and
-  /// distance, and the entry completes exactly this plan.
+  /// Planned workout done without recording ("Als erledigt eintragen"): the session takes
+  /// over the plan's content ([PlanFill]) – gym: exercises, sets and the prescribed weights;
+  /// endurance: duration, distance (laps in the pool) – and completes exactly this plan.
   final PlannedWorkout? plan;
 
   @override
@@ -28,11 +33,22 @@ class ManualEntryPage extends ConsumerStatefulWidget {
 }
 
 class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
+  late final PlanFill? _fill =
+      widget.plan == null
+          ? null
+          : PlanFill.of(
+            widget.plan!,
+            profile: ref.read(profileOrDefaultProvider),
+            templates: ref.read(templateListProvider),
+            prescriber: ref.read(loadPrescriberProvider),
+          );
   late Sport _sport = widget.plan?.sport ?? widget.sport ?? ref.read(sportFilterProvider) ?? Sport.run;
   late DateTime _start = _initialStart();
-  late int _minutes = (widget.plan?.durationMin ?? 45).clamp(5, 360);
+  late final int _planMinutes = (_fill?.minutes ?? 45).clamp(5, 360);
+  late int _minutes = _planMinutes;
   late final _title = TextEditingController(text: widget.plan?.title ?? '');
-  late final _distance = TextEditingController(text: _initialDistance());
+  late final String _planDistance = _initialDistance();
+  late final _distance = TextEditingController(text: _planDistance);
 
   DateTime _initialStart() {
     final now = DateTime.now();
@@ -42,11 +58,17 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
   }
 
   String _initialDistance() {
-    final km = widget.plan?.distanceKm;
+    final km = _fill?.km;
     if (km == null || km <= 0) return '';
     if (widget.plan!.sport == Sport.swim) return '${(km * 1000).round()}';
     return Units.num(ref.read(profileOrDefaultProvider).units.distOut(km * 1000), 1);
   }
+
+  /// The plan's content is used (same sport as planned).
+  bool get _fromPlan => widget.plan != null && _sport == widget.plan!.sport;
+
+  /// Gym exercises taken over from the plan (empty: only the total volume can be entered).
+  List<GymExercise> get _planExercises => _fromPlan ? _fill!.exercises : const [];
 
   final _volume = TextEditingController();
   final _notes = TextEditingController();
@@ -71,31 +93,54 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
     super.dispose();
   }
 
+  /// Entered distance in metres (null = empty / invalid).
+  double? _distanceM() {
+    final d = parseNum(_distance.text);
+    if (d == null) return null;
+    return _sport == Sport.swim ? d : ref.read(profileOrDefaultProvider).units.distIn(d);
+  }
+
   void _save() {
     final l = context.l10n;
     final repo = ref.read(repoProvider)!;
     final u = ref.read(profileOrDefaultProvider).units;
-    final d = parseNum(_distance.text);
     final vol = parseNum(_volume.text);
-    final s = Session(
-      id: repo.newId(),
-      sport: _sport,
-      title: _title.text.trim().isEmpty ? _sport.label(l) : _title.text.trim(),
-      start: _start,
-      durationSec: _minutes * 60,
-      rpe: _rpe,
-      notes: _notes.text.trim(),
-      distanceM: d == null ? 0 : (_sport == Sport.swim ? d : u.distIn(d)),
-      // Manual gym entries store the total volume as one summary "exercise".
-      exercises:
-          _sport == Sport.gym && vol != null && vol > 0
-              ? [
-                GymExercise(exId: 'manual', name: l.totalVolume, sets: [GymSet(weight: u.weightIn(vol), reps: 1, done: true)]),
-              ]
-              : const [],
-      indoor: true,
-      planId: widget.plan?.id,
-    );
+    final title = _title.text.trim().isEmpty ? _sport.label(l) : _title.text.trim();
+    final Session s;
+    if (_fromPlan && (_sport != Sport.gym || _planExercises.isNotEmpty)) {
+      s = sessionFromPlan(
+        widget.plan!,
+        _fill!,
+        id: repo.newId(),
+        start: _start,
+        title: title,
+        // Untouched fields keep the plan's exact values (not the rounded display).
+        minutes: _minutes == _planMinutes ? null : _minutes,
+        distanceM: _distance.text == _planDistance ? null : (_distanceM() ?? 0),
+        rpe: _rpe,
+        notes: _notes.text.trim(),
+      );
+    } else {
+      s = Session(
+        id: repo.newId(),
+        sport: _sport,
+        title: title,
+        start: _start,
+        durationSec: _minutes * 60,
+        rpe: _rpe,
+        notes: _notes.text.trim(),
+        distanceM: _sport == Sport.gym ? 0 : (_distanceM() ?? 0),
+        // Manual gym entries store the total volume as one summary "exercise".
+        exercises:
+            _sport == Sport.gym && vol != null && vol > 0
+                ? [
+                  GymExercise(exId: 'manual', name: l.totalVolume, sets: [GymSet(weight: u.weightIn(vol), reps: 1, done: true)]),
+                ]
+                : const [],
+        indoor: true,
+        planId: widget.plan?.id,
+      );
+    }
     repo.saveSession(s);
     ref.read(healthServiceProvider).writeSession(s);
     final plans = ref.read(planListProvider);
@@ -120,19 +165,23 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
     final l = context.l10n;
     final u = ref.watch(profileOrDefaultProvider).units;
     final df = DateFormat.yMMMEd(context.localeName).add_Hm();
+    final gymFromPlan = _sport == Sport.gym && _planExercises.isNotEmpty;
     return DiscardGuard(
       isDirty: () => _snapshot() != _initial,
       child: Scaffold(
-        appBar: AppBar(title: Text(l.logManually)),
+        appBar: AppBar(title: Text(widget.plan == null ? l.logManually : l.logAsDone)),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Segments<Sport>(
-              segments: [for (final s in Sport.values) Seg(s, icon: s.icon)],
-              value: _sport,
-              onChanged: (v) => setState(() => _sport = v),
-            ),
-            const SizedBox(height: 16),
+            // A planned workout fixes the sport.
+            if (widget.plan == null) ...[
+              Segments<Sport>(
+                segments: [for (final s in Sport.values) Seg(s, icon: s.icon)],
+                value: _sport,
+                onChanged: (v) => setState(() => _sport = v),
+              ),
+              const SizedBox(height: 16),
+            ],
             TextField(controller: _title, decoration: InputDecoration(labelText: l.title, hintText: _sport.label(l))),
             const SizedBox(height: 12),
             ListTile(
@@ -155,12 +204,18 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
               format: (v) => humanDuration(v.round() * 60),
               onChanged: (v) => setState(() => _minutes = v.round()),
             ),
-            if (_sport != Sport.gym)
+            if (_sport != Sport.gym) ...[
               TextField(
+                key: const ValueKey('manualDistance'),
                 controller: _distance,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(labelText: l.distance, suffixText: _sport == Sport.swim ? 'm' : u.distUnit),
-              )
+                onChanged: (_) => setState(() {}),
+              ),
+              _CardioDerived(sport: _sport, distanceM: _distanceM() ?? 0, seconds: _minutes * 60, poolM: _fill?.poolLengthM, units: u),
+              if (_fromPlan) _FromPlanHint(text: l.fromPlanHintCardio),
+            ] else if (gymFromPlan)
+              _GymFromPlan(exercises: _planExercises, units: u)
             else
               TextField(
                 controller: _volume,
@@ -174,9 +229,105 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
             const SizedBox(height: 8),
             TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
             const SizedBox(height: 24),
-            FilledButton(onPressed: _save, child: Text(l.save)),
+            FilledButton(key: const ValueKey('manualSave'), onPressed: _save, child: Text(l.save)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// "Ø 5:30 /km" (swim: "Ø 2:05 /100 m · 60 × 25 m") from the entered distance and duration.
+class _CardioDerived extends StatelessWidget {
+  const _CardioDerived({required this.sport, required this.distanceM, required this.seconds, required this.units, this.poolM});
+  final Sport sport;
+  final double distanceM;
+  final int seconds;
+  final int? poolM;
+  final Units units;
+
+  @override
+  Widget build(BuildContext context) {
+    if (distanceM <= 0 || seconds <= 0) return const SizedBox(height: 4);
+    final l = context.l10n;
+    final pool = poolM ?? 25;
+    final laps = sport == Sport.swim && pool > 0 ? (distanceM / pool).round() : 0;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Text(
+        [
+          '${sport.usesPace ? l.avgPace : l.avgSpeed} ${units.paceOrSpeed(sport, distanceM, seconds)}',
+          if (laps > 0) '${l.laps} $laps × $pool m',
+        ].join(' · '),
+        key: const ValueKey('manualDerived'),
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+    );
+  }
+}
+
+class _FromPlanHint extends StatelessWidget {
+  const _FromPlanHint({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.playlist_add_check_rounded, size: 18, color: AppColors.brand),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
+      ],
+    ),
+  );
+}
+
+/// The exercises, sets and weights that will be stored, with the totals.
+class _GymFromPlan extends StatelessWidget {
+  const _GymFromPlan({required this.exercises, required this.units});
+  final List<GymExercise> exercises;
+  final Units units;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final t = Theme.of(context).textTheme;
+    final sets = exercises.fold<int>(0, (a, e) => a + e.doneSets);
+    final volume = exercises.fold<double>(0, (a, e) => a + e.volume);
+    return SectionCard(
+      key: const ValueKey('gymFromPlan'),
+      title: l.fromPlanTitle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.fromPlanGymLine(exercises.length, sets, units.volume(volume)),
+            key: const ValueKey('gymFromPlanTotals'),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          for (final e in exercises)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: Text(exName(context, e.exId, e.name), style: t.bodyMedium)),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      e.workSets.map((s) => setLabelOf(l, e, s, units)).join(', '),
+                      textAlign: TextAlign.right,
+                      style: t.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          _FromPlanHint(text: l.fromPlanHintGym),
+        ],
       ),
     );
   }

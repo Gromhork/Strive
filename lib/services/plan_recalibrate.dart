@@ -127,7 +127,7 @@ class Recalibrator {
       final s = linked[p.id];
       if (s == null) continue;
       final r = complianceRatio(p, s);
-      if (r != null && r < 0.8) cutShort++;
+      if (r != null && r < ComplianceScale.greenMin) cutShort++;
       // Imported workouts carry an RPE estimated from their average HR (rpeFromHr, against a
       // predicted HRmax): judged like a session without RPE, so it doesn't count at full weight.
       final hrRpe = s.source != null && s.avgHr != null;
@@ -172,13 +172,13 @@ class Recalibrator {
     // Key sessions (quality / long) of the look-back that were done: chronic partial adherence
     // (easy runs skipped, key sessions done) cuts easy volume, not the key sessions (B9).
     final keyDue = dueList.where((p) => p.sport != Sport.gym && isHardPlan(p)).toList();
-    final keysDone = keyDue.where((p) => p.status != 'skipped' && (linked[p.id] != null || p.isDone)).length;
+    final keysDone = keyDue.where((p) => planCompleted(p, linked)).length;
     final keysMissed = keyDue.isEmpty || keysDone < 0.75 * keyDue.length;
     // Slots (sport + weekday) the athlete skipped ≥ 2× in the look-back: with the key sessions done,
     // only these come down – the easy runs the athlete still does keep their volume (partial adherence).
     final misses = <String, int>{};
     for (final p in dueList) {
-      if (p.sport == Sport.gym || (p.status != 'skipped' && (linked[p.id] != null || p.isDone))) continue;
+      if (p.sport == Sport.gym || planCompleted(p, linked)) continue;
       misses.update(_slot(p), (n) => n + 1, ifAbsent: () => 1);
     }
     final skippedSlots = {
@@ -233,7 +233,7 @@ class Recalibrator {
     // their volume; the next long run moves to a day with more time instead.
     final restDue = dueList.where((p) => p.intensity != 'long').toList();
     final restCompletion = restDue.length >= 3 ? weeklyCompletion(restDue, linked, now: now) : null;
-    final longMissed = dueList.where((p) => p.intensity == 'long' && p.sport != Sport.gym && linked[p.id] == null && !p.isDone).length;
+    final longMissed = dueList.where((p) => p.intensity == 'long' && p.sport != Sport.gym && !planCompleted(p, linked)).length;
     final onlyLongMissed = longMissed >= 1 && (restCompletion ?? 0) >= 0.9;
     if (completion != null && completion < 0.7) {
       reasons.add(RecalReason.lowCompletion);
@@ -1151,7 +1151,7 @@ class Recalibrator {
             .where(
               (x) => x.intensity == 'long' && x.sport == Sport.run && !dayOnly(x.date).isBefore(from) && dayOnly(x.date).isBefore(today),
             )
-            .where((x) => linked[x.id] == null && !x.isDone)
+            .where((x) => !planCompleted(x, linked))
             .length;
     if (missed < 2) return const {};
     final long = upcoming.where((p) => p.intensity == 'long' && p.sport == Sport.run && daysBetween(today, p.date) < 7).firstOrNull;

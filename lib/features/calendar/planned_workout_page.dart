@@ -7,6 +7,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/compliance.dart' show planCompliance;
 import '../../services/gym_tools.dart' show ProgressionKind;
 import '../../services/plan_text.dart';
 import '../../widgets/common.dart';
@@ -56,6 +57,8 @@ class PlannedWorkoutPage extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
     final phase = phaseLabel(l, p.phase);
     final exercises = p.exercises.isNotEmpty ? p.exercises : (template?.exercises ?? const []);
+    // A start too short to count (< 10 % of the plan) leaves the workout open.
+    final done = p.isDone && !planCompliance(p, ref.watch(planSessionsProvider)[p.id]).notCounted;
 
     return Scaffold(
       appBar: AppBar(
@@ -128,7 +131,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
             runSpacing: 4,
             children: [
               // Labelled – an unlabelled icon in the app bar was not understood.
-              if (!p.isDone)
+              if (!done)
                 OutlinedButton.icon(
                   key: const ValueKey('logManuallyButton'),
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ManualEntryPage(plan: p))),
@@ -253,15 +256,15 @@ class PlannedWorkoutPage extends ConsumerWidget {
         width: MediaQuery.sizeOf(context).width - 32,
         height: 56,
         child: FilledButton.icon(
-          style: FilledButton.styleFrom(backgroundColor: p.isDone ? AppColors.success : p.sport.color, foregroundColor: Colors.black87),
+          style: FilledButton.styleFrom(backgroundColor: done ? AppColors.success : p.sport.color, foregroundColor: Colors.black87),
           onPressed:
-              p.isDone
+              done
                   ? (p.sessionId == null
                       ? null
                       : () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: p.sessionId!))))
                   : () => startPlanned(context, ref, p),
-          icon: Icon(p.isDone ? Icons.check_rounded : Icons.play_arrow_rounded),
-          label: Text(p.isDone ? l.viewSession : l.startWorkout, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          icon: Icon(done ? Icons.check_rounded : Icons.play_arrow_rounded),
+          label: Text(done ? l.viewSession : l.startWorkout, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         ),
       ),
     );

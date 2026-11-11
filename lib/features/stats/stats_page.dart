@@ -98,12 +98,28 @@ class _PerformanceState extends ConsumerState<_Performance> {
                 ],
               ),
               const SizedBox(height: 14),
+              // Only what the sport has: no "0 km" for gym, no "0 kg" volume for a run.
               Row(
                 children: [
-                  Expanded(
-                    child: StatTile(label: l.distance, value: u.dist(dist, digits: 1), icon: Icons.straighten, color: AppColors.run),
-                  ),
-                  Expanded(child: StatTile(label: l.volume, value: u.volume(vol), icon: Sport.gym.icon, color: AppColors.gym)),
+                  if (filter != Sport.gym)
+                    Expanded(
+                      child: StatTile(
+                        label: l.distance,
+                        value: filter == Sport.swim ? u.swimDist(dist) : u.dist(dist, digits: 1),
+                        icon: Icons.straighten,
+                        color: filter?.color ?? AppColors.run,
+                      ),
+                    ),
+                  if (filter == null || filter == Sport.gym)
+                    Expanded(child: StatTile(label: l.volume, value: u.volume(vol), icon: Sport.gym.icon, color: AppColors.gym)),
+                  if (filter == Sport.gym)
+                    Expanded(
+                      child: StatTile(
+                        label: l.sets,
+                        value: '${s.fold<int>(0, (a, x) => a + x.setsDone)}',
+                        icon: Icons.check_circle_outline,
+                      ),
+                    ),
                 ],
               ),
               if (filter == null || filter == Sport.gym) ...[
@@ -320,7 +336,8 @@ class _Records extends ConsumerWidget {
           ..sort((a, b) => b.bestE1rm != a.bestE1rm ? b.bestE1rm.compareTo(a.bestE1rm) : b.maxReps.compareTo(a.maxReps));
 
     Session? best(Sport s, double Function(Session) f) {
-      final list = all.where((x) => x.sport == s && x.distanceM > 0).toList();
+      // Records are measurements: a session taken over from the plan sets none.
+      final list = all.where((x) => x.sport == s && x.distanceM > 0 && x.measured).toList();
       if (list.isEmpty) return null;
       list.sort((a, b) => f(b).compareTo(f(a)));
       return list.first;

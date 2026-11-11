@@ -72,7 +72,13 @@ class _WeekPageState extends ConsumerState<WeekPage> {
             children: [
               Expanded(child: StatTile(label: l.duration, value: humanDuration(totalSec))),
               const SizedBox(width: 10),
-              Expanded(child: StatTile(label: l.distance, value: '${Units.num(u.distOut(totalKm * 1000), 1)} ${u.distUnit}')),
+              // A pure strength week shows its volume, not "0 km".
+              Expanded(
+                child:
+                    sessions.any((s) => s.sport != Sport.gym) || plans.any((p) => p.sport != Sport.gym)
+                        ? StatTile(label: l.distance, value: '${Units.num(u.distOut(totalKm * 1000), 1)} ${u.distUnit}')
+                        : StatTile(label: l.volume, value: u.volume(sessions.fold<double>(0, (a, s) => a + s.volume))),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: StatTile(
@@ -232,7 +238,8 @@ class _DayRow extends ConsumerWidget {
           title: s.title,
           sub: [
             humanDuration(s.durationSec),
-            if (s.distanceM > 0) '${Units.num(units.distOut(s.distanceM), 1)} ${units.distUnit}',
+            if (s.sport == Sport.gym && s.setsDone > 0) l.setsN(s.setsDone),
+            if (s.distanceM > 0) s.sport == Sport.swim ? units.swimDist(s.distanceM) : units.dist(s.distanceM, digits: 1),
           ].join(' · '),
           compliance: const Compliance(ComplianceLevel.green),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: s.id))),

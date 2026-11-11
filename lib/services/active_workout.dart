@@ -347,6 +347,8 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
       exercises: s.exercises.where((e) => e.sets.any((x) => x.done)).toList(),
       templateId: s.templateId,
       planId: s.planId,
+      // All work sets incl. exercises without a done set (not stored) – plan compliance.
+      plannedSets: s.exercises.fold<int>(0, (a, e) => a + e.workSets.length),
     );
     discard();
     return session;

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../l10n/gen/app_localizations.dart';
+import '../services/compliance.dart' show ComplianceScale;
+
+String _pct(double share) => Units.pct(share * 100);
 
 /// Terms and abbreviations a beginner may not know. Each has a title (abbreviation +
 /// long form), a short explanation and a practical tip.
@@ -23,6 +26,7 @@ enum Term {
   strides,
   fartlek,
   acwr,
+  compliance,
 }
 
 extension TermText on Term {
@@ -44,6 +48,7 @@ extension TermText on Term {
     Term.strides => l.termStridesTitle,
     Term.fartlek => l.termFartlekTitle,
     Term.acwr => l.termAcwrTitle,
+    Term.compliance => l.termComplianceTitle,
   };
 
   String body(AppLocalizations l) => switch (this) {
@@ -64,6 +69,14 @@ extension TermText on Term {
     Term.strides => l.termStridesBody,
     Term.fartlek => l.termFartlekBody,
     Term.acwr => l.termAcwrBody,
+    // The bands come from the one scale, so the text can't drift from the markers.
+    Term.compliance => l.termComplianceBody(
+      _pct(ComplianceScale.greenMin),
+      _pct(ComplianceScale.greenMax),
+      _pct(ComplianceScale.yellowMin),
+      _pct(ComplianceScale.yellowMax),
+      _pct(ComplianceScale.countMin),
+    ),
   };
 
   String tip(AppLocalizations l) => switch (this) {
@@ -84,6 +97,7 @@ extension TermText on Term {
     Term.strides => l.termStridesTip,
     Term.fartlek => l.termFartlekTip,
     Term.acwr => l.termAcwrTip,
+    Term.compliance => l.termComplianceTip,
   };
 
   /// The short label shown in the UI (used for the tooltip "What does … mean?").
