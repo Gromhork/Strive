@@ -300,7 +300,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
     final p = plans[_i];
     final skipped = p.status == 'skipped';
     // The same state and colour as the calendar: 0,39 of 5,8 km is "partly" (orange), not a green tick.
-    final c = planCompliance(p, ref.watch(planSessionsProvider)[p.id]);
+    final c = planCompliance(p, ref.watch(planSessionsProvider)[p.id], profile: ref.watch(profileOrDefaultProvider));
     final partly = p.isDone && c.partly;
     // A start too short to count (< 10 % of the plan) leaves the workout open: start it again.
     final notCounted = p.isDone && c.notCounted;
@@ -531,7 +531,11 @@ class ComingUpCard extends ConsumerWidget {
                                         plans: dayPlans,
                                         done:
                                             dayPlans.length == 1 && dayPlans.first.isDone
-                                                ? planCompliance(dayPlans.first, linked[dayPlans.first.id])
+                                                ? planCompliance(
+                                                  dayPlans.first,
+                                                  linked[dayPlans.first.id],
+                                                  profile: ref.watch(profileOrDefaultProvider),
+                                                )
                                                 : null,
                                       ),
                             ),
@@ -727,8 +731,9 @@ class _WeekCard extends ConsumerWidget {
     final planned = plans.where((p) => inWeek(p.date)).toList();
     final sports = {...planned.map((p) => p.sport), ...done.map((s) => s.sport)}.toList()..sort((a, b) => a.index.compareTo(b.index));
     final linked = ref.watch(planSessionsProvider);
+    final profile = ref.watch(profileOrDefaultProvider);
     // The same count as the week page: completed planned workouts / planned (not dropped).
-    final counts = {for (final s in sports) s: planCounts(planned.where((p) => p.sport == s), linked)};
+    final counts = {for (final s in sports) s: planCounts(planned.where((p) => p.sport == s), linked, profile: profile)};
     String countText(Sport s) {
       final c = counts[s]!;
       return c.planned == 0 ? '${done.where((x) => x.sport == s).length}' : '${c.done}/${c.planned}';
@@ -738,8 +743,8 @@ class _WeekCard extends ConsumerWidget {
       for (final s in sports) s: counts[s]!.planned == 0 ? 1 : (counts[s]!.done / counts[s]!.planned).clamp(0.0, 1.0),
     };
     final totalSec = done.fold<int>(0, (a, s) => a + s.durationSec);
-    final completion = weeklyCompletion(planned, linked);
-    final focus = ref.watch(profileOrDefaultProvider).focus.sports;
+    final completion = weeklyCompletion(planned, linked, profile: profile);
+    final focus = profile.focus.sports;
     final quickSports = [
       for (final s in Sport.values)
         if (sports.contains(s) || focus.contains(s)) s,

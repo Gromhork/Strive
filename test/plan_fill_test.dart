@@ -28,6 +28,7 @@ import 'package:strive/services/load_prescription.dart';
 import 'package:strive/services/plan_fill.dart';
 import 'package:strive/services/session_feedback.dart';
 import 'package:strive/services/weather_service.dart';
+import 'package:strive/widgets/duration_picker.dart';
 
 final de = AppLocalizationsDe();
 final _now = DateTime(2026, 11, 11, 12);
@@ -490,6 +491,108 @@ void main() {
       final u = repo.sessionUpdates['w']!;
       expect(u['laps'], 48);
       expect(u['distanceM'], 1200);
+    });
+  });
+
+  group('review: "from the plan" per exercise on the edit page', () {
+    /// A Push workout logged as done ("mark as done") – every exercise taken over from the plan.
+    Session filled() {
+      final prescriber = LoadPrescriber(history: const [], profile: _profile, now: _now);
+      final fill = PlanFill.of(_gymPlan(), profile: _profile, templates: [_push], prescriber: prescriber);
+      return sessionFromPlan(_gymPlan(), fill, id: 'g', start: DateTime(2026, 11, 10, 18), title: 'Push');
+    }
+
+    Session applied(Session s, Map<String, dynamic> u) => Session.fromMap(s.id, {...s.toMap(), ...u});
+
+    testWidgets('M1: only the duration changed → still from the plan, no records', (t) async {
+      final repo = _FakeRepo();
+      final s = filled();
+      expect(s.exercises.every((e) => e.fromPlan), isTrue);
+      final o = await _overrides(repo, sessions: [s], plans: [_gymPlan(status: 'done', sessionId: 'g')], templates: [_push]);
+      await _open(t, () => EditSessionPage(session: s), o);
+      t.widget<DurationField>(find.byKey(const ValueKey('editDuration'))).onChanged(70 * 60);
+      await t.pump();
+      await t.tap(find.text(de.save).last);
+      await t.pumpAndSettle();
+      final u = repo.sessionUpdates['g']!;
+      expect(u['durationSec'], 70 * 60);
+      expect(u.containsKey('fromPlan'), isFalse);
+      final after = applied(s, u);
+      expect(after.fromPlan, isTrue);
+      expect(after.exercises.every((e) => e.fromPlan), isTrue);
+      expect(exerciseRecords([after]), isEmpty);
+      expect(e1rmHistory([after], '0025'), isEmpty);
+      expect(planCompliance(_gymPlan(status: 'done', sessionId: 'g'), after, now: _now).pct, 100);
+    });
+
+    testWidgets('reps of one exercise corrected → that exercise is measured, the others stay from the plan', (t) async {
+      final repo = _FakeRepo();
+      final s = filled();
+      final o = await _overrides(repo, sessions: [s], templates: [_push]);
+      await _open(t, () => EditSessionPage(session: s), o);
+      // The first rep field belongs to the bench press (the first exercise).
+      final reps = find.byWidgetPredicate((w) => w is TextField && w.decoration?.labelText == de.reps);
+      await t.enterText(reps.first, '3');
+      await t.pump();
+      await t.tap(find.text(de.save).last);
+      await t.pumpAndSettle();
+      final u = repo.sessionUpdates['g']!;
+      expect(u['fromPlan'], isFalse);
+      final after = applied(s, u);
+      final bench = after.exercises.firstWhere((e) => e.exId == '0025');
+      expect(bench.fromPlan, isFalse);
+      expect(after.exercises.where((e) => e.exId != '0025').every((e) => e.fromPlan), isTrue);
+      // Records: the corrected bench press only – not the prescribed shoulder press / pushdown weights.
+      expect(exerciseRecords([after]).keys, ['0025']);
+      // Fewer reps than prescribed on one set → no longer the full plan.
+      expect(complianceRatio(_gymPlan(), after)!, lessThan(1));
+    });
+
+    testWidgets('an added exercise raises the planned sets (no "> 150 %" for a full workout plus one)', (t) async {
+      final repo = _FakeRepo();
+      final s = filled();
+      expect(s.plannedSets, 9);
+      final o = await _overrides(repo, sessions: [s], templates: [_push]);
+      await _open(t, () => EditSessionPage(session: s), o);
+      await t.tap(find.byKey(const ValueKey('editAddExercise')));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 500));
+      Navigator.of(t.element(find.byType(ExerciseLibraryPage))).pop(const [
+        Exercise(
+          id: '0027',
+          name: 'barbell bent over row',
+          bodyPart: 'back',
+          equipment: 'barbell',
+          target: 'lats',
+          secondary: [],
+          instructions: [],
+        ),
+      ]);
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 500));
+      await t.pumpAndSettle();
+      await t.tap(find.text(de.save).last);
+      await t.pumpAndSettle();
+      final u = repo.sessionUpdates['g']!;
+      final after = applied(s, u);
+      final row = after.exercises.firstWhere((e) => e.exId == '0027');
+      expect(row.fromPlan, isFalse);
+      expect(u['plannedSets'], 9 + row.workSets.length);
+      expect(after.fromPlan, isFalse);
+      expect(complianceLevelOf(complianceRatio(_gymPlan(), after)!), ComplianceLevel.green);
+    });
+
+    testWidgets('a plan without a duration is never stored as a 0-s session', (t) async {
+      final repo = _FakeRepo();
+      final plan = PlannedWorkout(id: 'r', date: DateTime(2026, 11, 10), sport: Sport.run, title: 'Lauf', durationMin: 0, distanceKm: 5);
+      final o = await _overrides(repo, plans: [plan]);
+      await _open(t, () => ManualEntryPage(plan: plan), o);
+      await t.tap(find.byKey(const ValueKey('manualSave')));
+      await t.pumpAndSettle();
+      final s = repo.saved.single;
+      expect(s.durationSec, 45 * 60);
+      expect(s.distanceM, 5000);
+      expect(s.fromPlan, isTrue);
     });
   });
 }

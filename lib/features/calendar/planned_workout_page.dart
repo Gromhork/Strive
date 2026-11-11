@@ -58,7 +58,8 @@ class PlannedWorkoutPage extends ConsumerWidget {
     final phase = phaseLabel(l, p.phase);
     final exercises = p.exercises.isNotEmpty ? p.exercises : (template?.exercises ?? const []);
     // A start too short to count (< 10 % of the plan) leaves the workout open.
-    final done = p.isDone && !planCompliance(p, ref.watch(planSessionsProvider)[p.id]).notCounted;
+    final done =
+        p.isDone && !planCompliance(p, ref.watch(planSessionsProvider)[p.id], profile: ref.watch(profileOrDefaultProvider)).notCounted;
 
     return Scaffold(
       appBar: AppBar(

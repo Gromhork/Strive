@@ -189,15 +189,24 @@ class HealthService {
     return pkg;
   }
 
+  /// Whether [s] is written to Health Connect / HealthKit at all: only with a duration (a 0-s
+  /// workout is no record).
+  static bool writable(Session s) => s.durationSec > 0;
+
+  /// Distance (m) written for [s]: only a measured one – a workout logged as done with the plan's
+  /// distance ([Session.fromPlan]) is written with its duration only, so other apps never take
+  /// the plan's numbers for a measurement.
+  static int? distanceToWrite(Session s) => s.measured && s.distanceM > 0 ? s.distanceM.round() : null;
+
   Future<bool> writeSession(Session s) async {
-    if (!connected) return false;
+    if (!connected || !writable(s)) return false;
     try {
       await _configure();
       return await _h.writeWorkoutData(
         activityType: _typeOf(s),
         start: s.start,
         end: s.start.add(Duration(seconds: s.durationSec)),
-        totalDistance: s.distanceM > 0 ? s.distanceM.round() : null,
+        totalDistance: distanceToWrite(s),
         totalEnergyBurned: s.calories,
         title: s.title,
       );

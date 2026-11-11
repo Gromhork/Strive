@@ -95,7 +95,9 @@ class Prescription {
 
   Prescription _copy({
     double? weight,
+    int? reps,
     ProgressionKind? progression,
+    ProgressReason? reason,
     bool? phaseAdjusted,
     String? phase,
     List<int>? setReps,
@@ -106,7 +108,7 @@ class Prescription {
     bool clearReason = false,
   }) => Prescription(
     weight: weight ?? this.weight,
-    reps: reps,
+    reps: reps ?? this.reps,
     source: source,
     e1rm: e1rm,
     progression: progression ?? this.progression,
@@ -119,7 +121,7 @@ class Prescription {
     repMin: repMin ?? this.repMin,
     repMax: repMax ?? this.repMax,
     bodyweight: bodyweight ?? this.bodyweight,
-    reason: clearReason ? null : reason,
+    reason: clearReason ? null : (reason ?? this.reason),
     effort: effort,
     trend: trend,
     amrap: amrap ?? this.amrap,
@@ -210,15 +212,21 @@ class LoadPrescriber {
     final bw = isBodyweight(e);
     final hist = _history(e, info, bodyweight: bw);
     final (lo, hi) = range(e);
+    // Logged as done with the plan's numbers since the last measured session: hold what was
+    // prescribed then – the assumed reps are no proof the targets were hit (15 taps on "mark as
+    // done" must not walk the squat from 80 to 155 kg).
+    final planned = _planAnchor(e, bodyweight: bw, after: hist.firstOrNull?.date);
     Prescription? p;
-    if (bw) {
+    if (planned != null) {
+      p = _planHold(planned, info, bodyweight: bw);
+    } else if (bw) {
       p = _bodyweight(e, hist);
     } else if (hist.isNotEmpty) {
       p = _fromHistory(e, info, hist);
     } else {
       p = _fromAnchor(e, info);
     }
-    p = p?.withRange(lo, hi);
+    p = _capReps(p?.withRange(lo, hi), hi);
     if (p == null) return null;
     if (!lighterPhase(phase)) {
       // AMRAP on the last set while calibrating (first sessions of an exercise) and when
@@ -396,7 +404,9 @@ class LoadPrescriber {
     for (final s in _sessions) {
       final age = now.difference(s.start);
       if (age > maxWindow) break;
-      final all = s.exercises.where((x) => x.exId == exId).toList();
+      // Exercises taken over from the plan ("mark as done") carry assumed reps – no performance
+      // signal; they only anchor a hold ([_planAnchor]).
+      final all = s.exercises.where((x) => x.exId == exId && !s.exerciseFromPlan(x)).toList();
       // Deload / taper sessions are temporary and not a performance signal: skipped
       // (kept only as a last resort when there is nothing else).
       final inst = all.where((x) => !lighterPhase(x.phase)).toList();
@@ -447,6 +457,71 @@ class LoadPrescriber {
     final pool = recent.isNotEmpty ? recent : (old.isNotEmpty ? old : lighter);
     if (!loaded || pool.length < 2) return pool;
     return _dropOutliers(pool);
+  }
+
+  /// Most reps a prescription asks for: the top of the range plus the microloading margin
+  /// (+25 %, at least 2) – beyond it, load (or a harder variation) is the next step, not more
+  /// reps (push-ups climbed 8 → 26 reps without end).
+  static int repCap(int top) => top + max(2, (top * 0.25).round());
+
+  /// [p] with every rep target at most [repCap] of the range top [top]; a step that only added
+  /// reps beyond it becomes a hold ([ProgressReason.repCap]).
+  static Prescription? _capReps(Prescription? p, int top) {
+    if (p == null || top <= 0) return p;
+    final cap = repCap(top);
+    if (p.reps <= cap && p.setReps.every((r) => r <= cap)) return p;
+    final addOnly = p.progression == ProgressionKind.addReps;
+    return p._copy(
+      reps: min(p.reps, cap),
+      setReps: [for (final r in p.setReps) min(r, cap)],
+      progression: addOnly ? ProgressionKind.hold : null,
+      reason: addOnly ? ProgressReason.repCap : null,
+    );
+  }
+
+  /// The newest instance of [e] taken over from the plan ([Session.exerciseFromPlan]) that is newer
+  /// than the last measured one ([after]) and at most 21 days old – as a history entry in [e]'s
+  /// mode, or null. Deload / taper instances are no anchor (their lighter load is temporary).
+  _Entry? _planAnchor(GymExercise e, {required bool bodyweight, DateTime? after}) {
+    final auto = _autoBodyweight(e);
+    final bl = bodyweight ? (e.bodyKg > 0 ? e.bodyKg : bodyLoad(e)) : 0.0;
+    for (final s in _sessions) {
+      if (after != null && !s.start.isAfter(after)) return null;
+      if (now.difference(s.start).inDays > 21) return null; // time span
+      for (final x in s.exercises) {
+        if (x.exId != e.exId || !s.exerciseFromPlan(x) || lighterPhase(x.phase)) continue;
+        final sets = [
+          for (final st in x.sets)
+            if (st.done && !st.warmup && st.type != SetType.drop && st.reps >= 1)
+              GymSet(
+                weight: _toMode(x, st.weight, bodyweight: bodyweight, auto: auto, bodyLoad: bl),
+                reps: st.reps,
+                done: true,
+                target: st.target,
+              ),
+        ];
+        if (sets.isEmpty || (!bodyweight && sets.every((st) => st.weight <= 0))) continue;
+        return _Entry(s.start, sets, 0, bodyKg: bl);
+      }
+    }
+    return null;
+  }
+
+  /// Hold on a session taken over from the plan: the same load and rep targets once more – it is
+  /// what the athlete was asked to do, but the reps were not measured, so no progression step.
+  Prescription _planHold(_Entry a, _Info info, {required bool bodyweight}) {
+    final w = a.sets.map((s) => s.weight).reduce(max);
+    final targets = [for (final s in a.sets) s.target ?? s.reps];
+    return Prescription(
+      weight: bodyweight ? w : _clampMin(w, info),
+      reps: targets.reduce(min),
+      source: bodyweight ? LoadSource.bodyweight : LoadSource.history,
+      progression: ProgressionKind.hold,
+      fromHistory: true,
+      setReps: targets.toSet().length > 1 ? targets : const [],
+      bodyweight: bodyweight,
+      reason: ProgressReason.fromPlan,
+    );
   }
 
   /// Set weight [w] of the past exercise [ex] in the requested mode ([bodyweight]:

@@ -218,7 +218,7 @@ final exerciseRecordsProvider = Provider<Map<String, ExerciseRecord>>((ref) => e
 
 /// Plan id → linked session (for plan compliance).
 final planSessionsProvider = Provider<Map<String, Session>>(
-  (ref) => linkPlanSessions(ref.watch(planListProvider), ref.watch(sessionListProvider)),
+  (ref) => linkPlanSessions(ref.watch(planListProvider), ref.watch(sessionListProvider), profile: ref.watch(profileOrDefaultProvider)),
 );
 
 // ───────────────────────────── Today ─────────────────────────────

@@ -226,7 +226,7 @@ class FitnessState {
     final from = planStart.isAfter(today) ? today : planStart;
     final elapsed = max(0.0, daysBetween(planStart, today) / 7);
 
-    final linked = linkPlanSessions(plans, sessions);
+    final linked = linkPlanSessions(plans, sessions, profile: p);
     final hrMax = HrMax.of(p, sessions: sessions, now: now);
     final atStart = vdotAt(p, planStart);
     // Baseline: the paces of the plan's first tempo / interval run (the race session's step is no
@@ -272,7 +272,10 @@ class FitnessState {
     for (final x in plans) {
       if (x.sport != Sport.run || !_quality(x)) continue;
       final s = linked[x.id];
-      if (s == null || s.distanceM <= 0 || s.durationSec <= 0 || daysBetween(dayOnly(s.start), today) > 42 + holdDays) continue;
+      // Taken over from the plan: no measurement – no quality run (neither ratio, trend, count nor
+      // the evidence for a faster VDOT).
+      if (s == null || s.fromPlan || s.distanceM <= 0 || s.durationSec <= 0) continue;
+      if (daysBetween(dayOnly(s.start), today) > 42 + holdDays) continue;
       final km = x.distanceKm ?? 0;
       final plannedSec = x.steps.fold<int>(0, (t, st) => t + estimateStepSec(st, Sport.run, easyPace: easyPace, css: 100));
       final planVdot = vdotOfSteps(x.steps);
@@ -295,13 +298,15 @@ class FitnessState {
     // ── Adherence (training that was due since the plan start)
     bool endurance(PlannedWorkout x) => x.sport != Sport.gym && x.intensity != 'race';
     final due = plans.where((x) => endurance(x) && !x.date.isBefore(from) && !dayOnly(x.date).isAfter(today)).toList();
-    final adherence = due.length >= 3 ? weeklyCompletion(due, linked, now: now) : null;
+    final adherence = due.length >= 3 ? weeklyCompletion(due, linked, now: now, profile: p) : null;
     final recentFrom = addDays(today, -28);
     final recentList = due.where((x) => !x.date.isBefore(recentFrom)).toList();
-    final recent = recentList.length >= 3 ? weeklyCompletion(recentList, linked, now: now) : adherence;
+    final recent = recentList.length >= 3 ? weeklyCompletion(recentList, linked, now: now, profile: p) : adherence;
     // Session counts of the last 28 days (before today) – chronic skipping shows in the count of
     // sessions and of key sessions even when the minutes look fine (IMPORTANT 4).
-    bool done(PlannedWorkout x) => planCompleted(x, linked);
+    bool done(PlannedWorkout x) => planCompleted(x, linked, profile: p);
+    // A key session counts for the adaptation from half of it (4 of 30 km is no long run).
+    bool keyDone(PlannedWorkout x) => adaptationCompleted(x, linked, profile: p);
     final countList = recentList.where((x) => x.durationMin > 0 && dayOnly(x.date).isBefore(today)).toList();
     final keys = countList.where(isHardPlan).toList();
 
@@ -413,7 +418,7 @@ class FitnessState {
       recentDue: countList.length,
       recentDone: countList.where(done).length,
       keyDue: keys.length,
-      keyDone: keys.where(done).length,
+      keyDone: keys.where(keyDone).length,
     );
   }
 

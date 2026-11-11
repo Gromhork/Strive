@@ -89,6 +89,8 @@ String progressReasonText(AppLocalizations l, ProgressReason r) => switch (r) {
   ProgressReason.nudge => l.progNudge,
   ProgressReason.recalibrated => l.progRecalibrated,
   ProgressReason.e1rmFloor => l.progE1rmFloor,
+  ProgressReason.fromPlan => l.progFromPlan,
+  ProgressReason.repCap => l.progRepCap,
 };
 
 /// Today's target in one line: "Today: 3 × 6 @ 72.5 kg", or with differing rep targets
