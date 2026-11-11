@@ -36,6 +36,10 @@ class EventSpec {
     this.shorter = const [],
     this.runWalkFinish = false,
     this.backToBack = false,
+    this.minRuns = 0,
+    this.minRunKm,
+    this.minRides = 0,
+    this.minSwims = 0,
   });
 
   final String key;
@@ -95,6 +99,13 @@ class EventSpec {
   /// Back-to-back long runs on the weekend (ultra).
   final bool backToBack;
 
+  /// Sessions a week the race needs at least (review 2026-11 H3: an Ironman on 3 days had one run and one
+  /// swim a week, a marathon on 3 runs a 62 % long run): runs – unless the peak week reaches [minRunKm] run
+  /// km (marathon: 4 runs or ~40 km) – rides and swims. 0: no requirement. Coaching practice: Higdon /
+  /// Pfitzinger (marathon 4–5 runs, HM 3–4), Friel (Ironman 2–3 runs, 2–3 swims, 2–3 rides).
+  final int minRuns, minRides, minSwims;
+  final double? minRunKm;
+
   EventSport get sport => eventDistanceOf(key)?.sport ?? EventSport.run;
   bool get multisport => sport == EventSport.triathlon || sport == EventSport.duathlon;
 
@@ -117,7 +128,16 @@ class EventSpec {
 
   static const _specs = <String, EventSpec>{
     // ── Running ──
-    '5k': EventSpec('5k', weeks: (8, 12), weeksBeginner: (9, 10), taper: 1, longRunCapKm: 16, runKm: [15, 30, 50], runWalkFinish: true),
+    '5k': EventSpec(
+      '5k',
+      weeks: (8, 12),
+      weeksBeginner: (9, 10),
+      taper: 1,
+      longRunCapKm: 16,
+      runKm: [15, 30, 50],
+      runWalkFinish: true,
+      minRuns: 2,
+    ),
     '10k': EventSpec(
       '10k',
       weeks: (8, 12),
@@ -128,11 +148,15 @@ class EventSpec {
       runKm: [25, 40, 60],
       shorter: ['5k'],
       runWalkFinish: true,
+      minRuns: 2,
     ),
     'hm': EventSpec(
       'hm',
       weeks: (12, 16),
-      weeksBeginner: (12, 14),
+      // Beginners 16–18 (review 2026-11 M1 / M3): from a ~5 km first long run at ≤ +10 % / +1 km a step, 3:1 cycles
+      // and the 2-week taper, 12 weeks reached ~12 km – Higdon's 12-week novice plan starts from a 5–6 km long run
+      // and steps +1.6 km.
+      weeksBeginner: (16, 18),
       taper: 2,
       longRunKm: 15,
       // Slow runners: ~2 h time on feet is the HM long run (Galloway) – 15 km at 8:00 /km.
@@ -144,6 +168,8 @@ class EventSpec {
       shorter: ['10k', '5k'],
       // Galloway run/walk finishes are common at the HM (Hottenrott 2016: similar times, less fatigue).
       runWalkFinish: true,
+      minRuns: 3,
+      minRunKm: 30,
     ),
     'm': EventSpec(
       'm',
@@ -162,6 +188,8 @@ class EventSpec {
       runKm: [45, 65, 90],
       longDayMin: 180,
       shorter: ['hm', '10k', '5k'],
+      minRuns: 4,
+      minRunKm: 45,
     ),
     // 50 km ultra: time on feet – long runs up to 3.5 h plus the back-to-back run the next day carry
     // the weekend's load (Koop 2016; Roche) – no single run beyond 3.5 h.
@@ -179,6 +207,8 @@ class EventSpec {
       secondLongMin: 120,
       shorter: ['m', 'hm'],
       backToBack: true,
+      minRuns: 4,
+      minRunKm: 50,
     ),
     // ── Triathlon ──
     'sprint': EventSpec(
@@ -213,6 +243,9 @@ class EventSpec {
       brick: (10, 30, 30),
       shorter: ['sprint'],
       runWalkFinish: true,
+      minRuns: 2,
+      minRides: 2,
+      minSwims: 2,
     ),
     '70.3': EventSpec(
       '70.3',
@@ -226,12 +259,15 @@ class EventSpec {
       longRideMin: 180,
       longRideCapMin: 240,
       rideH: [5, 6.5, 8],
-      swimKm: [5, 7, 9],
+      swimKm: [6, 8, 10],
       swimRepMax: 800,
       longDayMin: 240,
       secondLongMin: 120,
       brick: (10, 45, 60),
       shorter: ['olympic', 'sprint'],
+      minRuns: 2,
+      minRides: 2,
+      minSwims: 2,
     ),
     // Ironman: long ride 5–6 h, long run 28–32 km / ≤ 3 h (Friel; Fitzgerald), 3-week taper.
     'ironman': EventSpec(
@@ -248,12 +284,15 @@ class EventSpec {
       longRideMin: 300,
       longRideCapMin: 360,
       rideH: [8, 10, 13],
-      swimKm: [6, 8, 10],
+      swimKm: [7, 10, 12],
       swimRepMax: 1000,
       longDayMin: 360,
       secondLongMin: 180,
       brick: (10, 45, 60),
       shorter: ['70.3', 'olympic'],
+      minRuns: 2,
+      minRides: 2,
+      minSwims: 2,
     ),
     // ── Duathlon (run – bike – run) ──
     'du_sprint': EventSpec(
@@ -271,6 +310,7 @@ class EventSpec {
       secondLongMin: 90,
       brick: (10, 20, 20),
       runWalkFinish: true,
+      minRuns: 2,
     ),
     'du_standard': EventSpec(
       'du_standard',
@@ -287,6 +327,8 @@ class EventSpec {
       secondLongMin: 90,
       brick: (10, 30, 30),
       shorter: ['du_sprint'],
+      minRuns: 2,
+      minRides: 2,
     ),
     // ── Cycling (Gran Fondo / century) ──
     'ride100': EventSpec(
@@ -298,6 +340,7 @@ class EventSpec {
       longRideCapMin: 270,
       rideH: [5, 7, 9],
       longDayMin: 240,
+      minRides: 2,
     ),
     'ride160': EventSpec(
       'ride160',
@@ -308,18 +351,29 @@ class EventSpec {
       rideH: [6, 8, 11],
       longDayMin: 300,
       shorter: ['ride100'],
+      minRides: 3,
     ),
     // ── Open-water swimming ──
-    'swim1500': EventSpec('swim1500', weeks: (8, 12), taper: 1, longSwimM: 1500, swimKm: [5, 8, 12], swimRepMax: 1500, longDayMin: 90),
+    'swim1500': EventSpec(
+      'swim1500',
+      weeks: (8, 12),
+      taper: 1,
+      longSwimM: 1500,
+      swimKm: [5, 8, 12],
+      swimRepMax: 1500,
+      longDayMin: 90,
+      minSwims: 2,
+    ),
     'swim3800': EventSpec(
       'swim3800',
       weeks: (12, 16),
       taper: 2,
-      longSwimM: 3000,
+      longSwimM: 3200,
       swimKm: [8, 12, 18],
-      swimRepMax: 3000,
+      swimRepMax: 3200,
       longDayMin: 120,
       shorter: ['swim1500'],
+      minSwims: 3,
     ),
     'swim5000': EventSpec(
       'swim5000',
@@ -331,6 +385,7 @@ class EventSpec {
       swimRepMax: 4000,
       longDayMin: 150,
       shorter: ['swim3800', 'swim1500'],
+      minSwims: 3,
     ),
   };
 }

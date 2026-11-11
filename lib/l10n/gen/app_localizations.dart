@@ -10534,6 +10534,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Race on {date}'**
   String raceOnDate(String date);
+
+  /// No description provided for @feasRunFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs a week in your plan: {have}. This distance needs at least {need} runs a week (or a clearly higher weekly volume), so your body tolerates the long run – plan more run days.'**
+  String feasRunFrequency(String have, String need);
+
+  /// No description provided for @feasRideFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Rides a week in your plan: {have}. This race needs at least {need} rides a week – plan more bike days.'**
+  String feasRideFrequency(String have, String need);
+
+  /// No description provided for @feasSwimFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Swims a week in your plan: {have}. This race needs at least {need} swims a week to build technique and continuous swimming – plan more swim sessions.'**
+  String feasSwimFrequency(String have, String need);
+
+  /// No description provided for @feasLongRunRamp.
+  ///
+  /// In en, this message translates to:
+  /// **'From where you are now, your long run grows safely (at most +10 % or +1 km a week) only to about {have} km in {weeks} weeks – this race needs about {need} km.'**
+  String feasLongRunRamp(String have, int weeks, String need);
+
+  /// No description provided for @feasLongRunShare3.
+  ///
+  /// In en, this message translates to:
+  /// **'Your other runs are too short for the long run this race needs: it should be at most about {pct} % of your weekly kilometres. Plan about {min} min for your other runs.'**
+  String feasLongRunShare3(int pct, int min);
+
+  /// No description provided for @feasLongSwimOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'By race day your continuous swim only reaches about {meters} m – for this open-water race you should swim at least about {target} m without stopping. Open water has no wall to hold on to: never swim alone, wear a wetsuit and a swim buoy.'**
+  String feasLongSwimOpen(int meters, int target);
+
+  /// No description provided for @wOpenWaterSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-water safety: never swim alone (group or escort boat), wetsuit, swim buoy and a bright cap; with cold, cramp or panic roll onto your back and raise a hand.'**
+  String get wOpenWaterSafety;
+
+  /// No description provided for @wGymRaceWeekNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Race coming up: no heavy leg work any more (the last heavy leg session is 7–10 days before the race) – upper body, core and mobility only, easy.'**
+  String get wGymRaceWeekNote;
+
+  /// No description provided for @stepFartlekSoftNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick it up, but controlled – effort 6–7 out of 10, short sentences still possible, no sprint'**
+  String get stepFartlekSoftNote;
+
+  /// No description provided for @stepBrickEasyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep running easy (effort 4–5 out of 10) – your legs get used to the change, no race pace yet'**
+  String get stepBrickEasyNote;
+
+  /// No description provided for @feasLongRunRampHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you already run longer? Enter your longest run of the last weeks – the plan then builds on it.'**
+  String get feasLongRunRampHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
