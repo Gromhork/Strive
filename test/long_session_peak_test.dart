@@ -235,7 +235,7 @@ void main() {
     expect(f.raiseDay, isNull);
     expect(f.issues, ['longRunTimeCap']);
     expect(f.timeCapMin, 180);
-    expect(FeasibilityText.of(l, f), contains('3 h'));
+    expect(FeasibilityText.of(l, f), contains('3 h'));
     final slowPlan = PlanGenerator(l, slow, const [], id).generate(start: _start);
     expect(peaks(slowPlan).runMin, inInclusiveRange(170, 185));
     // Intermediate (52 min 10 km): 4 runs + 2 strength sessions, the long run builds to ~28 km.

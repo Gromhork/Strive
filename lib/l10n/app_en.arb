@@ -3974,5 +3974,79 @@
     }
   },
   "progFromPlan": "last session was logged from the plan, not measured – same weight and reps once more",
-  "progRepCap": "as many reps as this range allows – add load or a harder variation to progress"
+  "progRepCap": "as many reps as this range allows – add load or a harder variation to progress",
+  "feasRunFrequency": "Runs a week in your plan: {have}. This distance needs at least {need} runs a week (or a clearly higher weekly volume), so your body tolerates the long run – plan more run days.",
+  "@feasRunFrequency": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "feasRideFrequency": "Rides a week in your plan: {have}. This race needs at least {need} rides a week – plan more bike days.",
+  "@feasRideFrequency": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "feasSwimFrequency": "Swims a week in your plan: {have}. This race needs at least {need} swims a week to build technique and continuous swimming – plan more swim sessions.",
+  "@feasSwimFrequency": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "feasLongRunRamp": "From where you are now, your long run grows safely (at most +10 % or +1 km a week) only to about {have} km in {weeks} weeks – this race needs about {need} km.",
+  "@feasLongRunRamp": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "weeks": {
+        "type": "int"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "feasLongRunShare3": "Your other runs are too short for the long run this race needs: it should be at most about {pct} % of your weekly kilometres. Plan about {min} min for your other runs.",
+  "@feasLongRunShare3": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "feasLongSwimOpen": "By race day your continuous swim only reaches about {meters} m – for this open-water race you should swim at least about {target} m without stopping. Open water has no wall to hold on to: never swim alone, wear a wetsuit and a swim buoy.",
+  "@feasLongSwimOpen": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "wOpenWaterSafety": "Open-water safety: never swim alone (group or escort boat), wetsuit, swim buoy and a bright cap; with cold, cramp or panic roll onto your back and raise a hand.",
+  "wGymRaceWeekNote": "Race coming up: no heavy leg work any more (the last heavy leg session is 7–10 days before the race) – upper body, core and mobility only, easy.",
+  "stepFartlekSoftNote": "Pick it up, but controlled – effort 6–7 out of 10, short sentences still possible, no sprint",
+  "stepBrickEasyNote": "Keep running easy (effort 4–5 out of 10) – your legs get used to the change, no race pace yet",
+  "feasLongRunRampHint": "Do you already run longer? Enter your longest run of the last weeks – the plan then builds on it."
 }

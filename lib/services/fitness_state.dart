@@ -203,8 +203,39 @@ class FitnessState {
     );
   }
 
+  /// First day of the CURRENT plan among the generated ([PlannedWorkout.phase]) workouts [phased] (sorted
+  /// by date): the stored start ([AthleteData.planStart], set when the plan is generated) when workouts of
+  /// the plan exist from it on; older profiles: the start of the latest block – a hole of > 3 weeks or the
+  /// phases starting over (a base week after build / peak / taper) begins a new plan. Workouts of an older
+  /// plan kept in the history made the weeks since *its* start count as trained: the race-day gain shrank to
+  /// ~0 and a target time the wizard had just suggested was flagged "very ambitious" (QA 2026-11: HM
+  /// suggestion 1:39:00, check "realistic 1:41:59"). Null without generated workouts.
+  static DateTime? currentPlanStart(UserProfile p, List<PlannedWorkout> phased) {
+    if (phased.isEmpty) return null;
+    final stored = p.athlete.planStart == null ? null : dayOnly(p.athlete.planStart!);
+    if (stored != null) {
+      final from = phased.where((x) => !dayOnly(x.date).isBefore(stored)).firstOrNull;
+      if (from != null) return dayOnly(from.date);
+    }
+    const rank = {'base': 0, 'build': 1, 'peak': 2, 'taper': 3};
+    var start = 0;
+    int? last = rank[phased.first.phase];
+    for (var i = 1; i < phased.length; i++) {
+      if (daysBetween(phased[i - 1].date, phased[i].date) > 21) {
+        start = i;
+        last = null;
+      }
+      final r = rank[phased[i].phase];
+      if (r == null) continue; // recovery keeps the phase it follows
+      if (r == 0 && last != null && last > 0) start = i;
+      last = r;
+    }
+    return dayOnly(phased[start].date);
+  }
+
   /// The full model from the plan and the logged sessions (see the class doc). [race] defaults to the
-  /// profile's event date; the plan start is the first phased workout of the 52 weeks before it.
+  /// profile's event date; the plan start is the current plan's first generated workout of the 52 weeks
+  /// before it ([currentPlanStart]).
   factory FitnessState.of(
     UserProfile p, {
     required List<PlannedWorkout> plans,
@@ -216,12 +247,12 @@ class FitnessState {
     final today = dayOnly(now);
     final event = race ?? a.eventDate;
     final horizon = event == null ? null : addDays(dayOnly(event), -(7 * GoalModel.maxEventWeeks));
-    final phased =
+    final phasedPlans =
         plans
             .where((x) => x.phase != null && (horizon == null || (!x.date.isBefore(horizon) && !dayOnly(x.date).isAfter(dayOnly(event!)))))
-            .map((x) => dayOnly(x.date))
-            .toList();
-    final planStart = phased.isEmpty ? null : phased.reduce((x, y) => x.isBefore(y) ? x : y);
+            .toList()
+          ..sort((x, y) => x.date.compareTo(y.date));
+    final planStart = currentPlanStart(p, phasedPlans);
     if (planStart == null) return FitnessState.fromProfile(p, now: now);
     final from = planStart.isAfter(today) ? today : planStart;
     final elapsed = max(0.0, daysBetween(planStart, today) / 7);

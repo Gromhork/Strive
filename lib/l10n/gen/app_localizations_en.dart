@@ -5817,4 +5817,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get progRepCap => 'as many reps as this range allows – add load or a harder variation to progress';
+
+  @override
+  String feasRunFrequency(String have, String need) {
+    return 'Runs a week in your plan: $have. This distance needs at least $need runs a week (or a clearly higher weekly volume), so your body tolerates the long run – plan more run days.';
+  }
+
+  @override
+  String feasRideFrequency(String have, String need) {
+    return 'Rides a week in your plan: $have. This race needs at least $need rides a week – plan more bike days.';
+  }
+
+  @override
+  String feasSwimFrequency(String have, String need) {
+    return 'Swims a week in your plan: $have. This race needs at least $need swims a week to build technique and continuous swimming – plan more swim sessions.';
+  }
+
+  @override
+  String feasLongRunRamp(String have, int weeks, String need) {
+    return 'From where you are now, your long run grows safely (at most +10 % or +1 km a week) only to about $have km in $weeks weeks – this race needs about $need km.';
+  }
+
+  @override
+  String feasLongRunShare3(int pct, int min) {
+    return 'Your other runs are too short for the long run this race needs: it should be at most about $pct % of your weekly kilometres. Plan about $min min for your other runs.';
+  }
+
+  @override
+  String feasLongSwimOpen(int meters, int target) {
+    return 'By race day your continuous swim only reaches about $meters m – for this open-water race you should swim at least about $target m without stopping. Open water has no wall to hold on to: never swim alone, wear a wetsuit and a swim buoy.';
+  }
+
+  @override
+  String get wOpenWaterSafety => 'Open-water safety: never swim alone (group or escort boat), wetsuit, swim buoy and a bright cap; with cold, cramp or panic roll onto your back and raise a hand.';
+
+  @override
+  String get wGymRaceWeekNote => 'Race coming up: no heavy leg work any more (the last heavy leg session is 7–10 days before the race) – upper body, core and mobility only, easy.';
+
+  @override
+  String get stepFartlekSoftNote => 'Pick it up, but controlled – effort 6–7 out of 10, short sentences still possible, no sprint';
+
+  @override
+  String get stepBrickEasyNote => 'Keep running easy (effort 4–5 out of 10) – your legs get used to the change, no race pace yet';
+
+  @override
+  String get feasLongRunRampHint => 'Do you already run longer? Enter your longest run of the last weeks – the plan then builds on it.';
 }

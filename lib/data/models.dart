@@ -56,6 +56,11 @@ Map<int, T> _intKeyed<T>(dynamic v, T? Function(dynamic) value) => {
 
 // ───────────────────────────── Profile ─────────────────────────────
 
+/// Training days before the athlete chose any (1 = Monday): Tue / Thu / Sat – rest days spread and the long
+/// session (and a race given as a plan length) on the weekend. Mon / Wed / Fri put a quick-setup hybrid 10 km
+/// plan's long run and race on a Friday (QA 2026-11).
+const defaultTrainingDays = [2, 4, 6];
+
 class UserProfile {
   final String name;
   final int? birthYear;
@@ -88,7 +93,7 @@ class UserProfile {
     this.experience = const {},
     this.focus = TrainingFocus.gym,
     this.goals = const [],
-    this.trainingDays = const [1, 3, 5],
+    this.trainingDays = defaultTrainingDays,
     this.longDay,
     this.imperial = false,
     this.maxHr,
@@ -134,7 +139,7 @@ class UserProfile {
               for (final d in _ints(m['trainingDays']))
                 if (d >= 1 && d <= 7) d,
             ]
-            : const [1, 3, 5],
+            : defaultTrainingDays,
     longDay: _in(m['longDay']),
     imperial: _b(m['imperial']),
     maxHr: _in(m['maxHr']),

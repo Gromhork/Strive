@@ -48,11 +48,13 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final race = dayOnly(event);
     if (race.isBefore(dayOnly(DateTime.now()))) return const PlanFeasibility();
     final earliest = addDays(race, -(7 * 30));
-    DateTime? start;
-    for (final p in ref.watch(planListProvider)) {
-      if (p.phase == null || p.date.isAfter(race) || p.date.isBefore(earliest)) continue;
-      if (start == null || p.date.isBefore(start)) start = p.date;
-    }
+    // The CURRENT plan's start – not the first workout of an older plan still in the history (QA 2026-11:
+    // its weeks counted as trained and the plan was checked from the wrong start).
+    final phased = [
+      for (final p in ref.watch(planListProvider))
+        if (p.phase != null && !p.date.isAfter(race) && !p.date.isBefore(earliest)) p,
+    ]..sort((x, y) => x.date.compareTo(y.date));
+    final start = FitnessState.currentPlanStart(profile, phased);
     if (start == null) return const PlanFeasibility();
     // The target check on the one fitness model of the running plan (= the goal forecast's race day).
     final fitness = FitnessState.of(
