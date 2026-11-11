@@ -162,7 +162,7 @@ class StepList extends StatelessWidget {
                 children: [
                   Text(() {
                     final title = s.isWork ? null : stepTitle(l, steps, index, sport: sport);
-                    final zone = zoneLabel(l, s.zone, sport: sport);
+                    final zone = zoneLabel(l, s.zone, sport: sport, note: s.note);
                     // "Recovery · 1:30 · Recovery" → "Recovery · 1:30".
                     // A swim rest is standing at the wall – no intensity to show.
                     final showZone = zone != title && !(sport == Sport.swim && s.kind == 'recovery');

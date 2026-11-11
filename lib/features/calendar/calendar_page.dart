@@ -17,6 +17,7 @@ import '../../services/plan_generator.dart';
 import '../../widgets/common.dart';
 import '../../widgets/plan_amount.dart';
 import '../stats/session_detail_page.dart';
+import '../../services/fitness_state.dart';
 import 'feasibility_card.dart';
 import 'plan_editor.dart';
 import 'plan_history_page.dart';
@@ -51,7 +52,15 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       if (p.phase == null || p.date.isAfter(race) || p.date.isBefore(earliest)) continue;
       if (start == null || p.date.isBefore(start)) start = p.date;
     }
-    return start == null ? const PlanFeasibility() : _feasibility.of(profile, start, context.l10n);
+    if (start == null) return const PlanFeasibility();
+    // The target check on the one fitness model of the running plan (= the goal forecast's race day).
+    final fitness = FitnessState.of(
+      profile,
+      plans: ref.watch(planListProvider),
+      sessions: ref.watch(sessionListProvider),
+      now: DateTime.now(),
+    );
+    return _feasibility.of(profile, start, context.l10n, fitness: fitness);
   }
 
   @override

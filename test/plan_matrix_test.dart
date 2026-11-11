@@ -759,9 +759,13 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
     if (ev != null && pl.firstTaper > 0) {
       final longs = plan.where((w) => w.sport == s && w.intensity == 'long');
       final best = longs.fold(0.0, (x, w) => max(x, _longValue(w)));
-      final last = pl.preTaper.reversed.where((wk) => wk.loading && wk.long(s) != null).firstOrNull;
-      if (last != null && _longValue(last.long(s)!) < best * kLastLongBeforeTaperShare) {
-        r.add(_inv6b, c, last.idx, 'last long ${s.name} before taper ${_r(_longValue(last.long(s)!))} $unit < 90 % of longest ${_r(best)}');
+      // Ironman (review r2 IMPORTANT 9): ride and run weekends alternate (Friel / Fitzgerald – the longest
+      // ride and the longest run are not on consecutive days), so the last two loading weeks count.
+      final lastWeeks = pl.preTaper.reversed.where((wk) => wk.loading && wk.long(s) != null).take(ev == 'ironman' ? 2 : 1).toList();
+      final last = lastWeeks.firstOrNull;
+      final lastValue = lastWeeks.fold(0.0, (x, wk) => max(x, _longValue(wk.long(s)!)));
+      if (last != null && lastValue < best * kLastLongBeforeTaperShare) {
+        r.add(_inv6b, c, last.idx, 'last long ${s.name} before taper ${_r(lastValue)} $unit < 90 % of longest ${_r(best)}');
       }
       // Longest long run 2–4 weeks before race day.
       if (s == Sport.run && kPeakLongRunEvents.contains(ev) && best > 0 && pl.raceWeek != null) {

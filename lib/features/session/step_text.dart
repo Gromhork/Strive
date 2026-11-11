@@ -9,7 +9,10 @@ import '../../services/step_progress.dart';
 
 /// Human readable texts for structured workout steps (UI and voice).
 
-String zoneLabel(AppLocalizations l, String zone, {Sport? sport}) => switch (zone) {
+/// [note]: the step's note – goal-pace / race steps of a running event say "race pace" whatever their
+/// pace zone code (a 10 km goal-pace set is zone M by convention, between T and I by pace; review r2).
+String zoneLabel(AppLocalizations l, String zone, {Sport? sport, String? note}) => switch (zone) {
+  'M' || 'T' || 'I' when note != null && (note == l.stepGoalPaceNote || note == l.stepHmpNote || note == l.stepRaceNote) => l.zGoalPace,
   'REC' when sport == Sport.swim => l.zSwimEasy,
   'E' || 'L' => l.zConversational,
   'M' => l.zMarathon,
@@ -99,7 +102,7 @@ String stepSetLabel(AppLocalizations l, List<WorkoutStep> steps, int i, Units u,
   final s = steps[i];
   final rep = s.isWork ? repInfo(steps, i) : null;
   final amount = stepAmount(s, u, sport);
-  return '${rep != null ? '${rep.reps} × ' : ''}$amount · ${zoneLabel(l, s.zone, sport: sport)}';
+  return '${rep != null ? '${rep.reps} × ' : ''}$amount · ${zoneLabel(l, s.zone, sport: sport, note: s.note)}';
 }
 
 /// Total distance of the distance-based steps ("1600 m" / "8.5 km"), or null if none.
@@ -133,7 +136,7 @@ String stepTarget(AppLocalizations l, WorkoutStep s, Units u, Sport sport) {
 /// One-line sentence like "5.0 km at conversational pace (Zone 2)".
 String stepSentence(AppLocalizations l, List<WorkoutStep> steps, int i, Units u, Sport sport) {
   final s = steps[i];
-  final title = stepTitle(l, steps, i, sport: sport), zone = zoneLabel(l, s.zone, sport: sport);
+  final title = stepTitle(l, steps, i, sport: sport), zone = zoneLabel(l, s.zone, sport: sport, note: s.note);
   return '$title: ${stepAmount(s, u, sport)}${zone == title ? '' : ' · $zone'}';
 }
 
@@ -177,7 +180,7 @@ String stepSpeech(AppLocalizations l, List<WorkoutStep> steps, int i, Units u, S
   // Swim rest: "Rest. 15 seconds." – the zone adds nothing.
   if (sport == Sport.swim && s.kind == 'recovery') return '$title. $amount.';
   final tail = targets.isEmpty ? '' : ', ${targets.join(', ')}';
-  return '$title. $amount ${zoneLabel(l, s.zone, sport: sport)}$tail.';
+  return '$title. $amount ${zoneLabel(l, s.zone, sport: sport, note: s.note)}$tail.';
 }
 
 String _spokenTime(int sec, String lang) {

@@ -69,13 +69,13 @@ void main() {
       final later = p.copyWith(athlete: p.athlete.merge({'eventDate': f.laterDate}));
       final fl = PlanGenerator.feasibility(later, start: start, l: l);
       expect(fl.issues, isNot(contains('tooShort')));
-      // Plan review C9: the long run stays ≤ 50 % of the week and ≤ 2 × the next-longest run. With
-      // 3 × 60 min that is ~12 km (before: 15 km = 56 % next to 60' runs) – the check now says the other
-      // runs are too short instead of silently planning a lopsided week.
+      // Plan review C9 capped the long run at ≤ 50 % / ≤ 2 × the next run (~12 km with 3 × 60 min, then
+      // "other runs need > 60 min"). Review r2 C6: three-run weeks follow the Galloway / Higdon novice plans
+      // (≤ 65 %, ≤ 3.5 ×) – the later date now reaches the HM long run without a share warning.
       final lp = gen(later);
-      expect(longestKm(lp), greaterThanOrEqualTo(12), reason: '${longestKm(lp)} km / ${longestMin(lp)} min');
-      expect(fl.issues, contains('longRunShare'));
-      expect(fl.otherRunNeedMin, greaterThan(60));
+      // (13.5 km with walk breaks ≈ 2 h on the feet – the HM's time-on-feet long run.)
+      expect(longestKm(lp), greaterThanOrEqualTo(13), reason: '${longestKm(lp)} km / ${longestMin(lp)} min');
+      expect(fl.issues, isNot(contains('longRunShare')));
     });
   });
 

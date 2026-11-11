@@ -261,6 +261,13 @@ class AthleteData {
   final DateTime? vdotEstimateAt;
   final double? vdotEstimateBase;
 
+  /// Last training-derived FTP / CSS step of "Plan überprüfen" and the value before the plan's first
+  /// step (the base of the per-plan cap): steps ≥ 3 weeks apart, total rise capped like the VDOT's.
+  final DateTime? ftpStepAt;
+  final int? ftpBase;
+  final DateTime? cssStepAt;
+  final int? cssBase;
+
   const AthleteData({
     this.setupMode = 'simple',
     this.difficulty = 'balanced',
@@ -299,6 +306,10 @@ class AthleteData {
     this.vdotEstimate,
     this.vdotEstimateAt,
     this.vdotEstimateBase,
+    this.ftpStepAt,
+    this.ftpBase,
+    this.cssStepAt,
+    this.cssBase,
   });
 
   bool get advanced => setupMode == 'advanced';
@@ -352,6 +363,10 @@ class AthleteData {
     vdotEstimate: _dn(m['vdotEstimate']),
     vdotEstimateAt: m['vdotEstimateAt'] == null ? null : _date(m['vdotEstimateAt']),
     vdotEstimateBase: _dn(m['vdotEstimateBase']),
+    ftpStepAt: m['ftpStepAt'] == null ? null : _date(m['ftpStepAt']),
+    ftpBase: _in(m['ftpBase']),
+    cssStepAt: m['cssStepAt'] == null ? null : _date(m['cssStepAt']),
+    cssBase: _in(m['cssBase']),
   );
 
   Map<String, dynamic> toMap() => {
@@ -392,6 +407,10 @@ class AthleteData {
     if (vdotEstimate != null) 'vdotEstimate': vdotEstimate,
     if (vdotEstimateAt != null) 'vdotEstimateAt': Timestamp.fromDate(vdotEstimateAt!),
     if (vdotEstimateBase != null) 'vdotEstimateBase': vdotEstimateBase,
+    if (ftpStepAt != null) 'ftpStepAt': Timestamp.fromDate(ftpStepAt!),
+    if (ftpBase != null) 'ftpBase': ftpBase,
+    if (cssStepAt != null) 'cssStepAt': Timestamp.fromDate(cssStepAt!),
+    if (cssBase != null) 'cssBase': cssBase,
   };
 
   /// Copy with some fields replaced (keys as in [toMap]); `null` values clear a field.
@@ -401,6 +420,9 @@ class AthleteData {
     final c = {...changes};
     if (c['eventDate'] is DateTime) c['eventDate'] = Timestamp.fromDate(c['eventDate']);
     if (c['vdotEstimateAt'] is DateTime) c['vdotEstimateAt'] = Timestamp.fromDate(c['vdotEstimateAt']);
+    for (final k in const ['ftpStepAt', 'cssStepAt']) {
+      if (c[k] is DateTime) c[k] = Timestamp.fromDate(c[k]);
+    }
     if (c['dayPlan'] is Map<int, List<Sport>>) {
       c['dayPlan'] = {for (final e in (c['dayPlan'] as Map<int, List<Sport>>).entries) '${e.key}': e.value.map((s) => s.name).toList()};
     }

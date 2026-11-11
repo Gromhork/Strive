@@ -5447,4 +5447,68 @@ class AppLocalizationsDe extends AppLocalizations {
   String daysLeftInline(int days) {
     return 'noch $days Tage';
   }
+
+  @override
+  String fcReasonSessionsSkipped(int done, int total) {
+    return '$done von $total geplanten Einheiten der letzten 4 Wochen erledigt – Regelmäßigkeit macht die Form, ausgelassene Einheiten summieren sich';
+  }
+
+  @override
+  String fcReasonKeyMissed(int done, int total) {
+    return '$done von $total Schlüsseleinheiten (Tempo, Intervalle, lange Läufe) der letzten 4 Wochen erledigt';
+  }
+
+  @override
+  String recalWhySessionsSkipped(int done, int total) {
+    return 'In den letzten 4 Wochen hast du $done von $total Einheiten gemacht. Wenn bestimmte Tage nie klappen, verschiebe oder streiche sie im Wochenplan, statt sie auszulassen.';
+  }
+
+  @override
+  String recalWhyKeyMissed(int done, int total) {
+    return 'In den letzten 4 Wochen hast du $done von $total Schlüsseleinheiten (Tempo, Intervalle, lange Läufe) gemacht – sie tragen die Wettkampfvorbereitung, gib ihnen Vorrang vor lockeren Läufen.';
+  }
+
+  @override
+  String recalWhyGoalAtRiskTime(String forecast, String goal) {
+    return 'Die Zielprognose liegt bei $forecast – die Zielzeit $goal ist mit der aktuellen Form schwer erreichbar. Überlege, die Zielzeit anzupassen.';
+  }
+
+  @override
+  String wRaceRealistic(String time, String pace) {
+    return 'Mit deiner Form realistisch: $time ($pace) – fühlst du dich nach der Hälfte gut, steigere.';
+  }
+
+  @override
+  String get recalWhyRpeLowSpaced => 'Deine Schlüsseleinheiten fielen dir wieder leicht – der Umfang wurde aber gerade erst erhöht und bleibt diese Woche (höchstens jede zweite Woche, 3× pro Plan). Bleibt es leicht, ziehen die Zielwerte nach.';
+
+  @override
+  String get recalWhyTaper => 'Taper: weniger ist mehr – der Umfang ist bewusst reduziert und bleibt so. Die Form geht in zwei Wochen nicht verloren, die Frische für den Wettkampf kommt aus der Erholung.';
+
+  @override
+  String recalWhyTaperOverdo(int pct) {
+    return 'Taper: Letzte Woche hast du $pct % des geplanten Umfangs trainiert. Jetzt ist weniger mehr – halte dich an den reduzierten Umfang, die Form für den Wettkampf kommt aus der Erholung.';
+  }
+
+  @override
+  String progStageHeld(int weeks) {
+    return 'Der Aufbau steht seit $weeks Wochen (Stufe wiederholt oder lange Einheit gekürzt).';
+  }
+
+  @override
+  String progStageHeldRisk(int weeks) {
+    return 'Der Aufbau steht seit $weeks Wochen und der Wettkampf ist nah – das Ziel ist gefährdet.';
+  }
+
+  @override
+  String feasLongRunShare2(int min) {
+    return 'Deine übrigen Läufe sind zu kurz für den langen Lauf, den dieses Rennen braucht: Bei drei Läufen pro Woche darf er etwa zwei Drittel der Woche ausmachen. Plane für die anderen Läufe etwa $min min ein.';
+  }
+
+  @override
+  String feasLongRunFinish(String have, String need) {
+    return 'Dein längster langer Lauf erreicht vor dem Rennen nur etwa $have km – dieses Rennen braucht etwa $need km. Der Plan behandelt das Rennen deshalb als Finish-Ziel, ohne Zielzeit.';
+  }
+
+  @override
+  String get zGoalPace => 'Wettkampftempo';
 }

@@ -35,7 +35,7 @@ class GoalStatusPage extends ConsumerWidget {
               : GoalStatusView(
                 forecast: f,
                 segments: f.planStart == null ? const [] : phaseSegments(plans, f.planStart!, f.raceDate),
-                outlook: f.planStart == null ? const [] : PlanGenerator.outlook(profile, start: f.planStart!),
+                outlook: f.planStart == null ? const [] : PlanGenerator.outlook(profile, start: f.planStart!, baseline: f.baselineVdot),
                 now: DateTime.now(),
                 onAdjustTarget: (sec) => applyTargetTime(context, ref, sec),
                 onRecalibrate: () => showRecalibration(context, ref),

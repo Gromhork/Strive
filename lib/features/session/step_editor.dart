@@ -334,7 +334,7 @@ class _BlockCard extends StatelessWidget {
                   children: [
                     Text('${kindLabel(l, s.kind)} · ${stepAmount(s, units, sport)}', style: const TextStyle(fontWeight: FontWeight.w600)),
                     Text(
-                      [zoneLabel(l, s.zone, sport: sport), if (target.isNotEmpty) target].join(' · '),
+                      [zoneLabel(l, s.zone, sport: sport, note: s.note), if (target.isNotEmpty) target].join(' · '),
                       style: Theme.of(context).textTheme.bodySmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

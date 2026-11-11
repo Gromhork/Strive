@@ -5,6 +5,7 @@ import 'package:strive/data/models.dart';
 import 'package:strive/services/goal_model.dart';
 import 'package:strive/services/plan_generator.dart';
 import 'package:strive/services/target_suggestion.dart';
+import 'package:strive/services/zones.dart';
 
 /// Target-time suggestion (docs/training-science.md §1.2, §1.12): finish goals, fitness basis,
 /// and that every suggested time passes the target check and the feasibility card.
@@ -142,11 +143,13 @@ void main() {
     expect(s.slowSec!, greaterThan(s.sec!));
   });
 
-  test('marathon from a 10 km race (below advanced): Riegel 1.08 when slower than VDOT', () {
+  test('marathon from a 10 km race (below advanced): Riegel 1.08 when slower than VDOT – in the shared model', () {
     final p = athlete('m', times: const {'10k': 3000});
     final s = suggestTargetTime(p, 'm', race(16), now: now);
-    final vdotOnly = GoalModel.roundTarget(GoalModel.timeAt(withTarget(p, 'm', 16, 1), s.vdotNow!, s.vdotRaceDay! - s.vdotNow!)!);
+    final vdotOnly = GoalModel.roundTarget(Vdot.raceTime(s.vdotRaceDay!, 42195));
     expect(s.sec!, greaterThan(vdotOnly));
+    // Review round 2, IMPORTANT 5: the check uses the same correction – the suggestion is its realistic time.
+    expect(GoalModel.check(withTarget(p, 'm', 16, s.sec!), start: now)!.suggestedSec, s.sec);
     // With a half-marathon time the VDOT prediction stands.
     final hm = athlete('m', times: const {'10k': 3000, 'hm': 6700});
     final h = suggestTargetTime(hm, 'm', race(16), now: now);
