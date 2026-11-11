@@ -252,26 +252,29 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            SectionCard(
-              key: const ValueKey('summaryEffort'),
-              title: l.summaryEffortTitle,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RpePicker(
-                    value: _rpe,
-                    hint: l.summaryEffortHint,
-                    onChanged: (v) {
-                      setState(() => _rpe = v);
-                      _persist();
-                    },
-                  ),
-                  if (_prefill != null && _rpe == _prefill)
-                    Text(l.summaryEffortPrefilled, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
-                ],
+            // A session that is about to be discarded needs no effort rating.
+            if (outcome != SummaryOutcome.tooShort || tooShortHasWork(s)) ...[
+              const SizedBox(height: 12),
+              SectionCard(
+                key: const ValueKey('summaryEffort'),
+                title: l.summaryEffortTitle,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RpePicker(
+                      value: _rpe,
+                      hint: l.summaryEffortHint,
+                      onChanged: (v) {
+                        setState(() => _rpe = v);
+                        _persist();
+                      },
+                    ),
+                    if (_prefill != null && _rpe == _prefill)
+                      Text(l.summaryEffortPrefilled, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
+                  ],
+                ),
               ),
-            ),
+            ],
             if (s.route.length > 1) ...[
               const SizedBox(height: 12),
               ClipRRect(borderRadius: BorderRadius.circular(20), child: SizedBox(height: 200, child: RouteMap(session: s))),
@@ -357,6 +360,10 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
 /// Title and text of the "too short" card, naming what is missing for this sport: gym only
 /// knows time (a workout without a done set is discarded before the summary), run / ride
 /// outdoors the GPS distance, the pool the counted laps.
+/// Whether a too-short session still holds real training: done gym sets, or cardio of at least
+/// five minutes (only the distance is missing). Then saving is the expected answer, not discarding.
+bool tooShortHasWork(Session s) => s.sport == Sport.gym ? s.setsDone > 0 : s.durationSec >= 5 * 60;
+
 (String, String) tooShortTexts(AppLocalizations l, Session s) {
   if (s.durationSec < 60) return (l.summaryTooShortTitle, s.sport == Sport.gym ? l.summaryTooShortGym : l.summaryTooShortTime);
   if (s.sport == Sport.swim) return (l.summaryNoLapsTitle, l.summaryNoLapsBody);
@@ -402,9 +409,15 @@ class _TooShortCard extends StatelessWidget {
             alignment: WrapAlignment.end,
             spacing: 8,
             children: [
-              // Too short to count: discarding is the expected answer (primary), saving the exception.
-              TextButton(key: const ValueKey('tooShortSave'), onPressed: onSave, child: Text(l.saveAnyway)),
-              FilledButton(key: const ValueKey('tooShortDiscard'), onPressed: onDiscard, child: Text(l.discard)),
+              // Nothing real done: discarding is the expected answer (primary), saving the exception.
+              // Real sets / minutes done: saving is primary – they should not be thrown away by habit.
+              if (tooShortHasWork(session)) ...[
+                TextButton(key: const ValueKey('tooShortDiscard'), onPressed: onDiscard, child: Text(l.discard)),
+                FilledButton(key: const ValueKey('tooShortSave'), onPressed: onSave, child: Text(l.save)),
+              ] else ...[
+                TextButton(key: const ValueKey('tooShortSave'), onPressed: onSave, child: Text(l.saveAnyway)),
+                FilledButton(key: const ValueKey('tooShortDiscard'), onPressed: onDiscard, child: Text(l.discard)),
+              ],
             ],
           ),
         ],

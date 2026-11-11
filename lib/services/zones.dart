@@ -235,9 +235,25 @@ class SwimZones {
   final int css; // sec per 100 m
   SwimZones(this.css);
 
-  static int? fromTests(int? t400, int? t200) {
-    if (t400 == null || t200 == null || t400 <= t200 * 2) return null;
-    return ((t400 - t200) / 2).round();
+  /// CSS (s / 100 m) from the 400 m / 200 m test – see [test].
+  static int? fromTests(int? t400, int? t200) => test(t400, t200).css;
+
+  /// Reading of the CSS test:
+  /// * both times, plausible (the 400 m at most 20 % slower per 100 m than the 200 m – a 400 m
+  ///   per 100 m faster than the 200 m, or one far off, is a typo): CSS = (t400 − t200) / 2;
+  /// * only the 400 m (or an implausible 200 m): an estimate from the 400 m pace + 5 s / 100 m
+  ///   (CSS is about the 1500 m pace, a little slower than a 400 m all-out);
+  /// * only the 200 m: no CSS – the test needs the 400 m.
+  static SwimTest test(int? t400, int? t200) {
+    final has400 = t400 != null && t400 > 0, has200 = t200 != null && t200 > 0;
+    int from400() => (t400! / 4 + 5).round();
+    if (has400 && has200) {
+      final ratio = t400 / t200;
+      if (ratio > 2 && ratio <= 2.4) return SwimTest(((t400 - t200) / 2).round(), SwimTestKind.both);
+      return SwimTest(from400(), SwimTestKind.implausible);
+    }
+    if (has400) return SwimTest(from400(), SwimTestKind.only400);
+    return SwimTest(null, has200 ? SwimTestKind.only200 : SwimTestKind.none);
   }
 
   static int defaultFor(String level) => switch (level) {
@@ -254,6 +270,17 @@ class SwimZones {
     'SP' => (css - 10, css - 3),
     _ => (css + 8, css + 12),
   };
+}
+
+/// How a CSS test was read ([SwimZones.test]).
+enum SwimTestKind { none, both, only400, only200, implausible }
+
+class SwimTest {
+  const SwimTest(this.css, this.kind);
+
+  /// s / 100 m; null without a usable test.
+  final int? css;
+  final SwimTestKind kind;
 }
 
 /// Riegel race prediction (exponent 1.06; 1.08 for marathon from short races for novices).

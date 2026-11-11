@@ -328,26 +328,93 @@ void undoToast(
     );
 }
 
-/// Number input dialog (returns parsed value or null). [signed] allows negative values.
+/// Number input dialog (returns parsed value or null when cancelled). [signed] allows negative
+/// values. "Speichern" only takes a valid number – an empty or mistyped field never closes the
+/// dialog as if nothing happened.
 Future<double?> askNumber(BuildContext context, String title, {double? initial, String? suffix, bool signed = false}) async {
+  final r = await _askNumber(context, title, initial: initial, suffix: suffix, signed: signed);
+  return r?.value;
+}
+
+/// Answer of [askOptionalNumber]: [value] null = "without" (e.g. no distance).
+class NumberAnswer {
+  const NumberAnswer(this.value);
+  final double? value;
+}
+
+/// Like [askNumber], with a third choice [noneLabel] ("Ohne Distanz") that answers
+/// `NumberAnswer(null)`; null when cancelled. Values must be positive.
+Future<NumberAnswer?> askOptionalNumber(BuildContext context, String title, {required String noneLabel, String? suffix, String? hint}) =>
+    _askNumber(context, title, suffix: suffix, hint: hint, noneLabel: noneLabel, positive: true);
+
+Future<NumberAnswer?> _askNumber(
+  BuildContext context,
+  String title, {
+  double? initial,
+  String? suffix,
+  String? hint,
+  bool signed = false,
+  bool positive = false,
+  String? noneLabel,
+}) {
   final ctrl = TextEditingController(text: initial == null ? '' : Units.num(initial, 2));
   final l = context.l10n;
-  return showDialog<double>(
+  double? valid(String text) {
+    final v = parseNum(text);
+    if (v == null || !v.isFinite || (positive && v <= 0)) return null;
+    return v;
+  }
+
+  return showDialog<NumberAnswer>(
     context: context,
     builder:
-        (c) => AlertDialog(
-          title: Text(title),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            keyboardType: TextInputType.numberWithOptions(decimal: true, signed: signed),
-            decoration: InputDecoration(suffixText: suffix),
-            onSubmitted: (v) => Navigator.pop(c, parseNum(v)),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(c), child: Text(l.cancel)),
-            FilledButton(onPressed: () => Navigator.pop(c, parseNum(ctrl.text)), child: Text(l.save)),
-          ],
+        (c) => StatefulBuilder(
+          builder: (c, setState) {
+            final text = ctrl.text.trim();
+            final v = valid(text);
+            void save() {
+              if (v != null) Navigator.pop(c, NumberAnswer(v));
+            }
+
+            return AlertDialog(
+              title: Text(title),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    key: const ValueKey('askNumberField'),
+                    controller: ctrl,
+                    autofocus: true,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true, signed: signed),
+                    decoration: InputDecoration(
+                      suffixText: suffix,
+                      hintText: hint,
+                      // Only for something typed that isn't a number – an empty field just keeps "Speichern" off.
+                      errorText: text.isNotEmpty && v == null ? l.invalidNumber : null,
+                    ),
+                    onChanged: (_) => setState(() {}),
+                    onSubmitted: (_) => save(),
+                  ),
+                  // The third answer sits with the field: three buttons in a row don't fit a phone.
+                  if (noneLabel != null) ...[
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      key: const ValueKey('askNumberNone'),
+                      style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                      onPressed: () => Navigator.pop(c, const NumberAnswer(null)),
+                      icon: const Icon(Icons.do_not_disturb_alt_rounded, size: 18),
+                      label: Text(noneLabel),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(c), child: Text(l.cancel)),
+                FilledButton(key: const ValueKey('askNumberSave'), onPressed: v == null ? null : save, child: Text(l.save)),
+              ],
+            );
+          },
         ),
   );
 }

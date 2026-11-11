@@ -3,9 +3,15 @@ import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
 import '../../core/sport.dart';
+import '../../core/theme.dart';
 import '../../services/google_auth.dart';
 import '../../main.dart';
 import '../../widgets/common.dart';
+
+/// A message for the login page that outlives the page the action started on – e.g. "account
+/// deleted": the deletion signs out, the app switches to this page, and a snackbar of the old page
+/// was lost on the way. Shown as a card at the top until dismissed or the next sign-in.
+final loginNotice = ValueNotifier<String?>(null);
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -28,6 +34,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _run(Future<void> Function() f) async {
+    loginNotice.value = null;
     setState(() {
       _busy = true;
       _error = null;
@@ -91,6 +98,36 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  ValueListenableBuilder<String?>(
+                    valueListenable: loginNotice,
+                    builder:
+                        (context, notice, _) =>
+                            notice == null
+                                ? const SizedBox.shrink()
+                                : Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: Material(
+                                    key: const ValueKey('loginNotice'),
+                                    color: AppColors.success.withValues(alpha: 0.14),
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Padding(
+                                      padding: const EdgeInsets.fromLTRB(14, 6, 4, 6),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.check_circle_rounded, color: AppColors.success),
+                                          const SizedBox(width: 10),
+                                          Expanded(child: Text(notice, style: const TextStyle(fontWeight: FontWeight.w600))),
+                                          IconButton(
+                                            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                                            icon: const Icon(Icons.close_rounded, size: 18),
+                                            onPressed: () => loginNotice.value = null,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                  ),
                   const StriveLogo(size: 76),
                   const SizedBox(height: 12),
                   Text(l.tagline, textAlign: TextAlign.center, style: t.bodyMedium),

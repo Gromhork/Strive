@@ -66,6 +66,14 @@ List<String> progressionLines(AppLocalizations l, GoalForecast f) {
   ];
 }
 
+/// Why the forecast is still "too early": before the first workout of the plan the general text,
+/// after one the number still missing – never "after your first workouts" once some are done.
+String forecastEarlyText(AppLocalizations l, GoalForecast f) {
+  const needed = 2; // GoalForecast.early: fewer than 2 done endurance sessions since the plan start
+  if (f.planStart == null || f.doneSessions <= 0) return l.fcEarlySub;
+  return l.fcEarlyMore(max(1, needed - f.doneSessions));
+}
+
 /// Colour, icon and label of a forecast status.
 (Color, IconData, String) forecastStyle(AppLocalizations l, GoalForecast f) {
   if (f.early) return (AppColors.brand, Icons.hourglass_top_rounded, l.fcEarly);
@@ -160,9 +168,12 @@ class EventProgress {
   final int? week;
   final int? weeks;
 
-  static EventProgress of(DateTime race, List<PlannedWorkout> plans, DateTime today) {
+  /// [planForRace] false: the plan is not built for this race (plan settings without it, another
+  /// race) – only the countdown; the phases and weeks of an unrelated plan would read as its.
+  static EventProgress of(DateTime race, List<PlannedWorkout> plans, DateTime today, {bool planForRace = true}) {
     final r = dayOnly(race);
     final left = daysBetween(today, r);
+    if (!planForRace) return EventProgress(daysLeft: left);
     final earliest = addDays(r, -(7 * 30));
     DateTime? start;
     for (final p in plans) {
@@ -185,6 +196,10 @@ class EventProgress {
     return EventProgress(daysLeft: left, phase: phase, week: week.clamp(1, max(1, weeks)), weeks: weeks);
   }
 }
+
+/// Whether the plan settings ([AthleteData.eventDate]) point at race goal [g] – only then the plan's
+/// phases and weeks belong to it.
+bool planBuiltFor(UserProfile p, Goal g) => p.athlete.eventDate != null && g.deadline != null && sameDay(p.athlete.eventDate!, g.deadline!);
 
 /// Long phase name ("Grundlagenphase").
 String phaseLong(AppLocalizations l, String phase) => switch (phase) {
@@ -215,7 +230,12 @@ class EventGoalLine extends ConsumerWidget {
     final today = ref.watch(todayProvider);
     final g = activeEventGoal(ref.watch(goalsProvider).value ?? const [], today);
     if (g == null) return const SizedBox.shrink();
-    final e = EventProgress.of(g.deadline!, ref.watch(planListProvider), today);
+    final e = EventProgress.of(
+      g.deadline!,
+      ref.watch(planListProvider),
+      today,
+      planForRace: planBuiltFor(ref.watch(profileOrDefaultProvider), g),
+    );
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),

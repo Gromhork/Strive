@@ -15,6 +15,9 @@ import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
 import '../../widgets/duration_picker.dart';
+import '../../services/insights.dart' show xpForSession;
+import '../../services/session_checks.dart';
+import 'session_check_hint.dart';
 import '../../widgets/rpe_picker.dart';
 import '../session/gym_session_page.dart' show exerciseFromLibrary;
 import '../train/exercise_picker.dart';
@@ -117,6 +120,8 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
       if (cardio && !swim) 'elevationM': elev ?? 0.0,
       if (swim) 'laps': _int(_laps) ?? 0,
       if (swim && (_int(_pool) ?? 0) > 0) 'poolLengthM': _int(_pool),
+      // XP as recorded (before the first correction) caps the XP from now on – see [Session.xpCap].
+      'xpCap': s.xpCap ?? xpForSession(s),
     };
     if (!cardio) {
       final ex = _exercises.where((e) => e.sets.isNotEmpty).toList();
@@ -191,6 +196,15 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
     super.dispose();
   }
 
+  /// Entered distance in metres (0 when empty).
+  double _distanceM() {
+    final d = parseNum(_distance.text);
+    if (d == null || s.sport == Sport.gym) return 0;
+    return s.sport == Sport.swim ? d : u.distIn(d);
+  }
+
+  SessionCheck get _check => SessionCheck.of(s.sport, _start, _durationSec, _distanceM());
+
   String _hint(AppLocalizations l) => switch (s.sport) {
     Sport.gym => l.editSessionHintGym,
     Sport.swim => l.editSessionHintSwim,
@@ -215,7 +229,11 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
     return DiscardGuard(
       isDirty: () => _snapshot() != _initial,
       child: Scaffold(
-        appBar: AppBar(title: Text(l.editSession), actions: [TextButton(onPressed: _save, child: Text(l.save))]),
+        // A workout ending in the future is a typo in the start or the duration: fix it first.
+        appBar: AppBar(
+          title: Text(l.editSession),
+          actions: [TextButton(key: const ValueKey('editSave'), onPressed: _check.endsInFuture ? null : _save, child: Text(l.save))],
+        ),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -247,10 +265,12 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
                 TextField(
                   key: const ValueKey('editDistance'),
                   controller: _distance,
+                  onChanged: (_) => setState(() {}),
                   keyboardType: num,
                   decoration: InputDecoration(labelText: l.distance, suffixText: swim ? 'm' : u.distUnit),
                 ),
             ]),
+            SessionCheckHint(check: _check, sport: s.sport, start: _start, durationSec: _durationSec, distanceM: _distanceM(), units: u),
             if (swim)
               row([
                 TextField(

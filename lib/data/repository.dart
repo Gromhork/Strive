@@ -235,10 +235,12 @@ class Repository {
   /// Replaces the planned (not done / skipped) workouts from [from] on with [plan] in as few
   /// batches as possible – the deletes and the new plan go together, so the calendar never
   /// shows both or neither for long.
-  Future<void> replacePlans(List<PlannedWorkout> all, DateTime from, List<PlannedWorkout> plan) {
-    final keep = {for (final p in plan) p.id};
+  /// Replaces the planned workouts from [from] with [plan]; done / skipped ones and those in
+  /// [keep] (linked to a session) stay.
+  Future<void> replacePlans(List<PlannedWorkout> all, DateTime from, List<PlannedWorkout> plan, {Set<String> keep = const {}}) {
+    final ids = {...keep, for (final p in plan) p.id};
     return _batched([
-      for (final p in all.where((p) => !p.date.isBefore(from) && p.status == 'planned' && !keep.contains(p.id)))
+      for (final p in all.where((p) => !p.date.isBefore(from) && p.status == 'planned' && !ids.contains(p.id)))
         (b) => b.delete(_plans.doc(p.id)),
       for (final p in plan) (b) => b.set(_plans.doc(p.id), p.toMap()),
     ]);

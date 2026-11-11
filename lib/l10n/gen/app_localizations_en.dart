@@ -814,7 +814,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String generatePlanSub(String focus, int days) {
-    return 'Focus: $focus · $days days/week (change in profile)';
+    return 'Focus: $focus · $days days/week (change in plan settings)';
   }
 
   @override
@@ -1914,7 +1914,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String planLengthHint(int lo, int hi) {
-    return 'Recommended for your goal: $lo–$hi weeks (👍).';
+    return 'Recommended for your goal: $lo–$hi weeks.';
   }
 
   @override
@@ -4986,7 +4986,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String feasLongDayDefault(String day, String time) {
-    return 'The long session on $day needs up to $time – far more than the time you set. The plan uses it; set that day\'s time yourself if it does not fit.';
+    return 'The long session on $day needs up to $time – far more than your other sessions. The plan schedules it like that; set that day’s time yourself if it does not fit.';
   }
 
   @override
@@ -5763,11 +5763,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String termComplianceBody(String greenMin, String greenMax, String yellowMin, String yellowMax, String countMin) {
-    return 'Compared with the plan is the distance (endurance workouts with a distance; structured workouts: distance or duration, whichever is closer to the plan), the done work sets (strength – sets done at a much lighter weight or with far fewer reps count partly) or else the duration. A workout marked as done with the plan\'s numbers counts as planned.\n\n✓ green, as planned: $greenMin–$greenMax\n✓ yellow, partly: $yellowMin up to $greenMin, or up to $yellowMax\n✓ orange, far off: less than $yellowMin or more than $yellowMax\n✕ red: missed, or less than $countMin – an aborted start doesn’t count as done.';
+    return 'Compared with the plan is the distance (endurance workouts with a distance; structured workouts: distance or duration, whichever is closer to the plan), the done work sets (strength – sets done at a much lighter weight or with far fewer reps count partly) or else the duration. A workout marked as done with the plan\'s numbers counts as planned.\n\n✓ green, as planned: $greenMin–$greenMax\n✓ yellow, partly / above plan: $yellowMin to under $greenMin, or over $greenMax up to $yellowMax\n✓ orange, far off: $countMin to under $yellowMin, or over $yellowMax\n✕ red: missed, or under $countMin – an aborted start doesn’t count as done.';
   }
 
   @override
-  String get termComplianceTip => 'Partly or far off still counts as done – the plan only adapts when it happens repeatedly. For that, a long run or a key session needs at least half of the plan, and clearly more than planned (over 150 %) counts like a session that was too hard.';
+  String termComplianceTip(String half, String over) {
+    return 'Partly or far off still counts as done – the plan only adapts when it happens repeatedly. For that, a long run or a key session needs at least $half of the plan, and clearly more than planned (over $over) counts like a session that was too hard.';
+  }
 
   @override
   String get feasTitleNote => 'Note on your plan';
@@ -5862,4 +5864,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feasLongRunRampHint => 'Do you already run longer? Enter your longest run of the last weeks – the plan then builds on it.';
+
+  @override
+  String summaryRemoveRaceGoal(String name, String date) {
+    return 'Remove the race goal “$name” ($date)';
+  }
+
+  @override
+  String get summaryRemoveRaceGoalOn => 'Your new plan has no race – the goal the previous plan was built for is removed with it.';
+
+  @override
+  String get summaryRemoveRaceGoalOff => 'The goal stays: its countdown and the hint “Goal and plan don’t match” remain until you align a plan with it again.';
+
+  @override
+  String fcEarlyMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more workouts of the plan and the forecast uses your training data.',
+      one: 'One more workout of the plan and the forecast uses your training data.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String plannedNotCountedSub(String date, String duration) {
+    return 'Your session on $date ($duration) was too short to count for this workout – it stays open.';
+  }
+
+  @override
+  String overPlanShort(String share) {
+    return 'above plan ($share)';
+  }
+
+  @override
+  String farOffShort(String share) {
+    return 'far off plan ($share)';
+  }
+
+  @override
+  String logCompletesPlanOf(String day) {
+    return 'Completes the workout planned for $day';
+  }
+
+  @override
+  String get invalidNumber => 'Please enter a number';
+
+  @override
+  String get withoutDistance => 'Without distance';
+
+  @override
+  String get enterDistanceHint => 'e.g. from the treadmill';
+
+  @override
+  String streakThisWeekShort(int done, int target) {
+    return 'This week: $done of $target training days';
+  }
+
+  @override
+  String get freeGymTitle => 'Free workout';
+
+  @override
+  String sessionEndsInFuture(String time) {
+    return 'With this start and duration the workout would end in the future ($time) – please check both.';
+  }
+
+  @override
+  String sessionPaceImplausible(String pace) {
+    return 'Average $pace – hardly possible. Are the distance and duration right?';
+  }
+
+  @override
+  String recNow(int count) {
+    return 'now $count×';
+  }
+
+  @override
+  String get yourSwimZones => 'Your swim zones';
+
+  @override
+  String get swimCssEstimated => 'Estimated from your 400 m – add the 200 m for an exact CSS.';
+
+  @override
+  String get swimTestOnly200 => 'The CSS test needs the 400 m time too – the 200 m alone is not enough.';
+
+  @override
+  String get swimTestImplausible => 'These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.';
 }

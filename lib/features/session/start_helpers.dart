@@ -93,7 +93,7 @@ Future<void> quickStart(BuildContext context, WidgetRef ref, Sport s) async {
   }
   if (!context.mounted) return;
   if (s == Sport.gym) {
-    await startGym(context, ref, title: l.freeWorkout);
+    await startGym(context, ref, title: l.freeGymTitle);
   } else {
     await showCardioStart(context, ref, s);
   }

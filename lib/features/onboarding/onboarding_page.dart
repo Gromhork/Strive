@@ -12,6 +12,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../data/default_programs.dart';
+import '../../data/repository.dart' show deepEquals;
 import '../calendar/feasibility_card.dart';
 import '../calendar/replace_plan_dialog.dart';
 import '../shell/account.dart';
@@ -30,8 +31,10 @@ import '../goals/goals_page.dart' show eventKeyForKm;
 import '../../widgets/event_distance_picker.dart';
 import '../../widgets/term_info.dart';
 import '../../widgets/segments.dart';
+import '../../widgets/discard_guard.dart';
 import '../../widgets/duration_picker.dart';
 import '../../services/target_suggestion.dart';
+import '../session/step_text.dart' show zoneLabel;
 
 /// What the setup flow edits.
 enum SetupMode {
@@ -73,6 +76,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   /// [AthleteData.planWeeks] weeks ([PlanGenerator.raceDayForWeeks]), kept in [AthleteData.eventDate]
   /// like a picked date so goal, countdown, forecast and taper work unchanged.
   bool _raceByWeeks = false;
+
+  /// The race date picked in "Datum" mode while "Planlänge" is shown (restored on the way back).
+  DateTime? _pickedDate;
   late UserProfile p;
   late AthleteData a;
   final _name = TextEditingController();
@@ -112,7 +118,25 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     _name.text = p.name;
     _imperial = p.imperial;
     _generatePlan = widget.mode != SetupMode.profile;
+    _markPristine();
   }
+
+  /// What the page showed before any input (after prefilling) – leaving with other values asks
+  /// "Discard changes?".
+  Map<String, dynamic>? _pristine;
+
+  void _markPristine() => _pristine = _snapshot();
+
+  Map<String, dynamic> _snapshot() => {
+    ..._profile.toMap(),
+    'nameField': _name.text.trim(),
+    'eventNameField': _eventName.text.trim(),
+    'imperialField': _imperial,
+    'withEvent': _withEvent,
+    'removeRaceGoal': _removeRaceGoal,
+  };
+
+  bool get _dirty => _pristine != null && !deepEquals(_pristine, _snapshot());
 
   bool _goalPrefilled = false;
   List<Session> _sessions = const [];
@@ -124,6 +148,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   void _prefillGoal(List<Goal> goals) {
     final today = dayOnly(DateTime.now());
     final goal = activeEventGoal(goals, today);
+    // Arriving after the first frame: the prefilled values are the starting point, not a change
+    // (unless the athlete already changed something).
+    final wasDirty = _dirty;
     if (goal != null) {
       final key = eventDistanceOf(goal.eventKey) != null ? goal.eventKey : eventKeyForKm(goal.eventKm ?? goal.target);
       final sameRace = a.eventDate != null && sameDay(a.eventDate!, goal.deadline!);
@@ -143,11 +170,20 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       _eventName.text = goal.title;
       _prefilledGoal = goal;
     }
+    if (!wasDirty) _markPristine();
   }
 
   /// The race goal the plan settings started from: changing its date or distance here edits that
   /// goal – a second goal next to it would leave the old race "not aligned" with the new plan.
   Goal? _prefilledGoal;
+
+  /// "Nur Planlänge" with a race goal set: the goal the old plan was built for is removed with the
+  /// new plan (the review step says so and lets the athlete keep it) – a kept goal would go on
+  /// showing a countdown, phases and "goal and plan don't match" for a plan without that race.
+  bool _removeRaceGoal = true;
+
+  /// The race goal a plan without a race leaves behind (null: none, or the plan has a race).
+  Goal? get _orphanRaceGoal => widget.mode == SetupMode.plan && !_withEvent ? _prefilledGoal : null;
 
   void _prefillWeek() {
     if (!_advanced) return;
@@ -218,7 +254,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Set<Sport> get _sports => {...p.focus.sports, if (p.goals.contains('strength') || p.goals.contains('muscle')) Sport.gym};
 
   void _setA(Map<String, dynamic> changes) => setState(() {
+    final before = a.eventDistance;
     a = a.merge(changes);
+    // An automatic race name ("Halbmarathon" – the distance's own name, filled in from the goal)
+    // follows the distance; only a name the athlete typed stays ("Halbmarathon · Marathon" never).
+    if (a.eventDistance != before && _eventName.text.trim() == _distanceLabel(context.l10n, before)) _eventName.clear();
     _syncRaceDay();
   });
 
@@ -372,6 +412,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       );
     }
 
+    // "Nur Planlänge": the race goal of the old plan goes with it (unless kept on the review step).
+    final orphan = _orphanRaceGoal;
+    if (orphan != null && _removeRaceGoal) repo.deleteGoal(orphan.id);
+
     if (_generatePlan) {
       await PlanService.replacePlan(
         repo: repo,
@@ -379,6 +423,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         profile: profile,
         templates: templates,
         existing: container.read(planListProvider),
+        sessions: container.read(sessionListProvider),
         start: start,
         weeks: a.planWeeks,
       );
@@ -396,11 +441,18 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final steps = _steps;
     final last = _page == steps.length - 1;
     // Android back goes one step back like the app-bar arrow; only on the first step it
-    // leaves the setup.
+    // leaves – the profile / plan settings (✕ or back) after "Discard changes?" when something
+    // was changed, like every other editor.
     return PopScope(
-      canPop: _page == 0,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _page > 0) _pager.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      canPop: _page == 0 && !widget.edit,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (_page > 0) {
+          _pager.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+          return;
+        }
+        if (_dirty && !await confirmDiscard(context)) return;
+        if (context.mounted) Navigator.of(context).pop();
       },
       child: Scaffold(
         appBar: AppBar(
@@ -1335,7 +1387,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   );
 
   Widget _swimming(AppLocalizations l) {
-    final css = SwimZones.fromTests(a.swim400Sec, a.swim200Sec);
+    final test = SwimZones.test(a.swim400Sec, a.swim200Sec);
+    final css = test.css;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1349,11 +1402,27 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         ),
         _label(l.cssTitle, hint: l.cssHint, term: Term.css),
         Row(children: [Expanded(child: _swimTestField(l, 400)), const SizedBox(width: 12), Expanded(child: _swimTestField(l, 200))]),
-        if (css != null)
+        // Feedback like the run step's pace zones: the CSS and the swim zones it gives, and why
+        // an entry is not used as entered.
+        if (test.kind == SwimTestKind.implausible || test.kind == SwimTestKind.only200)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(l.cssResult(fmtPace(css)), style: const TextStyle(color: AppColors.swim, fontWeight: FontWeight.w600)),
+            child: Row(
+              key: const ValueKey('swimTestHint'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 18, color: AppColors.warning),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    test.kind == SwimTestKind.only200 ? l.swimTestOnly200 : l.swimTestImplausible,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
           ),
+        if (css != null) ...[const SizedBox(height: 12), _SwimZonesPreview(css: css, estimated: test.kind != SwimTestKind.both)],
         _label(l.poolLength),
         Segments<int>(
           segments: [Seg(25, label: '25 m'), Seg(50, label: '50 m'), Seg(0, label: l.openWater)],
@@ -1604,7 +1673,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   context: context,
                   firstDate: today,
                   lastDate: addDays(today, 730),
-                  initialDate: a.eventDate != null && !a.eventDate!.isBefore(today) ? a.eventDate! : addDays(today, 90),
+                  initialDate: a.eventDate != null && !a.eventDate!.isBefore(today) ? a.eventDate! : _defaultRaceDate(today),
                 );
                 if (d != null) _setA({'eventDate': d});
               },
@@ -1649,6 +1718,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     );
   }
 
+  /// Where the race date picker opens: the start of the race's recommended plan length, moved to
+  /// the following race day – the long-session day, else Sunday (most races are on a weekend).
+  DateTime _defaultRaceDate(DateTime today) => defaultRaceDate(today, _recommendedRange.$1, longDay: p.longDay);
+
   /// The profile the plan is generated from (the quick setup's view of it in the quick setup).
   UserProfile get _planProfile => _advanced ? _profile : _quickProfile;
 
@@ -1656,9 +1729,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   void _setRaceByWeeks(bool byWeeks) {
     FocusScope.of(context).unfocus();
     if (byWeeks == _raceByWeeks) return;
+    // A date picked before switching to "plan length" comes back when switching back (with it the
+    // target suggestion) – switching to look at the plan lengths must not lose the entry.
+    if (byWeeks) _pickedDate = a.eventDate;
     setState(() => _raceByWeeks = byWeeks);
     if (!byWeeks) {
-      _setA({'eventDate': null});
+      _setA({'eventDate': _pickedDate});
       return;
     }
     final rec = _recommendedRange;
@@ -1723,7 +1799,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               for (final w in ({4, 8, 12, 16, 20, rec.$1, rec.$2}.toList()..sort()))
                 if (w >= PlanGenerator.supportedWeeks.first && w <= GoalModel.maxEventWeeks) (w, l.planWeeksN(w)),
             ]
-            : [(4, l.plan4w), (8, l.plan8w), (12, l.plan12w), (16, l.plan16w), (20, l.plan20w)];
+            : [
+              for (final w in const [4, 8, 12, 16, 20]) (w, l.planWeeksN(w)),
+            ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1803,6 +1881,33 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 ],
               ),
             ),
+        if (_orphanRaceGoal case final g?) ...[
+          const SizedBox(height: 12),
+          Container(
+            key: const ValueKey('summaryRaceGoal'),
+            padding: const EdgeInsets.fromLTRB(14, 4, 4, 10),
+            decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SwitchListTile(
+                  key: const ValueKey('removeRaceGoal'),
+                  contentPadding: const EdgeInsets.only(right: 6),
+                  value: _removeRaceGoal,
+                  onChanged: (v) => setState(() => _removeRaceGoal = v),
+                  title: Text(
+                    l.summaryRemoveRaceGoal(g.title, DateFormat.yMMMd(context.localeName).format(g.deadline!)),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Text(_removeRaceGoal ? l.summaryRemoveRaceGoalOn : l.summaryRemoveRaceGoalOff, style: t.bodySmall),
+                ),
+              ],
+            ),
+          ),
+        ],
         if (_generatePlan) ...[
           const SizedBox(height: 16),
           Text(l.summaryNewPlan, style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -1957,9 +2062,11 @@ List<String> planSettingChanges(
 
   String race(AthleteData x, String? name) {
     if (x.eventDate == null) return l.noRace;
+    final distance = eventDistanceOf(x.eventDistance) == null ? null : eventDistanceLabel(l, x.eventDistance!);
     return [
       if (name != null && name.isNotEmpty) name,
-      if (eventDistanceOf(x.eventDistance) != null) eventDistanceLabel(l, x.eventDistance!),
+      // An automatic name is the distance itself – once, not "Halbmarathon · Halbmarathon".
+      if (distance != null && distance.toLowerCase() != name?.toLowerCase()) distance,
       df.format(x.eventDate!),
       if (x.targetTimeSec != null) clock(x.targetTimeSec!),
     ].join(' · ');
@@ -1976,13 +2083,10 @@ List<String> planSettingChanges(
   }
 
   add(l.focusTitle, before.focus.label(l), after.focus.label(l));
-  add(
-    l.setupModeTitle,
-    b.setupMode == 'advanced' ? l.setupDetailed : l.setupQuick,
-    a.setupMode == 'advanced' ? l.setupDetailed : l.setupQuick,
-  );
+  // Quick ↔ detailed setup is how the settings were entered, not a property of the plan – its
+  // effect shows in the week line below.
   add(l.summaryWeek, days(before), days(after));
-  add(l.timeTitle, '${b.sessionMinutes} min', '${a.sessionMinutes} min');
+  add(l.timeTitle, formatMinutes(b.sessionMinutes), formatMinutes(a.sessionMinutes));
   add(l.summaryRace, race(b, nameBefore), race(a, nameAfter));
   if (a.eventDate == null) add(l.planLength, l.planWeeksN(b.planWeeks), l.planWeeksN(a.planWeeks));
   add(l.difficultyTitle, diff(b.difficulty), diff(a.difficulty));
@@ -2026,6 +2130,64 @@ class _ZonesPreview extends StatelessWidget {
           row(l.zoneThreshold, fmtPace(z.threshold), AppColors.ride),
           row(l.zoneInterval, fmtPace(z.interval), AppColors.gym),
           row(l.zoneRepetition, fmtPace(z.repetition), AppColors.danger),
+        ],
+      ),
+    );
+  }
+}
+
+/// Live swim zones preview from the CSS test (the swim counterpart of [_ZonesPreview]).
+class _SwimZonesPreview extends StatelessWidget {
+  const _SwimZonesPreview({required this.css, required this.estimated});
+  final int css;
+
+  /// From the 400 m alone (or with an implausible 200 m) – an estimate.
+  final bool estimated;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final z = SwimZones(css);
+    String range(String zone) {
+      final r = z.range(zone);
+      return '${fmtPace(r.$1)}–${fmtPace(r.$2)}';
+    }
+
+    Widget row(String name, String pace, Color c) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
+          const SizedBox(width: 8),
+          Expanded(child: Text(name)),
+          Text('$pace /100 m', style: const TextStyle(fontWeight: FontWeight.w600, fontFeatures: [FontFeature.tabularFigures()])),
+        ],
+      ),
+    );
+    return Container(
+      key: const ValueKey('swimZonesPreview'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.swim.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  '${l.yourSwimZones} · CSS ${estimated ? '≈ ' : ''}${fmtPace(css)} /100 m',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              const TermInfoButton(Term.css),
+            ],
+          ),
+          if (estimated) Text(l.swimCssEstimated, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 6),
+          row(zoneLabel(l, 'REC', sport: Sport.swim), range('REC'), const Color(0xFF7D8CA3)),
+          row(zoneLabel(l, 'EN', sport: Sport.swim), range('EN'), AppColors.run),
+          row(zoneLabel(l, 'CSS', sport: Sport.swim), range('CSS'), AppColors.ride),
+          row(zoneLabel(l, 'SP', sport: Sport.swim), range('SP'), AppColors.danger),
         ],
       ),
     );
@@ -2106,11 +2268,19 @@ class _RecommendationCard extends StatelessWidget {
                     children: [
                       Icon(e.key.icon, size: 16, color: e.key.color),
                       const SizedBox(width: 6),
-                      Text(l.recPerWeek(e.value), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                      if (current != null && current![e.key] != e.value) ...[
-                        const SizedBox(width: 4),
-                        Text('(${current![e.key] ?? 0})', style: Theme.of(context).textTheme.bodySmall),
-                      ],
+                      // What the week has now, next to the recommendation ("5× / Woche · jetzt 4×") –
+                      // wraps on a narrow phone instead of overflowing the chip.
+                      Flexible(
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(text: l.recPerWeek(e.value), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                              if (current != null && current![e.key] != e.value)
+                                TextSpan(text: ' · ${l.recNow(current![e.key] ?? 0)}', style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -2185,7 +2355,7 @@ class _MinutesStepper extends StatelessWidget {
   final bool big;
   final bool dimmed;
 
-  static String fmt(int m) => m < 60 || m % 60 != 0 && m < 90 ? '$m min' : (m % 60 == 0 ? '${m ~/ 60} h' : '${m ~/ 60} h ${m % 60}');
+  static String fmt(int m) => formatMinutes(m);
 
   @override
   Widget build(BuildContext context) {

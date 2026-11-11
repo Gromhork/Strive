@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,10 +12,13 @@ import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/plan_fill.dart';
 import '../../services/plan_match.dart';
+import '../../services/session_checks.dart';
+import '../stats/session_check_hint.dart';
 import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
+import '../../widgets/duration_picker.dart';
 import '../../widgets/rpe_picker.dart';
 import '../../widgets/segments.dart';
 import 'gym_session_page.dart' show setLabelOf;
@@ -45,17 +50,19 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
   late Sport _sport = widget.plan?.sport ?? widget.sport ?? ref.read(sportFilterProvider) ?? Sport.run;
   late DateTime _start = _initialStart();
 
-  /// The slider's start: the plan's minutes in its 5–360 range (45 without a planned duration).
-  late final int _planMinutes = ((_fill?.minutes ?? 0) > 0 ? _fill!.minutes : 45).clamp(5, 360);
+  /// The duration's start: the plan's minutes in the field's 1–600 range (45 without a planned duration).
+  late final int _planMinutes = ((_fill?.minutes ?? 0) > 0 ? _fill!.minutes : 45).clamp(1, 600);
   late int _minutes = _planMinutes;
   late final _title = TextEditingController(text: widget.plan?.title ?? '');
   late final String _planDistance = _initialDistance();
   late final _distance = TextEditingController(text: _planDistance);
 
+  /// When the workout was done: a past plan day at 18:00, today (and a workout planned for a later
+  /// day – it can't have been done in the future) an hour ago. Either way it completes [widget.plan].
   DateTime _initialStart() {
     final now = DateTime.now();
     final p = widget.plan;
-    if (p == null || sameDay(p.date, now) || p.date.isAfter(now)) return now.subtract(const Duration(hours: 1));
+    if (p == null || sameDay(p.date, now) || p.date.isAfter(now)) return now.subtract(Duration(minutes: max(60, _planMinutes)));
     return DateTime(p.date.year, p.date.month, p.date.day, 18);
   }
 
@@ -147,7 +154,10 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
     repo.saveSession(s);
     ref.read(healthServiceProvider).writeSession(s);
     final plans = ref.read(planListProvider);
-    final plan = matchPlan(s, plans);
+    // "Als erledigt eintragen" on a planned workout completes exactly that workout, whatever day it
+    // was done (as the gym version always did) – no "count it as a replacement?" afterwards.
+    // A free entry is matched like a recording.
+    final plan = widget.plan != null ? plans.where((p) => p.id == widget.plan!.id).firstOrNull ?? widget.plan : matchPlan(s, plans);
     if (plan != null) repo.updatePlan(plan.id, {'status': 'done', 'sessionId': s.id});
     toast(context, l.saved);
     if (plan != null) {
@@ -191,6 +201,14 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.event),
               title: Text(df.format(_start)),
+              // A workout planned for a later day, logged today: still completes that workout.
+              subtitle:
+                  widget.plan != null && !sameDay(widget.plan!.date, _start)
+                      ? Text(
+                        l.logCompletesPlanOf(DateFormat.MMMEd(context.localeName).format(widget.plan!.date)),
+                        key: const ValueKey('manualOtherDay'),
+                      )
+                      : null,
               onTap: () async {
                 final d = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2015), lastDate: DateTime.now());
                 if (d == null || !context.mounted) return;
@@ -198,15 +216,18 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
                 setState(() => _start = DateTime(d.year, d.month, d.day, t?.hour ?? _start.hour, t?.minute ?? _start.minute));
               },
             ),
-            LabeledSlider(
+            // The same duration input as everywhere else (no slider).
+            DurationField(
+              key: const ValueKey('manualDuration'),
               label: l.duration,
-              value: _minutes.toDouble(),
-              min: 5,
-              max: 360,
-              divisions: 71,
-              format: (v) => humanDuration(v.round() * 60),
-              onChanged: (v) => setState(() => _minutes = v.round()),
+              value: _minutes * 60,
+              units: DurationUnits.hm,
+              min: 60,
+              max: 10 * 3600,
+              clearable: false,
+              onChanged: (v) => setState(() => _minutes = ((v ?? _minutes * 60) / 60).round().clamp(1, 600)),
             ),
+            const SizedBox(height: 12),
             if (_sport != Sport.gym) ...[
               TextField(
                 key: const ValueKey('manualDistance'),
@@ -225,6 +246,14 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(labelText: l.totalVolume, suffixText: u.weightUnit),
               ),
+            SessionCheckHint(
+              check: SessionCheck.of(_sport, _start, _minutes * 60, _distanceM() ?? 0),
+              sport: _sport,
+              start: _start,
+              durationSec: _minutes * 60,
+              distanceM: _distanceM() ?? 0,
+              units: u,
+            ),
             const SizedBox(height: 16),
             Text(l.howHardOptional, style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 4),
@@ -232,7 +261,11 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
             const SizedBox(height: 8),
             TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
             const SizedBox(height: 24),
-            FilledButton(key: const ValueKey('manualSave'), onPressed: _save, child: Text(l.save)),
+            FilledButton(
+              key: const ValueKey('manualSave'),
+              onPressed: SessionCheck.of(_sport, _start, _minutes * 60, _distanceM() ?? 0).endsInFuture ? null : _save,
+              child: Text(l.save),
+            ),
           ],
         ),
       ),

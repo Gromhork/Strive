@@ -167,7 +167,11 @@ class _GuestBannerState extends ConsumerState<GuestBanner> {
 
   @override
   Widget build(BuildContext context) {
-    if (_hidden || !ref.watch(isGuestProvider) || ref.watch(sessionListProvider).length < GuestBanner.minSessions || _snoozed()) {
+    // Watched unconditionally: a first subscription inside a short-circuited condition happens in
+    // some later build and flushes pending provider updates during that build.
+    final guest = ref.watch(isGuestProvider);
+    final count = ref.watch(sessionListProvider).length;
+    if (_hidden || !guest || count < GuestBanner.minSessions || _snoozed()) {
       return const SizedBox.shrink();
     }
     return Padding(
@@ -368,7 +372,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                               Text(
                                 [
                                   if (skipped) l.recalDropped,
-                                  if (partly) l.partlyDone(Units.pct(c.pct!.toDouble())),
+                                  if (partly) c.shortLabel(l),
                                   if (notCounted) l.notCountedShort(Units.pct(c.pct!.toDouble())),
                                   planAmountText(p, ref.watch(profileOrDefaultProvider), templates: ref.watch(templateListProvider)),
                                   intensityLabel(l, p.intensity),

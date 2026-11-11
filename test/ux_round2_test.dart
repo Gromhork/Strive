@@ -317,9 +317,9 @@ void main() {
     test('greeting by local hour; durations rounded', () {
       String g(int h) => greetingFor(h, morning: 'M', afternoon: 'A', evening: 'E');
       expect([g(7), g(12), g(20), g(0)], ['M', 'A', 'E', 'E']);
-      expect(humanDuration(229), '4 min');
-      expect(humanDuration(20), '20 s');
-      expect(humanDuration(3600 + 29 * 60 + 40), '1 h 30 min');
+      expect(humanDuration(229), '4\u00a0min');
+      expect(humanDuration(20), '20\u00a0s');
+      expect(humanDuration(3600 + 29 * 60 + 40), '1\u00a0h 30\u00a0min');
     });
 
     test('restored run: the time the app was dead is a pause', () {

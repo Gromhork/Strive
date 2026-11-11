@@ -97,7 +97,7 @@ extension TermText on Term {
     Term.strides => l.termStridesTip,
     Term.fartlek => l.termFartlekTip,
     Term.acwr => l.termAcwrTip,
-    Term.compliance => l.termComplianceTip,
+    Term.compliance => l.termComplianceTip(_pct(ComplianceScale.yellowMin), _pct(ComplianceScale.yellowMax)),
   };
 
   /// The short label shown in the UI (used for the tooltip "What does … mean?").

@@ -172,11 +172,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     if (w < 0) {
       // Past week: completed vs. planned at a glance.
       final weekPlans = plans.where((p) => !p.date.isBefore(week) && p.date.isBefore(end)).toList();
-      final planned = weekPlans.length;
-      final done =
-          planned > 0
-              ? weekPlans.where((p) => p.isDone).length
-              : sessions.where((s) => !s.start.isBefore(week) && s.start.isBefore(end)).length;
+      // The one count of the app ([planCounts]): a session too short to count is no "done".
+      final counts = planCounts(weekPlans, ref.watch(planSessionsProvider), profile: ref.watch(profileOrDefaultProvider));
+      final planned = counts.planned;
+      final done = planned > 0 ? counts.done : sessions.where((s) => !s.start.isBefore(week) && s.start.isBefore(end)).length;
       trailing = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -266,6 +265,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final dayPlans = plans.where((p) => sameDay(p.date, _selected)).toList();
     final daySessions = sessions.where((s) => sameDay(s.start, _selected)).toList();
     final now = ref.watch(todayProvider);
+    final linked = ref.watch(planSessionsProvider);
+    final marks = monthMarks(ref.watch(planListProvider), plans, sessions, linked, now: now, profile: ref.watch(profileOrDefaultProvider));
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
       children: [
@@ -306,8 +307,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   builder: (_) {
                     final day = addDays(gridStart, w * 7 + d);
                     final inMonth = day.month == _focused.month;
-                    final p = plans.where((x) => sameDay(x.date, day)).toList();
-                    final s = sessions.where((x) => sameDay(x.start, day)).toList();
+                    final dayMarks = marks[dayKey(day)] ?? const <DayMark>[];
                     final sel = sameDay(day, _selected);
                     final today = sameDay(day, DateTime.now());
                     return Expanded(
@@ -340,27 +340,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    // Done: sessions, plus workouts marked done without a recording.
-                                    for (final x in {
-                                      ...s.map((e) => e.sport),
-                                      ...p.where((e) => e.isDone && e.sessionId == null).map((e) => e.sport),
-                                    }.take(4))
-                                      Container(
-                                        width: 7,
-                                        height: 7,
-                                        margin: const EdgeInsets.all(1),
-                                        decoration: BoxDecoration(color: x.color, shape: BoxShape.circle),
-                                      ),
-                                    // Open: hollow dot; a day passed without it: × (as in the legend).
-                                    for (final x in p.where((e) => e.status == 'planned' && !e.isMissedOn(now)).map((e) => e.sport).toSet())
-                                      Container(
-                                        width: 7,
-                                        height: 7,
-                                        margin: const EdgeInsets.all(1),
-                                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: x.color, width: 1.5)),
-                                      ),
-                                    if (p.any((e) => e.status == 'planned' && e.isMissedOn(now)))
-                                      const Icon(Icons.close_rounded, key: ValueKey('monthMissed'), size: 9, color: AppColors.danger),
+                                    // The legend's marks: ✓ in the compliance colour of a planned workout done
+                                    // (on the day it was done), ✕ missed / not counted, a hollow dot open, a
+                                    // filled dot a session outside the plan.
+                                    for (final m in dayMarks.take(4)) DayMarkIcon(m),
                                   ],
                                 ),
                               ),
@@ -381,7 +364,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         for (final p in dayPlans.where((p) => !p.isDone || p.sessionId == null))
           Padding(padding: const EdgeInsets.only(bottom: 6), child: PlanCard(plan: p)),
         for (final p in dayPlans.where((p) => p.isDone && p.sessionId != null))
-          if (ref.watch(planSessionsProvider)[p.id] case final s? when !sameDay(s.start, p.date)) DoneElsewhereLine(plan: p, session: s),
+          if (linked[p.id] case final s? when !sameDay(s.start, p.date)) DoneElsewhereLine(plan: p, session: s),
       ],
     );
   }
@@ -571,7 +554,8 @@ class PlanCard extends ConsumerWidget {
     final profile = ref.watch(profileOrDefaultProvider);
     final c = planCompliance(p, ref.watch(planSessionsProvider)[p.id], profile: profile);
     return Material(
-      color: p.sport.color.withValues(alpha: 0.12),
+      // Missed or not counted (red ✕): neutral, not the sport's tint of an open / done workout.
+      color: c.level == ComplianceLevel.red ? Theme.of(context).colorScheme.surfaceContainerHighest : p.sport.color.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: c.level == ComplianceLevel.none ? BorderSide.none : BorderSide(color: c.color(context).withValues(alpha: 0.55)),
@@ -643,7 +627,14 @@ class _SessionChip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = session;
-    final u = ref.watch(profileOrDefaultProvider).units;
+    final profile = ref.watch(profileOrDefaultProvider);
+    final u = profile.units;
+    // The planned workout this session fulfils (same day or replaced) – its compliance, the same
+    // ring as the planned-workout cards; a session outside the plan gets a neutral done mark.
+    final linked = ref.watch(planSessionsProvider);
+    final planId = linked.entries.where((e) => e.value.id == s.id).map((e) => e.key).firstOrNull;
+    final all = ref.watch(planListProvider);
+    final plan = planId == null ? null : all.where((p) => p.id == planId).firstOrNull;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
@@ -685,7 +676,14 @@ class _SessionChip extends ConsumerWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(width: 6),
-                const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
+                plan != null
+                    ? ComplianceRing(compliance: planCompliance(plan, s, profile: profile))
+                    : Icon(
+                      Icons.check_circle_rounded,
+                      key: const ValueKey('extraSessionDone'),
+                      color: Theme.of(context).colorScheme.outline,
+                      size: 20,
+                    ),
               ],
             ),
           ),
@@ -730,5 +728,82 @@ class _MonthLegend extends StatelessWidget {
         const TermInfoButton(Term.compliance, key: ValueKey('legendInfo')),
       ],
     );
+  }
+}
+
+/// One mark of a day in the month grid (see [monthMarks]).
+class DayMark {
+  const DayMark(this.sport, {this.compliance, this.extra = false});
+  final Sport sport;
+
+  /// The planned workout's compliance; null for [extra].
+  final Compliance? compliance;
+
+  /// A session outside the plan (filled dot).
+  final bool extra;
+}
+
+/// Day key → the marks of the month grid, as in its legend: a planned workout with a linked
+/// session on the day it was done (✓ in its compliance colour, ✕ when too short to count), one
+/// without on its own day (✓ marked done, hollow dot open, ✕ missed; skipped: none), sessions
+/// fulfilling no planned workout as filled dots. [allPlans]: every planned workout (a session
+/// linked to a filtered-out one is no extra); [plans] / [sessions]: the ones shown.
+Map<String, List<DayMark>> monthMarks(
+  List<PlannedWorkout> allPlans,
+  List<PlannedWorkout> plans,
+  List<Session> sessions,
+  Map<String, Session> linked, {
+  required DateTime now,
+  UserProfile? profile,
+}) {
+  final out = <String, List<DayMark>>{};
+  void add(DateTime d, DayMark m) => out.putIfAbsent(dayKey(d), () => []).add(m);
+  final shown = {for (final x in sessions) x.id};
+  for (final p in plans) {
+    final s = linked[p.id];
+    if (p.status == 'skipped' && s == null) continue;
+    final c = planCompliance(p, s, now: now, profile: profile);
+    if (s != null && !shown.contains(s.id)) continue;
+    add(s?.start ?? p.date, DayMark(p.sport, compliance: c));
+  }
+  final used = {
+    for (final p in allPlans)
+      if (linked[p.id] case final s?) s.id,
+  };
+  for (final s in sessions) {
+    if (!used.contains(s.id)) add(s.start, DayMark(s.sport, extra: true));
+  }
+  return out;
+}
+
+/// A [DayMark] drawn in the month grid (9 px).
+class DayMarkIcon extends StatelessWidget {
+  const DayMarkIcon(this.mark, {super.key});
+  final DayMark mark;
+
+  @override
+  Widget build(BuildContext context) {
+    final m = mark;
+    final c = m.compliance;
+    if (m.extra || c == null) {
+      return Container(
+        key: const ValueKey('monthExtra'),
+        width: 7,
+        height: 7,
+        margin: const EdgeInsets.all(1),
+        decoration: BoxDecoration(color: m.sport.color, shape: BoxShape.circle),
+      );
+    }
+    return switch (c.level) {
+      ComplianceLevel.none => Container(
+        key: const ValueKey('monthOpen'),
+        width: 7,
+        height: 7,
+        margin: const EdgeInsets.all(1),
+        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: m.sport.color, width: 1.5)),
+      ),
+      ComplianceLevel.red => Icon(Icons.close_rounded, key: const ValueKey('monthMissed'), size: 9, color: c.color(context)),
+      _ => Icon(Icons.check_rounded, key: ValueKey('monthDone_${c.level.name}'), size: 9, color: c.color(context)),
+    };
   }
 }

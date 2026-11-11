@@ -57,9 +57,15 @@ class PlannedWorkoutPage extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
     final phase = phaseLabel(l, p.phase);
     final exercises = p.exercises.isNotEmpty ? p.exercises : (template?.exercises ?? const []);
+    // Watched unconditionally at the top: a first subscription inside `isDone && …` happened in
+    // the build right after "mark as done" and flushed pending provider updates during that build
+    // ("setState() or markNeedsBuild() called during build").
+    final profile = ref.watch(profileOrDefaultProvider);
+    final linked = ref.watch(planSessionsProvider)[p.id];
+    final prescriber = ref.watch(loadPrescriberProvider);
+    final compliance = planCompliance(p, linked, profile: profile);
     // A start too short to count (< 10 % of the plan) leaves the workout open.
-    final done =
-        p.isDone && !planCompliance(p, ref.watch(planSessionsProvider)[p.id], profile: ref.watch(profileOrDefaultProvider)).notCounted;
+    final done = p.isDone && !compliance.notCounted;
 
     return Scaffold(
       appBar: AppBar(
@@ -160,6 +166,46 @@ class PlannedWorkoutPage extends ConsumerWidget {
               ),
             ],
           ),
+          // A session started from this workout but too short to count: say so and link it – the
+          // workout stays open, but the attempt is not invisible.
+          if (linked != null && compliance.notCounted) ...[
+            const SizedBox(height: 12),
+            Material(
+              key: const ValueKey('notCountedSession'),
+              color: AppColors.danger.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: linked.id))),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.close_rounded, color: AppColors.danger, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(l.complianceNotCounted(compliance.pct ?? 0), style: const TextStyle(fontWeight: FontWeight.w700)),
+                            Text(
+                              l.plannedNotCountedSub(
+                                DateFormat.MMMEd(context.localeName).format(linked.start),
+                                humanDuration(linked.durationSec),
+                              ),
+                              style: t.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(l.viewSession, style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w600)),
+                      const Icon(Icons.chevron_right_rounded, color: AppColors.brand),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
           if (p.auto != null && !p.isDone) ...[
             const SizedBox(height: 16),
             AutoAdjustCard(
@@ -214,7 +260,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
                 title: Text(exName(context, e.exId, e.name)),
                 subtitle: Builder(
                   builder: (_) {
-                    final rx = p.isDone ? null : ref.watch(loadPrescriberProvider).forExercise(e, phase: p.phase);
+                    final rx = p.isDone ? null : prescriber.forExercise(e, phase: p.phase);
                     final reps =
                         e.repMin != null && e.repMax != null
                             ? '${e.repMin}–${e.repMax}'

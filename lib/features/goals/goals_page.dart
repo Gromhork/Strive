@@ -12,6 +12,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/event_spec.dart';
 import '../../services/goal_model.dart';
 import '../../services/insights.dart';
 import '../../services/plan_service.dart';
@@ -98,7 +99,12 @@ class GoalsPage extends ConsumerWidget {
       final left = g.deadline == null ? 0 : daysBetween(today, g.deadline!);
       if (g.deadline == null || left < 0) return (left.toDouble(), 1.0, l.eventPassed);
       // The plan's phase and week instead of a bare percentage of elapsed days.
-      final e = EventProgress.of(g.deadline!, ref.watch(planListProvider), today);
+      final e = EventProgress.of(
+        g.deadline!,
+        ref.watch(planListProvider),
+        today,
+        planForRace: planBuiltFor(ref.watch(profileOrDefaultProvider), g),
+      );
       final p = e.week != null && e.weeks != null ? e.week! / e.weeks! : (1 - left / total).clamp(0.0, 1.0);
       return (left.toDouble(), p, eventProgressText(l, e));
   }
@@ -317,6 +323,9 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
     _target.dispose();
     super.dispose();
   }
+
+  /// Recommended plan length (weeks, lower end) to the chosen race – 12 when unknown.
+  int _raceWeeks() => EventSpec.of(_key)?.weeksFor(ref.read(profileOrDefaultProvider).level).$1 ?? 12;
 
   /// The profile with this event as the plan's goal (null when it cannot be aligned).
   UserProfile? _alignedProfile() {
@@ -609,7 +618,12 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                         context: context,
                         firstDate: DateTime.now(),
                         lastDate: DateTime.now().add(const Duration(days: 1095)), // time span
-                        initialDate: _deadline ?? DateTime.now().add(const Duration(days: 60)), // time span
+                        // A race: on the long-session day (else Sunday) of the race's recommended plan length.
+                        initialDate:
+                            _deadline ??
+                            (_type == GoalType.event
+                                ? defaultRaceDate(DateTime.now(), _raceWeeks(), longDay: ref.read(profileOrDefaultProvider).longDay)
+                                : DateTime.now().add(const Duration(days: 60))), // time span
                       );
                       if (d != null) setState(() => _deadline = d);
                     },

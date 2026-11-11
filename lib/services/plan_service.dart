@@ -55,9 +55,13 @@ class PlanService {
       // The programs of the chosen split must exist (built-ins added on demand).
       final added = missingBuiltins(templates, repo.newId, de: l.localeName.startsWith('de'), only: PlanGenerator.gymKeysFor(p).toSet());
       if (added.isNotEmpty) repo.saveTemplates(added);
-      final plan = PlanGenerator(l, p, [...templates, ...added], repo.newId).generate(start: day, weeks: weeks);
+      final generated = PlanGenerator(l, p, [...templates, ...added], repo.newId).generate(start: day, weeks: weeks);
+      // Done / linked workouts from [day] on stay – and their day is not planned again (a replan
+      // "from today" after today's run must not add a second run for today).
+      final kept = keptWorkouts(existing, day, sessions);
+      final plan = withoutCoveredDays(generated, kept);
       // Written locally at once (offline persistence); the future is the server commit.
-      final write = repo.replacePlans(existing, day, plan);
+      final write = repo.replacePlans(existing, day, plan, keep: {for (final k in kept) k.id});
       // Plan start / length: lets the plan review rebuild the plan to find gaps.
       if (saveMeta) repo.saveProfile(withPlanMeta(p, day, weeks));
       write.ignore();
@@ -66,5 +70,31 @@ class PlanService {
       _busy = false;
       _last = DateTime.now();
     }
+  }
+
+  /// Workouts on or after [day] a new plan keeps: done ones, and planned ones a session is
+  /// linked to (started from them – also a start too short to count, its data stays attached).
+  static List<PlannedWorkout> keptWorkouts(List<PlannedWorkout> existing, DateTime day, List<Session> sessions) {
+    final linked = {
+      for (final s in sessions)
+        if (s.planId != null) s.planId!,
+    };
+    return [
+      for (final p in existing)
+        if (!p.date.isBefore(day) && (p.isDone || p.sessionId != null || (p.status == 'planned' && linked.contains(p.id)))) p,
+    ];
+  }
+
+  /// [generated] without the workouts on days that already have a kept workout ([keptWorkouts]):
+  /// a day that was trained is not planned a second time.
+  static List<PlannedWorkout> withoutCoveredDays(List<PlannedWorkout> generated, List<PlannedWorkout> kept) {
+    final covered = {
+      for (final k in kept)
+        if (k.status != 'skipped') dayKey(k.date),
+    };
+    return [
+      for (final g in generated)
+        if (!covered.contains(dayKey(g.date))) g,
+    ];
   }
 }

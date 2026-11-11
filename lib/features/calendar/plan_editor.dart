@@ -447,11 +447,8 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
     final eventWeeks = _eventWeeks(p);
     final current = _currentLength(p.athlete);
     final options = [
-      (4, l.plan4w),
-      (8, l.plan8w),
-      (12, l.plan12w),
-      (16, l.plan16w),
-      (20, l.plan20w),
+      // The same plain labels as the plan settings' plan-length chips.
+      for (final w in const [4, 8, 12, 16, 20]) (w, l.planWeeksN(w)),
       if (![4, 8, 12, 16, 20].contains(current)) (current, l.planWeeksCurrent(current)),
     ]..sort((a, b) => a.$1.compareTo(b.$1));
     return Padding(
