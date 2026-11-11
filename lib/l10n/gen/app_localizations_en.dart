@@ -5776,4 +5776,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String feasLongRunTimeCap(String time, String have, String race) {
     return 'Your long runs stop at $time – at your easy pace that is about $have km (many plans go up to $race km). Running longer in one go adds more injury risk and recovery time than fitness. So: finishing is the goal – start easy and plan short walk breaks from the start (e.g. 1 min every 10 min).';
   }
+
+  @override
+  String durationRange(String from, String to) {
+    return 'Choose a time between $from and $to.';
+  }
+
+  @override
+  String bestTimeFor(String distance) {
+    return 'Best time · $distance';
+  }
+
+  @override
+  String swimTestFor(String distance) {
+    return 'Swim test · $distance';
+  }
+
+  @override
+  String get noTargetTime => 'No target time – just finish';
+
+  @override
+  String get raceWhen => 'When is the race?';
+
+  @override
+  String get raceByDate => 'Date';
+
+  @override
+  String get raceByWeeks => 'Plan length';
+
+  @override
+  String get raceByWeeksHint => 'No date yet? Choose the plan length: the race goes on the day of your long session in the last week, and the plan builds up to it – taper included.';
+
+  @override
+  String raceOnDate(String date) {
+    return 'Race on $date';
+  }
 }

@@ -71,3 +71,38 @@ String eventDistanceLabel(AppLocalizations l, String key) => switch (key) {
   'swim5000' => l.distSwim5000,
   _ => key,
 };
+
+/// Plausible pace bounds per discipline in s/km: (faster than about the world record, walking /
+/// slower than the cut-offs). Running 2:25–16:00 /km, cycling 55–8 km/h, swimming 0:55–5:00 /100 m.
+const _runPace = (145.0, 960.0), _ridePace = (3600 / 55, 3600 / 8), _swimPace = (550.0, 3000.0);
+
+/// Plausible finishing time (s) of the race distance [key] as (fastest, slowest), null for an
+/// unknown key. Anything outside is a typo (e.g. "4" typed for a 10 km time): the time inputs only
+/// offer this range and the profile drops stored times outside it, so no model ever sees them.
+(int, int)? eventTimeBounds(String? key) {
+  final d = eventDistanceOf(key);
+  if (d == null) return null;
+  final legs = switch (d.sport) {
+    EventSport.run => [(d.km, _runPace)],
+    EventSport.ride => [(d.km, _ridePace)],
+    EventSport.swim => [(d.km, _swimPace)],
+    EventSport.triathlon => [(d.legs[0], _swimPace), (d.legs[1], _ridePace), (d.legs[2], _runPace)],
+    EventSport.duathlon => [(d.legs[0], _runPace), (d.legs[1], _ridePace), (d.legs[2], _runPace)],
+  };
+  var lo = 0.0, hi = 0.0;
+  for (final (km, (fast, slow)) in legs) {
+    lo += km * fast;
+    hi += km * slow;
+  }
+  return (lo ~/ 60 * 60, (hi / 60).ceil() * 60);
+}
+
+/// Plausible time (s) of a pool swim test over [meters] (400 m / 200 m CSS test): 0:55–5:00 /100 m.
+(int, int) swimTestBounds(int meters) => ((meters * _swimPace.$1 / 1000) ~/ 5 * 5, (meters * _swimPace.$2 / 1000).ceil());
+
+/// Whether [sec] is a plausible time for the race distance [key] ([eventTimeBounds]); unknown
+/// distances only need a positive time.
+bool plausibleEventTime(String? key, int sec) {
+  final b = eventTimeBounds(key);
+  return sec > 0 && (b == null || (sec >= b.$1 && sec <= b.$2));
+}

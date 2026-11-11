@@ -13,6 +13,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
+import '../../widgets/duration_picker.dart';
 import '../../widgets/rpe_picker.dart';
 import '../session/gym_session_page.dart' show exerciseFromLibrary;
 import '../train/exercise_picker.dart';
@@ -35,7 +36,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   late final Units u = ref.read(profileOrDefaultProvider).units;
   late DateTime _start = s.start;
   late final _title = TextEditingController(text: s.title);
-  late final _duration = TextEditingController(text: clock(s.durationSec));
+  late int _durationSec = s.durationSec;
   late final _distance = TextEditingController(text: s.distanceM <= 0 ? '' : _distText(s.distanceM));
   late final _elevation = TextEditingController(text: s.elevationM <= 0 ? '' : s.elevationM.round().toString());
   late final _laps = TextEditingController(text: s.laps <= 0 ? '' : '${s.laps}');
@@ -47,18 +48,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   late int? _rpe = s.rpe;
   late final List<GymExercise> _exercises = s.exercises.map((e) => e.copy()).toList();
 
-  List<TextEditingController> get _controllers => [
-    _title,
-    _duration,
-    _distance,
-    _elevation,
-    _laps,
-    _pool,
-    _avgHr,
-    _maxHr,
-    _calories,
-    _notes,
-  ];
+  List<TextEditingController> get _controllers => [_title, _distance, _elevation, _laps, _pool, _avgHr, _maxHr, _calories, _notes];
 
   /// Editable values (for the unsaved-changes prompt on back).
   String _snapshot() => jsonEncode([_start.millisecondsSinceEpoch, for (final c in _controllers) c.text, _rpe, _performance()]);
@@ -66,7 +56,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   /// The performance data (what a session "taken over from the plan" took from it): changing it
   /// makes the session the athlete's own numbers.
   String _performance() => jsonEncode([
-    _duration.text,
+    _durationSec,
     _distance.text,
     _laps.text,
     _pool.text,
@@ -95,11 +85,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
 
   void _save() {
     final l = context.l10n;
-    final sec = parseHms(_duration.text);
-    if (sec == null || sec <= 0) {
-      toast(context, l.invalidDuration);
-      return;
-    }
+    final sec = _durationSec;
     final d = parseNum(_distance.text);
     final cardio = s.sport != Sport.gym;
     final swim = s.sport == Sport.swim;
@@ -222,7 +208,15 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
               },
             ),
             row([
-              TextField(controller: _duration, keyboardType: TextInputType.datetime, decoration: InputDecoration(labelText: l.durationHms)),
+              // Scroll wheels instead of typed "h:mm:ss" – no invalid duration to reject on save.
+              DurationField(
+                key: const ValueKey('editDuration'),
+                value: _durationSec,
+                onChanged: (v) => setState(() => _durationSec = v ?? _durationSec),
+                label: l.duration,
+                maxHours: 47,
+                clearable: false,
+              ),
               if (cardio)
                 TextField(
                   key: const ValueKey('editDistance'),

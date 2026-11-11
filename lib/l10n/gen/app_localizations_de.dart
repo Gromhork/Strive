@@ -5776,4 +5776,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String feasLongRunTimeCap(String time, String have, String race) {
     return 'Deine langen Läufe enden bei $time – bei deinem lockeren Tempo sind das etwa $have km (viele Pläne gehen bis $race km). Länger am Stück bringt mehr Verletzungsrisiko und Erholungsbedarf als Fitness. Daher: Ankommen ist das Ziel – ruhig loslaufen und von Beginn an kurze Gehpausen einplanen (z. B. 1 min alle 10 min).';
   }
+
+  @override
+  String durationRange(String from, String to) {
+    return 'Wähle eine Zeit zwischen $from und $to.';
+  }
+
+  @override
+  String bestTimeFor(String distance) {
+    return 'Bestzeit · $distance';
+  }
+
+  @override
+  String swimTestFor(String distance) {
+    return 'Schwimmtest · $distance';
+  }
+
+  @override
+  String get noTargetTime => 'Keine Zielzeit – ankommen';
+
+  @override
+  String get raceWhen => 'Wann ist der Wettkampf?';
+
+  @override
+  String get raceByDate => 'Datum';
+
+  @override
+  String get raceByWeeks => 'Planlänge';
+
+  @override
+  String get raceByWeeksHint => 'Noch kein Termin? Wähle die Planlänge: Der Wettkampf liegt am Tag deiner langen Einheit in der letzten Woche, und der Plan baut darauf hin – inklusive Tapering.';
+
+  @override
+  String raceOnDate(String date) {
+    return 'Wettkampf am $date';
+  }
 }

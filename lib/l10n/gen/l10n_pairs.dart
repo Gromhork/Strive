@@ -1683,4 +1683,13 @@ const l10nPairs = <(String, String)>[
   ('Partly or far off still counts as done – the plan only adapts when it happens repeatedly.', 'Teilweise oder stark abweichend zählt trotzdem als erledigt – der Plan passt sich erst an, wenn es sich wiederholt.'),
   ('Note on your plan', 'Hinweis zu deinem Plan'),
   ('Your long runs stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km). Running longer in one go adds more injury risk and recovery time than fitness. So: finishing is the goal – start easy and plan short walk breaks from the start (e.g. 1 min every 10 min).', 'Deine langen Läufe enden bei {time} – bei deinem lockeren Tempo sind das etwa {have} km (viele Pläne gehen bis {race} km). Länger am Stück bringt mehr Verletzungsrisiko und Erholungsbedarf als Fitness. Daher: Ankommen ist das Ziel – ruhig loslaufen und von Beginn an kurze Gehpausen einplanen (z. B. 1 min alle 10 min).'),
+  ('Choose a time between {from} and {to}.', 'Wähle eine Zeit zwischen {from} und {to}.'),
+  ('Best time · {distance}', 'Bestzeit · {distance}'),
+  ('Swim test · {distance}', 'Schwimmtest · {distance}'),
+  ('No target time – just finish', 'Keine Zielzeit – ankommen'),
+  ('When is the race?', 'Wann ist der Wettkampf?'),
+  ('Date', 'Datum'),
+  ('Plan length', 'Planlänge'),
+  ('No date yet? Choose the plan length: the race goes on the day of your long session in the last week, and the plan builds up to it – taper included.', 'Noch kein Termin? Wähle die Planlänge: Der Wettkampf liegt am Tag deiner langen Einheit in der letzten Woche, und der Plan baut darauf hin – inklusive Tapering.'),
+  ('Race on {date}', 'Wettkampf am {date}'),
 ];

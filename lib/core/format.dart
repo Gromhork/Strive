@@ -153,17 +153,6 @@ int? parseHms(String text) {
 
 double? parseNum(String s) => double.tryParse(s.trim().replaceAll(',', '.'));
 
-/// Parses "ss", "mm:ss" or "h:mm:ss" into seconds.
-int? parseClock(String s) {
-  final parts = s.trim().split(RegExp(r'[:.]')).where((e) => e.isNotEmpty).map(int.tryParse).toList();
-  if (parts.isEmpty || parts.any((e) => e == null)) return null;
-  var sec = 0;
-  for (final p in parts) {
-    sec = sec * 60 + p!;
-  }
-  return sec;
-}
-
 /// Y-axis range for a chart: data min/max plus padding, at least [minSpan] wide
 /// (so tiny fluctuations stay visually flat), rounded to whole numbers.
 (double, double) paddedRange(Iterable<double> values, {double minSpan = 2}) {

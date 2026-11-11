@@ -1379,6 +1379,17 @@ class PlanGenerator {
     return _longDayFrom(p, endurance);
   }
 
+  /// Race day of a race goal given as a plan length instead of a date: the long-session day
+  /// ([longDayOf] – the day the plan puts its longest session, e.g. the triathlon's long ride) of
+  /// the plan's last week. Weeks count like [GoalModel.weeksUntil] (the week of [start] is week 1),
+  /// so a plan from [start] to this day is exactly [weeks] long and builds up to it (periodisation,
+  /// taper) like for a dated race. Without an endurance day: the last training day, else Saturday.
+  static DateTime raceDayForWeeks(UserProfile p, DateTime start, int weeks) {
+    final days = scheduleOf(p).keys.toList()..sort();
+    final day = longDayOf(p) ?? days.lastOrNull ?? DateTime.saturday;
+    return addDays(startOfWeek(dayOnly(start)), 7 * (max(weeks, 1) - 1) + day - 1);
+  }
+
   // ───────────────────────────── Structure ─────────────────────────────
 
   /// weekday → sports. Advanced setup provides it directly; otherwise derive it.

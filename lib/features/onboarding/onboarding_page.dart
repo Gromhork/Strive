@@ -30,6 +30,8 @@ import '../goals/goals_page.dart' show eventKeyForKm;
 import '../../widgets/event_distance_picker.dart';
 import '../../widgets/term_info.dart';
 import '../../widgets/segments.dart';
+import '../../widgets/duration_picker.dart';
+import '../../services/target_suggestion.dart';
 
 /// What the setup flow edits.
 enum SetupMode {
@@ -64,11 +66,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _pager = PageController();
   int _page = 0;
 
-  /// Bumped when the target time is set from outside the field (suggestion taken).
-  int _targetRev = 0;
-
   /// Race goal (true) or just a plan length in weeks (false).
   late bool _withEvent = a.eventDate != null || a.eventDistance != null;
+
+  /// Race goal without a date: the race is on the long-session day of the last of
+  /// [AthleteData.planWeeks] weeks ([PlanGenerator.raceDayForWeeks]), kept in [AthleteData.eventDate]
+  /// like a picked date so goal, countdown, forecast and taper work unchanged.
+  bool _raceByWeeks = false;
   late UserProfile p;
   late AthleteData a;
   final _name = TextEditingController();
@@ -98,12 +102,20 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       }, fireImmediately: true);
     }
     _inInit = false;
+    // The recorded sessions (target suggestion) – subscribed after the first frame: a first
+    // subscription while building refreshes dependent providers during the build (Riverpod:
+    // "markNeedsBuild() called during build").
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.listenManual(sessionListProvider, (_, next) => setState(() => _sessions = next), fireImmediately: true);
+    });
     _name.text = p.name;
     _imperial = p.imperial;
     _generatePlan = widget.mode != SetupMode.profile;
   }
 
   bool _goalPrefilled = false;
+  List<Session> _sessions = const [];
   bool _inInit = true;
 
   /// Plan settings start from what the current plan is built on: the race of the active
@@ -129,8 +141,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       }
       _withEvent = true;
       _eventName.text = goal.title;
+      _prefilledGoal = goal;
     }
   }
+
+  /// The race goal the plan settings started from: changing its date or distance here edits that
+  /// goal – a second goal next to it would leave the old race "not aligned" with the new plan.
+  Goal? _prefilledGoal;
 
   void _prefillWeek() {
     if (!_advanced) return;
@@ -200,7 +217,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   void _setLongDay(int? d) => setState(() => p = UserProfile.fromMap({...p.toMap(), 'longDay': d}));
   Set<Sport> get _sports => {...p.focus.sports, if (p.goals.contains('strength') || p.goals.contains('muscle')) Sport.gym};
 
-  void _setA(Map<String, dynamic> changes) => setState(() => a = a.merge(changes));
+  void _setA(Map<String, dynamic> changes) => setState(() {
+    a = a.merge(changes);
+    _syncRaceDay();
+  });
 
   List<_Step> get _steps {
     final setup = widget.mode == SetupMode.setup;
@@ -226,6 +246,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   void _next() {
     FocusScope.of(context).unfocus();
+    // The week or the long day may have changed on an earlier step.
+    _syncRaceDay();
     if (_page < _steps.length - 1) {
       _pager.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
     } else {
@@ -256,8 +278,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       start = s;
     }
     final repo = ref.read(repoProvider)!;
+    // Read through the container from here on: saving the finished setup's profile replaces this
+    // page with the app (AuthGate) – the plan and the race goal must still be created then (the
+    // first setup used to stop at the next `mounted` check: a new account had no plan).
+    final container = ProviderScope.containerOf(context, listen: false);
     final l = context.l10n;
     final de = context.localeName.startsWith('de');
+    // A race given as a plan length stays on the day shown (also when the plan starts next Monday).
+    _syncRaceDay();
     // Sports that are no longer part of the focus (e.g. after switching from
     // triathlon to hybrid) are removed from the week plan.
     final sports = _sports;
@@ -312,10 +340,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     // Programs: all built-ins for new users; otherwise add the ones the split needs. "New"
     // only when the server confirms there are none – an empty local cache (first start
     // offline) must not add every built-in program a second time.
-    var templates = ref.read(templateListProvider);
+    var templates = container.read(templateListProvider);
     if (templates.isEmpty) {
       templates = await repo.templatesFromServer() ?? templates;
-      if (!mounted) return;
     }
     final added =
         templates.isEmpty
@@ -328,8 +355,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
     if (a.eventDate != null && (a.eventDistance != null || _eventName.text.trim().isNotEmpty)) {
       final km = _eventKm(a.eventDistance);
-      final goals = ref.read(goalsProvider).value ?? const <Goal>[];
-      final existing = goals.where((g) => g.type == GoalType.event && g.deadline != null && sameDay(g.deadline!, a.eventDate!)).firstOrNull;
+      final goals = container.read(goalsProvider).value ?? const <Goal>[];
+      final existing =
+          goals.where((g) => g.type == GoalType.event && g.deadline != null && sameDay(g.deadline!, a.eventDate!)).firstOrNull ??
+          goals.where((g) => g.id == _prefilledGoal?.id).firstOrNull;
       repo.saveGoal(
         Goal(
           id: existing?.id ?? repo.newId(),
@@ -351,7 +380,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         l: l,
         profile: profile,
         templates: templates,
-        existing: ref.read(planListProvider),
+        existing: container.read(planListProvider),
         start: start,
         weeks: a.planWeeks,
       );
@@ -405,14 +434,21 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           child: Column(
             children: [
               Expanded(
-                child: PageView(
+                // Built lazily, each step in its own element: typing on one step no longer rebuilds
+                // every other step (the plan step generates a whole plan for its feasibility check),
+                // and an error while building one step stays inside that step – it used to replace
+                // the whole page, and the PageView built anew started over at the first step.
+                child: PageView.builder(
                   controller: _pager,
                   physics: const NeverScrollableScrollPhysics(),
                   onPageChanged: (i) => setState(() => _page = i),
-                  children: [
-                    for (final s in steps)
-                      SingleChildScrollView(key: ValueKey(s.$1), padding: const EdgeInsets.fromLTRB(20, 20, 20, 24), child: s.$2(l)),
-                  ],
+                  itemCount: steps.length,
+                  // Steps come and go with the focus (run / ride / swim): a page keeps its state by id.
+                  findChildIndexCallback: (key) {
+                    final i = steps.indexWhere((s) => ValueKey(s.$1) == key);
+                    return i < 0 ? null : i;
+                  },
+                  itemBuilder: (_, i) => _StepPage(key: ValueKey(steps[i].$1), content: () => steps[i].$2(l)),
                 ),
               ),
               Padding(
@@ -536,28 +572,41 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         onChanged: (v) => onChanged(parseNum(v)),
       );
 
-  /// Duration input as "mm:ss" or "h:mm:ss".
-  /// [inline]: the label (a short distance like "5 km") stays inside the field as a suffix –
-  /// a floating label sat outside the filled box.
-  Widget _timeField(String label, int? seconds, ValueChanged<int?> onChanged, {String hint = 'mm:ss', Key? key, bool inline = false}) =>
-      TextFormField(
-        key: key,
-        initialValue: seconds == null ? '' : clock(seconds),
-        keyboardType: TextInputType.datetime,
-        decoration: InputDecoration(
-          labelText: inline ? null : label,
-          hintText: hint,
-          prefixIcon: const Icon(Icons.timer_outlined, size: 20),
-          suffixIcon:
-              inline
-                  ? Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Align(widthFactor: 1, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600))),
-                  )
-                  : null,
-        ),
-        onChanged: (v) => onChanged(parseClock(v)),
-      );
+  /// Race time of a running distance ([key] '5k' | '10k' | 'hm' | 'm') in the race time grid: scroll
+  /// wheels within the plausible range ([eventTimeBounds]), starting at the time the other entries
+  /// (or the level) predict.
+  Widget _raceTimeField(AppLocalizations l, String key, String label) {
+    final bounds = eventTimeBounds(key)!;
+    final predicted = Vdot.raceTime(Vdot.of(a) ?? Vdot.defaultFor(p.level), Vdot.distances[key]!);
+    return DurationField(
+      key: ValueKey('raceTime-$key'),
+      value: a.raceTimes[key],
+      onChanged: (v) => _setRace(key, v),
+      inlineLabel: label,
+      title: l.bestTimeFor(label),
+      min: bounds.$1,
+      max: bounds.$2,
+      initial: (predicted / 5).round() * 5,
+    );
+  }
+
+  /// Time of the 400 m / 200 m swim test ([meters]) – minutes and seconds, starting at the time the
+  /// known (or the level's) CSS predicts.
+  Widget _swimTestField(AppLocalizations l, int meters) {
+    final (lo, hi) = swimTestBounds(meters);
+    final css = SwimZones.fromTests(a.swim400Sec, a.swim200Sec) ?? SwimZones.defaultFor(p.level);
+    final field = meters == 400 ? 'swim400Sec' : 'swim200Sec';
+    return DurationField(
+      key: ValueKey('swimTest$meters'),
+      value: meters == 400 ? a.swim400Sec : a.swim200Sec,
+      onChanged: (v) => _setA({field: v}),
+      inlineLabel: '$meters m',
+      title: l.swimTestFor('$meters m'),
+      min: lo,
+      max: hi,
+      initial: ((css * meters / 100 + (meters == 400 ? 15 : 0)) / 5).round() * 5,
+    );
+  }
 
   // ───────────────────────────── pages ─────────────────────────────
 
@@ -1193,17 +1242,17 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _label(l.raceTimesTitle, hint: l.raceTimesHint),
         Row(
           children: [
-            Expanded(child: _timeField('5 km', a.raceTimes['5k'], (v) => _setRace('5k', v), inline: true)),
+            Expanded(child: _raceTimeField(l, '5k', '5 km')),
             const SizedBox(width: 12),
-            Expanded(child: _timeField('10 km', a.raceTimes['10k'], (v) => _setRace('10k', v), inline: true)),
+            Expanded(child: _raceTimeField(l, '10k', '10 km')),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _timeField('21,1 km', a.raceTimes['hm'], (v) => _setRace('hm', v), hint: 'h:mm:ss', inline: true)),
+            Expanded(child: _raceTimeField(l, 'hm', '${Units.num(21.1)} km')),
             const SizedBox(width: 12),
-            Expanded(child: _timeField('42,2 km', a.raceTimes['m'], (v) => _setRace('m', v), hint: 'h:mm:ss', inline: true)),
+            Expanded(child: _raceTimeField(l, 'm', '${Units.num(42.2)} km')),
           ],
         ),
         if (vdot != null) ...[const SizedBox(height: 12), _ZonesPreview(vdot: vdot)],
@@ -1301,13 +1350,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           onChanged: (v) => _setA({'canSwim400': v}),
         ),
         _label(l.cssTitle, hint: l.cssHint, term: Term.css),
-        Row(
-          children: [
-            Expanded(child: _timeField('400 m', a.swim400Sec, (v) => _setA({'swim400Sec': v}), inline: true)),
-            const SizedBox(width: 12),
-            Expanded(child: _timeField('200 m', a.swim200Sec, (v) => _setA({'swim200Sec': v}), inline: true)),
-          ],
-        ),
+        Row(children: [Expanded(child: _swimTestField(l, 400)), const SizedBox(width: 12), Expanded(child: _swimTestField(l, 200))]),
         if (css != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
@@ -1502,23 +1545,22 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           color: AppColors.warning,
         ),
         // Race goal or just a plan length – both are first-class choices.
-        SizedBox(
-          width: double.infinity,
-          child: SegmentedButton<bool>(
-            key: const ValueKey('goalKind'),
-            segments: [
-              ButtonSegment(value: true, icon: const Icon(Icons.emoji_events_outlined), label: Text(l.goalKindRace)),
-              ButtonSegment(value: false, icon: const Icon(Icons.date_range_rounded), label: Text(l.goalKindWeeks)),
-            ],
-            selected: {_withEvent},
-            onSelectionChanged: (v) {
-              setState(() => _withEvent = v.first);
-              if (!_withEvent) {
-                _eventName.clear();
-                _setA({'eventDate': null, 'eventDistance': null, 'targetTimeSec': null});
-              }
-            },
-          ),
+        Segments<bool>(
+          key: const ValueKey('goalKind'),
+          segments: [
+            Seg(true, icon: Icons.emoji_events_outlined, label: l.goalKindRace),
+            Seg(false, icon: Icons.date_range_rounded, label: l.goalKindWeeks),
+          ],
+          value: _withEvent,
+          onChanged: (v) {
+            FocusScope.of(context).unfocus();
+            setState(() => _withEvent = v);
+            if (!_withEvent) {
+              _raceByWeeks = false;
+              _eventName.clear();
+              _setA({'eventDate': null, 'eventDistance': null, 'targetTimeSec': null});
+            }
+          },
         ),
         const SizedBox(height: 16),
         if (!_withEvent) ...[
@@ -1528,41 +1570,132 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         ] else ...[
           TextField(
             controller: _eventName,
-            decoration: InputDecoration(labelText: l.eventName, prefixIcon: const Icon(Icons.flag_outlined)),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.event),
-            label: Text(a.eventDate == null ? l.eventDate : df.format(a.eventDate!)),
-            onPressed: () async {
-              final d = await showDatePicker(
-                context: context,
-                firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 730)), // time span
-                initialDate: a.eventDate ?? DateTime.now().add(const Duration(days: 90)), // time span
-              );
-              if (d != null) _setA({'eventDate': d});
-            },
+            textCapitalization: TextCapitalization.sentences,
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(
+              labelText: l.eventName,
+              // Left empty, the goal is named after the distance ("Halbmarathon").
+              hintText: a.eventDistance == null ? null : _distanceLabel(l, a.eventDistance),
+              prefixIcon: const Icon(Icons.flag_outlined),
+            ),
           ),
           _label(l.eventDistance),
           EventDistanceChips(
             sports: [sport],
             selected: eventFitsFocus(a.eventDistance, p.focus) ? a.eventDistance : null,
-            onChanged: (k) => _setA({'eventDistance': k}),
+            // A target time belongs to its distance.
+            onChanged: (k) => _setA({'eventDistance': k, if (k != a.eventDistance) 'targetTimeSec': null}),
           ),
-          if (a.eventDistance != null) ...[
-            _label(l.targetTime, hint: l.targetTimeHint),
-            _timeField(
-              l.targetTime,
-              a.targetTimeSec,
-              (v) => _setA({'targetTimeSec': v}),
-              hint: 'h:mm:ss',
-              key: ValueKey('targetTime$_targetRev'),
+          _label(l.raceWhen),
+          Segments<bool>(
+            key: const ValueKey('raceWhen'),
+            segments: [Seg(false, icon: Icons.event, label: l.raceByDate), Seg(true, icon: Icons.date_range_rounded, label: l.raceByWeeks)],
+            value: _raceByWeeks,
+            onChanged: _setRaceByWeeks,
+          ),
+          const SizedBox(height: 12),
+          if (!_raceByWeeks) ...[
+            OutlinedButton.icon(
+              key: const ValueKey('eventDateButton'),
+              icon: const Icon(Icons.event),
+              label: Text(a.eventDate == null ? l.eventDate : df.format(a.eventDate!)),
+              onPressed: () async {
+                FocusScope.of(context).unfocus();
+                final today = dayOnly(DateTime.now());
+                final d = await showDatePicker(
+                  context: context,
+                  firstDate: today,
+                  lastDate: addDays(today, 730),
+                  initialDate: a.eventDate != null && !a.eventDate!.isBefore(today) ? a.eventDate! : addDays(today, 90),
+                );
+                if (d != null) _setA({'eventDate': d});
+              },
             ),
-            _targetSuggestion(l),
+            if (a.eventDate == null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  l.goalNeedsDate,
+                  key: const ValueKey('eventNeedsDate'),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.warning, fontWeight: FontWeight.w600),
+                ),
+              ),
+          ] else ...[
+            Text(l.raceByWeeksHint, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 10),
+            _weekChips(l, race: true),
+            if (a.eventDate != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                key: const ValueKey('raceOnDate'),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.emoji_events_outlined, color: AppColors.warning, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        l.raceOnDate(DateFormat.MMMEd(context.localeName).format(a.eventDate!)),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
+          if (a.eventDistance != null) ...[_label(l.targetTime, hint: l.targetTimeHint), _targetTimeField(l), _targetSuggestion(l)],
         ],
       ],
+    );
+  }
+
+  /// The profile the plan is generated from (the quick setup's view of it in the quick setup).
+  UserProfile get _planProfile => _advanced ? _profile : _quickProfile;
+
+  /// Date ↔ plan length of a race goal. The plan length starts in the recommended range of the race.
+  void _setRaceByWeeks(bool byWeeks) {
+    FocusScope.of(context).unfocus();
+    if (byWeeks == _raceByWeeks) return;
+    setState(() => _raceByWeeks = byWeeks);
+    if (!byWeeks) {
+      _setA({'eventDate': null});
+      return;
+    }
+    final rec = _recommendedRange;
+    if (a.planWeeks < rec.$1 || a.planWeeks > rec.$2) {
+      _setA({'planWeeks': rec.$1});
+    } else {
+      _setA({});
+    }
+  }
+
+  /// Keeps the race day of a race given as a plan length on the long-session day of the plan's last
+  /// week ([PlanGenerator.raceDayForWeeks], plan from [start]) – the long day follows the week, the
+  /// race distance and the setup, so this runs after every change and before the plan is made.
+  void _syncRaceDay({DateTime? start}) {
+    if (!_withEvent || !_raceByWeeks) return;
+    final d = PlanGenerator.raceDayForWeeks(_planProfile, start ?? dayOnly(DateTime.now()), a.planWeeks);
+    if (a.eventDate == null || !sameDay(a.eventDate!, d)) a = a.merge({'eventDate': d});
+  }
+
+  /// Target time: scroll wheels within the race's plausible range, starting at the suggestion.
+  Widget _targetTimeField(AppLocalizations l) {
+    final key = a.eventDistance!;
+    final bounds = eventTimeBounds(key);
+    final date = a.eventDate ?? addDays(dayOnly(DateTime.now()), 7 * _recommendedRange.$1);
+    final suggested = suggestTargetTime(_planProfile, key, date, sessions: _sessions).sec;
+    return DurationField(
+      key: const ValueKey('targetTime'),
+      value: a.targetTimeSec,
+      onChanged: (v) => _setA({'targetTimeSec': v}),
+      title: l.targetTime,
+      emptyText: l.noTargetTime,
+      min: bounds?.$1,
+      max: bounds?.$2,
+      // A finish goal has no suggestion: halfway between the fastest and the slowest plausible time.
+      initial: suggested ?? (bounds == null ? null : GoalModel.roundTarget(sqrt(bounds.$1 * bounds.$2).round())),
     );
   }
 
@@ -1576,19 +1709,23 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       profile: _advanced ? _profile : _quickProfile,
       eventKey: key,
       eventDate: date,
-      sessions: ref.read(sessionListProvider),
+      sessions: _sessions,
       current: a.targetTimeSec,
-      onApply: (sec) {
-        _targetRev++;
-        _setA({'targetTimeSec': sec});
-      },
+      onApply: (sec) => _setA({'targetTimeSec': sec}),
     );
   }
 
-  /// Plan length chips (weeks), the recommended range marked.
-  Widget _weekChips(AppLocalizations l) {
+  /// Plan length chips (weeks), the recommended range marked. [race]: the weeks to a race without a
+  /// date – plain "12 Wochen" labels, and the race's recommended range is always offered.
+  Widget _weekChips(AppLocalizations l, {bool race = false}) {
     final rec = _recommendedRange;
-    final options = [(4, l.plan4w), (8, l.plan8w), (12, l.plan12w), (16, l.plan16w), (20, l.plan20w)];
+    final options =
+        race
+            ? [
+              for (final w in ({4, 8, 12, 16, 20, rec.$1, rec.$2}.toList()..sort()))
+                if (w >= PlanGenerator.supportedWeeks.first && w <= GoalModel.maxEventWeeks) (w, l.planWeeksN(w)),
+            ]
+            : [(4, l.plan4w), (8, l.plan8w), (12, l.plan12w), (16, l.plan16w), (20, l.plan20w)];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1604,7 +1741,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 label: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(label),
+                    // Narrow phones / large text: the label gives way, never an overflow.
+                    Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
                     if (w >= rec.$1 && w <= rec.$2) ...[
                       const SizedBox(width: 6),
                       Container(
@@ -2088,4 +2226,14 @@ class _MinutesStepper extends StatelessWidget {
       child: row,
     );
   }
+}
+
+/// One step of the setup in its own element: it rebuilds with the page, but an exception while
+/// building it is contained here (the framework's error widget replaces this step only).
+class _StepPage extends StatelessWidget {
+  const _StepPage({super.key, required this.content});
+  final Widget Function() content;
+
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(padding: const EdgeInsets.fromLTRB(20, 20, 20, 24), child: content());
 }
