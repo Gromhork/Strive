@@ -54,10 +54,7 @@ class HomePage extends ConsumerWidget {
         children: const [
           _Greeting(),
           SizedBox(height: 12),
-          AdjustWeekBanner(),
-          AutoAdjustedBanner(),
-          GuestBanner(),
-          GoalMismatchCard(snoozable: true),
+          _BannerSlot(),
           TodayCard(),
           SizedBox(height: 12),
           GoalStatusCard(),
@@ -125,6 +122,29 @@ final isGuestProvider = Provider<bool>((ref) {
 
 /// After 3 sessions a guest is asked to secure the data (link e-mail or Google); dismissed,
 /// it comes back after a week.
+/// At most one hint card above today's workout, the most important first: goal and plan
+/// don't match → missed workouts to move → automatic adjustments to review → secure the
+/// guest account. Several stacked cards pushed today's workout out of view.
+class _BannerSlot extends ConsumerWidget {
+  const _BannerSlot();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plans = ref.watch(planListProvider);
+    final now = DateTime.now();
+    final prefs = ref.read(prefsProvider);
+    final m = ref.watch(goalAlignmentProvider);
+    String? snoozed;
+    try {
+      snoozed = prefs.getString(GoalMismatchCard.prefsKey);
+    } catch (_) {}
+    if (m != null && m.mismatch && snoozed != m.signature) return const GoalMismatchCard(snoozable: true);
+    if (adjustWeekBannerVisible(prefs, plans, now)) return const AdjustWeekBanner();
+    if (unseenAutoAdjustments(plans, ref.watch(autoAdjSeenProvider), now).isNotEmpty) return const AutoAdjustedBanner();
+    return const GuestBanner();
+  }
+}
+
 class GuestBanner extends ConsumerStatefulWidget {
   const GuestBanner({super.key});
   static const prefsKey = 'guestBannerSnoozed';
