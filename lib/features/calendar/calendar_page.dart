@@ -424,15 +424,15 @@ final planFirstDayProvider = Provider<DateTime?>((ref) {
 
 /// A planned workout that was done on another day, on its own day: "Fahrtspiel · erledigt am
 /// Mo" (tap: the session) – the calendar and Home's "Demnächst" show the day the same way.
-class DoneElsewhereLine extends StatelessWidget {
+class DoneElsewhereLine extends ConsumerWidget {
   const DoneElsewhereLine({super.key, required this.plan, required this.session});
   final PlannedWorkout plan;
   final Session session;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final c = planCompliance(plan, session);
+    final c = planCompliance(plan, session, profile: ref.watch(profileOrDefaultProvider));
     final t = Theme.of(context).textTheme.bodySmall;
     return InkWell(
       key: ValueKey('doneElsewhere_${plan.id}'),
@@ -567,7 +567,7 @@ class PlanCard extends ConsumerWidget {
     final l = context.l10n;
     final p = plan;
     final profile = ref.watch(profileOrDefaultProvider);
-    final c = planCompliance(p, ref.watch(planSessionsProvider)[p.id]);
+    final c = planCompliance(p, ref.watch(planSessionsProvider)[p.id], profile: profile);
     return Material(
       color: p.sport.color.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(

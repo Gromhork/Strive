@@ -5763,11 +5763,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String termComplianceBody(String greenMin, String greenMax, String yellowMin, String yellowMax, String countMin) {
-    return 'Compared is the distance (endurance workouts with a distance), the done work sets (strength) or else the duration – against the plan.\n\n✓ green, as planned: $greenMin–$greenMax\n✓ yellow, partly: $yellowMin up to $greenMin, or up to $yellowMax\n✓ orange, far off: less than $yellowMin or more than $yellowMax\n✕ red: missed, or less than $countMin – an aborted start doesn’t count as done.';
+    return 'Compared with the plan is the distance (endurance workouts with a distance; structured workouts: distance or duration, whichever is closer to the plan), the done work sets (strength – sets done at a much lighter weight or with far fewer reps count partly) or else the duration. A workout marked as done with the plan\'s numbers counts as planned.\n\n✓ green, as planned: $greenMin–$greenMax\n✓ yellow, partly: $yellowMin up to $greenMin, or up to $yellowMax\n✓ orange, far off: less than $yellowMin or more than $yellowMax\n✕ red: missed, or less than $countMin – an aborted start doesn’t count as done.';
   }
 
   @override
-  String get termComplianceTip => 'Partly or far off still counts as done – the plan only adapts when it happens repeatedly.';
+  String get termComplianceTip => 'Partly or far off still counts as done – the plan only adapts when it happens repeatedly. For that, a long run or a key session needs at least half of the plan, and clearly more than planned (over 150 %) counts like a session that was too hard.';
 
   @override
   String get feasTitleNote => 'Note on your plan';
@@ -5811,6 +5811,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String raceOnDate(String date) {
     return 'Race on $date';
   }
+
+  @override
+  String get progFromPlan => 'last session was logged from the plan, not measured – same weight and reps once more';
+
+  @override
+  String get progRepCap => 'as many reps as this range allows – add load or a harder variation to progress';
 
   @override
   String feasRunFrequency(String have, String need) {

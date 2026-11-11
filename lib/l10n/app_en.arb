@@ -3897,7 +3897,7 @@
   "coachFewerSets": "Fewer sets than planned – no problem, don’t make them up.",
   "coachMoreSets": "More sets than planned – give yourself enough recovery before the next strength session.",
   "termComplianceTitle": "Plan compliance – how a workout is rated",
-  "termComplianceBody": "Compared is the distance (endurance workouts with a distance), the done work sets (strength) or else the duration – against the plan.\n\n✓ green, as planned: {greenMin}–{greenMax}\n✓ yellow, partly: {yellowMin} up to {greenMin}, or up to {yellowMax}\n✓ orange, far off: less than {yellowMin} or more than {yellowMax}\n✕ red: missed, or less than {countMin} – an aborted start doesn’t count as done.",
+  "termComplianceBody": "Compared with the plan is the distance (endurance workouts with a distance; structured workouts: distance or duration, whichever is closer to the plan), the done work sets (strength – sets done at a much lighter weight or with far fewer reps count partly) or else the duration. A workout marked as done with the plan's numbers counts as planned.\n\n✓ green, as planned: {greenMin}–{greenMax}\n✓ yellow, partly: {yellowMin} up to {greenMin}, or up to {yellowMax}\n✓ orange, far off: less than {yellowMin} or more than {yellowMax}\n✕ red: missed, or less than {countMin} – an aborted start doesn’t count as done.",
   "@termComplianceBody": {
     "placeholders": {
       "greenMin": {
@@ -3917,7 +3917,7 @@
       }
     }
   },
-  "termComplianceTip": "Partly or far off still counts as done – the plan only adapts when it happens repeatedly.",
+  "termComplianceTip": "Partly or far off still counts as done – the plan only adapts when it happens repeatedly. For that, a long run or a key session needs at least half of the plan, and clearly more than planned (over 150 %) counts like a session that was too hard.",
   "feasTitleNote": "Note on your plan",
   "feasLongRunTimeCap": "Your long runs stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km). Running longer in one go adds more injury risk and recovery time than fitness. So: finishing is the goal – start easy and plan short walk breaks from the start (e.g. 1 min every 10 min).",
   "@feasLongRunTimeCap": {
@@ -3973,6 +3973,8 @@
       }
     }
   },
+  "progFromPlan": "last session was logged from the plan, not measured – same weight and reps once more",
+  "progRepCap": "as many reps as this range allows – add load or a harder variation to progress",
   "feasRunFrequency": "Runs a week in your plan: {have}. This distance needs at least {need} runs a week (or a clearly higher weekly volume), so your body tolerates the long run – plan more run days.",
   "@feasRunFrequency": {
     "placeholders": {

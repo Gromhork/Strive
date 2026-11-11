@@ -209,7 +209,7 @@ ProgressionCheck? progressionCheck(
   final relevant = {...longs, ...runWalks};
   if (relevant.length < 2) return null;
 
-  final linked = linkPlanSessions(plans, sessions);
+  final linked = linkPlanSessions(plans, sessions, profile: p);
 
   // ── Long sessions
   var planned = 0.0, achieved = 0.0, doneAchieved = 0.0, donePlanned = 0.0;

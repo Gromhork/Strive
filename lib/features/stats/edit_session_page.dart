@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -53,8 +54,9 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   /// Editable values (for the unsaved-changes prompt on back).
   String _snapshot() => jsonEncode([_start.millisecondsSinceEpoch, for (final c in _controllers) c.text, _rpe, _performance()]);
 
-  /// The performance data (what a session "taken over from the plan" took from it): changing it
-  /// makes the session the athlete's own numbers.
+  /// The performance data of an endurance session (what a session "taken over from the plan" took
+  /// from it): changing it makes the session the athlete's own numbers. Gym exercises are judged
+  /// one by one ([_fromPlanKeys]).
   String _performance() => jsonEncode([
     _durationSec,
     _distance.text,
@@ -65,11 +67,23 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   late final String _initial;
   late final String _initialPerformance;
 
+  /// Gym: the exercises taken over from the plan ([Session.exerciseFromPlan]) with their sets as
+  /// loaded – one whose sets, weights, reps or mode the athlete changes becomes measured; the
+  /// others (and a changed duration, title, …) keep the mark, so the plan's prescribed weights
+  /// never turn into records.
+  late final Map<GymExercise, String> _fromPlanKeys = {
+    for (var i = 0; i < _exercises.length; i++)
+      if (s.exerciseFromPlan(s.exercises[i])) _exercises[i]: _setsKey(_exercises[i]),
+  };
+
+  static String _setsKey(GymExercise e) => jsonEncode([e.bw, e.bodyKg, for (final x in e.sets) x.toMap()]);
+
   @override
   void initState() {
     super.initState();
     _initial = _snapshot();
     _initialPerformance = _performance();
+    _fromPlanKeys; // the sets as loaded, before any edit
   }
 
   String _distText(double m) => s.sport == Sport.swim ? m.round().toString() : Units.num(u.distOut(m), 2);
@@ -106,11 +120,23 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
     };
     if (!cardio) {
       final ex = _exercises.where((e) => e.sets.isNotEmpty).toList();
+      // Edited and added exercises are the athlete's own numbers; untouched ones stay "from the plan".
+      for (final e in ex) {
+        e.fromPlan = _fromPlanKeys[e] == _setsKey(e);
+      }
       update['exercises'] = ex.map((e) => e.toMap()).toList();
       update['volume'] = ex.fold<double>(0, (a, e) => a + e.volume);
+      // The compliance compares the done sets with the planned ones: an added exercise raises the
+      // reference (a fully done workout plus one exercise is no "> 150 %"), a removed one keeps it.
+      final work = ex.fold<int>(0, (a, e) => a + e.workSets.length);
+      if (s.plannedSets != null) update['plannedSets'] = max(s.plannedSets!, work);
+      // Still the plan's workout as a whole only while every exercise is untouched and none was
+      // removed or added (a changed duration doesn't matter).
+      if (s.fromPlan && !(ex.length == s.exercises.length && ex.every((e) => e.fromPlan))) update['fromPlan'] = false;
+    } else if (s.fromPlan && _performance() != _initialPerformance) {
+      // Corrected performance data are the athlete's own numbers – no longer "from the plan".
+      update['fromPlan'] = false;
     }
-    // Corrected performance data are the athlete's own numbers – no longer "from the plan".
-    if (s.fromPlan && _performance() != _initialPerformance) update['fromPlan'] = false;
     ref.read(repoProvider)?.updateMany(sessions: {s.id: update});
     toast(context, l.sessionCorrected);
     Navigator.pop(context);

@@ -43,8 +43,8 @@ class _WeekPageState extends ConsumerState<WeekPage> {
     final linked = ref.watch(planSessionsProvider);
     // One definition everywhere: planned workouts (not dropped) completed by a session or
     // marked done – the total and the per-sport rows add up.
-    final counts = planCounts(plans, linked);
-    final completion = weeklyCompletion(plans, linked);
+    final counts = planCounts(plans, linked, profile: ref.watch(profileOrDefaultProvider));
+    final completion = weeklyCompletion(plans, linked, profile: ref.watch(profileOrDefaultProvider));
 
     return Scaffold(
       appBar: AppBar(title: Text(l.thisWeek)),
@@ -140,7 +140,7 @@ class _WeekPageState extends ConsumerState<WeekPage> {
   }
 }
 
-class _SportRow extends StatelessWidget {
+class _SportRow extends ConsumerWidget {
   const _SportRow({required this.sport, required this.done, required this.planned, required this.linked, required this.units});
   final Sport sport;
   final List<Session> done;
@@ -149,12 +149,12 @@ class _SportRow extends StatelessWidget {
   final Units units;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final sec = done.fold<int>(0, (a, s) => a + s.durationSec);
     final km = done.fold<double>(0, (a, s) => a + s.distanceM);
     final planKm = planned.fold<double>(0, (a, p) => a + (p.distanceKm ?? 0));
-    final c = planCounts(planned, linked);
+    final c = planCounts(planned, linked, profile: ref.watch(profileOrDefaultProvider));
     final extra = extraSessions(done, planned, linked);
     final target = c.planned;
     final progress = target == 0 ? (done.isEmpty ? 0.0 : 1.0) : (c.done / target).clamp(0.0, 1.0);
@@ -228,7 +228,7 @@ class _DayRow extends ConsumerWidget {
           title: p.title,
           sub: planAmountText(p, profile, templates: templates),
 
-          compliance: planCompliance(p, linked[p.id]),
+          compliance: planCompliance(p, linked[p.id], profile: profile),
           skipped: p.status == 'skipped',
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id))),
         ),

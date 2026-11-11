@@ -346,7 +346,8 @@ class _Records extends ConsumerWidget {
     Widget sportRecords(Sport s) {
       final longest = best(s, (x) => x.distanceM);
       final longestTime = best(s, (x) => x.durationSec.toDouble());
-      final fastest = best(s, (x) => x.distanceM >= (s == Sport.swim ? 400 : 5000) ? x.distanceM / x.durationSec : 0);
+      // Speed needs a duration: a 0-s entry would be infinitely fast.
+      final fastest = best(s, (x) => x.distanceM >= (s == Sport.swim ? 400 : 5000) && x.durationSec > 0 ? x.distanceM / x.durationSec : 0);
       final total = all.where((x) => x.sport == s).fold<double>(0, (a, x) => a + x.distanceM);
       if (longest == null) return const SizedBox.shrink();
       String d(double m) => s == Sport.swim ? u.swimDist(m) : u.dist(m, digits: 1);

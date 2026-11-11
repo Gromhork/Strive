@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../core/format.dart';
@@ -5,6 +7,8 @@ import '../core/sport.dart';
 import '../core/theme.dart';
 import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
+import '../widgets/plan_amount.dart';
+import 'plan_adjuster.dart' show isHardPlan;
 
 /// The one plan-compliance scale of the app (TrainingPeaks-style traffic light). Every place
 /// that judges "how much of the plan was done" – calendar markers and legend, the session's
@@ -18,7 +22,11 @@ import '../l10n/gen/app_localizations.dart';
 /// | 10–49 % or > 150 % | orange "stark abweichend" | yes |
 /// | < 10 % | red "nicht gewertet" | no – an aborted start (e.g. 0:29 of 56 min) gives no training stimulus |
 ///
-/// The share is distance for distance-based endurance plans, done work sets for gym, else duration.
+/// The share is distance for distance-based endurance plans (structured workouts: distance or
+/// duration, whichever is closer to the plan), done work sets × how fully they were done for
+/// gym, else duration ([complianceRatio]). A workout logged as done with the plan's numbers is
+/// 100 %. For the plan adaptation a key / long session below 50 % counts as missed
+/// ([adaptationCompleted]) and one above 150 % as a load spike ([overPlan]).
 abstract final class ComplianceScale {
   static const greenMin = 0.8;
   static const greenMax = 1.2;
@@ -121,28 +129,71 @@ double plannedKm(PlannedWorkout p) {
   return 0;
 }
 
-/// actual / planned: done work sets for gym ([plannedGymSets]), distance when the plan is
-/// distance-based (and the session has a distance), otherwise duration. Null when the plan
-/// has no target.
-double? complianceRatio(PlannedWorkout p, Session s) {
+/// Planned (km, minutes) a session of [p] is compared with: what every screen shows for the
+/// workout ([planAmount] – for structured workouts the step estimate) when the [profile] is
+/// known, else the stored distance / duration. One source for the display, "mark as done"
+/// (PlanFill) and the compliance – no "as planned" at 92 %.
+(double, int) plannedReference(PlannedWorkout p, {UserProfile? profile}) {
+  if (profile == null || p.sport == Sport.gym || p.steps.isEmpty) return (plannedKm(p), p.durationMin);
+  final a = planAmount(p, profile);
+  final km = a.km ?? 0;
+  return (km > 0 ? km : plannedKm(p), a.minutes > 0 ? a.minutes : p.durationMin);
+}
+
+/// How fully the done work sets of [s] delivered what was prescribed (0…1): per set with a
+/// prescribed rep target, its load × reps against the prescribed load × target reps (reps
+/// alone without a prescribed load), each set at most 1 – more on one set does not make up
+/// for another. Null without prescribed sets (free sets, older sessions).
+double? gymExecution(Session s) {
+  var sum = 0.0;
+  var n = 0;
+  for (final e in s.exercises) {
+    final body = e.bw == true ? e.bodyKg : 0.0;
+    final rx = e.rxKg == null ? 0.0 : e.rxKg! + body;
+    for (final set in e.sets) {
+      final t = set.target ?? 0;
+      if (!set.done || set.warmup || set.type == SetType.drop || t <= 0) continue;
+      final load = set.weight + body;
+      final f = rx > 0 && load > 0 ? load * set.reps / (rx * t) : set.reps / t;
+      sum += min(1.0, max(0.0, f));
+      n++;
+    }
+  }
+  return n == 0 ? null : sum / n;
+}
+
+/// actual / planned. Null when the plan has no target.
+/// * Taken over from the plan ([Session.fromPlan]): 1 – the plan's own numbers.
+/// * Gym: done work sets / [plannedGymSets], times [gymExecution] (all sets done at a much
+///   lighter load or with far fewer reps is partial, not "as planned").
+/// * Endurance: distance when the plan is distance-based (and the session has a distance),
+///   otherwise duration – against [plannedReference]. Structured workouts with both take the
+///   one closer to the plan: recoveries walked or stood and faster / slower work shift one of
+///   them while the whole workout was done.
+double? complianceRatio(PlannedWorkout p, Session s, {UserProfile? profile}) {
+  if (s.fromPlan) return 1;
   if (p.sport == Sport.gym && s.sport == Sport.gym) {
     final sets = plannedGymSets(p, s);
-    if (sets > 0) return s.setsDone / sets;
+    if (sets > 0) return s.setsDone / sets * (gymExecution(s) ?? 1);
   }
-  final km = plannedKm(p);
-  if (km > 0 && s.distanceM > 0) return s.distanceM / (km * 1000);
-  if (p.durationMin > 0) return s.durationSec / (p.durationMin * 60);
-  return null;
+  final (km, minutes) = plannedReference(p, profile: profile);
+  final byKm = km > 0 && s.distanceM > 0 ? s.distanceM / (km * 1000) : null;
+  final byTime = minutes > 0 ? s.durationSec / (minutes * 60) : null;
+  if (byKm != null && byTime != null && p.steps.isNotEmpty && s.durationSec > 0) {
+    return (byKm - 1).abs() <= (byTime - 1).abs() ? byKm : byTime;
+  }
+  return byKm ?? byTime;
 }
 
 /// Whether linked session [s] fulfils [p] at all (≥ [ComplianceScale.countMin] of the plan).
-bool sessionCounts(PlannedWorkout p, Session s) => (complianceRatio(p, s) ?? 1) >= ComplianceScale.countMin;
+bool sessionCounts(PlannedWorkout p, Session s, {UserProfile? profile}) =>
+    (complianceRatio(p, s, profile: profile) ?? 1) >= ComplianceScale.countMin;
 
 /// Compliance of [p] given its linked session [s] (if any). [now] is injectable for tests.
-Compliance planCompliance(PlannedWorkout p, Session? s, {DateTime? now}) {
+Compliance planCompliance(PlannedWorkout p, Session? s, {DateTime? now, UserProfile? profile}) {
   if (p.status == 'skipped') return Compliance.none;
   if (s != null) {
-    final r = complianceRatio(p, s);
+    final r = complianceRatio(p, s, profile: profile);
     return r == null ? const Compliance(ComplianceLevel.green) : Compliance(complianceLevelOf(r), r);
   }
   // Marked done without recorded data → counts as completed.
@@ -152,19 +203,27 @@ Compliance planCompliance(PlannedWorkout p, Session? s, {DateTime? now}) {
 }
 
 /// Plan id → linked session (via [PlannedWorkout.sessionId] or [Session.planId]). Of several
-/// sessions started from the same workout (an aborted start, then the real one), the one that
-/// fulfils more of the plan wins.
-Map<String, Session> linkPlanSessions(List<PlannedWorkout> plans, List<Session> sessions) {
+/// sessions started from the same workout (an aborted start, then the real one), one that counts
+/// wins, and among those the one closest to the plan (100 %) – a second session at 160 % does
+/// not turn a workout done as planned orange.
+Map<String, Session> linkPlanSessions(List<PlannedWorkout> plans, List<Session> sessions, {UserProfile? profile}) {
   final byId = {for (final s in sessions) s.id: s};
   final planById = {for (final p in plans) p.id: p};
   final out = <String, Session>{};
+  bool better(PlannedWorkout p, Session a, Session b) {
+    final ra = complianceRatio(p, a, profile: profile) ?? 1, rb = complianceRatio(p, b, profile: profile) ?? 1;
+    final ca = ra >= ComplianceScale.countMin, cb = rb >= ComplianceScale.countMin;
+    if (ca != cb) return ca;
+    return ca ? (ra - 1).abs() < (rb - 1).abs() : ra > rb;
+  }
+
   for (final s in sessions) {
     // A session started from a workout days away only fulfils it once confirmed (the plan
     // then points back at it via sessionId) – see plan_match.replacementCandidate.
     final p = s.planId == null ? null : planById[s.planId];
     if (p != null && (p.sessionId == s.id || daysBetween(p.date, s.start).abs() <= 1)) {
       final cur = out[p.id];
-      if (cur == null || (complianceRatio(p, s) ?? 1) > (complianceRatio(p, cur) ?? 1)) out[p.id] = s;
+      if (cur == null || better(p, s, cur)) out[p.id] = s;
     }
   }
   for (final p in plans) {
@@ -173,7 +232,9 @@ Map<String, Session> linkPlanSessions(List<PlannedWorkout> plans, List<Session> 
     final cur = out[p.id];
     // The explicit link wins – unless it is a start too short to count and another session
     // from the same workout does count.
-    if (cur == null || cur.id == s.id || sessionCounts(p, s) || !sessionCounts(p, cur)) out[p.id] = s;
+    if (cur == null || cur.id == s.id || sessionCounts(p, s, profile: profile) || !sessionCounts(p, cur, profile: profile)) {
+      out[p.id] = s;
+    }
   }
   return out;
 }
@@ -184,19 +245,19 @@ Map<String, Session> linkPlanSessions(List<PlannedWorkout> plans, List<Session> 
 /// Monday morning doesn't read "0 %". Skipped and missed workouts count as 0, and so does a
 /// session too short to count ([sessionCounts]).
 /// Null when nothing with a duration is due yet.
-double? weeklyCompletion(List<PlannedWorkout> plans, Map<String, Session> linked, {DateTime? now}) {
+double? weeklyCompletion(List<PlannedWorkout> plans, Map<String, Session> linked, {DateTime? now, UserProfile? profile}) {
   final today = dayOnly(now ?? DateTime.now());
   var planned = 0.0, done = 0.0;
   for (final p in plans) {
     final min = p.durationMin.toDouble();
     if (min <= 0) continue;
     final s = linked[p.id];
-    final completed = planCompleted(p, linked);
+    final completed = planCompleted(p, linked, profile: profile);
     if (!completed && !dayOnly(p.date).isBefore(today)) continue; // not due yet
     planned += min;
     if (!completed) continue;
     if (s != null) {
-      final r = complianceRatio(p, s) ?? 1;
+      final r = complianceRatio(p, s, profile: profile) ?? 1;
       done += min * r.clamp(0.0, 1.0);
     } else {
       done += min;
@@ -207,17 +268,33 @@ double? weeklyCompletion(List<PlannedWorkout> plans, Map<String, Session> linked
 
 /// Whether [p] counts as completed: not skipped, and a linked session that counts
 /// ([sessionCounts]) or marked done without one.
-bool planCompleted(PlannedWorkout p, Map<String, Session> linked) {
+bool planCompleted(PlannedWorkout p, Map<String, Session> linked, {UserProfile? profile}) {
   if (p.status == 'skipped') return false;
   final s = linked[p.id];
-  return s != null ? sessionCounts(p, s) : p.isDone;
+  return s != null ? sessionCounts(p, s, profile: profile) : p.isDone;
 }
+
+/// Whether [p] counts as done for the plan adaptation (missed key / long sessions, moving the
+/// long run): as [planCompleted], but a key or long endurance session ([isHardPlan]) needs at
+/// least [ComplianceScale.yellowMin] of the plan – 4 of 30 km is no long run done, although the
+/// calendar shows it orange ("done, far off plan").
+bool adaptationCompleted(PlannedWorkout p, Map<String, Session> linked, {UserProfile? profile}) {
+  if (!planCompleted(p, linked, profile: profile)) return false;
+  final s = linked[p.id];
+  if (s == null || p.sport == Sport.gym || !isHardPlan(p)) return true;
+  return (complianceRatio(p, s, profile: profile) ?? 1) >= ComplianceScale.yellowMin;
+}
+
+/// Linked endurance session [s] did clearly more than [p] planned (> [ComplianceScale.yellowMax])
+/// – a load spike the plan adaptation counts like a too-hard session.
+bool overPlan(PlannedWorkout p, Session s, {UserProfile? profile}) =>
+    p.sport != Sport.gym && (complianceRatio(p, s, profile: profile) ?? 1) > ComplianceScale.yellowMax;
 
 /// One definition of "x of y workouts done" for every count of a week (total, per sport, Home
 /// and week page): planned workouts that were not dropped, and how many are completed.
-({int done, int planned}) planCounts(Iterable<PlannedWorkout> plans, Map<String, Session> linked) {
+({int done, int planned}) planCounts(Iterable<PlannedWorkout> plans, Map<String, Session> linked, {UserProfile? profile}) {
   final counted = plans.where((p) => p.status != 'skipped').toList();
-  return (done: counted.where((p) => planCompleted(p, linked)).length, planned: counted.length);
+  return (done: counted.where((p) => planCompleted(p, linked, profile: profile)).length, planned: counted.length);
 }
 
 /// Sessions that fulfil none of [plans] (extra training), shown as "+1 extra" next to the counts.

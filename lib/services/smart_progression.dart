@@ -63,6 +63,14 @@ enum ProgressReason {
   /// Kept near the recent e1RM-derived load: reps were not missed, so a further cut
   /// (limit ratings, holds) is not justified.
   e1rmFloor,
+
+  /// The last session was logged as done with the plan's numbers ("mark as done"): its reps
+  /// are assumed, not measured → the same load and targets once more.
+  fromPlan,
+
+  /// The reps are at the most the range allows (top + ~25 %) → hold; more load or a harder
+  /// variation is the next step.
+  repCap,
 }
 
 /// Direction of the recent e1RM trend of an exercise.

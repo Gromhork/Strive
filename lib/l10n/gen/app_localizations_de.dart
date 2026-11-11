@@ -5763,11 +5763,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String termComplianceBody(String greenMin, String greenMax, String yellowMin, String yellowMax, String countMin) {
-    return 'Verglichen wird die Strecke (Ausdauer mit Distanz), die erledigten Arbeitssätze (Kraft) oder sonst die Dauer – mit dem Plan.\n\n✓ grün, wie geplant: $greenMin–$greenMax\n✓ gelb, teilweise: $yellowMin bis unter $greenMin oder bis $yellowMax\n✓ orange, stark abweichend: unter $yellowMin oder über $yellowMax\n✕ rot: verpasst, oder unter $countMin – ein abgebrochener Start zählt nicht als erledigt.';
+    return 'Mit dem Plan verglichen wird die Strecke (Ausdauer mit Distanz; strukturierte Einheiten: Strecke oder Dauer, je nachdem, was näher am Plan liegt), die erledigten Arbeitssätze (Kraft – Sätze mit deutlich weniger Gewicht oder Wiederholungen zählen teilweise) oder sonst die Dauer. Eine mit den Planwerten als erledigt eingetragene Einheit zählt wie geplant.\n\n✓ grün, wie geplant: $greenMin–$greenMax\n✓ gelb, teilweise: $yellowMin bis unter $greenMin oder bis $yellowMax\n✓ orange, stark abweichend: unter $yellowMin oder über $yellowMax\n✕ rot: verpasst, oder unter $countMin – ein abgebrochener Start zählt nicht als erledigt.';
   }
 
   @override
-  String get termComplianceTip => 'Teilweise oder stark abweichend zählt trotzdem als erledigt – der Plan passt sich erst an, wenn es sich wiederholt.';
+  String get termComplianceTip => 'Teilweise oder stark abweichend zählt trotzdem als erledigt – der Plan passt sich erst an, wenn es sich wiederholt. Dafür braucht ein langer Lauf oder eine Schlüsseleinheit mindestens die Hälfte des Plans, und deutlich mehr als geplant (über 150 %) zählt wie eine zu harte Einheit.';
 
   @override
   String get feasTitleNote => 'Hinweis zu deinem Plan';
@@ -5811,6 +5811,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String raceOnDate(String date) {
     return 'Wettkampf am $date';
   }
+
+  @override
+  String get progFromPlan => 'letzte Einheit aus dem Plan übernommen, nicht gemessen – Gewicht und Wiederholungen noch einmal';
+
+  @override
+  String get progRepCap => 'so viele Wiederholungen, wie dieser Bereich vorsieht – steigere mit Zusatzgewicht oder einer schwereren Variante';
 
   @override
   String feasRunFrequency(String have, String need) {

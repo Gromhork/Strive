@@ -115,7 +115,7 @@ class Recalibrator {
   late final HrMax hrMax = HrMax.of(profile, sessions: sessions, now: now);
 
   Recalibration run() {
-    final linked = linkPlanSessions(plans, sessions);
+    final linked = linkPlanSessions(plans, sessions, profile: profile);
     final from = addDays(today, -lookbackDays);
     final window = plans.where((p) => !dayOnly(p.date).isBefore(from) && dayOnly(p.date).isBefore(today)).toList();
 
@@ -126,8 +126,15 @@ class Recalibrator {
     for (final p in window.where((p) => p.sport != Sport.gym && p.intensity != 'race')) {
       final s = linked[p.id];
       if (s == null) continue;
-      final r = complianceRatio(p, s);
+      final r = complianceRatio(p, s, profile: profile);
       if (r != null && r < ComplianceScale.greenMin) cutShort++;
+      // Clearly more than planned (> 150 %): a load spike – counts like a too-hard session (a long
+      // run, tempo or interval session ×1, an easy one ×½), whatever the RPE says.
+      if (overPlan(p, s, profile: profile)) {
+        final h = isHardPlan(p) ? 1.0 : 0.5;
+        tooHard += h;
+        if (!dayOnly(p.date).isBefore(_add(today, -7))) tooHardLastWeek += h;
+      }
       // Imported workouts carry an RPE estimated from their average HR (rpeFromHr, against a
       // predicted HRmax): judged like a session without RPE, so it doesn't count at full weight.
       final hrRpe = s.source != null && s.avgHr != null;
@@ -168,17 +175,19 @@ class Recalibrator {
     // session is moved inside its week instead, rule 5).
     final dueList = window.where((p) => p.durationMin > 0 && p.intensity != 'race').toList();
     final history = dueList.isEmpty ? 0 : daysBetween(dueList.map((p) => dayOnly(p.date)).reduce((x, y) => x.isBefore(y) ? x : y), today);
-    final completion = dueList.length >= 3 && history >= minHistoryDays ? weeklyCompletion(dueList, linked, now: now) : null;
+    final completion =
+        dueList.length >= 3 && history >= minHistoryDays ? weeklyCompletion(dueList, linked, now: now, profile: profile) : null;
     // Key sessions (quality / long) of the look-back that were done: chronic partial adherence
-    // (easy runs skipped, key sessions done) cuts easy volume, not the key sessions (B9).
+    // (easy runs skipped, key sessions done) cuts easy volume, not the key sessions (B9). A key
+    // session counts from half of it ([adaptationCompleted]): 4 of 30 km is no long run done.
     final keyDue = dueList.where((p) => p.sport != Sport.gym && isHardPlan(p)).toList();
-    final keysDone = keyDue.where((p) => planCompleted(p, linked)).length;
+    final keysDone = keyDue.where((p) => adaptationCompleted(p, linked, profile: profile)).length;
     final keysMissed = keyDue.isEmpty || keysDone < 0.75 * keyDue.length;
     // Slots (sport + weekday) the athlete skipped ≥ 2× in the look-back: with the key sessions done,
     // only these come down – the easy runs the athlete still does keep their volume (partial adherence).
     final misses = <String, int>{};
     for (final p in dueList) {
-      if (p.sport == Sport.gym || planCompleted(p, linked)) continue;
+      if (p.sport == Sport.gym || adaptationCompleted(p, linked, profile: profile)) continue;
       misses.update(_slot(p), (n) => n + 1, ifAbsent: () => 1);
     }
     final skippedSlots = {
@@ -232,8 +241,9 @@ class Recalibrator {
     // Long runs missed while the rest was done (I14): the easy runs are not the problem – they keep
     // their volume; the next long run moves to a day with more time instead.
     final restDue = dueList.where((p) => p.intensity != 'long').toList();
-    final restCompletion = restDue.length >= 3 ? weeklyCompletion(restDue, linked, now: now) : null;
-    final longMissed = dueList.where((p) => p.intensity == 'long' && p.sport != Sport.gym && !planCompleted(p, linked)).length;
+    final restCompletion = restDue.length >= 3 ? weeklyCompletion(restDue, linked, now: now, profile: profile) : null;
+    final longMissed =
+        dueList.where((p) => p.intensity == 'long' && p.sport != Sport.gym && !adaptationCompleted(p, linked, profile: profile)).length;
     final onlyLongMissed = longMissed >= 1 && (restCompletion ?? 0) >= 0.9;
     if (completion != null && completion < 0.7) {
       reasons.add(RecalReason.lowCompletion);
@@ -849,7 +859,7 @@ class Recalibrator {
       planned += p.durationMin;
       if (p.status == 'skipped') continue;
       final s = linked[p.id];
-      done += s != null ? p.durationMin * (complianceRatio(p, s) ?? 1) : (p.isDone ? p.durationMin.toDouble() : 0);
+      done += s != null ? p.durationMin * (complianceRatio(p, s, profile: profile) ?? 1) : (p.isDone ? p.durationMin.toDouble() : 0);
     }
     return planned > 0 ? done / planned : null;
   }
@@ -965,7 +975,9 @@ class Recalibrator {
       final gap = daysBetween(dayOnly(last), today);
       if (gap >= 10) {
         out[sport] = gap;
-      } else if (due.length >= 3 && mine.any((x) => x.start.isBefore(from)) && (weeklyCompletion(due, linked, now: now) ?? 1) < 0.15) {
+      } else if (due.length >= 3 &&
+          mine.any((x) => x.start.isBefore(from)) &&
+          (weeklyCompletion(due, linked, now: now, profile: profile) ?? 1) < 0.15) {
         out[sport] = lookbackDays;
       }
     }
@@ -1151,7 +1163,7 @@ class Recalibrator {
             .where(
               (x) => x.intensity == 'long' && x.sport == Sport.run && !dayOnly(x.date).isBefore(from) && dayOnly(x.date).isBefore(today),
             )
-            .where((x) => !planCompleted(x, linked))
+            .where((x) => !adaptationCompleted(x, linked, profile: profile))
             .length;
     if (missed < 2) return const {};
     final long = upcoming.where((p) => p.intensity == 'long' && p.sport == Sport.run && daysBetween(today, p.date) < 7).firstOrNull;
