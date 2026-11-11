@@ -1,0 +1,7 @@
+{
+ 'recalWhyRpeLowSpaced': ['Your key workouts felt easy again – but the volume only just went up, so it stays this week (at most every other week, 3 times per plan). If it keeps feeling easy, the targets follow.', 'Deine Schlüsseleinheiten fielen dir wieder leicht – der Umfang wurde aber gerade erst erhöht und bleibt diese Woche (höchstens jede zweite Woche, 3× pro Plan). Bleibt es leicht, ziehen die Zielwerte nach.'],
+ 'recalWhyTaper': ['Taper: less is more – the volume is reduced on purpose and stays that way. Fitness doesn\'t drop in two weeks; freshness for race day comes from the rest.', 'Taper: weniger ist mehr – der Umfang ist bewusst reduziert und bleibt so. Die Form geht in zwei Wochen nicht verloren, die Frische für den Wettkampf kommt aus der Erholung.'],
+ 'recalWhyTaperOverdo': ['Taper: last week you trained {pct} % of the planned volume. Less is more now – stick to the reduced volume, the form for race day comes from the rest.', 'Taper: Letzte Woche hast du {pct} % des geplanten Umfangs trainiert. Jetzt ist weniger mehr – halte dich an den reduzierten Umfang, die Form für den Wettkampf kommt aus der Erholung.'],
+ 'progStageHeld': ['The build-up has been held for {weeks} weeks (stage repeated or long session shortened).', 'Der Aufbau steht seit {weeks} Wochen (Stufe wiederholt oder lange Einheit gekürzt).'],
+ 'progStageHeldRisk': ['The build-up has been held for {weeks} weeks and race day is close – the goal is at risk.', 'Der Aufbau steht seit {weeks} Wochen und der Wettkampf ist nah – das Ziel ist gefährdet.'],
+}

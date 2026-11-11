@@ -3,6 +3,7 @@ import 'dart:math';
 import '../core/event_distances.dart';
 import '../core/format.dart';
 import '../data/models.dart';
+import 'fitness_state.dart';
 import 'zones.dart';
 
 /// How a target time compares with what the weeks to race day can realistically give.
@@ -135,7 +136,7 @@ class GoalModel {
   static int? predict(UserProfile p, double vdot) {
     final ev = p.athlete.eventDistance;
     final meters = Vdot.distances[ev];
-    if (meters != null) return Vdot.raceTime(vdot, meters);
+    if (meters != null) return (Vdot.raceTime(vdot, meters) * (ev == 'm' ? marathonScale(p) : 1.0)).round();
     final d = eventDistanceOf(ev);
     if (d == null) return null;
     final a = p.athlete;
@@ -163,6 +164,26 @@ class GoalModel {
       EventSport.swim => swim(d.km),
     };
     return (t + transition).round();
+  }
+
+  /// Marathon predicted from short races only (best race ≤ 10 km, no half / marathon time) below the
+  /// advanced level: Riegel with exponent 1.08 ([riegel], §1.2 – 1.06 / VDOT are too optimistic for
+  /// recreational marathoners) when slower than the VDOT time – the factor (≥ 1) on the VDOT
+  /// prediction. Part of [predict], so the suggestion, the check, the forecast and the race session
+  /// share it (review round 2, IMPORTANT 5: the suggestion used it, the check did not).
+  static double marathonScale(UserProfile p) {
+    final a = p.athlete;
+    if (a.eventDistance != 'm' || p.level == 'advanced') return 1;
+    (double, int)? best;
+    for (final e in a.raceTimes.entries) {
+      final d = Vdot.distances[e.key];
+      if (d == null || e.value <= 0) continue;
+      if (d > 10000) return 1;
+      if (best == null || Vdot.fromRace(d, e.value) > Vdot.fromRace(best.$1, best.$2)) best = (d, e.value);
+    }
+    if (best == null) return 1;
+    final r = riegel(best.$2, best.$1, 42195, novice: true) / Vdot.raceTime(Vdot.fromRace(best.$1, best.$2), 42195);
+    return max(1.0, r);
   }
 
   /// Leg times (s, race order) and the transitions (s) of a triathlon / duathlon at running fitness
@@ -214,42 +235,51 @@ class GoalModel {
   /// else to 10 s.
   static int roundTarget(int sec) => sec >= 3600 ? (sec / 60).ceil() * 60 : (sec / 10).ceil() * 10;
 
-  /// Target-time check for a plan starting at [start] (null without event date, distance,
-  /// target time or model).
-  static TargetCheck? check(UserProfile p, {required DateTime start}) {
+  /// Target-time check from [start] (null without event date, distance, target time or model).
+  ///
+  /// The fitness comes from the one model ([FitnessState], review round 2): [fitness] when the caller
+  /// has the plan and the sessions (goal editor, calendar, forecast), else the profile alone
+  /// ([FitnessState.fromProfile] at [start]: a plan stored on the profile counts as trained as planned).
+  /// Realistic = today's VDOT + the gain of the weeks to race day – the forecast's race-day value, so a
+  /// suggestion, the check and the forecast agree on the same day and the realistic time no longer
+  /// gets slower as the plan progresses (C4: W1 3:37 → W17 3:47 while the forecast said 3:36).
+  static TargetCheck? check(UserProfile p, {required DateTime start, FitnessState? fitness}) {
     final a = p.athlete;
     final target = a.targetTimeSec;
     if (a.eventDate == null || a.eventDistance == null || target == null || target <= 0 || !hasModel(p)) return null;
     final weeks = weeksUntil(a.eventDate!, start);
     if (weeks < 1) return null;
-    final (vdot, guessed) = currentVdot(p);
-    TargetStatus statusFor(int w) {
-      final g = gain(p, (w - 1).toDouble());
-      final realistic = timeAt(p, vdot, g)!;
-      final best = timeAt(p, vdot, g * optimistic)!;
+    final f = fitness ?? FitnessState.fromProfile(p, now: start);
+    final vdot = f.current;
+    final race = dayOnly(a.eventDate!);
+    int time(double v) => f.timeAt(v, p: p)!;
+    TargetStatus statusFor(DateTime day) {
+      final g = f.gainTo(day);
+      final realistic = time(vdot + g);
+      final best = time(vdot + g * optimistic);
       return target >= realistic * 0.995 ? TargetStatus.ok : (target >= best ? TargetStatus.ambitious : TargetStatus.unrealistic);
     }
 
-    final g = gain(p, (weeks - 1).toDouble());
-    final status = statusFor(weeks);
+    final g = f.gainTo(race);
+    final status = statusFor(race);
     DateTime? later;
     if (status != TargetStatus.ok) {
-      final race = dayOnly(a.eventDate!);
       for (var w = weeks + 1; w <= maxEventWeeks && later == null; w++) {
-        if (statusFor(w) == TargetStatus.ok) later = DateTime(race.year, race.month, race.day + 7 * (w - weeks));
+        final d = DateTime(race.year, race.month, race.day + 7 * (w - weeks));
+        if (statusFor(d) == TargetStatus.ok) later = d;
       }
     }
     final meters = Vdot.distances[a.eventDistance];
     return TargetCheck(
       status: status,
       targetSec: target,
-      currentSec: predict(p, vdot)!,
-      realisticSec: timeAt(p, vdot, g)!,
-      optimisticSec: timeAt(p, vdot, g * optimistic)!,
+      currentSec: time(vdot),
+      realisticSec: time(vdot + g),
+      optimisticSec: time(vdot + g * optimistic),
       currentVdot: vdot,
       gainVdot: g,
       goalVdot: meters == null ? null : Vdot.fromRace(meters, target),
-      guessed: guessed,
+      guessed: f.guessed,
       laterDate: later,
       weeks: weeks,
     );

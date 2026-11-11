@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../../services/fitness_state.dart';
 import '../../services/plan_generator.dart';
 
 /// Feasibility of the event goal ([PlanGenerator.feasibility]), cached per profile and
@@ -14,11 +15,13 @@ class FeasibilityCache {
   String? _key;
   PlanFeasibility _value = const PlanFeasibility();
 
-  PlanFeasibility of(UserProfile p, DateTime start, AppLocalizations l) {
-    final key = '${p.toMap()}|${dayOnly(start)}|${l.localeName}';
+  /// [fitness]: the running plan's fitness model – mid-plan the target check uses the forecast's values.
+  PlanFeasibility of(UserProfile p, DateTime start, AppLocalizations l, {FitnessState? fitness}) {
+    final fk = fitness == null ? '' : '${fitness.current.toStringAsFixed(2)}/${fitness.futureFactor.toStringAsFixed(2)}/${fitness.today}';
+    final key = '${p.toMap()}|${dayOnly(start)}|${l.localeName}|$fk';
     if (key != _key) {
       _key = key;
-      _value = PlanGenerator.feasibility(p, start: start, l: l);
+      _value = PlanGenerator.feasibility(p, start: start, l: l, fitness: fitness);
     }
     return _value;
   }

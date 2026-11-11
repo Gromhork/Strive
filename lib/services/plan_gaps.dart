@@ -35,6 +35,53 @@ class GapFill {
 UserProfile withPlanMeta(UserProfile p, DateTime start, int weeks) =>
     p.copyWith(athlete: p.athlete.merge({'planStart': dayOnly(start), 'planLength': weeks}));
 
+/// The profile for a plan re-created mid-plan ("Plan neu aufsetzen", "align plan with goal") from
+/// [start]: the weekly volume and the longest run the athlete actually reached in the 4 weeks before
+/// it replace the setup values (runWeeklyKm, longestRunKm, bikeWeeklyHours, swimWeeklyKm) – the new
+/// plan continues from there instead of restarting at the setup's volume (like [PlanGaps]' continuation,
+/// but from the done sessions). Weekly volume: the highest loading week (the plan's recovery / taper
+/// weeks don't count); longest run: the longest run of the 4 weeks. Unchanged without ≥ 2 weeks of a
+/// generated plan before [start] (a fresh setup keeps what the athlete entered).
+UserProfile withReachedVolume(
+  UserProfile p, {
+  required List<PlannedWorkout> plans,
+  required List<Session> sessions,
+  required DateTime start,
+}) {
+  final day = dayOnly(start);
+  final from = addDays(day, -28);
+  final history = plans.where((x) => x.phase != null && !dayOnly(x.date).isBefore(from) && dayOnly(x.date).isBefore(day)).toList();
+  if (history.isEmpty) return p;
+  final first = history.map((x) => dayOnly(x.date)).reduce((x, y) => x.isBefore(y) ? x : y);
+  if (daysBetween(first, day) < 14) return p;
+  final rest = {
+    for (final x in history)
+      if (x.phase == 'recovery' || x.phase == 'taper') startOfWeek(x.date),
+  };
+  final weeks = <DateTime, Map<Sport, double>>{};
+  var longest = 0.0;
+  for (final s in sessions) {
+    final d = dayOnly(s.start);
+    if (d.isBefore(from) || !d.isBefore(day) || s.sport == Sport.gym) continue;
+    if (s.sport == Sport.run) longest = max(longest, s.distanceM / 1000);
+    final wk = startOfWeek(d);
+    if (rest.contains(wk)) continue;
+    final w = weeks.putIfAbsent(wk, () => {});
+    w[s.sport] = (w[s.sport] ?? 0) + (s.sport == Sport.ride ? s.durationSec / 3600 : s.distanceM / 1000);
+  }
+  double top(Sport s) => weeks.values.fold<double>(0, (x, w) => max(x, w[s] ?? 0));
+  double r1(double v) => double.parse(v.toStringAsFixed(1));
+  final run = top(Sport.run), ride = top(Sport.ride), swim = top(Sport.swim);
+  return p.copyWith(
+    athlete: p.athlete.merge({
+      if (run > 0) 'runWeeklyKm': r1(run),
+      if (longest > 0) 'longestRunKm': r1(longest),
+      if (ride > 0) 'bikeWeeklyHours': r1(ride),
+      if (swim > 0) 'swimWeeklyKm': r1(swim),
+    }),
+  );
+}
+
 /// Gaps in the current plan (docs/training-science.md §11, "gaps"). Pure – no Firestore.
 ///
 /// The plan is rebuilt with [PlanGenerator] from its start (stored on the profile as

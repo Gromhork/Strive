@@ -269,8 +269,11 @@ void main() {
         if (long == null || runs.length < 3) continue;
         final km = long.distanceKm!;
         final next = runs.where((w) => w != long).fold(0.0, (x, w) => max(x, w.distanceKm ?? 0));
-        expect(km, lessThanOrEqualTo(0.5 * runKm(runs) + 0.3), reason: '$key ${long.date}');
-        expect(km, lessThanOrEqualTo(2 * next + 0.3), reason: '$key ${long.date}');
+        // Review r2 C6: weeks with three runs follow the Galloway / Higdon novice plans – ≤ 65 % and
+        // ≤ 3.5 × the next run; four runs keep 50 % / 2 ×.
+        final three = runs.length == 3;
+        expect(km, lessThanOrEqualTo((three ? 0.65 : 0.5) * runKm(runs) + 0.3), reason: '$key ${long.date}');
+        expect(km, lessThanOrEqualTo((three ? 3.5 : 2) * next + 0.3), reason: '$key ${long.date}');
       }
     }
     // Marathon: ≤ 55 % (spec §1.10).

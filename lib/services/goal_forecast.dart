@@ -3,9 +3,9 @@ import 'dart:math';
 import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/models.dart';
-import 'compliance.dart';
+import '../l10n/gen/app_localizations.dart';
+import 'fitness_state.dart';
 import 'goal_model.dart';
-import 'insights.dart';
 import 'plan_generator.dart';
 import 'plan_recalibrate.dart';
 import 'progression_check.dart';
@@ -15,7 +15,20 @@ import 'zones.dart';
 enum ForecastStatus { ahead, onTrack, slightlyBehind, atRisk }
 
 /// Why the forecast moved away from the plan.
-enum ForecastReason { missedTraining, slowerThanPlanned, fasterThanPlanned, longRunBehind, trainingBreak, fatigue }
+enum ForecastReason {
+  missedTraining,
+  slowerThanPlanned,
+  fasterThanPlanned,
+  longRunBehind,
+  trainingBreak,
+  fatigue,
+
+  /// < 70 % of the sessions of the last 4 weeks done (chronic skipping, IMPORTANT 4).
+  sessionsSkipped,
+
+  /// < 75 % of the key sessions (tempo, intervals, long) of the last 4 weeks done.
+  keySessionsMissed,
+}
 
 /// How much data the forecast stands on.
 enum ForecastConfidence { low, medium, high }
@@ -76,6 +89,11 @@ class GoalForecast {
     this.progression,
     this.paceStatus,
     this.finishOnly = false,
+    this.sessionsDue = 0,
+    this.sessionsDone = 0,
+    this.keysDue = 0,
+    this.keysDone = 0,
+    this.baselineVdot,
   });
 
   final String event;
@@ -129,9 +147,18 @@ class GoalForecast {
   /// level-default VDOT predicts a half marathon in ~1:54 for someone whose easy pace is 7:40/km.
   final bool finishOnly;
 
+  /// Due / done endurance sessions and key sessions of the last 4 weeks ([ForecastReason.sessionsSkipped],
+  /// [ForecastReason.keySessionsMissed]).
+  final int sessionsDue, sessionsDone, keysDue, keysDone;
+
+  /// VDOT the plan was built with ([FitnessState.baseline]).
+  final double? baselineVdot;
+
   /// Reasons that rule out "ahead": the athlete is behind on something the time model can't see.
   static const _noAhead = {
     ForecastReason.longRunBehind,
+    ForecastReason.sessionsSkipped,
+    ForecastReason.keySessionsMissed,
     ForecastReason.missedTraining,
     ForecastReason.trainingBreak,
     ForecastReason.fatigue,
@@ -167,168 +194,57 @@ class GoalForecast {
     if (race.isBefore(today)) return null;
     final daysLeft = daysBetween(today, race);
 
-    // Plan start: the first phased workout of the plan leading to this race.
-    final horizon = addDays(race, -(7 * GoalModel.maxEventWeeks));
-    final phased = plans.where((x) => x.phase != null && !x.date.isBefore(horizon) && !dayOnly(x.date).isAfter(race)).toList();
-    final planStart = phased.isEmpty ? null : phased.map((x) => dayOnly(x.date)).reduce((x, y) => x.isBefore(y) ? x : y);
-    final from = planStart ?? today;
-    final elapsedWeeks = max(0.0, daysBetween(from, today) / 7);
-
-    final linked = linkPlanSessions(plans, sessions);
-    final hrMax = HrMax.of(p, sessions: sessions, now: now);
-    final (profileVdot, guessed) = GoalModel.currentVdot(p);
-    // The plan line starts at the fitness the plan was built with. A recalibration that moved
-    // the profile's VDOT since then (it rewrites the race time) must not move the start of the
-    // line too – baseline + gain(weeks) would count the realised gain twice (or a cut twice).
-    // The first quality run of the plan keeps the paces of the plan start.
-    final firstQuality =
-        (plans
-                .where((x) => x.sport == Sport.run && planStart != null && !x.date.isBefore(planStart) && _vdotOfSteps(x.steps) != null)
-                .toList()
-              ..sort((x, y) => x.date.compareTo(y.date)))
-            .firstOrNull;
-    final startVdot = firstQuality == null ? null : _vdotOfSteps(firstQuality.steps);
-    final baseline = startVdot != null && (startVdot - profileVdot).abs() >= 0.75 ? startVdot : profileVdot;
+    // ── Fitness: the one model ([FitnessState] – baseline, today's VDOT from the evidence, race day).
+    final fit = FitnessState.of(p, plans: plans, sessions: sessions, now: now, race: race);
+    final planStart = fit.planStart != null && !fit.planStart!.isAfter(race) ? fit.planStart : null;
+    final from = planStart == null || planStart.isAfter(today) ? today : planStart;
+    final elapsedWeeks = fit.elapsedWeeks;
+    final linked = fit.linked;
+    final baseline = fit.baseline;
     final runs = sessions.where((s) => s.sport == Sport.run && !s.start.isAfter(now)).toList();
     final planOf = {for (final x in plans) x.id: x};
     PlannedWorkout? planFor(Session s) => s.planId != null ? planOf[s.planId] : plans.where((x) => x.sessionId == s.id).firstOrNull;
-
-    // ── Efforts (5 km and longer, last 60 days)
-    final trend = <(DateTime, double)>[];
-    double? effort, floor;
-    for (final s in runs.where((s) => daysBetween(dayOnly(s.start), today) <= 60)) {
-      double? best;
-      for (final e in runBestEfforts([s]).values) {
-        if (!Vdot.distances.containsKey(e.key)) continue;
-        final v = Vdot.fromRace(e.meters, e.seconds);
-        if (best == null || v > best) best = v;
-      }
-      if (best == null) continue;
-      // A run linked to a planned training session is structured training, not a time trial.
-      final plan = planFor(s);
-      final maximal =
-          plan?.intensity == 'race' || (plan == null && ((s.rpe ?? 0) >= 8 || (s.avgHr != null && s.avgHr! >= 0.88 * hrMax.bpm)));
-      if (maximal) {
-        effort = max(effort ?? 0, best);
-        trend.add((dayOnly(s.start), best));
-      } else {
-        floor = max(floor ?? 0, best);
-      }
-    }
-
-    // ── Quality runs: implied VDOT from actual vs planned average speed
-    final implied = <(DateTime, double)>[];
-    final ratios = <double>[], planVdots = <double>[];
-    final easyPace = PaceZones(baseline).easySlow;
-    for (final x in plans) {
-      if (x.sport != Sport.run || (x.intensity != 'tempo' && x.intensity != 'intervals')) continue;
-      final s = linked[x.id];
-      if (s == null || s.distanceM <= 0 || s.durationSec <= 0 || daysBetween(dayOnly(s.start), today) > 42) continue;
-      final km = x.distanceKm ?? 0;
-      final plannedSec = x.steps.fold<int>(0, (t, st) => t + estimateStepSec(st, Sport.run, easyPace: easyPace, css: 100));
-      final planVdot = _vdotOfSteps(x.steps);
-      if (km <= 0 || plannedSec <= 0 || planVdot == null) continue;
-      final ratio = qualityRatio(s, km: km, stepSec: plannedSec, planSec: x.durationMin * 60);
-      // Faster only counts when it did not take an all-out effort; slower only when it was a
-      // real effort (an easy jog of a quality day says nothing about fitness).
-      if (ratio > 1 && (s.rpe ?? 0) >= 9) continue;
-      if (ratio < 1 && s.rpe != null && s.rpe! <= 5) continue;
-      final v = (planVdot * pow(ratio, 1.2)).clamp(planVdot - 3, planVdot + 3).toDouble();
-      implied.add((dayOnly(s.start), v));
-      ratios.add(ratio.toDouble());
-      planVdots.add(planVdot);
-    }
-    trend.addAll(implied);
-    trend.sort((x, y) => x.$1.compareTo(y.$1));
-
-    // ── Adherence (training that was due since the plan start)
-    bool endurance(PlannedWorkout x) => x.sport != Sport.gym && x.intensity != 'race';
-    final due = plans.where((x) => endurance(x) && !x.date.isBefore(from) && !dayOnly(x.date).isAfter(today)).toList();
-    final adherence = due.length >= 3 ? weeklyCompletion(due, linked, now: now) : null;
-    final recentFrom = addDays(today, -28);
-    final recentDue = due.where((x) => !x.date.isBefore(recentFrom)).toList();
-    final recent = recentDue.length >= 3 ? weeklyCompletion(recentDue, linked, now: now) : adherence;
-
-    // ── Fitness now. Hitting the targets of a quality run only says "at least the VDOT the
-    // plan expected" (targets are a prescription, not a maximum): without contrary evidence
-    // the athlete is on the plan's line (the gain of the weeks trained, scaled by how much of
-    // it was done). Clearly slower runs at a real effort pull it down, faster ones up; a
-    // near-maximal effort is a direct measurement.
-    final expectedNow = baseline + GoalModel.gain(p, elapsedWeeks) * ((adherence ?? 1) / 0.9).clamp(0.0, 1.0);
-    var vdot = effort ?? expectedNow;
-    final recentRatios = ratios.skip(max(0, ratios.length - 5)).toList();
-    // "Faster than planned" needs more than two good days (B10): ≥ 3 quality runs over ≥ 14 days
-    // (or a measured maximal effort) – the same evidence the recalibration needs for VDOT +1.
-    final qDays = implied.map((x) => x.$1).toList()..sort();
-    final fasterEvidence = effort != null || (qDays.length >= 3 && daysBetween(qDays.first, qDays.last) >= 14);
-    // ≥ 3 quality runs (C1): one or two sessions are no trend.
-    if (recentRatios.length >= 3) {
-      final rm = _median(recentRatios);
-      final q = _median(planVdots.skip(max(0, planVdots.length - 5)).toList()) * pow(rm, 1.2);
-      if (rm < 0.98) vdot = min(vdot, (vdot + 2 * q) / 3);
-      if (rm > 1.02 && fasterEvidence) vdot = max(vdot, q.toDouble());
-    }
-    final qm = recentRatios.length >= 3;
-    if (floor != null && floor > vdot) vdot = floor;
+    final effort = fit.effort;
+    final trend = fit.trend;
+    final adherence = fit.adherence;
+    final recent = fit.recentAdherence;
+    final fasterEvidence = fit.fasterEvidence;
+    final qm = fit.qualityRuns >= 3;
+    final vdot = fit.current;
     final reasons = <ForecastReason>[];
-
-    // ── Detraining after a break
-    final runPlansDue = plans.where((x) => x.sport == Sport.run && !x.date.isBefore(from) && dayOnly(x.date).isBefore(today)).length;
-    // The longest gap of the last 28 days counts (B11), not only the one up to today – one easy
-    // run after three weeks off does not undo the detraining. A finished gap fades linearly over
-    // twice its length after the return; gaps before the plan start are the plan's baseline.
-    if (runs.isNotEmpty && runPlansDue >= 2) {
-      final days = {for (final s in runs) dayOnly(s.start)}.toList()..sort();
-      final points = [...days, today];
-      var penalty = 0.0;
-      for (var i = 1; i < points.length; i++) {
-        final gap = daysBetween(points[i - 1], points[i]);
-        if (gap <= 10) continue;
-        final open = i == points.length - 1;
-        final since = daysBetween(points[i], today);
-        if (!open && (since > 28 || points[i - 1].isBefore(from))) continue;
-        final full = min(4.0, (gap - 10) / 7 * 0.7 + 0.3);
-        penalty = max(penalty, full * max(0.0, 1 - since / (2 * gap)));
-      }
-      if (penalty > 0.05) {
-        vdot -= penalty;
-        reasons.add(ForecastReason.trainingBreak);
-      }
-    }
-
+    if (fit.breakPenalty > 0) reasons.add(ForecastReason.trainingBreak);
     if (adherence != null && adherence < 0.7) reasons.add(ForecastReason.missedTraining);
-    final futureFactor = recent == null ? 1.0 : (0.3 + 0.7 * recent / 0.9).clamp(0.3, 1.0);
+    // Chronic skipping over the last 4 weeks (IMPORTANT 4): fewer than 70 % of the sessions or 75 % of
+    // the key sessions done – even when the minutes look fine (long runs done, easy runs skipped).
+    final sessionsSkipped = elapsedWeeks >= 3 && fit.recentDue >= 6 && fit.recentDone < 0.7 * fit.recentDue;
+    final keysMissed = elapsedWeeks >= 3 && fit.keyDue >= 3 && fit.keyDone < 0.75 * fit.keyDue;
+    if (sessionsSkipped && !reasons.contains(ForecastReason.missedTraining)) reasons.add(ForecastReason.sessionsSkipped);
+    if (keysMissed) reasons.add(ForecastReason.keySessionsMissed);
     final doneSessions = sessions.where((s) => !dayOnly(s.start).isBefore(from) && !s.start.isAfter(now) && s.sport != Sport.gym).length;
 
     // ── Race day
     final weeksLeft = daysLeft / 7;
-    final trainingLeft = max(0.0, weeksLeft - 1);
-    final gainLeft = GoalModel.gainBetween(p, elapsedWeeks, elapsedWeeks + trainingLeft) * futureFactor;
+    final gainLeft = fit.gainTo(race);
     final vdotRace = vdot + gainLeft;
-    final planLine = baseline + GoalModel.gain(p, elapsedWeeks);
+    final planLine = fit.planLine;
     final confidence = effort != null ? ForecastConfidence.high : (qm ? ForecastConfidence.medium : ForecastConfidence.low);
     if (confidence != ForecastConfidence.low && planStart != null) {
       if (vdot <= planLine - 1.5) reasons.add(ForecastReason.slowerThanPlanned);
       if (vdot >= planLine + 1.5) reasons.add(ForecastReason.fasterThanPlanned);
     }
-    final u =
-        switch (confidence) {
-          ForecastConfidence.high => 1.0,
-          ForecastConfidence.medium => 1.5,
-          ForecastConfidence.low => guessed ? 3.5 : 2.0,
-        } +
-        0.04 * weeksLeft;
+    final u = fit.uncertainty(weeksLeft);
 
     // Run/walk beginners without a measured effort: finish goal, no time (C6). The level default
     // (VDOT 33) predicts a 1:54 half marathon for someone who cannot run 30 min yet.
     // Same rule as the generator's race session and outlook ([PlanGenerator.finishOnly]).
-    final finishOnly = effort == null && a.raceTimes.isEmpty && PlanGenerator.finishOnly(p);
+    final finishOnly = effort == null && a.raceTimes.isEmpty && PlanGenerator.finishOnly(p, start: from);
     final model = GoalModel.hasModel(p) && !finishOnly;
-    int? at(double v, double g) => model ? GoalModel.timeAt(p, v, g) : null;
-    final nowSec = at(vdot, 0);
-    final raceSec = at(vdot, gainLeft);
-    final fast = at(vdot, gainLeft + u), slow = at(vdot, gainLeft - u);
-
+    // Times measured from the plan's baseline (C1: a triathlon applies the run's relative gain to the
+    // whole race – anchoring at today's VDOT made a perfect athlete's 70.3 slower every week).
+    int? at(double v) => model ? fit.timeAt(v) : null;
+    final nowSec = at(vdot);
+    final raceSec = at(vdotRace);
+    final fast = at(vdotRace + u), slow = at(vdotRace - u);
     // ── Long run: the longest run of the last 6 weeks against the longest planned so far, and
     // the long runs due in the last 3 weeks – ≥ 2 of them missed or < 75 % done (C3: eight
     // skipped long runs stayed "on track" because one long run 6 weeks ago still counted).
@@ -366,13 +282,15 @@ class GoalForecast {
       if (x == null || x.intensity == 'race') continue;
       tooHard += Recalibrator.rpeLoad(x.intensity, s.rpe!);
     }
-    final fatigue = tooHard >= 2;
+    final fatigue = tooHard >= 2 || fit.chronicFatigue;
     if (fatigue) reasons.add(ForecastReason.fatigue);
 
     // ── Status from the target time ([paceStatus], C1: persists two weeks)
     final target = a.targetTimeSec != null && a.targetTimeSec! > 0 && raceSec != null ? a.targetTimeSec : null;
     var pace = ForecastStatus.onTrack;
     int? suggested;
+    var quietAhead = false;
+    ForecastStatus? prevRaw;
     if (target != null) {
       final r = raceSec! / target;
       // Ahead: running needs the B10 evidence; a triathlon target slower than what the athlete's
@@ -397,6 +315,7 @@ class GoalForecast {
           persist: false,
         );
         final before = prev == null || prev.early ? ForecastStatus.onTrack : (prev.paceStatus ?? ForecastStatus.onTrack);
+        prevRaw = before;
         if (_side(before) != _side(pace)) {
           pace = ForecastStatus.onTrack;
         } else if (before.index < pace.index) {
@@ -404,6 +323,41 @@ class GoalForecast {
         }
       }
       if (pace != ForecastStatus.onTrack) suggested = GoalModel.roundTarget(raceSec);
+      // A soft target the athlete keeps beating: the faster target is suggested for the first two
+      // weeks "ahead" shows, then the forecast stays quiet about it (review round 2: "set 3:34" 13
+      // weeks in a row).
+      // "Ahead" showed the last two weeks already when the raw status was ahead one, two and three weeks ago.
+      if (persist && pace == ForecastStatus.ahead && prevRaw == ForecastStatus.ahead && effort == null) {
+        final twoWeeksAgo = DateTime(now.year, now.month, now.day - 14, now.hour, now.minute);
+        final prev2 = _of(
+          p,
+          plans: plans,
+          sessions: [
+            for (final s in sessions)
+              if (!s.start.isAfter(twoWeeksAgo)) s,
+          ],
+          now: twoWeeksAgo,
+          persist: false,
+        );
+        final threeWeeksAgo = DateTime(now.year, now.month, now.day - 21, now.hour, now.minute);
+        GoalForecast? prev3;
+        if (prev2 != null && !prev2.early && prev2.paceStatus == ForecastStatus.ahead) {
+          prev3 = _of(
+            p,
+            plans: plans,
+            sessions: [
+              for (final s in sessions)
+                if (!s.start.isAfter(threeWeeksAgo)) s,
+            ],
+            now: threeWeeksAgo,
+            persist: false,
+          );
+        }
+        if (prev3 != null && !prev3.early && prev3.paceStatus == ForecastStatus.ahead) {
+          suggested = null;
+          quietAhead = true;
+        }
+      }
     }
     var status = pace;
     void atLeast(ForecastStatus s) {
@@ -415,6 +369,7 @@ class GoalForecast {
     final missed = adherence != null && elapsedWeeks >= 3 ? adherence : 1.0;
     if (missed < 0.5) atLeast(ForecastStatus.atRisk);
     if (missed < 0.7) atLeast(ForecastStatus.slightlyBehind);
+    if (sessionsSkipped || keysMissed) atLeast(ForecastStatus.slightlyBehind);
 
     // ── Floors (C3): long runs behind → at least slightly behind; half marathon and longer at
     // risk with ≤ 10 weeks left (≤ 6 for shorter races). Fatigue → at least slightly behind.
@@ -429,7 +384,11 @@ class GoalForecast {
     if (progression != null && progression.behind) {
       if (progression.longBehind && !reasons.contains(ForecastReason.longRunBehind)) reasons.add(ForecastReason.longRunBehind);
       final share = progression.longAchievedShare ?? 1;
-      atLeast(progression.longBehind && (weeksLeft <= 8 || share < 0.6) ? ForecastStatus.atRisk : ForecastStatus.slightlyBehind);
+      atLeast(
+        progression.atRisk || (progression.longBehind && (weeksLeft <= 8 || share < 0.6))
+            ? ForecastStatus.atRisk
+            : ForecastStatus.slightlyBehind,
+      );
     }
 
     // Never "ahead" while something the time model can't see is behind (C3), or right after a
@@ -439,6 +398,7 @@ class GoalForecast {
       suggested = null;
     }
     if (status == ForecastStatus.onTrack) suggested = null;
+    if (quietAhead) suggested = null;
     if (reasons.contains(ForecastReason.fasterThanPlanned) && status != ForecastStatus.ahead) {
       reasons.remove(ForecastReason.fasterThanPlanned);
     }
@@ -447,8 +407,9 @@ class GoalForecast {
     final planned = <(DateTime, double)>[];
     if (planStart != null) {
       final totalWeeks = daysBetween(planStart, race) / 7;
+      final training = daysBetween(planStart, startOfWeek(race)) / 7;
       for (var w = 0.0; w <= totalWeeks + 1e-9; w += max(1.0, totalWeeks / 12)) {
-        planned.add((addDays(planStart, (w * 7).round()), baseline + GoalModel.gain(p, min(w, max(0, totalWeeks - 1)))));
+        planned.add((addDays(planStart, (w * 7).round()), baseline + GoalModel.gain(p, min(w, max(0, training)))));
       }
     }
 
@@ -480,54 +441,50 @@ class GoalForecast {
       progression: progression,
       paceStatus: target == null ? null : pace,
       finishOnly: finishOnly,
+      sessionsDue: fit.recentDue,
+      sessionsDone: fit.recentDone,
+      keysDue: fit.keyDue,
+      keysDone: fit.keyDone,
+      baselineVdot: planStart == null ? null : baseline,
     );
   }
 
-  /// Dead band of [qualityRatio]: ± 5 % of the planned time is "as planned" (C1).
-  static const deadBand = 0.05;
+  /// Dead band of [qualityRatio] ([FitnessState.deadBand]).
+  static const deadBand = FitnessState.deadBand;
 
-  /// Actual / planned average speed of a quality run [s] over the plan's [km], 0.85 … 1.15, against
-  /// the step estimate ([stepSec]: work at the target paces, warm-up / cool-down / recoveries at
-  /// easy pace). The whole-session average blurs the work paces, so ± [deadBand] counts as exactly
-  /// on plan (1.0); a session that took the plan's displayed duration ([planSec], rounded to 5 min
-  /// – up to ~9 % off the step estimate in older plans) ± 2 % is on plan as well.
-  static double qualityRatio(Session s, {required double km, required int stepSec, required int planSec}) {
-    if (s.distanceM <= 0 || s.durationSec <= 0 || km <= 0) return 1;
-    if (planSec > 0 && (s.durationSec / planSec - 1).abs() <= 0.02 && (s.distanceM / (km * 1000) - 1).abs() <= 0.02) return 1;
-    final ref = stepSec > 0 ? stepSec : planSec;
-    if (ref <= 0) return 1;
-    final r = (s.distanceM / s.durationSec) / (km * 1000 / ref);
-    return (r - 1).abs() <= deadBand ? 1 : r.clamp(0.85, 1.15).toDouble();
-  }
-
-  static double _median(List<double> v) {
-    final s = [...v]..sort();
-    return s.length.isOdd ? s[s.length ~/ 2] : (s[s.length ~/ 2 - 1] + s[s.length ~/ 2]) / 2;
-  }
-
-  /// VDOT the work-step paces of a quality run were set for (T at 88 %, I at 97.5 % VO2max).
-  static double? _vdotOfSteps(List<WorkoutStep> steps) {
-    for (final s in steps) {
-      if (!s.isWork || s.paceMin == null || s.paceMax == null) continue;
-      final frac = switch (s.zone) {
-        'T' => 0.88,
-        'I' => 0.975,
-        _ => null,
-      };
-      if (frac == null) continue;
-      final v = 60000 / ((s.paceMin! + s.paceMax!) / 2); // m/min
-      return Vdot.vo2(v) / frac;
-    }
-    return null;
-  }
+  /// [FitnessState.qualityRatio].
+  static double qualityRatio(Session s, {required double km, required int stepSec, required int planSec}) =>
+      FitnessState.qualityRatio(s, km: km, stepSec: stepSec, planSec: planSec);
 
   /// Planned workouts to update when the target changes to [newTarget]: race-pace steps of
-  /// upcoming peak / taper workouts and the race itself follow the new goal pace.
-  static Map<String, Map<String, dynamic>> retarget(UserProfile p, List<PlannedWorkout> plans, int newTarget, {required DateTime now}) {
+  /// upcoming peak / taper workouts and the race itself follow the new goal – with the generator's
+  /// rule (C3; [PlanGenerator] `_goalPace`): the target check from today on the one fitness model
+  /// ([FitnessState] from [plans] and [sessions]) – within reach → race-pace work at the faster of
+  /// target and realistic time, the race at the target; out of reach → both at the realistic time and
+  /// the race says "Ziel X – starte mit Y". A conservative target (> 5 % slower than realistic) adds
+  /// the realistic pacing to the race (IMPORTANT 5). With [l] the race's description is rebuilt
+  /// (else the old target's time is replaced in it).
+  static Map<String, Map<String, dynamic>> retarget(
+    UserProfile p,
+    List<PlannedWorkout> plans,
+    int newTarget, {
+    required DateTime now,
+    List<Session> sessions = const [],
+    AppLocalizations? l,
+  }) {
     final meters = Vdot.distances[p.athlete.eventDistance];
     if (meters == null) return const {};
-    final pace = (newTarget / (meters / 1000)).round();
     final old = p.athlete.targetTimeSec;
+    final q = p.copyWith(athlete: p.athlete.merge({'targetTimeSec': newTarget}));
+    final fit = FitnessState.of(q, plans: plans, sessions: sessions, now: now);
+    final t = GoalModel.check(q, start: now, fitness: fit);
+    final behind = t != null && t.status != TargetStatus.ok;
+    // Race-pace work: the faster of target and realistic within reach, else the realistic time.
+    final goal = t == null ? newTarget : (behind ? t.realisticSec : t.ambitionSec);
+    final pace = (goal / (meters / 1000)).round();
+    final raceSec = behind ? t.realisticSec : newTarget;
+    final racePace = (raceSec / (meters / 1000)).round();
+    final km = meters / 1000;
     final out = <String, Map<String, dynamic>>{};
     for (final x in plans) {
       if (x.status != 'planned' || dayOnly(x.date).isBefore(dayOnly(now)) || x.sport != Sport.run) continue;
@@ -542,13 +499,14 @@ class GoalForecast {
             () {
               changed = true;
               final half = race ? 3 : ((s.paceMax! - s.paceMin!) ~/ 2).clamp(3, 5);
+              final c = race ? racePace : pace;
               return WorkoutStep(
                 kind: s.kind,
                 durationSec: s.durationSec,
                 distanceM: s.distanceM,
                 zone: s.zone,
-                paceMin: pace - half,
-                paceMax: pace + half,
+                paceMin: c - half,
+                paceMax: c + half,
                 hrMin: s.hrMin,
                 hrMax: s.hrMax,
                 note: s.note,
@@ -558,12 +516,64 @@ class GoalForecast {
             s,
       ];
       if (!changed && !race) continue;
+      String? description;
+      if (race && l != null) {
+        description = raceDescription(
+          l,
+          x.description,
+          target: newTarget,
+          realisticSec: t?.realisticSec,
+          behind: behind,
+          conservative: t?.conservative ?? false,
+          km: km,
+        );
+      } else if (race && old != null) {
+        description = x.description.replaceAll(clock(old), clock(newTarget));
+      }
       out[x.id] = {
         if (changed) 'steps': steps.map((s) => s.toMap()).toList(),
-        if (race && old != null) 'description': x.description.replaceAll(clock(old), clock(newTarget)),
-        if (race) 'durationMin': (newTarget / 60).round(),
+        if (description != null) 'description': description,
+        if (race) 'durationMin': (raceSec / 60).round(),
       };
     }
     return out;
+  }
+
+  /// [description] of a running race session with its goal lines (the generator's: "Zielzeit X …",
+  /// "Ziel X – starte mit Y" + the race text, or the plain race text) replaced for [target]; other
+  /// lines (fuelling, run/walk) stay. [conservative]: the realistic time and pace follow the goal line.
+  static String raceDescription(
+    AppLocalizations l,
+    String description, {
+    required int target,
+    required int? realisticSec,
+    required bool behind,
+    required bool conservative,
+    required double km,
+  }) {
+    // A line matches a template when it starts and ends like it around the placeholders.
+    const mark = '\u0000';
+    bool like(String line, String template) {
+      final parts = template.split(mark);
+      return line.startsWith(parts.first) && line.endsWith(parts.last) && line.length >= parts.first.length + parts.last.length;
+    }
+
+    final templates = [l.wRaceDesc, l.wRaceGoalDesc(mark), l.wRaceGoalStart(mark, mark), l.wRaceRealistic(mark, mark)];
+    final lines = description.isEmpty ? <String>[] : description.split('\n');
+    var at = lines.indexWhere((x) => templates.any((t) => like(x, t)));
+    lines.removeWhere((x) => templates.any((t) => like(x, t)));
+    if (at < 0 || at > lines.length) at = lines.length;
+    String perKm(int sec) => '${clock((sec / km).round())}/km';
+    final goal = [
+      if (behind && realisticSec != null) ...[
+        l.wRaceGoalStart(clock(target), perKm(realisticSec)),
+        l.wRaceDesc,
+      ] else
+        l.wRaceGoalDesc(clock(target)),
+      if (!behind && conservative && realisticSec != null)
+        l.wRaceRealistic(clock(GoalModel.roundTarget(realisticSec)), perKm(realisticSec)),
+    ];
+    lines.insertAll(at, goal);
+    return lines.join('\n');
   }
 }

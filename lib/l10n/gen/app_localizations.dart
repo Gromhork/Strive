@@ -9971,6 +9971,90 @@ abstract class AppLocalizations {
   /// **'{days} days left'**
   String daysLeftInline(int days);
 
+  /// No description provided for @fcReasonSessionsSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} planned sessions of the last 4 weeks done – regular training builds the fitness, skipped sessions add up'**
+  String fcReasonSessionsSkipped(int done, int total);
+
+  /// No description provided for @fcReasonKeyMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} key sessions (tempo, intervals, long runs) of the last 4 weeks done'**
+  String fcReasonKeyMissed(int done, int total);
+
+  /// No description provided for @recalWhySessionsSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Over the last 4 weeks {done} of {total} sessions were done. If certain days never work, move or drop them in the week planner instead of skipping them.'**
+  String recalWhySessionsSkipped(int done, int total);
+
+  /// No description provided for @recalWhyKeyMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Over the last 4 weeks {done} of {total} key sessions (tempo, intervals, long runs) were done – they carry the race preparation, give them priority over easy runs.'**
+  String recalWhyKeyMissed(int done, int total);
+
+  /// No description provided for @recalWhyGoalAtRiskTime.
+  ///
+  /// In en, this message translates to:
+  /// **'The goal forecast puts race day at {forecast} – the target {goal} is hard to reach with the current fitness. Consider adjusting the target.'**
+  String recalWhyGoalAtRiskTime(String forecast, String goal);
+
+  /// No description provided for @wRaceRealistic.
+  ///
+  /// In en, this message translates to:
+  /// **'Realistic on your fitness: {time} ({pace}) – if you feel good after halfway, pick it up.'**
+  String wRaceRealistic(String time, String pace);
+
+  /// No description provided for @recalWhyRpeLowSpaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Your key workouts felt easy again – but the volume only just went up, so it stays this week (at most every other week, 3 times per plan). If it keeps feeling easy, the targets follow.'**
+  String get recalWhyRpeLowSpaced;
+
+  /// No description provided for @recalWhyTaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Taper: less is more – the volume is reduced on purpose and stays that way. Fitness doesn\'t drop in two weeks; freshness for race day comes from the rest.'**
+  String get recalWhyTaper;
+
+  /// No description provided for @recalWhyTaperOverdo.
+  ///
+  /// In en, this message translates to:
+  /// **'Taper: last week you trained {pct} % of the planned volume. Less is more now – stick to the reduced volume, the form for race day comes from the rest.'**
+  String recalWhyTaperOverdo(int pct);
+
+  /// No description provided for @progStageHeld.
+  ///
+  /// In en, this message translates to:
+  /// **'The build-up has been held for {weeks} weeks (stage repeated or long session shortened).'**
+  String progStageHeld(int weeks);
+
+  /// No description provided for @progStageHeldRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'The build-up has been held for {weeks} weeks and race day is close – the goal is at risk.'**
+  String progStageHeldRisk(int weeks);
+
+  /// No description provided for @feasLongRunShare2.
+  ///
+  /// In en, this message translates to:
+  /// **'Your other runs are too short for the long run this race needs: with three runs a week it may be about two thirds of the week. Plan about {min} min for your other runs.'**
+  String feasLongRunShare2(int min);
+
+  /// No description provided for @feasLongRunFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Your longest long run only reaches about {have} km before the race – this race needs about {need} km. The plan therefore treats the race as a finish goal, without a target time.'**
+  String feasLongRunFinish(String have, String need);
+
+  /// No description provided for @zGoalPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Race pace'**
+  String get zGoalPace;
+
   /// No description provided for @mismatchTitle.
   ///
   /// In en, this message translates to:
@@ -10067,36 +10151,6 @@ abstract class AppLocalizations {
   /// **'{weeks} weeks · current'**
   String planWeeksCurrent(int weeks);
 
-  /// No description provided for @coachQRace.
-  ///
-  /// In en, this message translates to:
-  /// **'How do I prepare best for {race}?'**
-  String coachQRace(String race);
-
-  /// No description provided for @coachQTri.
-  ///
-  /// In en, this message translates to:
-  /// **'How do I combine swimming, cycling and running in one week?'**
-  String get coachQTri;
-
-  /// No description provided for @coachQGym.
-  ///
-  /// In en, this message translates to:
-  /// **'How do I get stronger without stalling?'**
-  String get coachQGym;
-
-  /// No description provided for @coachQRide.
-  ///
-  /// In en, this message translates to:
-  /// **'How do I get faster on the bike?'**
-  String get coachQRide;
-
-  /// No description provided for @coachQSwim.
-  ///
-  /// In en, this message translates to:
-  /// **'How do I swim more efficiently?'**
-  String get coachQSwim;
-
   /// No description provided for @planLogReplace.
   ///
   /// In en, this message translates to:
@@ -10187,17 +10241,47 @@ abstract class AppLocalizations {
   /// **'Plan {pct} % done (of the planned minutes due so far)'**
   String planCompletionMinutes(int pct);
 
+  /// No description provided for @quickRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get quickRecord;
+
   /// No description provided for @noXpTooShort.
   ///
   /// In en, this message translates to:
   /// **'No XP – too short for a workout'**
   String get noXpTooShort;
 
-  /// No description provided for @quickRecord.
+  /// No description provided for @coachQRace.
   ///
   /// In en, this message translates to:
-  /// **'Record'**
-  String get quickRecord;
+  /// **'How do I prepare best for {race}?'**
+  String coachQRace(String race);
+
+  /// No description provided for @coachQTri.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I combine swimming, cycling and running in one week?'**
+  String get coachQTri;
+
+  /// No description provided for @coachQGym.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I get stronger without stalling?'**
+  String get coachQGym;
+
+  /// No description provided for @coachQRide.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I get faster on the bike?'**
+  String get coachQRide;
+
+  /// No description provided for @coachQSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I swim more efficiently?'**
+  String get coachQSwim;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

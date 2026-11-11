@@ -971,7 +971,10 @@ class _StepCard extends ConsumerWidget {
                   child: Text(
                     [
                       if (m != null || sec != null) l.left,
-                      if (lengthsLeft != null) l.nLengths(lengthsLeft) else if (!rest || run) zoneLabel(l, st.zone, sport: s.sport),
+                      if (lengthsLeft != null)
+                        l.nLengths(lengthsLeft)
+                      else if (!rest || run)
+                        zoneLabel(l, st.zone, sport: s.sport, note: st.note),
                     ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

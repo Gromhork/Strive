@@ -7,7 +7,8 @@ import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'cardio_progression.dart';
 import 'compliance.dart';
-import 'goal_model.dart';
+import 'fitness_state.dart';
+import 'goal_forecast.dart';
 import 'insights.dart';
 import 'plan_adjuster.dart';
 import 'plan_gaps.dart';
@@ -173,6 +174,17 @@ class Recalibrator {
     final keyDue = dueList.where((p) => p.sport != Sport.gym && isHardPlan(p)).toList();
     final keysDone = keyDue.where((p) => p.status != 'skipped' && (linked[p.id] != null || p.isDone)).length;
     final keysMissed = keyDue.isEmpty || keysDone < 0.75 * keyDue.length;
+    // Slots (sport + weekday) the athlete skipped ≥ 2× in the look-back: with the key sessions done,
+    // only these come down – the easy runs the athlete still does keep their volume (partial adherence).
+    final misses = <String, int>{};
+    for (final p in dueList) {
+      if (p.sport == Sport.gym || (p.status != 'skipped' && (linked[p.id] != null || p.isDone))) continue;
+      misses.update(_slot(p), (n) => n + 1, ifAbsent: () => 1);
+    }
+    final skippedSlots = {
+      for (final e in misses.entries)
+        if (e.value >= 2) e.key,
+    };
 
     // ── Decide the load factors: fatigue (RPE) and compliance separately – a long session
     // whose key sessions were all done only follows the fatigue factors.
@@ -215,7 +227,7 @@ class Recalibrator {
       f1 = r1;
       f2 = r2;
     }
-    final recoveryWeek = reasons.contains(RecalReason.fatigueRecovery);
+    var recoveryWeek = reasons.contains(RecalReason.fatigueRecovery);
     var easyFirst = false;
     // Long runs missed while the rest was done (I14): the easy runs are not the problem – they keep
     // their volume; the next long run moves to a day with more time instead.
@@ -243,8 +255,28 @@ class Recalibrator {
       shortenLong = true;
     }
     if (reasons.isEmpty && tooEasy >= 2 && (completion ?? 1) >= 0.9) {
-      reasons.add(RecalReason.rpeLow);
-      progress = true;
+      // "A little more volume" at most every other week and [maxVolumeRaises] times per plan – the
+      // +5 % came every Monday for weeks (review: W2–W7); quality that keeps feeling easy is a
+      // threshold question (rules 7–9), not a volume one.
+      final raised = _volumeRaiseWeeks();
+      final raisable = plans.any(
+        (p) =>
+            p.status == 'planned' &&
+            (p.intensity == 'easy' || p.intensity == 'long') &&
+            p.sport != Sport.gym &&
+            p.phase != 'recovery' &&
+            p.phase != 'taper' &&
+            !dayOnly(p.date).isBefore(today) &&
+            dayOnly(p.date).isBefore(_add(today, 7)),
+      );
+      if (!raisable) {
+        // A recovery / taper week ahead: nothing to raise – no "a little more volume" message.
+      } else if (raised.contains(startOfWeek(_add(today, -7))) || raised.contains(startOfWeek(today)) || raised.length >= maxVolumeRaises) {
+        reasons.add(RecalReason.rpeLowSpaced);
+      } else {
+        reasons.add(RecalReason.rpeLow);
+        progress = true;
+      }
     }
     // ── Return after a break (R4): a sport without any session for >= 10 days (or ~0 % of
     // its due training in the look-back) although it was planned and trained before.
@@ -253,9 +285,35 @@ class Recalibrator {
       reasons.add(RecalReason.returnAfterBreak);
       progress = false;
     }
+    // ── Taper / race week (§11.6): the plan's reduced volume is the point – no fatigue or completion
+    // cuts on top, no recovery week, never more volume; one taper message instead of the generic
+    // ones, and a warning when the athlete trained clearly more than the taper planned (> 110 %).
+    final taperDone = _taperDone(linked);
+    if (_inTaper()) {
+      const volume = {
+        RecalReason.rpeHigh,
+        RecalReason.rpeLow,
+        RecalReason.rpeLowSpaced,
+        RecalReason.lowCompletion,
+        RecalReason.cutShort,
+        RecalReason.fatigueRecovery,
+        RecalReason.fatigueCheck,
+      };
+      final generic = reasons.any(volume.contains);
+      reasons.removeWhere(volume.contains);
+      f1 = f2 = r1 = r2 = q1 = q2 = 1;
+      swapAll = swapFirst = shortenLong = progress = easyFirst = recoveryWeek = false;
+      if ((taperDone ?? 0) > taperOverdoShare) {
+        reasons.add(RecalReason.taperOverdo);
+      } else if (generic) {
+        reasons.add(RecalReason.taper);
+      }
+    }
 
     // ── Thresholds
     final oldVdot = Vdot.of(a) ?? Vdot.defaultFor(profile.level);
+    // The one fitness model (baseline, break penalty, cap) – shared with the goal forecast.
+    final fitness = FitnessState.of(profile, plans: plans, sessions: sessions, now: now);
     var newVdot = _newVdot(oldVdot);
     if (newVdot != null) reasons.add(newVdot > oldVdot ? RecalReason.fasterRuns : RecalReason.slowerRuns);
     // Only sessions whose targets were set for the current thresholds: a session run against
@@ -290,7 +348,7 @@ class Recalibrator {
         reasons.add(RecalReason.runTrendFaster);
       }
       if (newVdot != null && newVdot > oldVdot) {
-        final cap = _vdotCap();
+        final cap = fitness.planStart == null ? null : fitness.cap;
         if (cap != null && newVdot > cap) {
           if (cap >= oldVdot + 0.3) {
             newVdot = cap;
@@ -302,22 +360,46 @@ class Recalibrator {
       }
       if (newVdot != null) newVdot = double.parse(newVdot.toStringAsFixed(1));
     }
+    // IMPORTANT 1: no fitness increase while a break / return is active, after less than half of the
+    // training, or while the forecast's model still takes VDOT off for a break – the paces must not
+    // speed up on the way back (sim: VDOT 42.0 → 42.8 in the week back from two sick weeks).
+    if (newVdot != null &&
+        newVdot > oldVdot &&
+        (breaks.isNotEmpty || (completion != null && completion < 0.5) || fitness.breakPenalty > 0)) {
+      newVdot = null;
+      reasons.removeWhere((r) => r == RecalReason.fasterRuns || r == RecalReason.runTrendFaster);
+    }
+    // FTP / CSS steps like the VDOT's (C5): at most every [minVdotStepDays] days, and the rise since
+    // the plan start capped ([maxFtpRise], [maxCssGain]) – the FTP ran 220 → 287 W (+30 %) in 12 weeks.
+    final planStart = _planStart();
+    bool since(DateTime? at) => at != null && (planStart == null || !dayOnly(at).isBefore(planStart));
+    bool due(DateTime? at) => at == null || daysBetween(at, today) >= minVdotStepDays;
+    final ftpBase = since(a.ftpStepAt) && a.ftpBase != null ? a.ftpBase! : a.ftp;
+    // No fitness rise while a return after a break is active or less than half was trained.
+    final noRise = breaks.isNotEmpty || (completion != null && completion < 0.5);
     int? newFtp;
-    if (a.ftp != null && ride != null) {
-      if (ride.strongAndComfortable >= 2 && ride.harder == 0) {
-        newFtp = (a.ftp! * 1.03).round();
-        reasons.add(RecalReason.ftpUp);
+    if (a.ftp != null && ride != null && due(a.ftpStepAt)) {
+      if (ride.strongAndComfortable >= 2 && ride.harder == 0 && !noRise) {
+        final up = min((a.ftp! * 1.03).round(), (ftpBase! * (1 + maxFtpRise(profile))).floor());
+        if (up > a.ftp!) {
+          newFtp = up;
+          reasons.add(RecalReason.ftpUp);
+        }
       } else if (ride.slowAndHard >= 2) {
         newFtp = (a.ftp! * 0.97).round();
         reasons.add(RecalReason.ftpDown);
       }
     }
     final oldCss = SwimZones.fromTests(a.swim400Sec, a.swim200Sec) ?? SwimZones.defaultFor(profile.level);
+    final cssBase = since(a.cssStepAt) && a.cssBase != null ? a.cssBase! : oldCss;
     int? newCss;
-    if (swim != null) {
-      if (swim.strongAndComfortable >= 3 && swim.harder == 0) {
-        newCss = oldCss - 2;
-        reasons.add(RecalReason.cssFaster);
+    if (swim != null && due(a.cssStepAt)) {
+      if (swim.strongAndComfortable >= 3 && swim.harder == 0 && !noRise) {
+        final faster = max(oldCss - 2, (cssBase * (1 - maxCssGain)).ceil());
+        if (faster < oldCss) {
+          newCss = faster;
+          reasons.add(RecalReason.cssFaster);
+        }
       } else if (swim.slowAndHard >= 2) {
         newCss = oldCss + 2;
         reasons.add(RecalReason.cssSlower);
@@ -436,7 +518,8 @@ class Recalibrator {
         }
       }
       // Load factors: days 0–6, 7–13; refills after the 14-day horizon keep the plan's volume.
-      final keepLong = easyFirst && p.intensity == 'long';
+      // Partial adherence: long sessions and the slots the athlete still trains keep their volume.
+      final keepLong = easyFirst && (p.intensity == 'long' || !skippedSlots.contains(_slot(p)));
       final fd = days < 7 ? (keepLong ? r1 : f1) : (days < horizonDays ? (keepLong ? r2 : f2) : 1.0);
       final quality = p.intensity == 'tempo' || p.intensity == 'intervals';
       final rest = p.phase == 'recovery' || p.phase == 'taper';
@@ -493,7 +576,8 @@ class Recalibrator {
           if (fill != null && days >= horizonDays) k = _longsBefore(p, current) + (fillLongs[p.sport] ?? 0);
           final cap = _longCapped(p) ? null : _longCap(p, k, linked);
           if (cap != null && cur * g > cap * 1.02) {
-            g = cap / cur;
+            // Never below the run floor (20 min run/walk and beginners, else 25 min and 4 km).
+            g = max(cap / cur, min(1.0, runFloor(p, profile) / cur));
             capHit = true;
             if (fill != null) shortened = true;
           }
@@ -580,34 +664,37 @@ class Recalibrator {
     if (gapCount > 0) reasons.add(RecalReason.planGaps);
     if (gapOmitted > 0) reasons.add(RecalReason.gapsOmitted);
 
-    // ── Is the race goal still reachable with what was trained (C3)? Re-run the setup's
-    // feasibility check from today on the athlete's actual longest run and weekly volume; a
-    // timing issue the plan start did not have is surfaced (with its options in [feasibility]).
-    // Only after real evidence: ≥ 2 long runs of the last 3 weeks missed or < 75 % done, a return
-    // after a break, or less than half of the training done – one missed long run is no verdict.
+    // ── Is the race goal still reachable (C3)? One verdict (IMPORTANT 2): the goal forecast's "at
+    // risk" – judged against the ORIGINAL plan's long runs, adherence and the one fitness model, not a
+    // fresh re-plan from today (that flagged "too short" for an athlete back on plan after a sick
+    // fortnight). The setup's feasibility from today adds the options (later race, shorter distance).
     PlanFeasibility? feasibility;
-    var longsBehind = 0;
-    for (final p in plans) {
-      final d = dayOnly(p.date);
-      if (p.sport != Sport.run || p.intensity != 'long' || d.isBefore(_add(today, -21)) || !d.isBefore(today)) continue;
-      final s = linked[p.id];
-      if ((s == null && !p.isDone) || (s != null && s.distanceM > 0 && s.distanceM < 750 * (p.distanceKm ?? 0))) longsBehind++;
-    }
-    // A run/walk stage held for the second week in a row counts as well.
-    final heldAgain =
-        held.isNotEmpty &&
-        plans.any(
-          (p) =>
-              (p.auto?.reason ?? '').startsWith('recalStage') &&
-              !dayOnly(p.date).isBefore(_add(today, -14)) &&
-              dayOnly(p.date).isBefore(today),
-        );
-    final evidence = longsBehind >= 2 || breaks.isNotEmpty || (completion != null && completion < 0.5) || heldAgain;
-    if (evidence && a.eventDistance != null && a.eventDate != null) {
+    final forecast =
+        a.eventDate != null && a.eventDistance != null ? GoalForecast.of(profile, plans: plans, sessions: sessions, now: now) : null;
+    int? goalTargetSec, goalForecastSec;
+    if (forecast != null && forecast.atRisk) {
+      reasons.add(RecalReason.goalAtRisk);
       feasibility = _feasibilityNow();
-      if (feasibility != null) reasons.add(RecalReason.goalAtRisk);
+      const behind = {
+        ForecastReason.longRunBehind,
+        ForecastReason.missedTraining,
+        ForecastReason.trainingBreak,
+        ForecastReason.sessionsSkipped,
+      };
+      if (forecast.targetSec != null &&
+          forecast.raceDaySec != null &&
+          !forecast.reasons.any(behind.contains) &&
+          forecast.progression?.behind != true) {
+        goalTargetSec = forecast.targetSec;
+        goalForecastSec = forecast.raceDaySec;
+      }
     }
-
+    // ── Chronic skipping over the last 4 weeks (IMPORTANT 4) – the same counts as the forecast.
+    final plannedWeeks = fitness.planStart == null ? 0.0 : fitness.elapsedWeeks;
+    if (plannedWeeks >= 3 && fitness.recentDue >= 6 && fitness.recentDone < 0.7 * fitness.recentDue) {
+      reasons.add(RecalReason.sessionsSkipped);
+    }
+    if (plannedWeeks >= 3 && fitness.keyDue >= 3 && fitness.keyDone < 0.75 * fitness.keyDue) reasons.add(RecalReason.keySessionsMissed);
     // The new VDOT for the profile (newly generated plans use it too) – in its own field, never as
     // a synthetic race time (C5). Race times an older version wrote are moved there (migration).
     Map<String, int>? raceTimes;
@@ -627,6 +714,9 @@ class Recalibrator {
       // Swim test times that give the new CSS ((t400 − t200) / 2), for the profile.
       if (newCss != null) ...{'swim200Sec': 2 * newCss - 4, 'swim400Sec': 4 * newCss - 4},
     };
+    // When the FTP / CSS stepped, and from which value (the cap's base for this plan).
+    if (newFtp != null) athlete.addAll({'ftpStepAt': now, 'ftpBase': ftpBase});
+    if (newCss != null) athlete.addAll({'cssStepAt': now, 'cssBase': cssBase});
     return Recalibration(
       reasons: reasons,
       athlete: athlete,
@@ -646,6 +736,13 @@ class Recalibrator {
         newVdot: newVdot,
         breakDays: breaks.values.fold<int?>(null, (x, v) => max(x ?? 0, v)),
         gaps: gapCount,
+        goalTargetSec: goalTargetSec,
+        goalForecastSec: goalForecastSec,
+        sessionsDue: fitness.recentDue,
+        sessionsDone: fitness.recentDone,
+        keysDue: fitness.keyDue,
+        keysDone: fitness.keyDone,
+        taperDone: taperDone,
       ),
       changes: changes,
       raceTimes: raceTimes,
@@ -696,22 +793,69 @@ class Recalibrator {
     return fresh.any((i) => !before.contains(i)) ? f : null;
   }
 
+  /// Highest training-derived FTP rise over a plan (share of the FTP before its first step): Allen &
+  /// Coggan (Training and Racing with a Power Meter) – trained cyclists gain ~5–10 % FTP over a
+  /// season's build, newcomers more. +3 % steps every ≥ 3 weeks reach it in ~2 months.
+  static double maxFtpRise(UserProfile p) => p.level == 'beginner' ? 0.10 : 0.08;
+
+  /// Highest training-derived CSS gain over a plan (share of the CSS before its first step, ~4 s / 100 m
+  /// at 1:45): trained swimmers improve their CSS by a few per cent over a season.
+  static const maxCssGain = 0.04;
+
+  /// "A little more volume" (rule 4) at most this often per plan, never in consecutive weeks.
+  static const maxVolumeRaises = 3;
+
+  /// Done / planned volume of the taper above which it is "overdone" ([RecalReason.taperOverdo]).
+  static const taperOverdoShare = 1.10;
+
+  /// Plan start: stored on the profile, else the first workout with a phase.
+  DateTime? _planStart() {
+    if (a.planStart != null) return dayOnly(a.planStart!);
+    final phased = plans.where((p) => p.phase != null).map((p) => dayOnly(p.date));
+    return phased.isEmpty ? null : phased.reduce((x, y) => x.isBefore(y) ? x : y);
+  }
+
+  /// Weeks (Mondays) of this plan in which rule 4 raised the volume (a 'recal' record above the original).
+  Set<DateTime> _volumeRaiseWeeks() {
+    final start = _planStart();
+    return {
+      for (final p in plans)
+        if (p.auto?.reason == 'recal' && _amount(p) > _origAmount(p) * 1.02 && (start == null || !dayOnly(p.date).isBefore(start)))
+          startOfWeek(p.date),
+    };
+  }
+
+  /// "sport|weekday" of a workout – its slot in the training week.
+  static String _slot(PlannedWorkout p) => '${p.sport.name}|${p.date.weekday}';
+
+  /// The next 7 days are (mostly) taper / race week: ≥ half of the planned endurance workouts are in
+  /// the taper phase or the race.
+  bool _inTaper() {
+    final next = plans.where(
+      (p) => p.sport != Sport.gym && p.status != 'skipped' && !dayOnly(p.date).isBefore(today) && dayOnly(p.date).isBefore(_add(today, 7)),
+    );
+    if (next.isEmpty) return false;
+    return next.where((p) => p.phase == 'taper' || p.intensity == 'race').length * 2 >= next.length;
+  }
+
+  /// Done / planned volume of the taper workouts due in the last 7 days (distance, else time; missed
+  /// and skipped = 0), or null without any.
+  double? _taperDone(Map<String, Session> linked) {
+    var planned = 0.0, done = 0.0;
+    for (final p in plans) {
+      final d = dayOnly(p.date);
+      if (p.phase != 'taper' || p.sport == Sport.gym || p.intensity == 'race' || p.durationMin <= 0) continue;
+      if (d.isBefore(_add(today, -7)) || !d.isBefore(today)) continue;
+      planned += p.durationMin;
+      if (p.status == 'skipped') continue;
+      final s = linked[p.id];
+      done += s != null ? p.durationMin * (complianceRatio(p, s) ?? 1) : (p.isDone ? p.durationMin.toDouble() : 0);
+    }
+    return planned > 0 ? done / planned : null;
+  }
+
   /// Days between two training-derived VDOT steps (rule 7, C5).
   static const minVdotStepDays = 21;
-
-  /// Highest training-derived VDOT: the race times' (or level default) VDOT + [GoalModel.optimistic] ×
-  /// the expected gain of the weeks since the plan start (null without a plan start).
-  double? _vdotCap() {
-    final base = Vdot.ofRaces(a) ?? Vdot.defaultFor(profile.level);
-    DateTime? start = a.planStart;
-    if (start == null) {
-      final phased = plans.where((p) => p.phase != null).map((p) => dayOnly(p.date));
-      if (phased.isNotEmpty) start = phased.reduce((x, y) => x.isBefore(y) ? x : y);
-    }
-    if (start == null) return null;
-    final weeks = max(0.0, daysBetween(start, today) / 7);
-    return base + GoalModel.optimistic * GoalModel.gain(profile, weeks);
-  }
 
   /// A race time an older version of the recalibration wrote for a VDOT step (key = the event
   /// distance or 10 km, the exact time of a one-decimal VDOT) next to the athlete's own race
@@ -1346,8 +1490,8 @@ enum RecalReason {
   /// target; quality stays at reduced repeats.
   fatigueCheck,
 
-  /// The race goal no longer fits what was trained ([PlanGenerator.feasibility] re-run on the
-  /// actual long run / weekly volume found a new issue).
+  /// The goal forecast says "at risk" ([GoalForecast.atRisk] – the one verdict, IMPORTANT 2); the
+  /// options come from [PlanGenerator.feasibility] re-run on the actual long run / weekly volume.
   goalAtRisk,
 
   /// Run/walk stage held: the coming week repeats the current stage (C25K: progress only at
@@ -1357,6 +1501,22 @@ enum RecalReason {
   /// Long runs missed on their day while the other runs were done: the next one moves to a day
   /// with more time instead of cutting easy runs.
   moveLong,
+
+  /// < 70 % of the sessions of the last 4 weeks done (chronic skipping, IMPORTANT 4).
+  sessionsSkipped,
+
+  /// < 75 % of the key sessions of the last 4 weeks done.
+  keySessionsMissed,
+
+  /// Quality felt easy again, but the volume was raised last week (or [Recalibrator.maxVolumeRaises]
+  /// times this plan): it stays this week.
+  rpeLowSpaced,
+
+  /// Taper / race week: the reduced volume is deliberate – no extra cuts or additions.
+  taper,
+
+  /// Taper overdone: clearly more than the taper planned was trained ([RecalStats.taperDone]).
+  taperOverdo,
 }
 
 /// What happens to one workout.
@@ -1426,10 +1586,26 @@ class RecalStats {
     required this.newVdot,
     this.breakDays,
     this.gaps = 0,
+    this.goalTargetSec,
+    this.goalForecastSec,
+    this.sessionsDue = 0,
+    this.sessionsDone = 0,
+    this.keysDue = 0,
+    this.keysDone = 0,
+    this.taperDone,
   });
+
+  /// Done / planned volume of the taper workouts of the last 7 days (null without any).
+  final double? taperDone;
 
   /// Refilled sessions proposed (gaps in the plan).
   final int gaps;
+
+  /// Goal at risk from the target time alone: the target and the forecast's race-day time.
+  final int? goalTargetSec, goalForecastSec;
+
+  /// Due / done sessions and key sessions of the last 4 weeks.
+  final int sessionsDue, sessionsDone, keysDue, keysDone;
 
   /// Longest training break of a planned sport (days without a session), or null.
   final int? breakDays;
