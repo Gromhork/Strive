@@ -111,9 +111,17 @@ class RecalibrationSheet extends StatefulWidget {
     RecalReason.gapsOmitted => l.recalWhyGapsOmitted,
     RecalReason.fatigueRecovery => l.recalWhyFatigueRecovery,
     RecalReason.fatigueCheck => l.recalWhyFatigueCheck,
-    RecalReason.goalAtRisk => l.recalWhyGoalAtRisk,
+    RecalReason.goalAtRisk =>
+      s.goalTargetSec != null && s.goalForecastSec != null
+          ? l.recalWhyGoalAtRiskTime(clock(s.goalForecastSec!), clock(s.goalTargetSec!))
+          : l.recalWhyGoalAtRisk,
     RecalReason.repeatStage => l.recalWhyRepeatStage,
     RecalReason.moveLong => l.recalWhyMoveLong,
+    RecalReason.sessionsSkipped => l.recalWhySessionsSkipped(s.sessionsDone, s.sessionsDue),
+    RecalReason.keySessionsMissed => l.recalWhyKeyMissed(s.keysDone, s.keysDue),
+    RecalReason.rpeLowSpaced => l.recalWhyRpeLowSpaced,
+    RecalReason.taper => l.recalWhyTaper,
+    RecalReason.taperOverdo => l.recalWhyTaperOverdo(((s.taperDone ?? 0) * 100).round()),
   };
 
   /// Largest change of the aerobic efficiency factor (any sport).

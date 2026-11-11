@@ -425,6 +425,7 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
       templates: ref.read(templateListProvider),
       existing: ref.read(planListProvider),
       start: start,
+      sessions: ref.read(sessionListProvider),
       weeks: _weeks,
       saveMeta: ref.read(profileProvider).value != null,
     );

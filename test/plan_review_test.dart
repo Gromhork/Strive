@@ -305,7 +305,9 @@ void main() {
       for (final p in plan.where((p) => p.sport == Sport.swim && p.intensity == 'easy'))
         p.steps.where((s) => s.isWork).map((s) => s.distanceM ?? 0).fold(0.0, max),
     ];
-    expect(reps.first, lessThanOrEqualTo(200));
+    // Review r2 IMPORTANT 8: triathlon beginners start the continuous swim at 300 m (below the 400 m they
+    // can swim) and grow it towards the swim leg (was 200 m repeats).
+    expect(reps.first, lessThanOrEqualTo(300));
     expect(reps.reduce(max), greaterThanOrEqualTo(400));
     for (final p in plan.where((p) => p.sport == Sport.run && p.intensity == 'long')) {
       expect(p.date.weekday, greaterThanOrEqualTo(6), reason: '${p.date}');

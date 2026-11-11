@@ -3,6 +3,7 @@ import 'dart:math';
 import '../core/format.dart';
 import '../data/models.dart';
 import 'event_spec.dart';
+import 'fitness_state.dart';
 import 'goal_model.dart';
 import 'insights.dart';
 import 'plan_generator.dart';
@@ -52,31 +53,48 @@ class TargetSuggestion {
 ///   triathlon / duathlon without any data (race time, FTP, swim test), athletes who start on
 ///   run/walk ([PlanGenerator.runWalkStartFor]) and beginners at distances that are no beginner
 ///   goal ([EventSpec.beginnerOk]: marathon, ultra, Ironman, 5 km open water).
-/// * **Fitness now**: VDOT from the profile's race times (Daniels [7]; confidence high when a
-///   race within × 2.5 of the event distance exists, else medium); else the best 5 km+ effort of
-///   the runs of the last 90 days ([runBestEfforts], medium) – but never above the level
-///   default: training runs are mostly submaximal, and the target check / plan paces keep the
-///   profile's VDOT until the recalibration takes an effort over; else the level default (low).
-///   Multisport: legs from FTP / CSS as in [GoalModel.predict] (medium with FTP and swim test).
-/// * **Race day**: `GoalModel.timeAt(VDOT_now, gain(weeks − 1))` – exactly the *realistic* value
-///   of [GoalModel.check], so the suggestion always passes the check and the feasibility card.
-///   Marathon from a race ≤ 10 km below the advanced level: Riegel with exponent 1.08 ([riegel],
-///   §1.2 – 1.06 / VDOT are too optimistic for recreational marathoners), scaled by the same
-///   relative gain; the slower of the two counts.
-/// * **Range**: VDOT gain ± u with u = 2 (race times) · 1.5 (best efforts) · 3.5 (level default)
-///   + 0.04 / week, as in GoalForecast.
-TargetSuggestion suggestTargetTime(UserProfile p, String eventKey, DateTime eventDate, {List<Session> sessions = const [], DateTime? now}) {
+/// * **One model** ([FitnessState], review round 2): with the plan ([plans]) the fitness of the plan
+///   that runs – today's VDOT from the evidence (efforts, quality runs, the recalibrated VDOT) or the
+///   plan's line, + the gain of the weeks to race day – exactly the goal forecast's race-day value and
+///   the *realistic* value of [GoalModel.check] given the same [FitnessState] (C4: the suggestion got
+///   slower week by week mid-plan because it restarted from the plan-start VDOT). Without plans: the
+///   profile alone ([FitnessState.fromProfile]; a plan stored on the profile counts as trained as
+///   planned).
+/// * **Fitness now without a plan**: VDOT from the profile's race times (Daniels [7]; confidence high
+///   when a race within × 2.5 of the event distance exists, else medium); else the best 5 km+ effort
+///   of the runs of the last 90 days ([runBestEfforts], medium) – but never above the level
+///   default: training runs are mostly submaximal; else the level default (low). Multisport: legs
+///   from FTP / CSS as in [GoalModel.predict] (medium with FTP and swim test). Marathon from races ≤
+///   10 km: Riegel 1.08 inside [GoalModel.predict] ([GoalModel.marathonScale]) – shared with the
+///   check, no separate correction here any more.
+/// * **Range**: VDOT gain ± u ([FitnessState.uncertainty]; best efforts 1.5).
+TargetSuggestion suggestTargetTime(
+  UserProfile p,
+  String eventKey,
+  DateTime eventDate, {
+  List<Session> sessions = const [],
+  List<PlannedWorkout>? plans,
+  DateTime? now,
+}) {
   final today = now ?? DateTime.now();
   final q = p.copyWith(athlete: p.athlete.merge({'eventDistance': eventKey, 'eventDate': eventDate, 'targetTimeSec': null}));
   final a = q.athlete;
   final weeks = GoalModel.weeksUntil(eventDate, today);
-  if (PlanGenerator.finishOnly(q)) return TargetSuggestion(basis: TargetBasis.finishOnly, confidence: TargetConfidence.low, weeks: weeks);
 
   // ── Fitness now
-  final (profileVdot, guessed) = GoalModel.currentVdot(q);
-  var vdot = profileVdot;
+  final fit =
+      plans == null
+          ? FitnessState.fromProfile(q, now: today)
+          : FitnessState.of(q, plans: plans, sessions: sessions, now: today, race: eventDate);
+  // Same plan as the forecast's: from the running plan's start (C6 finish goals depend on its long runs).
+  if (PlanGenerator.finishOnly(q, start: fit.planStart ?? dayOnly(today))) {
+    return TargetSuggestion(basis: TargetBasis.finishOnly, confidence: TargetConfidence.low, weeks: weeks);
+  }
+  final guessed = fit.guessed;
+  var vdot = fit.current;
   var basis = guessed ? TargetBasis.levelEstimate : TargetBasis.raceTimes;
-  if (guessed) {
+  if (guessed && fit.planStart == null) {
+    final profileVdot = vdot;
     final recent = sessions.where((s) => !s.start.isAfter(today) && daysBetween(s.start, today) <= 90).toList();
     double? best;
     for (final e in runBestEfforts(recent).values) {
@@ -98,40 +116,15 @@ TargetSuggestion suggestTargetTime(UserProfile p, String eventKey, DateTime even
     _ => TargetConfidence.low,
   };
 
-  // ── Race day
-  final g = GoalModel.gain(q, max(0, weeks - 1).toDouble());
-  final u =
-      switch (basis) {
-        TargetBasis.raceTimes => 2.0,
-        TargetBasis.bestEfforts => 1.5,
-        _ => 3.5,
-      } +
-      0.04 * weeks;
-  final time = GoalModel.timeAt(q, vdot, g)!;
-  var scale = 1.0;
-  if (eventKey == 'm' && basis == TargetBasis.raceTimes && q.level != 'advanced') {
-    // Riegel 1.08 from the best race ≤ 10 km (no HM / marathon time known).
-    (String, int)? from;
-    for (final e in a.raceTimes.entries) {
-      final d = Vdot.distances[e.key];
-      if (d == null || e.value <= 0) continue;
-      if (d > 10000) {
-        from = null;
-        break;
-      }
-      if (from == null || Vdot.fromRace(d, e.value) > Vdot.fromRace(Vdot.distances[from.$1]!, from.$2)) from = (e.key, e.value);
-    }
-    if (from != null) {
-      final r = riegel(from.$2, Vdot.distances[from.$1]!, meters, novice: true) * time / GoalModel.predict(q, vdot)!;
-      if (r > time) scale = r / time;
-    }
-  }
-  int at(double gain) => (GoalModel.timeAt(q, vdot, gain)! * scale).round();
-  final sec = GoalModel.roundTarget(at(g));
+  // ── Race day: the one model's gain to race day, times measured from its baseline (C1).
+  final g = fit.gainTo(eventDate);
+  final u = (basis == TargetBasis.bestEfforts ? 1.5 : fit.uncertainty(0)) + 0.04 * weeks;
+  int at(double v) => fit.timeAt(v, p: q)!;
+  final sec = GoalModel.roundTarget(at(vdot + g));
   return TargetSuggestion(
     sec: sec,
-    fastSec: min(sec, GoalModel.roundTarget(at(g + u))),
-    slowSec: max(sec, GoalModel.roundTarget(at(max(g - u, 20 - vdot)))),
+    fastSec: min(sec, GoalModel.roundTarget(at(vdot + g + u))),
+    slowSec: max(sec, GoalModel.roundTarget(at(max(vdot + g - u, 20)))),
     basis: basis,
     confidence: confidence,
     vdotNow: vdot,

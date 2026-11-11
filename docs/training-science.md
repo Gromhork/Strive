@@ -376,6 +376,56 @@ the slower of VDOT and Riegel 1.08; triathlon from the legs (FTP / CSS). Finish 
 water, run/walk starters, beginner marathon / Ironman, multisport without data. Range ± 2 / 1.5 / 3.5 VDOT + 0.04 /
 week.
 
+**Target-time suggestion, update (review round 2).** The suggestion no longer has its own model: it reads the one
+fitness model of §1.12a (with the running plan: the forecast's race-day value), and the marathon Riegel 1.08 correction
+now lives in `GoalModel.predict` (`GoalModel.marathonScale`), so suggestion, check, forecast and race session share it.
+
+### 1.12a One fitness model (`FitnessState`, review round 2) [M/P]
+
+Round 2 of the sports-science review found forecast, target suggestion, target check, race-day pacing and "Plan
+überprüfen" disagreeing on the same day (marathoner W17: suggestion / check 3:47, forecast 3:36; a perfect 70.3 athlete
+whose forecast got 8 min slower in 12 weeks; forecast and training paces ~6 VDOT apart after recalibrations). All of them
+now read `FitnessState` (lib/services/fitness_state.dart):
+
+```text
+baseline     : VDOT the plan was built with – paces of its first tempo / interval run (T / I targets; never the race
+               session's step, C5), else the profile's VDOT at the plan start (a recalibrated estimate only when set before)
+today        : max effort (60 d) > recalibrated VDOT set after the plan start + the gain since (C2: the paces run on it)
+               > plan line baseline + gain(credited weeks) × min(1, completion / 0.9)
+quality runs : ≥ 3 runs ≥ 3 % off their targets (the recalibration's threshold; ± 5 % dead band) pull down / lift; after a
+               recalibration only runs against the current targets count; < 3 runs in 42 d → those of the last 63 d (an
+               estimate is kept 3 weeks)
+detraining   : as §1.12 (gap > 10 d)
+overreaching : a week whose 14-day too-hard score was ≥ 2 on two consecutive Mondays (and ≥ 1 in that week) earns no
+               adaptation (credited weeks = elapsed − those weeks; non-functional overreaching, Meeusen 2013), and no
+               upward quality lift while it lasts (IMPORTANT 10)
+race day     : today + [gain(credited + left) − gain(credited)] × (0.3 + 0.7 · completion_28d / 0.9, ≤ 1);
+               left = training weeks to the Monday of race week (fractional)
+times        : GoalModel.timeAt(p, baseline, v − baseline) – always from the baseline (C1: the triathlon model applies the
+               run's relative gain to the whole race; anchored at today's VDOT it counted the gain twice for the run)
+profile only : FitnessState.fromProfile – a plan stored on the profile (planStart / planLength) is assumed trained as
+               planned; the default of GoalModel.check and of suggestTargetTime without plans (C4: mid-plan the check
+               restarted from the plan-start VDOT every week and drifted 3:37 → 3:47)
+```
+
+Consumers: `GoalForecast` (status, reasons, range), `suggestTargetTime(plans:)` (goal editor), `GoalModel.check(fitness:)`
+(feasibility card, retarget), `GoalForecast.retarget` (C3: the generator's goal-pace rule – within reach the race-pace work
+runs at the faster of target and realistic time and the race at the target; out of reach both at the realistic time with
+"Ziel X – starte mit Y"; a conservative target adds "realistisch: …" to the race – IMPORTANT 5), and the `Recalibrator`
+(VDOT cap = baseline + 1.6 × gain(weeks trained); no VDOT rise while a break / return is active, completion < 50 % or the
+model still takes VDOT off for a break – IMPORTANT 1; goal at risk ⇔ the forecast's at risk, judged on the original plan –
+the setup's feasibility from today only supplies the options, IMPORTANT 2). Invariant (`test/fitness_model_test.dart`,
+day-by-day simulation): every Monday suggestion = round(forecast race day) and check realistic = forecast race day (± 1 s);
+a perfect athlete's race-day time stays constant (marathon ± 5 s, 70.3 / duathlon ± 15 s).
+
+**Chronic skipping** (IMPORTANT 4): over the last 28 days (≥ 3 weeks into the plan) < 70 % of the due endurance sessions
+(≥ 6 due) or < 75 % of the key sessions (tempo, intervals, long; ≥ 3 due) done → forecast reasons `sessionsSkipped` /
+`keySessionsMissed` (≥ slightly behind, never ahead) and the same findings in "Plan überprüfen" – the minutes alone looked
+fine when the long runs were done and two easy runs a week were skipped.
+
+**Soft target**: "ahead – set a faster target" is suggested for the first two weeks it shows, then the forecast stays
+quiet about it (it said "set 3:37" for 13 weeks in a row).
+
 **Plan length without an event** (`PlanGenerator.supportedWeeks` = 4, 6, 8, 10, 12, 16, 20, 24;
 `recommendedWeeks(p)`: beginners 8–12 (8), others 8–16 (12), with an event the table §14; `phasesFor(p, start:,
 weeks:)` for a preview): base ~42–50 % then build, a recovery week after every 2–4 loading weeks (§1.9), no peak, no
@@ -485,6 +535,34 @@ Before → after (Mon-start plan 2026-11-09, 3 run days, 60 min, Saturday 150 mi
 | olympic 16 wk, cannot swim 400 m | continuous swim stuck at 400 m, warning | ladder (6 stages) → CSS test → continuous swim 500 → 800 m, no warning |
 
 The ongoing check is in §1.12 (progression check). The UI suggests a target time with `suggestTargetTime` (§1.12).
+
+### 1.10c Three-run weeks, finish goals and easy-run floors [P] (review round 2, `test/fitness_model_gen_test.dart`)
+
+* **Long-run share with three runs (C6).** Novice half-marathon plans with three runs a week put ~60–65 % of the
+  week into the long run (Galloway run-walk-run [91]: two 30 min midweek runs + the long run; Higdon Novice 1 [93]:
+  3 + 3 mi midweek next to a 10 mi long run, ~3.3 ×). The whole-week rule is therefore 65 % and ≤ 3.5 × the
+  next-longest run for weeks with exactly three runs (four runs: 50 % / 2 ×, marathon 55 %), and the HM volume curve
+  lets the long run take ≤ 65 % (≤ 15 km) of a three-run week. R1 (≤ 1.1 × the longest run of the last 30 days) and
+  the long run's time cap (HM 150 min) still bound it. A knee / hip / ankle runner whose easy run is swapped for a
+  ride counts the runs actually planned. 3 × 30 min HM (14 wk): long run 7 km W6–W12 → 13 km; run/walk beginner HM
+  (20 wk): peak 12 → 15.5 km.
+* **Finish goal when the long run is not reached.** A running event whose plan (≥ 6 loading weeks before the taper)
+  never reaches the race's long run (`EventSpec.longRunKm` or `longRunMin` on the feet) is planned as a finish goal:
+  `PlanGenerator.finishOnly` is true, the race session has no pace / target time, the outlook no predicted times;
+  feasibility adds `longRunFinish` ("longest long run ~X km, the race needs ~Y km") with a later date when one helps,
+  else the shorter distance. The "other runs need … min" option (`longRunShare`) uses the same 65 % / 3.5 × rules and
+  stays below ¾ of the long run's own time (3 × 30 min case: 90 → 35 min).
+* **Marathon easy runs.** Besides the build / peak floor (≥ 6 km), marathon easy runs stay ≥ 5 km (~30 min) in base and
+  recovery weeks (≥ 4 km after the recovery-week trim), ≥ 4.5 km in the taper and ≥ 4 km (~25 min) in race week, never
+  more than 75 % of the week's long run – 3 km jogs in a marathon taper are not training (Pfitzinger [94]:
+  general-aerobic runs through the taper), while the lower taper floors keep its volume cut (§1.7). Marathon 18 wk:
+  shortest easy run 3.0 → 4.0 km (taper 3.0 → 4.5 km).
+* **Later date for too-short plans.** A knee runner's HM plan reported "14 weeks are not enough" without a later date –
+  the long run was capped by the four-run share while one run had become a ride, so no later date helped. With the
+  runs actually planned the 14-week plan reaches 15 km; a 9-week plan reports `tooShort` with a later date.
+* **Goal-pace label.** Goal-pace sets keep the race-pace zone code `M` (forecast retarget / recalibration rely on it),
+  but every goal-pace / race step of a running event is labelled "race pace" in the UI (`zoneLabel` with the step's
+  note) – a 10 km goal pace lies between T and I, so "steady" (sets) next to "threshold" (race) was wrong.
 
 ### 1.11 Workout library and scaling [P]
 
@@ -923,6 +1001,13 @@ olympic / 70.3 800 m, Ironman 1000 m) cannot be reached in the weeks before the 
 swim a week is a *continuous swim*: 500 m, then +100 m per loading week (≈ +15–20 %, little impact load, H8) up to the
 race's distance (recovery / taper ~70 %, race week ~50 %).
 
+**Triathlon beginners who can swim 400 m** (review round 2, IMPORTANT 8) [P]: a sprint beginner with one swim a week
+reached only 200 m in one go. Triathlon beginners now get ≥ 2 swims a week (§4.4: 2–3 sessions; the second as a double
+day far from the first), one of them the continuous swim: 300 m in week 1 (below the 400 m they can swim), +100–200 m
+per loading week towards the race's swim leg (sprint 750 m; the target never exceeds the leg) – sprint 10 weeks:
+300 → 400 → 500 → 600 → 700 m before the taper instead of 200 m. When the weeks are too few, the `longSwim`
+feasibility issue offers a later race date like the other timing issues.
+
 ---
 
 ## 5. Heart-rate zones
@@ -1051,6 +1136,17 @@ Multisport with ≤ 3 runs a week: the run day rotates quality ↔ easy (B7). Th
 the brick), and a quality run gets the run km left after the long run and the brick (R3: intensity in, volume held) –
 before, the run volume jumped ±25–35 % from week to week. Long runs of multisport races rotate in the peak too (long →
 long → shorter), never with the shorter week right before a recovery / taper week.
+
+**Ironman weekends and session counts** (review round 2, IMPORTANT 9) [P]: Ironman age-group plans (Friel [86];
+Fitzgerald & Warden 80/20 Triathlon [87]) train each discipline ≥ 3 × a week and do not stack the longest ride with
+brick and the longest run on consecutive days. The generator therefore (1) adds a third ride and a third swim as
+second sessions on days with ≥ 90 min (two ~45 min sessions; a ride goes with a swim, a swim with a run, so the
+quality ride keeps its day; never on the long-ride day) – 70.3 keeps the rule "≥ 60 min on top of the day's session";
+(2) alternates brick weeks whose long run is next to a long ride ≥ 4 h: a *ride weekend* (full long ride + brick, the
+next day's long run ≤ 75 % / ≤ 2 h, planned as the shorter long-run week) and a *run weekend* (long ride ≤ 3 h with a ≤ 20
+min transition run, the full long run). Counted back from the taper, the last loading week is a run weekend; the long
+ride's progression ignores the capped weeks. Advanced Ironman 28 wk: 2 rides / 2 swims → 3 / 3 per week; peak weekend
+"300' + brick, then 30 km" → "300' + brick, then 21–22.5 km" alternating with "180' + 20' brick, then 30 km".
 
 ---
 
@@ -1305,6 +1401,36 @@ Multisport, cycling, swimming, ultra, hybrid, strength:
 - **Beginner strength**: weeks 1–6 use regressions (lat pulldown, dumbbell RDL, reverse crunch), full lifts from week 7; no
   "next deload week" text without a deload.
 - **Masters** (≥ 50) and women ≥ 45 without strength days: a strength tip on one easy session per loading week (§2.9, §9.2).
+
+### 11.6 Fitness-model recalibration (review round 2, `test/fitness_model_recal_test.dart`) [P]
+
+- **Progression against the plan's ladder** (`progressionCheck`): long sessions are measured against the original amount kept
+  in the `AutoAdjustment` record, not the already-reduced session – a long run cut 10 → 7 km and done at 7 km is 70 % of the
+  ladder, not 100 % (repeated reductions no longer hide a lag). A recovery week the recalibration proposed counts as planned.
+  New issue `stageHeld`: a run/walk stage repeated ('recalStage') or a long session planned ≥ 5 % below its original for
+  ≥ 3 weeks in a row; with ≤ 12 weeks to race day `ProgressionCheck.atRisk` is set (C25K / Galloway: a ladder that stalls for
+  3 weeks cannot catch up in the time left).
+- **R1 floor**: the R1 long-run cap (≤ 1.1 × the longest of 30 days) never takes a long session below the run floor (20 min for
+  beginners / run/walk, else 25 min and 4 km) – a 7 km long run of a beginner whose longest was 2 km is capped at 2.3 km /
+  20 min instead of 2.2 km / 19 min.
+- **Re-created plan** ("Plan neu aufsetzen", "align plan with goal"): `withReachedVolume` replaces the setup's weekly volume and
+  longest run by what the done sessions of the last 4 weeks reached (highest loading week, longest run; recovery / taper
+  weeks don't count; unchanged without ≥ 2 weeks of plan history). Marathon re-created in week 9: 35 / 16 km →
+  47.6 / 18.5 km, first week 36.9 → 48.4 km, next long runs 17.5 / 19.5 / 21.5 → 20.5 / 22.5 / 25 km (same as the old plan).
+- **Taper** (Mujika & Padilla 2003, Bosquet 2007: volume −40–60 %, intensity kept): in a taper / race week the plan's reduced
+  volume is not cut further for fatigue or missed sessions, never raised, and no recovery week is proposed; instead of
+  rpeHigh / lowCompletion / rpeLow one message "Taper: weniger ist mehr" (`RecalReason.taper`), and a warning
+  (`taperOverdo`) when the taper workouts of the last 7 days were done at > 110 % of the plan (scenario: 130 %).
+- **FTP / CSS steps like the VDOT's**: training-derived FTP +3 % and CSS −2 s steps at most every 21 days (as
+  `minVdotStepDays`), the rise since the plan's first step capped – FTP ≤ +8 % (beginners +10 %; Allen & Coggan: trained
+  cyclists gain ~5–10 % FTP over a season's build), CSS ≤ 4 % faster. No step up during a return after a break or with < 50 %
+  of the training done. Scenario: 220 → 287 W in 12 weeks before, now 220 → 227 → 234 → 237 W.
+- **"A little more volume"** (rule 4, +5 %): never in consecutive weeks, at most 3 × per plan, and only said when a workout is
+  actually raised (not ahead of a recovery week); otherwise `rpeLowSpaced` (quality that keeps feeling easy is a threshold
+  question, rules 7–9).
+- **Partial adherence** (key sessions done, completion < 70 %): only the slots (sport + weekday) the athlete skipped ≥ 2 × in
+  the look-back come down; the easy runs the athlete still does keep their volume (scenario: Saturday easy run 50' stays,
+  the skipped Monday / Wednesday / Friday runs 50 → 45').
 
 ---
 

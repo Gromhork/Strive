@@ -330,6 +330,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
       templates: ref.read(templateListProvider),
       existing: ref.read(planListProvider),
       start: start,
+      sessions: ref.read(sessionListProvider),
       weeks: profile.athlete.planWeeks,
     );
     toast(context, l.planAligned(GoalModel.weeksUntil(profile.athlete.eventDate!, start)));
@@ -597,6 +598,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                         eventKey: eventKey!,
                         eventDate: _deadline!,
                         sessions: ref.watch(sessionListProvider),
+                        plans: ref.watch(planListProvider),
                         current: _targetSec,
                         onApply:
                             (sec) => setState(() {

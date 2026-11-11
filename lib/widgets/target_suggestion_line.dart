@@ -16,6 +16,7 @@ class TargetSuggestionLine extends StatelessWidget {
     required this.sessions,
     required this.current,
     required this.onApply,
+    this.plans,
   });
 
   final UserProfile profile;
@@ -25,10 +26,13 @@ class TargetSuggestionLine extends StatelessWidget {
   final int? current;
   final ValueChanged<int> onApply;
 
+  /// The plan that runs (mid-plan the suggestion starts from its fitness – the goal forecast's model).
+  final List<PlannedWorkout>? plans;
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final sug = suggestTargetTime(profile, eventKey, eventDate, sessions: sessions);
+    final sug = suggestTargetTime(profile, eventKey, eventDate, sessions: sessions, plans: plans);
     final t = Theme.of(context).textTheme;
     final basis = switch (sug.basis) {
       TargetBasis.raceTimes => l.targetSuggestBasisRace,

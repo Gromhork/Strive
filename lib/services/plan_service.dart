@@ -34,6 +34,8 @@ class PlanService {
 
   /// Returns the number of generated workouts, or null when another replacement is still
   /// running. [saveMeta] false: the profile is not written (no profile document yet).
+  /// [sessions]: the athlete's sessions – a plan re-created mid-plan starts from the volume reached
+  /// ([withReachedVolume]); that volume is stored on the profile with the plan metadata.
   static Future<int?> replacePlan({
     required Repository repo,
     required AppLocalizations l,
@@ -43,24 +45,21 @@ class PlanService {
     required DateTime start,
     required int weeks,
     bool saveMeta = true,
+    List<Session> sessions = const [],
   }) async {
     if (busy) return null;
     _busy = true;
     try {
       final day = dayOnly(start);
+      final p = withReachedVolume(profile, plans: existing, sessions: sessions, start: day);
       // The programs of the chosen split must exist (built-ins added on demand).
-      final added = missingBuiltins(
-        templates,
-        repo.newId,
-        de: l.localeName.startsWith('de'),
-        only: PlanGenerator.gymKeysFor(profile).toSet(),
-      );
+      final added = missingBuiltins(templates, repo.newId, de: l.localeName.startsWith('de'), only: PlanGenerator.gymKeysFor(p).toSet());
       if (added.isNotEmpty) repo.saveTemplates(added);
-      final plan = PlanGenerator(l, profile, [...templates, ...added], repo.newId).generate(start: day, weeks: weeks);
+      final plan = PlanGenerator(l, p, [...templates, ...added], repo.newId).generate(start: day, weeks: weeks);
       // Written locally at once (offline persistence); the future is the server commit.
       final write = repo.replacePlans(existing, day, plan);
       // Plan start / length: lets the plan review rebuild the plan to find gaps.
-      if (saveMeta) repo.saveProfile(withPlanMeta(profile, day, weeks));
+      if (saveMeta) repo.saveProfile(withPlanMeta(p, day, weeks));
       write.ignore();
       return plan.length;
     } finally {

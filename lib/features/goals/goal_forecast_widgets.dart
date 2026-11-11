@@ -29,7 +29,14 @@ void applyTargetTime(BuildContext context, WidgetRef ref, int sec) {
   final repo = ref.read(repoProvider);
   if (repo == null) return;
   final p = ref.read(profileOrDefaultProvider);
-  final updates = GoalForecast.retarget(p, ref.read(planListProvider), sec, now: DateTime.now());
+  final updates = GoalForecast.retarget(
+    p,
+    ref.read(planListProvider),
+    sec,
+    now: DateTime.now(),
+    sessions: ref.read(sessionListProvider),
+    l: context.l10n,
+  );
   if (updates.isNotEmpty) repo.updateMany(plans: updates);
   repo.saveProfile(p.copyWith(athlete: p.athlete.merge({'targetTimeSec': sec})));
   ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(context.l10n.targetAdjusted(clock(sec)))));
@@ -47,6 +54,7 @@ List<String> progressionLines(AppLocalizations l, GoalForecast f) {
         ProgressionIssue.longSessionsMissed => l.progLongMissed,
         ProgressionIssue.runWalkNotAchieved => l.progRunWalkNotAchieved,
         ProgressionIssue.highEffort => l.progHighEffort,
+        ProgressionIssue.stageHeld => c.atRisk ? l.progStageHeldRisk(c.heldWeeks) : l.progStageHeld(c.heldWeeks),
       },
     for (final o in c.options)
       '→ ${switch (o) {
@@ -76,6 +84,8 @@ String forecastReasonText(AppLocalizations l, GoalForecast f, ForecastReason r) 
   ForecastReason.longRunBehind => l.fcReasonLongRun,
   ForecastReason.trainingBreak => l.fcReasonBreak,
   ForecastReason.fatigue => l.fcReasonFatigue,
+  ForecastReason.sessionsSkipped => l.fcReasonSessionsSkipped(f.sessionsDone, f.sessionsDue),
+  ForecastReason.keySessionsMissed => l.fcReasonKeyMissed(f.keysDone, f.keysDue),
 };
 
 String phaseShort(AppLocalizations l, String phase) => switch (phase) {

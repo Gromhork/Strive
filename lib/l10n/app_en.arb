@@ -3531,5 +3531,117 @@
         "type": "int"
       }
     }
-  }
+  },
+  "fcReasonSessionsSkipped": "{done} of {total} planned sessions of the last 4 weeks done – regular training builds the fitness, skipped sessions add up",
+  "@fcReasonSessionsSkipped": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "fcReasonKeyMissed": "{done} of {total} key sessions (tempo, intervals, long runs) of the last 4 weeks done",
+  "@fcReasonKeyMissed": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "recalWhySessionsSkipped": "Over the last 4 weeks {done} of {total} sessions were done. If certain days never work, move or drop them in the week planner instead of skipping them.",
+  "@recalWhySessionsSkipped": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "recalWhyKeyMissed": "Over the last 4 weeks {done} of {total} key sessions (tempo, intervals, long runs) were done – they carry the race preparation, give them priority over easy runs.",
+  "@recalWhyKeyMissed": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "recalWhyGoalAtRiskTime": "The goal forecast puts race day at {forecast} – the target {goal} is hard to reach with the current fitness. Consider adjusting the target.",
+  "@recalWhyGoalAtRiskTime": {
+    "placeholders": {
+      "forecast": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "wRaceRealistic": "Realistic on your fitness: {time} ({pace}) – if you feel good after halfway, pick it up.",
+  "@wRaceRealistic": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "recalWhyRpeLowSpaced": "Your key workouts felt easy again – but the volume only just went up, so it stays this week (at most every other week, 3 times per plan). If it keeps feeling easy, the targets follow.",
+  "recalWhyTaper": "Taper: less is more – the volume is reduced on purpose and stays that way. Fitness doesn't drop in two weeks; freshness for race day comes from the rest.",
+  "recalWhyTaperOverdo": "Taper: last week you trained {pct} % of the planned volume. Less is more now – stick to the reduced volume, the form for race day comes from the rest.",
+  "@recalWhyTaperOverdo": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "progStageHeld": "The build-up has been held for {weeks} weeks (stage repeated or long session shortened).",
+  "@progStageHeld": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "progStageHeldRisk": "The build-up has been held for {weeks} weeks and race day is close – the goal is at risk.",
+  "@progStageHeldRisk": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "feasLongRunShare2": "Your other runs are too short for the long run this race needs: with three runs a week it may be about two thirds of the week. Plan about {min} min for your other runs.",
+  "@feasLongRunShare2": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "feasLongRunFinish": "Your longest long run only reaches about {have} km before the race – this race needs about {need} km. The plan therefore treats the race as a finish goal, without a target time.",
+  "@feasLongRunFinish": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "zGoalPace": "Race pace"
 }
