@@ -5590,4 +5590,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noXpTooShort => 'No XP – too short for a workout';
+
+  @override
+  String get quickRecord => 'Record';
 }

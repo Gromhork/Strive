@@ -32,6 +32,23 @@ Color _ink(BuildContext context, Color c) {
 
 /// Contiguous live pace zones (slow → fast) of a session, or null when the session has no
 /// live pace (rides – no power meter –, treadmill runs).
+/// Displayed (fast, slow) pace range of a run zone: the zones touch – each one ends where the
+/// next begins (the boundaries of [LiveZones.run]), so no pace (e.g. 4:27–4:42 between
+/// threshold and marathon pace) belongs to no zone. Workout targets keep the Daniels ranges
+/// ([PaceZones.range]); this is the zone map the athlete reads.
+(int, int) contiguousRunRange(PaceZones z, String code) {
+  final c = LiveZones.run(z).cuts;
+  return switch (code) {
+    'REC' => (c[0], c[0] + 40),
+    'E' => (c[1], c[0]),
+    'M' => (c[2], c[1]),
+    'T' => (c[3], c[2]),
+    'I' => (c[4], c[3]),
+    'R' => (min(z.repetition - 3, c[4] - 10), c[4]),
+    _ => z.range(code),
+  };
+}
+
 class LiveZones {
   LiveZones._(this.sport, this.codes, this.cuts, [this.paces]);
 
@@ -45,7 +62,7 @@ class LiveZones {
   (int?, int?)? shown(int i) {
     final code = codes[i];
     if (paces == null || code == 'REC' || code == 'R') return null;
-    final r = paces!.range(code);
+    final r = contiguousRunRange(paces!, code);
     return (r.$1, r.$2);
   }
 

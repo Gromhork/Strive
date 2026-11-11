@@ -455,13 +455,14 @@ class TrackerNotifier extends Notifier<CardioState?> {
     if (!indoor) _listen(title);
   }
 
-  /// Continues a recording restored from storage after the app was killed. Time keeps
-  /// running from the stored timestamps (a running recording counts the time the app was
-  /// gone; a paused one stays paused); route, laps, splits and step progress are kept. GPS
+  /// Continues a recording restored from storage after the app was killed. The time the app
+  /// was dead counts as a pause ([withKilledGapPaused], [savedAt] = when the state was last
+  /// written); a paused one stays paused; route, laps, splits and step progress are kept. GPS
   /// distance while the app was dead is lost – tracking resumes from the next fix.
   /// Returns 'service' / 'permission' when GPS cannot be used (the recording is restored
   /// anyway; the GPS chip shows the error).
-  Future<String?> restore(CardioState saved, {AppLocalizations? l, String lang = 'de'}) async {
+  Future<String?> restore(CardioState saved, {AppLocalizations? l, String lang = 'de', DateTime? savedAt}) async {
+    saved = withKilledGapPaused(saved, savedAt, DateTime.now());
     _stopAll();
     _last = null;
     _lastAlt = null;
@@ -480,6 +481,16 @@ class TrackerNotifier extends Notifier<CardioState?> {
     _run(saved.title, saved.indoor || err != null);
     if (err != null) state = state?.copyWith(gpsError: err);
     return err;
+  }
+
+  /// A recording that was running when the app died: the time up to [savedAt] (its last write)
+  /// stays active, the gap until [now] (app dead, restore prompt) is a pause – the run doesn't
+  /// gain 20 minutes of "running" with no distance (review r09).
+  @visibleForTesting
+  static CardioState withKilledGapPaused(CardioState s, DateTime? savedAt, DateTime now) {
+    final since = s.runningSince;
+    if (since == null || savedAt == null || savedAt.isBefore(since) || !now.isAfter(savedAt)) return s;
+    return s.copyWith(accumulatedSec: s.accumulatedSec + savedAt.difference(since).inSeconds, runningSince: now);
   }
 
   Future<String?> _ensurePermission() async {

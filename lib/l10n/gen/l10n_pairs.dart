@@ -1635,4 +1635,5 @@ const l10nPairs = <(String, String)>[
   ('Workouts done', 'Einheiten erledigt'),
   ('Plan {pct} % done (of the planned minutes due so far)', 'Plan zu {pct} % erfüllt (fällige geplante Minuten)'),
   ('No XP – too short for a workout', 'Keine XP – zu kurz für ein Training'),
+  ('Record', 'Aufzeichnen'),
 ];

@@ -7,7 +7,7 @@ import '../../data/exercise_names_de.dart';
 import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
-import '../../services/zones.dart' show templateMinutes;
+import '../../services/zones.dart' show estimateStepsSec;
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart' show bodyweightLoad;
@@ -22,9 +22,17 @@ String plannedSetsLine(AppLocalizations l, GymExercise e, Units u) {
   if (work.isEmpty) return l.programPreviewSets(e.sets.length);
   final top = work.map((s) => s.weight).reduce((a, b) => a > b ? a : b);
   final load = e.bw == true ? bodyweightLoad(l.bodyweight, top, u) : (top > 0 ? u.weight(top) : l.bodyweight);
+  // The same "4 × 5–8" as the planned workout and the editor (the rep range of the program),
+  // with today's load – not "4 × 5 @ 57,5 kg" here and "4 × 5–8" there.
+  if (e.repMin != null && e.repMax != null) return '${work.length} × ${e.repMin}–${e.repMax} · $load';
   final reps = work.map((s) => s.reps).toList();
   return reps.toSet().length == 1 ? l.rxToday(reps.length, reps.first, load) : l.rxTodayList(reps.join(' · '), load);
 }
+
+/// Duration of a program as every list shows it: endurance programs with steps from the
+/// steps ([estimateStepsSec], like the planned workouts' "≈ 38 min"), gym from the program.
+int programMinutes(WorkoutTemplate t, UserProfile p) =>
+    t.sport != Sport.gym && t.steps.isNotEmpty ? (estimateStepsSec(t.steps, t.sport, p) / 60).round().clamp(5, 400) : t.estimatedMinutes;
 
 /// Read-only view of a program with a big "Start" button; editing sits behind the pencil.
 class ProgramPreviewPage extends ConsumerWidget {
@@ -43,7 +51,7 @@ class ProgramPreviewPage extends ConsumerWidget {
     // The same prescription the workout will start with.
     final exercises = p.sport == Sport.gym ? ref.watch(loadPrescriberProvider).apply(p.exercises) : const <GymExercise>[];
     final sets = exercises.fold<int>(0, (a, e) => a + e.sets.length);
-    final minutes = p.sport == Sport.gym ? p.estimatedMinutes : templateMinutes(p, profile);
+    final minutes = programMinutes(p, profile);
 
     return Scaffold(
       appBar: AppBar(
@@ -69,7 +77,7 @@ class ProgramPreviewPage extends ConsumerWidget {
                   [
                     if (p.sport == Sport.gym) '${p.exercises.length} ${l.exercises}',
                     if (p.sport == Sport.gym) l.programPreviewSets(sets),
-                    '~$minutes min',
+                    '≈ $minutes min',
                   ].join(' · '),
                   style: t.bodyMedium,
                 ),
@@ -114,7 +122,7 @@ class ProgramPreviewPage extends ConsumerWidget {
             StepList(steps: p.steps, sport: p.sport, units: u)
           else
             Text(
-              [if (p.targetKm != null) u.dist(p.targetKm! * 1000), '~$minutes min', intensityLabel(l, p.intensity)].join(' · '),
+              [if (p.targetKm != null) u.dist(p.targetKm! * 1000), '≈ $minutes min', intensityLabel(l, p.intensity)].join(' · '),
               style: t.bodyMedium,
             ),
         ],

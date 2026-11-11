@@ -5,6 +5,7 @@ import '../../core/sport.dart';
 import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../services/zones.dart';
+import 'cardio_extra_pages.dart' show contiguousRunRange;
 import 'step_text.dart';
 
 /// Intensity zones offered per sport (slow → fast).
@@ -97,7 +98,8 @@ String zoneFeel(AppLocalizations l, String zone, Sport sport) => switch (normali
   switch (sport) {
     case Sport.run:
       final vdot = Vdot.of(a);
-      final r = PaceZones(vdot ?? Vdot.defaultFor(p.level)).range(z);
+      // Contiguous zone map (no paces between two zones) – the same ranges as the live zone view.
+      final r = contiguousRunRange(PaceZones(vdot ?? Vdot.defaultFor(p.level)), z);
       final unit = u.imperial ? '/mi' : '/km';
       return ('${fmtPaceSec(r.$1, u)}–${fmtPaceSec(r.$2, u)} $unit', vdot == null);
     case Sport.ride:

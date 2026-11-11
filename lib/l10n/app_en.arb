@@ -3689,5 +3689,6 @@
       }
     }
   },
-  "noXpTooShort": "No XP – too short for a workout"
+  "noXpTooShort": "No XP – too short for a workout",
+  "quickRecord": "Record"
 }

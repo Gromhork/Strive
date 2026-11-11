@@ -33,6 +33,7 @@
  'workoutsDone': ['Workouts done', 'Einheiten erledigt'],
  'extraSessionsN': ['+{n} extra', '+{n} extra'],
  'planCompletionMinutes': ['Plan {pct} % done (of the planned minutes due so far)', 'Plan zu {pct} % erfüllt (fällige geplante Minuten)'],
+ 'quickRecord': ['Record', 'Aufzeichnen'],
  'noXpTooShort': ['No XP – too short for a workout', 'Keine XP – zu kurz für ein Training'],
  # Coach starter questions by goal
  'coachQRace': ['How do I prepare best for {race}?', 'Wie bereite ich mich am besten auf {race} vor?'],

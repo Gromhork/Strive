@@ -395,15 +395,23 @@ class _GlassButton extends StatelessWidget {
   );
 }
 
-/// The open set after [k] (wrapping around to earlier open sets), null when every set is
-/// done. [k] itself counts as done – it is the set that was just completed.
+/// The first open set (lowest index – set 2 left open comes before set 4), null when every
+/// set is done. [k] itself counts as done – it is the set that was just completed. Matches
+/// the overview's "Als Nächstes Satz 2".
 int? nextOpenSet(List<GymSet> sets, int k) {
-  for (var d = 1; d <= sets.length; d++) {
-    final i = (k + d) % sets.length;
+  for (var i = 0; i < sets.length; i++) {
     if (i != k && !sets[i].done) return i;
   }
   return null;
 }
+
+/// The AMRAP hint belongs to the last open work set only – not to the last set while set 2 is
+/// still open.
+bool showAmrapHint(List<GymSet> sets, int k) =>
+    k < sets.length &&
+    sets[k].amrap &&
+    !sets[k].done &&
+    !sets.indexed.any((x) => x.$1 != k && !x.$2.done && !x.$2.warmup && x.$2.type != SetType.drop);
 
 /// True when the open work sets already carry the prescribed load.
 bool _matches(GymExercise e, Prescription p) {
@@ -602,8 +610,8 @@ class _SetEditor extends ConsumerWidget {
                 const SizedBox(height: 10),
                 ReservePicker(rpe: s.rpe, onChanged: (v) => n.updateSet(index, set, rpe: v, clearRpe: v == null)),
               ],
-              // AMRAP only on the set it applies to (the last work set), not on every exercise.
-              if (s.amrap && !s.done)
+              // AMRAP only on the set it applies to (the last open work set), not on every exercise.
+              if (showAmrapHint(e.sets, set))
                 Padding(
                   key: const ValueKey('amrapHint'),
                   padding: const EdgeInsets.only(top: 8),
@@ -621,9 +629,13 @@ class _SetEditor extends ConsumerWidget {
                 width: double.infinity,
                 height: 56,
                 child: FilledButton.icon(
+                  key: const ValueKey('focusToggleSet'),
+                  // "Rückgängig" on a done set: an outlined, clearly active button (the grey
+                  // fill looked disabled).
                   style: FilledButton.styleFrom(
-                    backgroundColor: s.done ? Theme.of(context).colorScheme.surfaceContainerHighest : AppColors.gym,
-                    foregroundColor: s.done ? null : Colors.white,
+                    backgroundColor: s.done ? Colors.transparent : AppColors.gym,
+                    foregroundColor: s.done ? AppColors.gym : Colors.white,
+                    side: s.done ? const BorderSide(color: AppColors.gym, width: 1.5) : null,
                     textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
                   ),
                   icon: Icon(s.done ? Icons.undo_rounded : Icons.check_rounded),

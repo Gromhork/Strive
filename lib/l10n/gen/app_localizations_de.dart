@@ -5590,4 +5590,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noXpTooShort => 'Keine XP – zu kurz für ein Training';
+
+  @override
+  String get quickRecord => 'Aufzeichnen';
 }

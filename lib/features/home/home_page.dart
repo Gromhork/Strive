@@ -513,7 +513,11 @@ class ComingUpCard extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Padding(
+                          // Long-press explains the short label ("GK A" → "Ganzkörper A").
+                          Tooltip(
+                            message: dayPlans.map((p) => glueTitle(p.title)).join('\n'),
+                            triggerMode: TooltipTriggerMode.longPress,
+                            child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 1),
                             child: Text(
                               // Six days share the row: a short label (the kind of session; gym:
@@ -535,6 +539,7 @@ class ComingUpCard extends ConsumerWidget {
                                 color: hiddenDay || dayPlans.isEmpty ? dim : null,
                                 fontWeight: dayPlans.length > 1 ? FontWeight.w700 : FontWeight.w400,
                               ),
+                            ),
                             ),
                           ),
                         ],

@@ -96,7 +96,7 @@ class _WorkoutRestoreGateState extends ConsumerState<WorkoutRestoreGate> {
       } else {
         final err = await ref
             .read(trackerProvider.notifier)
-            .restore(saved.cardio!, l: l, lang: Localizations.localeOf(context).languageCode);
+            .restore(saved.cardio!, l: l, lang: Localizations.localeOf(context).languageCode, savedAt: saved.savedAt);
         if (!mounted) return;
         if (err != null) toast(context, err == 'service' ? l.gpsServiceOff : l.gpsPermissionDenied);
         Navigator.push(context, MaterialPageRoute(builder: (_) => const CardioSessionPage()));

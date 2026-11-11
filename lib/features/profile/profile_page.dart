@@ -380,8 +380,10 @@ Future<bool> confirmGuestLogout(BuildContext context) async {
           title: Text(l.guestLogoutTitle),
           content: Text(l.guestLogoutBody),
           actions: [
+            // Destructive: deletes the guest's data on this device – styled as such.
             TextButton(
               key: const ValueKey('guestLogoutAnyway'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
               onPressed: () => Navigator.pop(c, 'out'),
               child: Text(l.guestLogoutAnyway),
             ),

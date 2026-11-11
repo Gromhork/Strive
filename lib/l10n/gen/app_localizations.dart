@@ -10192,6 +10192,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No XP – too short for a workout'**
   String get noXpTooShort;
+
+  /// No description provided for @quickRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get quickRecord;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
