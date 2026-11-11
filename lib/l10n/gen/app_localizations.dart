@@ -9728,7 +9728,7 @@ abstract class AppLocalizations {
   /// No description provided for @legendMissed.
   ///
   /// In en, this message translates to:
-  /// **'missed'**
+  /// **'missed / too little'**
   String get legendMissed;
 
   /// No description provided for @replacesDayWorkout.
@@ -10202,7 +10202,7 @@ abstract class AppLocalizations {
   /// No description provided for @coachMuchShorter.
   ///
   /// In en, this message translates to:
-  /// **'Only {share} of the plan – it counts as partly done. Feeling good? Add a bit on an easy day; otherwise just carry on.'**
+  /// **'Only {share} of the plan – far off, but it counts as done. Feeling good? Add a bit on an easy day; otherwise just carry on.'**
   String coachMuchShorter(String share);
 
   /// No description provided for @partlyDone.
@@ -10282,6 +10282,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How do I swim more efficiently?'**
   String get coachQSwim;
+
+  /// No description provided for @fromPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken over from the plan'**
+  String get fromPlanTitle;
+
+  /// No description provided for @fromPlanGymLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} exercises · {sets} sets · {volume}'**
+  String fromPlanGymLine(int count, int sets, String volume);
+
+  /// No description provided for @fromPlanHintGym.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved with the exercises, sets and weights of the plan. Did something differ? Correct it afterwards on the session under “Edit”.'**
+  String get fromPlanHintGym;
+
+  /// No description provided for @fromPlanHintCardio.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration and distance come from the plan – change them to what you actually did.'**
+  String get fromPlanHintCardio;
+
+  /// No description provided for @fromPlanBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken over from the plan'**
+  String get fromPlanBadge;
+
+  /// No description provided for @fromPlanNoteGym.
+  ///
+  /// In en, this message translates to:
+  /// **'not recorded: counts for volume, sets, statistics and the plan, but sets no records. Use “Edit” to enter what you really lifted.'**
+  String get fromPlanNoteGym;
+
+  /// No description provided for @fromPlanNoteCardio.
+  ///
+  /// In en, this message translates to:
+  /// **'not recorded: counts for distance, time and the plan, but sets no records and doesn’t adjust your paces. Use “Edit” to enter your real values.'**
+  String get fromPlanNoteCardio;
+
+  /// No description provided for @summaryTooShortGym.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than a minute of training.'**
+  String get summaryTooShortGym;
+
+  /// No description provided for @summaryTooShortTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than a minute recorded.'**
+  String get summaryTooShortTime;
+
+  /// No description provided for @summaryNoDistanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No distance recorded'**
+  String get summaryNoDistanceTitle;
+
+  /// No description provided for @summaryNoDistanceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS recorded no distance. Save anyway and enter the distance afterwards under “Edit” – or discard the session.'**
+  String get summaryNoDistanceBody;
+
+  /// No description provided for @summaryNoLapsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No laps counted'**
+  String get summaryNoLapsTitle;
+
+  /// No description provided for @summaryNoLapsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No laps were counted. Save anyway and enter laps or distance afterwards under “Edit” – or discard the session.'**
+  String get summaryNoLapsBody;
+
+  /// No description provided for @summaryTooLittle.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than 10 % of the plan – this doesn’t count as done yet.'**
+  String get summaryTooLittle;
+
+  /// No description provided for @editSessionHintGym.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct weights, reps and sets, add or remove exercises.'**
+  String get editSessionHintGym;
+
+  /// No description provided for @editSessionHintCardio.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct wrong measurements or entries.'**
+  String get editSessionHintCardio;
+
+  /// No description provided for @editSessionHintSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct laps, pool length or distance – laps × pool length give the distance.'**
+  String get editSessionHintSwim;
+
+  /// No description provided for @removeExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove exercise'**
+  String get removeExercise;
+
+  /// No description provided for @exerciseRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} removed'**
+  String exerciseRemoved(String name);
+
+  /// No description provided for @moreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get moreActions;
+
+  /// No description provided for @complianceNotCounted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not counted – only {pct} % of the plan'**
+  String complianceNotCounted(int pct);
+
+  /// No description provided for @notCountedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'not counted ({share})'**
+  String notCountedShort(String share);
+
+  /// No description provided for @setsOfPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} sets'**
+  String setsOfPlanned(int done, int total);
+
+  /// No description provided for @coachNotCounted.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {share} of the plan – too little to count as done. Did more than that? Correct the session; otherwise the workout is still open.'**
+  String coachNotCounted(String share);
+
+  /// No description provided for @coachNotCountedSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {share} of the planned sets – too little to count as done. Did more sets? Add them on the session; otherwise the workout is still open.'**
+  String coachNotCountedSets(String share);
+
+  /// No description provided for @coachMuchFewerSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {share} of the planned sets – far off, but it counts as done. Don’t make them up; the next strength session starts normally again.'**
+  String coachMuchFewerSets(String share);
+
+  /// No description provided for @coachFewerSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer sets than planned – no problem, don’t make them up.'**
+  String get coachFewerSets;
+
+  /// No description provided for @coachMoreSets.
+  ///
+  /// In en, this message translates to:
+  /// **'More sets than planned – give yourself enough recovery before the next strength session.'**
+  String get coachMoreSets;
+
+  /// No description provided for @termComplianceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan compliance – how a workout is rated'**
+  String get termComplianceTitle;
+
+  /// No description provided for @termComplianceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared is the distance (endurance workouts with a distance), the done work sets (strength) or else the duration – against the plan.\n\n✓ green, as planned: {greenMin}–{greenMax}\n✓ yellow, partly: {yellowMin} up to {greenMin}, or up to {yellowMax}\n✓ orange, far off: less than {yellowMin} or more than {yellowMax}\n✕ red: missed, or less than {countMin} – an aborted start doesn’t count as done.'**
+  String termComplianceBody(String greenMin, String greenMax, String yellowMin, String yellowMax, String countMin);
+
+  /// No description provided for @termComplianceTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Partly or far off still counts as done – the plan only adapts when it happens repeatedly.'**
+  String get termComplianceTip;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

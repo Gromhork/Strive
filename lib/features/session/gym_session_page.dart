@@ -11,6 +11,8 @@ import '../../providers.dart';
 import '../../services/exercise_class.dart' show offersBodyweightMode;
 import '../../services/active_workout.dart';
 import '../../services/insights.dart';
+import '../../services/load_prescription.dart' show LoadPrescriber;
+import '../../data/exercise_db.dart' show Exercise;
 import '../../widgets/common.dart';
 import '../../widgets/effort_chips.dart';
 import '../../widgets/exercise_media.dart';
@@ -62,7 +64,7 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
       final ok = await confirm(context, l.finishWorkout, body: l.finishOpenSets(open, w.totalSets), ok: l.finish, cancel: l.keepTraining);
       if (!ok || !mounted) return;
     }
-    final total = w.totalSets;
+    final total = w.exercises.fold<int>(0, (a, e) => a + e.workSets.length); // work sets, like setsDone
     final session = n.finish(ref.read(repoProvider)!.newId());
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SessionSummaryPage(draft: session, plannedSets: total)));
   }
@@ -75,17 +77,7 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
     final prescriber = ref.read(loadPrescriberProvider);
     final phase = planPhaseOf(ref.read(planListProvider), ref.read(activeGymProvider)?.planId);
     for (final e in picked) {
-      // Same number of work sets as last time; weights & reps come from the prescriber.
-      final prev = lastSetsFor(history, e.id)?.where((s) => !s.warmup && s.type != SetType.drop).toList();
-      final raw = GymExercise(
-        exId: e.id,
-        name: e.name,
-        sets: [
-          for (var k = 0; k < (prev == null || prev.isEmpty ? 3 : prev.length.clamp(1, 6)); k++)
-            GymSet(reps: prev == null || prev.isEmpty ? 10 : prev[k].reps),
-        ],
-      );
-      n.addExercise(prescriber.apply([raw], phase: phase).single);
+      n.addExercise(exerciseFromLibrary(e, history: history, prescriber: prescriber, phase: phase));
     }
   }
 
@@ -589,6 +581,21 @@ String capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(
 
 /// "60 kg × 8", "8 ×" (no weight) or, with [bw] (short bodyweight label), "BW × 8",
 /// "BW +5 kg × 8" / "BW −10 kg × 8".
+/// A library exercise added to a workout (running or already finished): the same number of
+/// work sets as last time (else 3 × 10), weights and reps from the [prescriber].
+GymExercise exerciseFromLibrary(Exercise e, {required List<Session> history, required LoadPrescriber prescriber, String? phase}) {
+  final prev = lastSetsFor(history, e.id)?.where((s) => !s.warmup && s.type != SetType.drop).toList();
+  final raw = GymExercise(
+    exId: e.id,
+    name: e.name,
+    sets: [
+      for (var k = 0; k < (prev == null || prev.isEmpty ? 3 : prev.length.clamp(1, 6)); k++)
+        GymSet(reps: prev == null || prev.isEmpty ? 10 : prev[k].reps),
+    ],
+  );
+  return prescriber.apply([raw], phase: phase).single;
+}
+
 String setLabel(GymSet s, Units u, {String? bw}) {
   if (bw != null) return '${bodyweightLoad(bw, s.weight, u)} × ${s.reps}';
   return s.weight > 0 ? '${u.weight(s.weight)} × ${s.reps}' : '${s.reps} ×';

@@ -75,7 +75,7 @@ class SessionFeedback {
   bool get isQuality => plan.intensity == 'tempo' || plan.intensity == 'intervals';
 
   /// Less than 80 % of the planned volume (TrainingPeaks / §11 "cut short").
-  bool get cutShort => completion != null && completion! < 0.8;
+  bool get cutShort => completion != null && completion! < ComplianceScale.greenMin;
 
   double get _weight => signals.fold(0.0, (x, s) => x + s.weight);
 
@@ -190,6 +190,10 @@ SessionFeedback evaluateSession(PlannedWorkout p, Session s, UserProfile profile
     final estimated = s.source != null && s.avgHr != null;
     signals.add(Signal(SignalKind.rpe, sc.clamp(-1.0, 1.0), estimated ? 0.3 : 1));
   }
+
+  // Logged as done with the plan's own numbers ("aus Plan übernommen"): distance, duration and
+  // pace are the plan, not a measurement – only the athlete's rating counts.
+  if (s.fromPlan) return SessionFeedback(plan: p, session: s, signals: signals, completion: complianceRatio(p, s));
 
   // ── Heart rate vs. the time-weighted target of the steps (added after the other
   // signals: with a predicted HRmax it may need one of them as confirmation).

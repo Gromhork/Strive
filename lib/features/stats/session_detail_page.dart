@@ -120,6 +120,8 @@ class SessionDetailPage extends ConsumerWidget {
                 if (s.sport == Sport.gym) ...[
                   _half(context, StatTile(label: l.volume, value: u.volume(s.volume), color: AppColors.gym)),
                   _half(context, StatTile(label: l.sets, value: '${s.setsDone}')),
+                  if (s.exercises.any((e) => e.exId != 'manual'))
+                    _half(context, StatTile(label: l.exercises, value: '${s.exercises.length}')),
                 ] else ...[
                   _half(
                     context,
@@ -150,6 +152,23 @@ class SessionDetailPage extends ConsumerWidget {
             ),
           ),
           PlanLinkCard(session: s),
+          if (s.fromPlan) ...[
+            const SizedBox(height: 8),
+            Row(
+              key: const ValueKey('fromPlanNote'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.playlist_add_check_rounded, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '${l.fromPlanBadge} – ${s.sport == Sport.gym ? l.fromPlanNoteGym : l.fromPlanNoteCardio}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (s.source != null) ...[
             const SizedBox(height: 8),
             Row(
@@ -211,11 +230,14 @@ class SessionDetailPage extends ConsumerWidget {
                       u.volume(s.volume),
                       delta(u.weightOut(s.volume), u.weightOut(prev.volume), fmt: (d) => '${Units.grouped(d)} ${u.weightUnit}'),
                     )
-                  else if (s.distanceM > 0 && prev.distanceM > 0) ...[
+                  // The plan's own numbers are no performance to compare.
+                  else if (s.distanceM > 0 && prev.distanceM > 0 && s.measured && prev.measured) ...[
                     _CompareRow(
                       l.distance,
-                      u.dist(s.distanceM),
-                      delta(u.distOut(s.distanceM), u.distOut(prev.distanceM), fmt: (d) => Units.num(d, 2)),
+                      s.sport == Sport.swim ? u.swimDist(s.distanceM) : u.dist(s.distanceM),
+                      s.sport == Sport.swim
+                          ? delta(s.distanceM, prev.distanceM, fmt: (d) => '${d.round()} m')
+                          : delta(u.distOut(s.distanceM), u.distOut(prev.distanceM), fmt: (d) => Units.num(d, 2)),
                     ),
                     _CompareRow(
                       s.sport.usesPace ? l.avgPace : l.avgSpeed,
@@ -223,7 +245,7 @@ class SessionDetailPage extends ConsumerWidget {
                       delta(s.durationSec / s.distanceM, prev.durationSec / prev.distanceM, lowerIsBetter: true, fmt: (_) => ''),
                     ),
                   ],
-                  if (s.sport == Sport.gym)
+                  if (s.sport == Sport.gym && s.measured && prev.measured)
                     for (final e in s.exercises)
                       Builder(
                         builder: (_) {
@@ -281,6 +303,7 @@ class SessionDetailPage extends ConsumerWidget {
       '${s.sport.label(l)}: ${s.title}',
       clock(s.durationSec),
       if (s.distanceM > 0) s.sport == Sport.swim ? u.swimDist(s.distanceM) : u.dist(s.distanceM),
+      if (s.sport == Sport.gym && s.setsDone > 0) l.setsN(s.setsDone),
       if (s.volume > 0) u.volume(s.volume),
     ];
     return '${parts.join(' · ')}\n${l.sharedFromStrive}';

@@ -1,32 +1,56 @@
 import 'package:flutter/material.dart';
 
 import '../core/format.dart';
+import '../core/sport.dart';
 import '../core/theme.dart';
 import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
 
-/// Plan adherence of one planned workout (TrainingPeaks-style traffic light).
+/// The one plan-compliance scale of the app (TrainingPeaks-style traffic light). Every place
+/// that judges "how much of the plan was done" – calendar markers and legend, the session's
+/// plan card, Home, the week page, the summary headline, the plan adaptation and the stats –
+/// uses these bands via [complianceLevelOf] / [complianceRatio] / [planCompleted].
+///
+/// | share of the plan | level | counts as done |
+/// |---|---|---|
+/// | 80–120 % | green "wie geplant" | yes |
+/// | 50–79 % or 121–150 % | yellow "teilweise" | yes |
+/// | 10–49 % or > 150 % | orange "stark abweichend" | yes |
+/// | < 10 % | red "nicht gewertet" | no – an aborted start (e.g. 0:29 of 56 min) gives no training stimulus |
+///
+/// The share is distance for distance-based endurance plans, done work sets for gym, else duration.
+abstract final class ComplianceScale {
+  static const greenMin = 0.8;
+  static const greenMax = 1.2;
+  static const yellowMin = 0.5;
+  static const yellowMax = 1.5;
+
+  /// Below this share a linked session does not count as done.
+  static const countMin = 0.1;
+}
+
+/// Plan adherence of one planned workout.
 enum ComplianceLevel {
   /// Future, today-but-not-yet-done, or skipped on purpose.
   none,
 
-  /// 80–120 % of the planned duration/distance.
+  /// 80–120 % of the plan.
   green,
 
   /// 50–80 % or 120–150 %.
   yellow,
 
-  /// Below 50 % or above 150 %.
+  /// 10–50 % or above 150 %.
   orange,
 
-  /// Day passed without the workout.
+  /// Day passed without the workout, or a session of less than 10 % of the plan (not counted).
   red,
 }
 
 class Compliance {
   final ComplianceLevel level;
 
-  /// actual / planned (duration, or distance for distance-based plans); null when unknown.
+  /// actual / planned ([complianceRatio]); null when unknown.
   final double? ratio;
   const Compliance(this.level, [this.ratio]);
 
@@ -34,6 +58,12 @@ class Compliance {
   static const missed = Compliance(ComplianceLevel.red);
 
   int? get pct => ratio == null ? null : (ratio! * 100).round();
+
+  /// A session is linked, but it was too little to count (< [ComplianceScale.countMin]).
+  bool get notCounted => level == ComplianceLevel.red && ratio != null;
+
+  /// Done, but not "as planned" (yellow / orange) – "teilweise erledigt (40 %)".
+  bool get partly => (level == ComplianceLevel.yellow || level == ComplianceLevel.orange) && ratio != null;
 
   Color color(BuildContext context) => switch (level) {
     ComplianceLevel.green => AppColors.success,
@@ -56,7 +86,7 @@ class Compliance {
       ComplianceLevel.green => p == null ? l.complianceDone : l.complianceGreen(p),
       ComplianceLevel.yellow => l.complianceYellow(p ?? 0),
       ComplianceLevel.orange => l.complianceOrange(p ?? 0),
-      ComplianceLevel.red => l.complianceMissed,
+      ComplianceLevel.red => p == null ? l.complianceMissed : l.complianceNotCounted(p),
       ComplianceLevel.none => skipped ? l.complianceSkipped : l.compliancePlanned,
     };
   }
@@ -66,19 +96,47 @@ const complianceYellow = Color(0xFFFFD43B);
 const complianceOrange = Color(0xFFFF8C1A);
 
 ComplianceLevel complianceLevelOf(double ratio) {
-  if (ratio >= 0.8 && ratio <= 1.2) return ComplianceLevel.green;
-  if (ratio >= 0.5 && ratio <= 1.5) return ComplianceLevel.yellow;
+  if (ratio < ComplianceScale.countMin) return ComplianceLevel.red;
+  if (ratio >= ComplianceScale.greenMin && ratio <= ComplianceScale.greenMax) return ComplianceLevel.green;
+  if (ratio >= ComplianceScale.yellowMin && ratio <= ComplianceScale.yellowMax) return ComplianceLevel.yellow;
   return ComplianceLevel.orange;
 }
 
-/// actual / planned: distance when the plan is distance-based (and the session has a
-/// distance), otherwise duration. Null when the plan has no target.
-double? complianceRatio(PlannedWorkout p, Session s) {
+/// Work sets a gym session is compared with: the sets the workout had when it was finished
+/// ([Session.plannedSets]), else the work sets of the planned workout's own exercises. 0 when
+/// unknown or when the session has no set data (imported / summary-only entry) – then the
+/// duration is compared.
+int plannedGymSets(PlannedWorkout p, Session s) {
+  if (!s.exercises.any((e) => e.exId != 'manual')) return 0;
+  final own = s.plannedSets ?? 0;
+  if (own > 0) return own;
+  return p.exercises.fold<int>(0, (a, e) => a + e.workSets.length);
+}
+
+/// Planned distance (km) of [p]: its distance, or for a swim the sum of its steps' metres.
+double plannedKm(PlannedWorkout p) {
   final km = p.distanceKm ?? 0;
+  if (km > 0) return km;
+  if (p.sport == Sport.swim) return p.steps.fold<double>(0, (a, s) => a + (s.distanceM ?? 0)) / 1000;
+  return 0;
+}
+
+/// actual / planned: done work sets for gym ([plannedGymSets]), distance when the plan is
+/// distance-based (and the session has a distance), otherwise duration. Null when the plan
+/// has no target.
+double? complianceRatio(PlannedWorkout p, Session s) {
+  if (p.sport == Sport.gym && s.sport == Sport.gym) {
+    final sets = plannedGymSets(p, s);
+    if (sets > 0) return s.setsDone / sets;
+  }
+  final km = plannedKm(p);
   if (km > 0 && s.distanceM > 0) return s.distanceM / (km * 1000);
   if (p.durationMin > 0) return s.durationSec / (p.durationMin * 60);
   return null;
 }
+
+/// Whether linked session [s] fulfils [p] at all (≥ [ComplianceScale.countMin] of the plan).
+bool sessionCounts(PlannedWorkout p, Session s) => (complianceRatio(p, s) ?? 1) >= ComplianceScale.countMin;
 
 /// Compliance of [p] given its linked session [s] (if any). [now] is injectable for tests.
 Compliance planCompliance(PlannedWorkout p, Session? s, {DateTime? now}) {
@@ -93,7 +151,9 @@ Compliance planCompliance(PlannedWorkout p, Session? s, {DateTime? now}) {
   return dayOnly(p.date).isBefore(today) ? Compliance.missed : Compliance.none;
 }
 
-/// Plan id → linked session (via [PlannedWorkout.sessionId] or [Session.planId]).
+/// Plan id → linked session (via [PlannedWorkout.sessionId] or [Session.planId]). Of several
+/// sessions started from the same workout (an aborted start, then the real one), the one that
+/// fulfils more of the plan wins.
 Map<String, Session> linkPlanSessions(List<PlannedWorkout> plans, List<Session> sessions) {
   final byId = {for (final s in sessions) s.id: s};
   final planById = {for (final p in plans) p.id: p};
@@ -102,11 +162,18 @@ Map<String, Session> linkPlanSessions(List<PlannedWorkout> plans, List<Session> 
     // A session started from a workout days away only fulfils it once confirmed (the plan
     // then points back at it via sessionId) – see plan_match.replacementCandidate.
     final p = s.planId == null ? null : planById[s.planId];
-    if (p != null && (p.sessionId == s.id || daysBetween(p.date, s.start).abs() <= 1)) out[p.id] = s;
+    if (p != null && (p.sessionId == s.id || daysBetween(p.date, s.start).abs() <= 1)) {
+      final cur = out[p.id];
+      if (cur == null || (complianceRatio(p, s) ?? 1) > (complianceRatio(p, cur) ?? 1)) out[p.id] = s;
+    }
   }
   for (final p in plans) {
     final s = p.sessionId == null ? null : byId[p.sessionId];
-    if (s != null) out[p.id] = s;
+    if (s == null) continue;
+    final cur = out[p.id];
+    // The explicit link wins – unless it is a start too short to count and another session
+    // from the same workout does count.
+    if (cur == null || cur.id == s.id || sessionCounts(p, s) || !sessionCounts(p, cur)) out[p.id] = s;
   }
   return out;
 }
@@ -114,7 +181,8 @@ Map<String, Session> linkPlanSessions(List<PlannedWorkout> plans, List<Session> 
 /// Share (0…1) of the planned minutes that were completed, weighted by planned minutes.
 /// Each workout contributes at most its planned minutes (over-delivery doesn't hide a miss).
 /// Only workouts that are already due count – past days, plus anything done early – so
-/// Monday morning doesn't read "0 %". Skipped and missed workouts count as 0.
+/// Monday morning doesn't read "0 %". Skipped and missed workouts count as 0, and so does a
+/// session too short to count ([sessionCounts]).
 /// Null when nothing with a duration is due yet.
 double? weeklyCompletion(List<PlannedWorkout> plans, Map<String, Session> linked, {DateTime? now}) {
   final today = dayOnly(now ?? DateTime.now());
@@ -123,7 +191,7 @@ double? weeklyCompletion(List<PlannedWorkout> plans, Map<String, Session> linked
     final min = p.durationMin.toDouble();
     if (min <= 0) continue;
     final s = linked[p.id];
-    final completed = p.status != 'skipped' && (s != null || p.isDone);
+    final completed = planCompleted(p, linked);
     if (!completed && !dayOnly(p.date).isBefore(today)) continue; // not due yet
     planned += min;
     if (!completed) continue;
@@ -137,8 +205,13 @@ double? weeklyCompletion(List<PlannedWorkout> plans, Map<String, Session> linked
   return planned == 0 ? null : done / planned;
 }
 
-/// Whether [p] counts as completed: not skipped, and a linked session or marked done.
-bool planCompleted(PlannedWorkout p, Map<String, Session> linked) => p.status != 'skipped' && (linked[p.id] != null || p.isDone);
+/// Whether [p] counts as completed: not skipped, and a linked session that counts
+/// ([sessionCounts]) or marked done without one.
+bool planCompleted(PlannedWorkout p, Map<String, Session> linked) {
+  if (p.status == 'skipped') return false;
+  final s = linked[p.id];
+  return s != null ? sessionCounts(p, s) : p.isDone;
+}
 
 /// One definition of "x of y workouts done" for every count of a week (total, per sport, Home
 /// and week page): planned workouts that were not dropped, and how many are completed.
@@ -156,11 +229,11 @@ int extraSessions(Iterable<Session> sessions, Iterable<PlannedWorkout> plans, Ma
   return sessions.where((s) => !used.contains(s.id)).length;
 }
 
-/// Colour of a weekly completion share.
+/// Colour of a weekly completion share (same bands as one workout).
 Color completionColor(double share) =>
-    share >= 0.8
+    share >= ComplianceScale.greenMin
         ? AppColors.success
-        : share >= 0.5
+        : share >= ComplianceScale.yellowMin
         ? complianceYellow
         : complianceOrange;
 
