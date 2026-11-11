@@ -153,13 +153,18 @@ class EventSpec {
       taperBeginner: 2,
       beginnerOk: false,
       longRunKm: 28,
+      // Slow runners: ~3 h on the feet is the marathon long run (Hanson / Galloway / Higdon: time-capped,
+      // never > 3–3.5 h – longer single runs add injury risk and recovery cost faster than aerobic benefit).
+      // At a long-run pace slower than ~6:25 /km the 3 h run is shorter than 28 km, and that is the target.
+      longRunMin: 180,
       longRunCapKm: 35,
       longRunCapMin: 180,
       runKm: [45, 65, 90],
       longDayMin: 180,
       shorter: ['hm', '10k', '5k'],
     ),
-    // 50 km ultra: time on feet – 3–4 h long runs, back-to-back weekends (Koop 2016; Roche).
+    // 50 km ultra: time on feet – long runs up to 3.5 h plus the back-to-back run the next day carry
+    // the weekend's load (Koop 2016; Roche) – no single run beyond 3.5 h.
     'ultra50': EventSpec(
       'ultra50',
       weeks: (16, 24),
@@ -168,7 +173,7 @@ class EventSpec {
       longRunKm: 30,
       longRunMin: 210,
       longRunCapKm: 38,
-      longRunCapMin: 240,
+      longRunCapMin: 210,
       runKm: [55, 75, 100],
       longDayMin: 240,
       secondLongMin: 120,

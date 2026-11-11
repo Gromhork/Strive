@@ -3802,5 +3802,20 @@
   "coachQTri": "How do I combine swimming, cycling and running in one week?",
   "coachQGym": "How do I get stronger without stalling?",
   "coachQRide": "How do I get faster on the bike?",
-  "coachQSwim": "How do I swim more efficiently?"
+  "coachQSwim": "How do I swim more efficiently?",
+  "feasTitleNote": "Note on your plan",
+  "feasLongRunTimeCap": "Your long runs stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km). Running longer in one go adds more injury risk and recovery time than fitness. So: finishing is the goal – start easy and plan short walk breaks from the start (e.g. 1 min every 10 min).",
+  "@feasLongRunTimeCap": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "have": {
+        "type": "String"
+      },
+      "race": {
+        "type": "String"
+      }
+    }
+  }
 }

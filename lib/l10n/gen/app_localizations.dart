@@ -10282,6 +10282,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How do I swim more efficiently?'**
   String get coachQSwim;
+
+  /// No description provided for @feasTitleNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note on your plan'**
+  String get feasTitleNote;
+
+  /// No description provided for @feasLongRunTimeCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Your long runs stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km). Running longer in one go adds more injury risk and recovery time than fitness. So: finishing is the goal – start easy and plan short walk breaks from the start (e.g. 1 min every 10 min).'**
+  String feasLongRunTimeCap(String time, String have, String race);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
