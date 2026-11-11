@@ -140,8 +140,9 @@ void main() {
   group('C6 three-run half-marathon plans', () {
     test('3 × 30 min: long run grows past 7 km (≤ 65 % of the week), finish goal without a race time', () {
       final plan = gen(r3x30);
-      // Before: 7.0 km from W6 to W12 (≤ 50 % / ≤ 2 × the 3.5 km runs). After: 13 km by the peak.
-      expect(longestLong(plan), greaterThanOrEqualTo(12.5));
+      // Before: 7.0 km from W6 to W12 (≤ 50 % / ≤ 2 × the 3.5 km runs). After: 13 km by the peak; since review
+      // 2026-11 H3 the long run is ≤ 60 % of a 3-run week (was 65 %): ~11 km next to 30 min runs.
+      expect(longestLong(plan), greaterThanOrEqualTo(11));
       for (final wk in weeks(plan).where(loading)) {
         final runs = wk.where((w) => w.sport == Sport.run && w.intensity != 'race').toList();
         final total = runs.fold(0.0, (x, w) => x + (w.distanceKm ?? 0));
@@ -152,13 +153,14 @@ void main() {
       expect(PlanGenerator.finishOnly(r3x30, start: start), isTrue);
       final raceW = plan.firstWhere((w) => w.intensity == 'race');
       expect(raceW.steps.single.paceMin, isNull);
-      expect(raceW.description, isNot(contains('Zielzeit')));
+      expect(raceW.description, contains(l.wRaceFinishDesc));
       expect(PlanGenerator.outlook(r3x30, start: start).every((o) => o.predictedSec == null), isTrue);
       final f = PlanGenerator.feasibility(r3x30, start: start, l: l);
       expect(f.issues, containsAll(['longRunShare', 'longRunFinish']));
-      // Before: "other runs need 90 min" next to a 60 min long day. After: 35 min, below the long run's time.
-      expect(f.otherRunNeedMin, lessThanOrEqualTo(40));
-      expect(f.planLongKm, greaterThanOrEqualTo(12.5));
+      // Before: "other runs need 90 min" next to a 60 min long day. After: below the long run's time (≤ 60 % of
+      // the week since review 2026-11 H3: ~50 min).
+      expect(f.otherRunNeedMin, lessThan(60));
+      expect(f.planLongKm, greaterThanOrEqualTo(11));
       expect(f.planLongTargetKm, 15);
       expect(f.extraIssueText(l, 'longRunFinish', dayName: (d) => '$d'), contains('Finish-Ziel'));
       expect(f.shorterDistance, '10k');
@@ -254,9 +256,12 @@ void main() {
     expect(PlanGenerator.feasibility(knee(14), start: start, l: l).issues, isNot(contains('tooShort')));
     final f = PlanGenerator.feasibility(knee(7), start: start, l: l);
     expect(f.issues, contains('tooShort'));
-    // The first date that works – the 9-week plan has no issue.
-    expect(f.laterDate, race(9));
-    expect(PlanGenerator.feasibility(knee(9), start: start, l: l).issues, isEmpty);
+    // The first date that works has no issue. (Joint problems: the long run grows ≤ +5 % / 0.5 km a step since
+    // review 2026-11 M1 – 10 → 15 km takes longer than the 9 weeks of before.)
+    expect(f.laterDate, isNotNull);
+    final w = 1 + daysBetween(start, f.laterDate!) ~/ 7;
+    const timing = {'tooShort', 'longRunRamp', 'runWalk', 'longRunFinish'};
+    expect(PlanGenerator.feasibility(knee(w), start: start, l: l).issues.where(timing.contains), isEmpty);
   });
 
   test('MINOR 10 km goal pace: zone code M kept, label "race pace" for sets and race alike', () {

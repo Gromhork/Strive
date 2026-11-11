@@ -431,4 +431,45 @@ void main() {
     // Before: 3:36:13 (W1) → 3:47 (W17) – the check restarted from the plan-start VDOT every week.
     expect(at.reduce(max) - at.reduce(min), lessThanOrEqualTo(2), reason: at.map(h.hms).join(' '));
   });
+
+  test('QA 2026-11: the wizard\'s suggested target never triggers our own warning – an older plan in the history aside', () {
+    // HM on 6 Feb 2027, 5 km PB 22:12, wizard on Wed 11 Nov 2026: suggestion 1:39:00; after "Übernehmen" the
+    // check said "very ambitious – realistic 1:41:59": workouts of an older plan (June) were taken as this
+    // plan's start, its weeks counted as trained and the race-day gain shrank to ~0.
+    final now = DateTime(2026, 11, 11, 10);
+    final race = DateTime(2027, 2, 6);
+    final base = UserProfile(
+      level: 'intermediate',
+      focus: TrainingFocus.run,
+      birthYear: 1990,
+      experience: const {Sport.run},
+      trainingDays: const [2, 4, 6],
+      goals: const ['race'],
+      athlete: AthleteData(raceTimes: const {'5k': 22 * 60 + 12}, eventDistance: 'hm', eventDate: race),
+    );
+    final s = suggestTargetTime(base, 'hm', race, now: now);
+    expect(s.sec, 99 * 60);
+    final start = dayOnly(now);
+    for (final stored in [true, false]) {
+      final p = base.copyWith(
+        athlete: base.athlete.merge({'targetTimeSec': s.sec, if (stored) 'planStart': start, if (stored) 'planLength': 13}),
+      );
+      final old = PlanGenerator(
+        l,
+        p.copyWith(athlete: p.athlete.merge({'eventDate': null, 'planStart': null})),
+        templates,
+        id,
+      ).generate(start: DateTime(2026, 6, 1), weeks: 12);
+      final plans = [...old, ...PlanGenerator(l, p, templates, id).generate(start: start)];
+      final fit = FitnessState.of(p, plans: plans, sessions: const [], now: now);
+      expect(daysBetween(start, fit.planStart!), inInclusiveRange(0, 6), reason: 'stored $stored: ${fit.planStart}');
+      final tc = GoalModel.check(p, start: start, fitness: fit)!;
+      expect(tc.status, TargetStatus.ok, reason: 'stored $stored: realistic ${h.hms(tc.realisticSec)}');
+      expect(PlanGenerator.feasibility(p, start: start, l: l, fitness: fit).issues.where((i) => i.startsWith('target')), isEmpty);
+      // Goal editor and forecast: the same race-day time.
+      expect(suggestTargetTime(p, 'hm', race, plans: plans, now: now).sec, s.sec);
+      final fc = GoalForecast.of(p, plans: plans, sessions: const [], now: now)!;
+      expect(GoalModel.roundTarget(fc.raceDaySec!), s.sec);
+    }
+  });
 }

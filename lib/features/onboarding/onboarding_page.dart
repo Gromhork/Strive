@@ -336,9 +336,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       if (!eventFitsFocus(a.eventDistance, p.focus)) 'eventDistance': null,
       if (!eventFitsFocus(a.eventDistance, p.focus)) 'targetTimeSec': null,
     });
-    var days = [
-      ...(p.trainingDays.isEmpty ? const [1, 3, 5] : p.trainingDays),
-    ]..sort();
+    var days = [...(p.trainingDays.isEmpty ? defaultTrainingDays : p.trainingDays)]..sort();
     var longDays = days; // days that can hold the long endurance session
     if (_advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) {
       days = (a.dayPlan.entries.where((e) => e.value.isNotEmpty).map((e) => e.key).toList()..sort());
@@ -1934,7 +1932,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   Widget _plan(AppLocalizations l) {
-    final weeksToEvent = a.eventDate == null ? null : GoalModel.weeksUntil(a.eventDate!, DateTime.now());
+    final weeksToEvent = a.eventDate == null ? null : PlanGenerator.planWeeksUntil(_planProfile, a.eventDate!, DateTime.now());
     final pre = weeksToEvent == null ? 0 : weeksToEvent - GoalModel.specificWeeks;
     final rec = _recommendedRange;
     return Column(
@@ -2035,7 +2033,7 @@ List<String> planSummaryLines(AppLocalizations l, UserProfile p, {DateTime? now}
   final sports = count.keys.toList()..sort((a, b) => a.index.compareTo(b.index));
   final total = count.values.fold<int>(0, (a, n) => a + n);
   final a = p.athlete;
-  final toEvent = a.eventDate == null ? null : GoalModel.weeksUntil(a.eventDate!, now ?? DateTime.now());
+  final toEvent = a.eventDate == null ? null : PlanGenerator.planWeeksUntil(p, a.eventDate!, now ?? DateTime.now());
   return [
     l.summaryWeekStructure('${l.sessionsPerWeekN(total)} – ${sports.map((s) => '${s.label(l)} ${count[s]}×').join(' · ')}'),
     toEvent != null && toEvent >= 2 && toEvent <= GoalModel.maxEventWeeks

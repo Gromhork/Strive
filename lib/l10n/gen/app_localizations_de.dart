@@ -5821,6 +5821,51 @@ class AppLocalizationsDe extends AppLocalizations {
   String get progRepCap => 'so viele Wiederholungen, wie dieser Bereich vorsieht – steigere mit Zusatzgewicht oder einer schwereren Variante';
 
   @override
+  String feasRunFrequency(String have, String need) {
+    return 'Läufe pro Woche in deinem Plan: $have. Diese Distanz braucht mindestens $need Läufe pro Woche (oder einen deutlich höheren Wochenumfang), damit dein Körper die Belastung des langen Laufs verträgt – plane mehr Lauftage ein.';
+  }
+
+  @override
+  String feasRideFrequency(String have, String need) {
+    return 'Radeinheiten pro Woche in deinem Plan: $have. Dieses Rennen braucht mindestens $need Radeinheiten pro Woche – plane mehr Radtage ein.';
+  }
+
+  @override
+  String feasSwimFrequency(String have, String need) {
+    return 'Schwimmeinheiten pro Woche in deinem Plan: $have. Dieses Rennen braucht mindestens $need Schwimmeinheiten pro Woche, damit Technik und Am-Stück-Schwimmen wachsen – plane mehr Schwimmeinheiten ein.';
+  }
+
+  @override
+  String feasLongRunRamp(String have, int weeks, String need) {
+    return 'Von deinem jetzigen Stand aus wächst dein langer Lauf bei sicherer Steigerung (höchstens +10 % bzw. +1 km pro Woche) in $weeks Wochen nur bis etwa $have km – dieses Rennen braucht etwa $need km.';
+  }
+
+  @override
+  String feasLongRunShare3(int pct, int min) {
+    return 'Deine übrigen Läufe sind zu kurz für den langen Lauf, den dieses Rennen braucht: Er sollte höchstens etwa $pct % deiner Wochenkilometer ausmachen. Plane für die anderen Läufe etwa $min min ein.';
+  }
+
+  @override
+  String feasLongSwimOpen(int meters, int target) {
+    return 'Bis zum Wettkampf reicht dein Am-Stück-Schwimmen nur für etwa $meters m – für dieses Freiwasser-Rennen solltest du mindestens etwa $target m ohne Pause schwimmen können. Im offenen Wasser gibt es keinen Beckenrand: nie allein schwimmen, mit Neoprenanzug und Schwimmboje.';
+  }
+
+  @override
+  String get wOpenWaterSafety => 'Sicherheit im Freiwasser: nie allein schwimmen (Gruppe oder Begleitboot), Neoprenanzug, Schwimmboje und auffällige Badekappe; bei Kälte, Krampf oder Panik auf den Rücken drehen und eine Hand heben.';
+
+  @override
+  String get wGymRaceWeekNote => 'Wettkampf in Sicht: keine schweren Beinübungen mehr (die letzte schwere Beineinheit liegt 7–10 Tage vor dem Rennen) – nur Oberkörper, Rumpf und Mobilität, locker.';
+
+  @override
+  String get stepFartlekSoftNote => 'Zügig, aber kontrolliert – Anstrengung 6–7 von 10, kurze Sätze sprechen geht noch, kein Sprint';
+
+  @override
+  String get stepBrickEasyNote => 'Locker weiterlaufen (Anstrengung 4–5 von 10) – die Beine gewöhnen sich an den Wechsel, noch kein Renntempo';
+
+  @override
+  String get feasLongRunRampHint => 'Läufst du schon länger? Trag deinen längsten Lauf der letzten Wochen ein – der Plan baut dann darauf auf.';
+
+  @override
   String summaryRemoveRaceGoal(String name, String date) {
     return 'Wettkampfziel „$name“ ($date) entfernen';
   }
@@ -5841,23 +5886,6 @@ class AppLocalizationsDe extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String recNow(int count) {
-    return 'jetzt $count×';
-  }
-
-  @override
-  String get yourSwimZones => 'Deine Schwimmzonen';
-
-  @override
-  String get swimCssEstimated => 'Geschätzt aus deinen 400 m – mit der 200-m-Zeit wird die CSS genau.';
-
-  @override
-  String get swimTestOnly200 => 'Für den CSS-Test brauchst du auch die 400-m-Zeit – die 200 m allein reichen nicht.';
-
-  @override
-  String get swimTestImplausible => 'Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.';
 
   @override
   String plannedNotCountedSub(String date, String duration) {
@@ -5905,4 +5933,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String sessionPaceImplausible(String pace) {
     return 'Durchschnitt $pace – kaum möglich. Stimmen Distanz und Dauer?';
   }
+
+  @override
+  String recNow(int count) {
+    return 'jetzt $count×';
+  }
+
+  @override
+  String get yourSwimZones => 'Deine Schwimmzonen';
+
+  @override
+  String get swimCssEstimated => 'Geschätzt aus deinen 400 m – mit der 200-m-Zeit wird die CSS genau.';
+
+  @override
+  String get swimTestOnly200 => 'Für den CSS-Test brauchst du auch die 400-m-Zeit – die 200 m allein reichen nicht.';
+
+  @override
+  String get swimTestImplausible => 'Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.';
 }

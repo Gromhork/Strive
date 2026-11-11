@@ -167,7 +167,9 @@ void main() {
     ]) {
       int? prev;
       for (var w = 2; w <= 40; w++) {
-        final sec = suggestTargetTime(p, key, race(w), now: now).sec!;
+        // (A plan whose long runs stay far short of the race's is a finish goal without a time – review 2026-11 H4.)
+        final sec = suggestTargetTime(p, key, race(w), now: now).sec;
+        if (sec == null) continue;
         if (prev != null) expect(sec, lessThanOrEqualTo(prev), reason: '$key week $w');
         prev = sec;
       }

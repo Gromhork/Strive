@@ -237,7 +237,10 @@ class GoalForecast {
     // Run/walk beginners without a measured effort: finish goal, no time (C6). The level default
     // (VDOT 33) predicts a 1:54 half marathon for someone who cannot run 30 min yet.
     // Same rule as the generator's race session and outlook ([PlanGenerator.finishOnly]).
-    final finishOnly = effort == null && a.raceTimes.isEmpty && PlanGenerator.finishOnly(p, start: from);
+    // With race times only a plan whose long runs stay far short of the race's is a finish goal (review
+    // 2026-11 H4, [PlanGenerator.longRunShortFor]).
+    final finishOnly =
+        effort == null && (a.raceTimes.isEmpty ? PlanGenerator.finishOnly(p, start: from) : PlanGenerator.longRunShortFor(p, start: from));
     final model = GoalModel.hasModel(p) && !finishOnly;
     // Times measured from the plan's baseline (C1: a triathlon applies the run's relative gain to the
     // whole race – anchoring at today's VDOT made a perfect athlete's 70.3 slower every week).

@@ -52,7 +52,10 @@ class FeasibilityCard extends StatelessWidget {
   static String issueText(AppLocalizations l, PlanFeasibility f, String issue) => switch (issue) {
     'beginnerMarathon' => l.feasBeginnerMarathon,
     'beginnerDistance' => l.feasBeginnerDistance,
-    'longSwim' => l.feasLongSwim((f.longSwimM ?? 0).round(), (f.longSwimTargetM ?? 0).round()),
+    'longSwim' =>
+      f.openWater
+          ? l.feasLongSwimOpen((f.longSwimM ?? 0).round(), (f.longSwimTargetM ?? 0).round())
+          : l.feasLongSwim((f.longSwimM ?? 0).round(), (f.longSwimTargetM ?? 0).round()),
     'runWalkLong' => l.feasRunWalkLong,
     'runWalk' => l.feasRunWalk,
     'longRunTime' => l.feasLongRunTime((f.longRunKm ?? 0).floor(), (f.longRunTargetKm ?? 0).round()),

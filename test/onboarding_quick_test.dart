@@ -154,8 +154,8 @@ void main() {
   testWidgets('quick start: chosen days and long day are saved and used by the generated plan', (tester) async {
     final repo = await _pump(tester);
     await _toSchedule(tester, level: 'intermediate');
-    // Mon/Wed/Fri → Tue/Wed/Sat/Sun.
-    await _toggleDays(tester, [1, 2, 7, 5, 6]);
+    // Tue/Thu/Sat (the default, [defaultTrainingDays]) → Tue/Wed/Sat/Sun.
+    await _toggleDays(tester, [4, 3, 7]);
     // Long session on Saturday.
     await _tap(tester, find.byKey(const ValueKey('longDay')));
     final sat = find.descendant(of: find.byType(DropdownMenuItem<int?>), matching: find.textContaining('Sat'));
@@ -183,32 +183,32 @@ void main() {
   testWidgets('quick start: the last training day cannot be removed', (tester) async {
     final repo = await _pump(tester);
     await _toSchedule(tester);
-    await _toggleDays(tester, [1, 3, 5]);
+    await _toggleDays(tester, [2, 4, 6]);
     expect(find.text(l.quickMinOneDay), findsOneWidget);
     ScaffoldMessenger.of(tester.element(find.byType(OnboardingPage))).hideCurrentSnackBar();
     await tester.pumpAndSettle();
     await _finish(tester);
-    expect(repo.savedProfile!.trainingDays, [5]);
-    expect(repo.savedPlans.map((w) => w.date.weekday).toSet(), {5});
+    expect(repo.savedProfile!.trainingDays, [6]);
+    expect(repo.savedPlans.map((w) => w.date.weekday).toSet(), {6});
   });
 
   testWidgets('quick start: removing the long day resets it to automatic', (tester) async {
     final repo = await _pump(tester);
     await _toSchedule(tester, level: 'intermediate');
     await _tap(tester, find.byKey(const ValueKey('longDay')));
-    await tester.tap(find.descendant(of: find.byType(DropdownMenuItem<int?>), matching: find.textContaining('Wed')).last);
+    await tester.tap(find.descendant(of: find.byType(DropdownMenuItem<int?>), matching: find.textContaining('Thu')).last);
     await tester.pumpAndSettle();
-    await _toggleDays(tester, [3, 6]); // drop Wednesday, add Saturday
+    await _toggleDays(tester, [4, 7]); // drop Thursday, add Sunday
     await _finish(tester);
-    expect(repo.savedProfile!.trainingDays, [1, 5, 6]);
+    expect(repo.savedProfile!.trainingDays, [2, 6, 7]);
     expect(repo.savedProfile!.longDay, isNull);
-    expect(repo.savedPlans.where((w) => w.intensity == 'long').every((w) => w.date.weekday == 6), isTrue);
+    expect(repo.savedPlans.where((w) => w.intensity == 'long').every((w) => w.date.weekday == 7), isTrue);
   });
 
   testWidgets('quick start: a beginner sees which of the chosen days the plan keeps free', (tester) async {
     final repo = await _pump(tester);
     await _toSchedule(tester); // beginner, no running experience → run/walk, ≤ 3 runs
-    await _toggleDays(tester, [2, 4]); // Mon–Fri
+    await _toggleDays(tester, [1, 3, 5, 6]); // Mon–Fri
     expect(find.text(l.quickDaysCapped(3, 5)), findsOneWidget);
     expect(find.descendant(of: find.byKey(const ValueKey('use2')), matching: find.byIcon(Icons.bedtime_outlined)), findsOneWidget);
     await _finish(tester);
@@ -221,7 +221,7 @@ void main() {
   testWidgets('quick start: a strength goal adds strength days and the gym step', (tester) async {
     final repo = await _pump(tester);
     await _toSchedule(tester, level: 'intermediate', goal: l.goalStrength);
-    await _toggleDays(tester, [2, 6]); // Mon–Sat minus Thu
+    await _toggleDays(tester, [1, 3, 4, 5]); // Mon–Sat minus Thu
     final gymDays = [
       for (var d = 1; d <= 7; d++)
         if (find.descendant(of: find.byKey(ValueKey('use$d')), matching: find.byIcon(Sport.gym.icon)).evaluate().isNotEmpty) d,
@@ -245,15 +245,15 @@ void main() {
         birthYear: 1990,
         level: 'intermediate',
         focus: TrainingFocus.run,
-        trainingDays: const [1, 3, 5],
+        trainingDays: defaultTrainingDays, // (the page starts from the default profile before the stream emits)
         onboarded: true,
         athlete: const AthleteData(
           setupMode: 'simple',
           sessionsPerDay: 2,
           dayPlan: {
-            2: [Sport.run],
-            4: [Sport.run],
-            6: [Sport.run, Sport.gym],
+            1: [Sport.run],
+            3: [Sport.run],
+            5: [Sport.run, Sport.gym],
           },
         ),
       ),
@@ -266,7 +266,7 @@ void main() {
     expect(repo.deleted, ['old'], reason: 'old planned workouts are replaced');
     expect(repo.savedProfile!.athlete.dayPlan, isEmpty);
     expect(repo.savedPlans, isNotEmpty);
-    expect(repo.savedPlans.map((w) => w.date.weekday).toSet().difference({1, 3, 5}), isEmpty);
+    expect(repo.savedPlans.map((w) => w.date.weekday).toSet().difference(defaultTrainingDays.toSet()), isEmpty);
     expect(find.byType(OnboardingPage), findsNothing);
   });
 

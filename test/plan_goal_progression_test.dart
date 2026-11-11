@@ -39,7 +39,9 @@ void main() {
       expect(longestMin(plan), greaterThanOrEqualTo(75));
       expect(longestKm(plan), greaterThanOrEqualTo(7.5));
       for (var i = 1; i < longs.length; i++) {
-        expect(longs[i].durationMin, greaterThanOrEqualTo(longs[i - 1].durationMin - 2), reason: longs[i].title);
+        // (The first continuous long run builds on the run/walk's running km at ≤ +10 % / +1 km – review 2026-11 M1 –
+        // so it may be a few minutes shorter than the last long run/walk.)
+        expect(longs[i].durationMin, greaterThanOrEqualTo(longs[i - 1].durationMin - 5), reason: longs[i].title);
         expect(longs[i].durationMin, lessThanOrEqualTo(longs[i - 1].durationMin + 15), reason: longs[i].title);
       }
       // The first long session is a long run/walk (walk breaks from the start), not a continuous run.
@@ -151,7 +153,8 @@ void main() {
       const beginner = UserProfile(level: 'beginner', focus: TrainingFocus.gym);
       expect(PlanGenerator.recommendedWeeks(beginner), (min: 8, max: 12, def: 8));
       expect(PlanGenerator.recommendedWeeks(beginner.copyWith(level: 'advanced')), (min: 8, max: 16, def: 12));
-      expect(PlanGenerator.recommendedWeeks(runner('hm', 12)).min, 12);
+      // Beginner HM 16–18 weeks (review 2026-11 M1 / M3: the long run grows ≤ +10 % / +1 km a step).
+      expect(PlanGenerator.recommendedWeeks(runner('hm', 12)).min, 16);
       for (final r in [PlanGenerator.recommendedWeeks(beginner), PlanGenerator.recommendedWeeks(beginner.copyWith(level: 'advanced'))]) {
         expect(PlanGenerator.supportedWeeks, contains(r.def));
       }

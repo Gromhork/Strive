@@ -724,7 +724,12 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
     double? capKm = s == Sport.run ? spec?.longRunCapKm : null;
     // (Beginners' long runs: ≤ 150 min whatever the event – the generator's cap.)
     final runCap = spec?.longRunCapMin ?? 150;
-    final capMin = s == Sport.run ? (p.level == 'beginner' ? min(150, runCap) : runCap) : (spec?.longRideCapMin ?? 180);
+    // (A single run a week: ≤ [PlanGenerator.singleRunMaxMin] – review 2026-11 H3.)
+    final runsWk = PlanGenerator.scheduleOf(p).values.fold(0, (x, v) => x + v.where((e) => e == Sport.run).length);
+    final capMin =
+        s == Sport.run
+            ? (runsWk <= 1 ? PlanGenerator.singleRunMaxMin : (p.level == 'beginner' ? min(150, runCap) : runCap))
+            : (spec?.longRideCapMin ?? 180);
     bool atCap(PlannedWorkout w) {
       final day = PlanGenerator.dayMinutesFor(p, w.date.weekday);
       final dayTotal = plan.where((x) => sameDay(x.date, w.date) && x.sport != Sport.gym).fold(0, (x, y) => x + y.durationMin);
