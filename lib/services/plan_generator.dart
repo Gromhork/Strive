@@ -232,9 +232,17 @@ class PlanGenerator {
   /// 0.5 km) – below 10 km that is more than +10 %, the step novice plans take (Higdon / Galloway).
   double get _goalStepKm => _longCap < 1.1 ? 0.5 : 1.0;
 
-  /// Longest long run a loading week may plan after [longest] (km): + max(10 % – EASY 5 %, [_goalStepKm]),
-  /// rounded down to 0.5 km but at least +0.5 km (Frandsen 2025, review 2026-11 M1).
-  double _longStepCap(double longest) => max(longest + 0.5, _floorHalf(longest + max(longest * (_longCap - 1), _goalStepKm)));
+  /// Longest long run a loading week may plan after [longest] (km), in 0.5 km steps, at least +0.5 km:
+  /// * beginners, EASY, joint problems, seniors / heavy novices ([_gentleGoal]): + max(10 % – 5 %, [_goalStepKm])
+  ///   (Frandsen 2025: spikes > 10 % over the 30-day longest raise the injury risk – review 2026-11 M1);
+  /// * intermediate / advanced runners build from an established base: + max(10 %, min(12 %, 2 km)) – Pfitzinger /
+  ///   Higdon intermediate marathon plans add 1.5–3 km a step towards 30–34 km (PR #51 peaks).
+  double _longStepCap(double longest) {
+    final gentle = beginner || _gentleGoal || _longCap < 1.1;
+    final step = gentle ? max(longest * (_longCap - 1), _goalStepKm) : max(longest * 0.10, min(longest * 0.12, 2.0));
+    // (Experienced runners: to the nearest 0.5 km – rounding every step down lost ~0.3 km a week.)
+    return max(longest + 0.5, gentle ? _floorHalf(longest + step) : _r1(longest + step));
+  }
 
   /// EASY, joint problems, seniors (≥ 65) and heavy novices (BMI ≥ 30): the smaller goal step.
   bool get _gentleGoal => a.difficulty == 'easy' || hf.lowImpactRun || _senior || (beginner && _heavy);
@@ -413,6 +421,14 @@ class PlanGenerator {
       final nLoad = [for (var i = 1; i < until; i++) phases[i]].where((p) => p != 'recovery' && p != 'taper').length;
       if (nLoad > 0) runGrowthEff = min(runGrowth, max(0.02, pow(runCeiling / start0, 1 / nLoad) - 1.0));
     }
+    // 70.3 / Ironman (intermediate / advanced, coordinator 2026-11): the run volume reaches its ceiling a few
+    // build's last ~10 weeks – at 8 % a week a cold start (2 runs, ~14 km) sat far below it, the long
+    // run (≤ 60 % of the week) reached 28 km only once. Up to the CHALLENGING rate (10 %, R2).
+    if (weeksToEvent != null && _longCourse && !beginner && !slowRun && start0 > 0 && runCeiling > start0) {
+      final until = max(1, (phases.contains('taper') ? phases.indexOf('taper') : total) - 10);
+      final nLoad = [for (var i = 1; i < until; i++) phases[i]].where((p) => p != 'recovery').length;
+      if (nLoad > 0) runGrowthEff = max(runGrowthEff, min(0.10, pow(runCeiling / start0, 1 / nLoad) - 1.0));
+    }
     final runKm = [
       for (final v in _curve(total, phases, _runStartKm(runPerWeek), runCeiling, growth: runGrowthEff, preWeeks: prePlanWeeks))
         hf.lowImpactRun ? v * 0.9 : v,
@@ -566,7 +582,7 @@ class PlanGenerator {
       final hasQ2 = roles.values.expand((x) => x).any((s) => s.sport == Sport.run && s.role == 'q2');
       // (Only once the long run is near its peak: while it still grows by ≤ 10 % a step (R1) a shorter week
       // costs a whole step – the last peak week then stayed ~2.5 km short.)
-      final grown = lastLongKm >= min(goalKm ?? 0, longMaxKm) - 2.5;
+      final grown = lastLongKm >= min(goalKm ?? 0, longMaxKm) - 0.75;
       _mpLongWeek = _finishMode || !grown || !(phase == 'peak' && a.eventDistance == 'm' && peakIdx.isOdd && hasQ2);
       if (phase == 'peak' && a.eventDistance == 'm' && _mpLongWeek) {
         for (final s in roles.values.expand((x) => x)) {
@@ -4331,10 +4347,9 @@ class PlanGenerator {
         // The other runs are too short to carry the long run (≤ 50 % of the week, ≤ 2 × the next-longest
         // run): more weeks do not help, longer runs on the other days do.
         // … also when R1's weekly step alone would have gone further ([_rampMaxKm]): the week's volume and its
-        // other runs keep the long run short, not the safe ramp.
-        // (R1 alone stays short of the race's long run, and the plan is within two weekly steps of R1: a week-1 long run
-        // the volume kept a step lower is still a ramp-limited build.)
-        final rampLimited = g._rampMaxKm < runTarget - 0.25 && g._longStepCap(g._longStepCap(longRun)) >= g._rampMaxKm - 0.25;
+        // other runs keep the long run short, not the safe ramp. (Within two weekly steps of R1 – capped at the
+        // race's need – counts as ramp-limited: a first long run the volume kept a step lower is still a ramp.)
+        final rampLimited = g._longStepCap(g._longStepCap(longRun)) >= min(g._rampMaxKm, runTarget) - 0.25;
         final byShare = !byTime && !runFreq && g._rwAtRace == null && !rampLimited;
         // Otherwise the weeks – "N weeks are not enough" only below the recommended plan length; from it on the
         // start level and the safe weekly step are the limit ([longRunRamp], review 2026-11 M3). Too few runs

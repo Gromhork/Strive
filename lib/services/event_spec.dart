@@ -282,7 +282,8 @@ class EventSpec {
       longRunCapKm: 32,
       // ≤ 3 h like the marathon long run – 28–32 km for most age-groupers (Friel; Fitzgerald).
       longRunCapMin: 180,
-      runKm: [35, 45, 60],
+      // (Intermediate 48 km: a 28–29 km long run at ≤ 60 % of a 2-run week incl. the brick – review 2026-11 H3.)
+      runKm: [35, 48, 60],
       longRideMin: 300,
       longRideCapMin: 360,
       rideH: [8, 10, 13],

@@ -1247,7 +1247,10 @@ class Recalibrator {
 
   /// Quality session → easy session of the same sport, ~80 % of the time.
   PlannedWorkout _toEasy(PlannedWorkout p, PaceZones? newPz) {
-    final minutes = max(20, (p.durationMin * swapFactor / 5).round() * 5);
+    var minutes = max(20, (p.durationMin * swapFactor / 5).round() * 5);
+    // Runs keep the run floor ([runFloor]: non-beginners 25 min / 4 km) – a 30 min interval session became a
+    // 3.8 km easy run.
+    if (p.sport == Sport.run && profile.level != 'beginner' && !isRunWalk(p)) minutes = max(minutes, min(25, p.durationMin));
     final hz = HrZones(hrMax.bpm, a.restHr);
     switch (p.sport) {
       case Sport.swim:
@@ -1304,7 +1307,8 @@ class Recalibrator {
         final pz = newPz ?? PaceZones(Vdot.of(a) ?? Vdot.defaultFor(profile.level));
         final hadPace = p.steps.any((s) => s.paceMin != null);
         final (fast, slow) = pz.range('E');
-        final km = double.parse((minutes * 60 / ((fast + slow) / 2)).toStringAsFixed(1));
+        final km0 = double.parse((minutes * 60 / ((fast + slow) / 2)).toStringAsFixed(1));
+        final km = profile.level == 'beginner' || isRunWalk(p) ? km0 : max(km0, min(4.0, p.distanceKm ?? 4.0));
         final hr = hz.zone(2);
         return _copy(
           p,

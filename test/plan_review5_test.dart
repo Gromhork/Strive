@@ -165,7 +165,7 @@ void main() {
   });
 
   group('M1 long-run steps', () {
-    test('every loading week: long run ≤ the longest so far + max(10 %, 1 km)', () {
+    test('every loading week: long run ≤ the longest so far + max(10 %, 1 km) (beginners) / max(10 %, min(12 %, 2 km))', () {
       final fails = <String>[];
       for (final d in eventDistances.where((d) => EventSpec.of(d.key)!.longRunKm != null)) {
         final spec = EventSpec.of(d.key)!;
@@ -180,7 +180,8 @@ void main() {
           var longest = 0.0;
           for (final w in gen(p).where((w) => w.sport == Sport.run && w.intensity == 'long' && w.phase != 'taper')) {
             final km = w.distanceKm ?? 0;
-            if (longest > 0 && w.phase != 'recovery' && km > longest + max(longest * 0.1, 1.0) + 0.3) {
+            final step = level == 'beginner' ? max(longest * 0.1, 1.0) : max(longest * 0.1, min(longest * 0.12, 2.0));
+            if (longest > 0 && w.phase != 'recovery' && km > longest + step + 0.3) {
               fails.add('${d.key}/$level ${dayKey(w.date)}: $km after $longest');
             }
             longest = max(longest, km);
