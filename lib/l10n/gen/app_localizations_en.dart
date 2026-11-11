@@ -5300,7 +5300,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get legendOff => 'far off';
 
   @override
-  String get legendMissed => 'missed';
+  String get legendMissed => 'missed / too little';
 
   @override
   String replacesDayWorkout(String day) {
@@ -5606,7 +5606,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String coachMuchShorter(String share) {
-    return 'Only $share of the plan – it counts as partly done. Feeling good? Add a bit on an easy day; otherwise just carry on.';
+    return 'Only $share of the plan – far off, but it counts as done. Feeling good? Add a bit on an easy day; otherwise just carry on.';
   }
 
   @override
@@ -5657,4 +5657,115 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachQSwim => 'How do I swim more efficiently?';
+
+  @override
+  String get fromPlanTitle => 'Taken over from the plan';
+
+  @override
+  String fromPlanGymLine(int count, int sets, String volume) {
+    return '$count exercises · $sets sets · $volume';
+  }
+
+  @override
+  String get fromPlanHintGym => 'Saved with the exercises, sets and weights of the plan. Did something differ? Correct it afterwards on the session under “Edit”.';
+
+  @override
+  String get fromPlanHintCardio => 'Duration and distance come from the plan – change them to what you actually did.';
+
+  @override
+  String get fromPlanBadge => 'Taken over from the plan';
+
+  @override
+  String get fromPlanNoteGym => 'not recorded: counts for volume, sets, statistics and the plan, but sets no records. Use “Edit” to enter what you really lifted.';
+
+  @override
+  String get fromPlanNoteCardio => 'not recorded: counts for distance, time and the plan, but sets no records and doesn’t adjust your paces. Use “Edit” to enter your real values.';
+
+  @override
+  String get summaryTooShortGym => 'Less than a minute of training.';
+
+  @override
+  String get summaryTooShortTime => 'Less than a minute recorded.';
+
+  @override
+  String get summaryNoDistanceTitle => 'No distance recorded';
+
+  @override
+  String get summaryNoDistanceBody => 'GPS recorded no distance. Save anyway and enter the distance afterwards under “Edit” – or discard the session.';
+
+  @override
+  String get summaryNoLapsTitle => 'No laps counted';
+
+  @override
+  String get summaryNoLapsBody => 'No laps were counted. Save anyway and enter laps or distance afterwards under “Edit” – or discard the session.';
+
+  @override
+  String get summaryTooLittle => 'Less than 10 % of the plan – this doesn’t count as done yet.';
+
+  @override
+  String get editSessionHintGym => 'Correct weights, reps and sets, add or remove exercises.';
+
+  @override
+  String get editSessionHintCardio => 'Correct wrong measurements or entries.';
+
+  @override
+  String get editSessionHintSwim => 'Correct laps, pool length or distance – laps × pool length give the distance.';
+
+  @override
+  String get removeExercise => 'Remove exercise';
+
+  @override
+  String exerciseRemoved(String name) {
+    return '$name removed';
+  }
+
+  @override
+  String get moreActions => 'More';
+
+  @override
+  String complianceNotCounted(int pct) {
+    return 'Not counted – only $pct % of the plan';
+  }
+
+  @override
+  String notCountedShort(String share) {
+    return 'not counted ($share)';
+  }
+
+  @override
+  String setsOfPlanned(int done, int total) {
+    return '$done of $total sets';
+  }
+
+  @override
+  String coachNotCounted(String share) {
+    return 'Only $share of the plan – too little to count as done. Did more than that? Correct the session; otherwise the workout is still open.';
+  }
+
+  @override
+  String coachNotCountedSets(String share) {
+    return 'Only $share of the planned sets – too little to count as done. Did more sets? Add them on the session; otherwise the workout is still open.';
+  }
+
+  @override
+  String coachMuchFewerSets(String share) {
+    return 'Only $share of the planned sets – far off, but it counts as done. Don’t make them up; the next strength session starts normally again.';
+  }
+
+  @override
+  String get coachFewerSets => 'Fewer sets than planned – no problem, don’t make them up.';
+
+  @override
+  String get coachMoreSets => 'More sets than planned – give yourself enough recovery before the next strength session.';
+
+  @override
+  String get termComplianceTitle => 'Plan compliance – how a workout is rated';
+
+  @override
+  String termComplianceBody(String greenMin, String greenMax, String yellowMin, String yellowMax, String countMin) {
+    return 'Compared is the distance (endurance workouts with a distance), the done work sets (strength) or else the duration – against the plan.\n\n✓ green, as planned: $greenMin–$greenMax\n✓ yellow, partly: $yellowMin up to $greenMin, or up to $yellowMax\n✓ orange, far off: less than $yellowMin or more than $yellowMax\n✕ red: missed, or less than $countMin – an aborted start doesn’t count as done.';
+  }
+
+  @override
+  String get termComplianceTip => 'Partly or far off still counts as done – the plan only adapts when it happens repeatedly.';
 }

@@ -301,7 +301,7 @@ class FitnessState {
     final recent = recentList.length >= 3 ? weeklyCompletion(recentList, linked, now: now) : adherence;
     // Session counts of the last 28 days (before today) – chronic skipping shows in the count of
     // sessions and of key sessions even when the minutes look fine (IMPORTANT 4).
-    bool done(PlannedWorkout x) => x.status != 'skipped' && (linked[x.id] != null || x.isDone);
+    bool done(PlannedWorkout x) => planCompleted(x, linked);
     final countList = recentList.where((x) => x.durationMin > 0 && dayOnly(x.date).isBefore(today)).toList();
     final keys = countList.where(isHardPlan).toList();
 
@@ -441,7 +441,8 @@ class FitnessState {
   /// on plan (1.0); a session that took the plan's displayed duration ([planSec], rounded to 5 min
   /// – up to ~9 % off the step estimate in older plans) ± 2 % is on plan as well.
   static double qualityRatio(Session s, {required double km, required int stepSec, required int planSec}) {
-    if (s.distanceM <= 0 || s.durationSec <= 0 || km <= 0) return 1;
+    // Taken over from the plan (no measurement): as planned.
+    if (s.fromPlan || s.distanceM <= 0 || s.durationSec <= 0 || km <= 0) return 1;
     if (planSec > 0 && (s.durationSec / planSec - 1).abs() <= 0.02 && (s.distanceM / (km * 1000) - 1).abs() <= 0.02) return 1;
     final ref = stepSec > 0 ? stepSec : planSec;
     if (ref <= 0) return 1;

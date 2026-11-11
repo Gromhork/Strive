@@ -274,9 +274,12 @@ class ExerciseRecord {
   const ExerciseRecord(this.exId, this.name, this.bestE1rm, this.maxWeight, this.maxReps, this.date, this.sessions);
 }
 
+/// Records come from measured sessions only: a workout logged as done with the plan's
+/// prescribed weights ([Session.fromPlan]) is no proof of a lift.
 Map<String, ExerciseRecord> exerciseRecords(List<Session> sessions) {
   final out = <String, ExerciseRecord>{};
   for (final s in sessions.reversed) {
+    if (s.fromPlan) continue;
     for (final e in s.exercises) {
       final prev = out[e.exId];
       final best = e.bestE1rm;
@@ -305,6 +308,7 @@ Map<String, ExerciseRecord> exerciseRecords(List<Session> sessions) {
 List<(DateTime, double)> e1rmHistory(List<Session> sessions, String exId) {
   final out = <(DateTime, double)>[];
   for (final s in sessions.reversed) {
+    if (s.fromPlan) continue; // the plan's weights, not a measured lift
     for (final e in s.exercises.where((e) => e.exId == exId)) {
       if (e.bestE1rm > 0) out.add((s.start, e.bestE1rm));
     }
@@ -314,6 +318,7 @@ List<(DateTime, double)> e1rmHistory(List<Session> sessions, String exId) {
 
 /// Exercises in [current] that beat all previous sessions (new e1RM record).
 List<String> newPrs(Session current, List<Session> history) {
+  if (current.fromPlan) return const [];
   final prev = exerciseRecords(history.where((s) => s.id != current.id && s.start.isBefore(current.start)).toList());
   return current.exercises
       .where((e) => e.bestE1rm > 0 && (prev[e.exId] == null || e.bestE1rm > prev[e.exId]!.bestE1rm + 0.01))
@@ -372,7 +377,7 @@ Map<String, BestEffort> runBestEfforts(List<Session> sessions) {
     if (sec > 0 && (cur == null || sec < cur.seconds)) out[k] = BestEffort(k, bestEffortDistances[k]!, sec, s);
   }
 
-  for (final s in sessions.where((s) => s.sport == Sport.run && !s.indoor)) {
+  for (final s in sessions.where((s) => s.sport == Sport.run && !s.indoor && !s.fromPlan)) {
     for (final e in bestEffortDistances.entries) {
       final km = (e.value / 1000).floor();
       if (s.splits.length >= km && km >= 1) {

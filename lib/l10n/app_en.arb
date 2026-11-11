@@ -3406,7 +3406,7 @@
   "legendOnTarget": "as planned",
   "legendPartly": "partly",
   "legendOff": "far off",
-  "legendMissed": "missed",
+  "legendMissed": "missed / too little",
   "replacesDayWorkout": "replaces {day} workout",
   "@replacesDayWorkout": {
     "placeholders": {
@@ -3747,7 +3747,7 @@
       }
     }
   },
-  "coachMuchShorter": "Only {share} of the plan – it counts as partly done. Feeling good? Add a bit on an easy day; otherwise just carry on.",
+  "coachMuchShorter": "Only {share} of the plan – far off, but it counts as done. Feeling good? Add a bit on an easy day; otherwise just carry on.",
   "@coachMuchShorter": {
     "placeholders": {
       "share": {
@@ -3802,5 +3802,120 @@
   "coachQTri": "How do I combine swimming, cycling and running in one week?",
   "coachQGym": "How do I get stronger without stalling?",
   "coachQRide": "How do I get faster on the bike?",
-  "coachQSwim": "How do I swim more efficiently?"
+  "coachQSwim": "How do I swim more efficiently?",
+  "fromPlanTitle": "Taken over from the plan",
+  "fromPlanGymLine": "{count} exercises · {sets} sets · {volume}",
+  "@fromPlanGymLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "sets": {
+        "type": "int"
+      },
+      "volume": {
+        "type": "String"
+      }
+    }
+  },
+  "fromPlanHintGym": "Saved with the exercises, sets and weights of the plan. Did something differ? Correct it afterwards on the session under “Edit”.",
+  "fromPlanHintCardio": "Duration and distance come from the plan – change them to what you actually did.",
+  "fromPlanBadge": "Taken over from the plan",
+  "fromPlanNoteGym": "not recorded: counts for volume, sets, statistics and the plan, but sets no records. Use “Edit” to enter what you really lifted.",
+  "fromPlanNoteCardio": "not recorded: counts for distance, time and the plan, but sets no records and doesn’t adjust your paces. Use “Edit” to enter your real values.",
+  "summaryTooShortGym": "Less than a minute of training.",
+  "summaryTooShortTime": "Less than a minute recorded.",
+  "summaryNoDistanceTitle": "No distance recorded",
+  "summaryNoDistanceBody": "GPS recorded no distance. Save anyway and enter the distance afterwards under “Edit” – or discard the session.",
+  "summaryNoLapsTitle": "No laps counted",
+  "summaryNoLapsBody": "No laps were counted. Save anyway and enter laps or distance afterwards under “Edit” – or discard the session.",
+  "summaryTooLittle": "Less than 10 % of the plan – this doesn’t count as done yet.",
+  "editSessionHintGym": "Correct weights, reps and sets, add or remove exercises.",
+  "editSessionHintCardio": "Correct wrong measurements or entries.",
+  "editSessionHintSwim": "Correct laps, pool length or distance – laps × pool length give the distance.",
+  "removeExercise": "Remove exercise",
+  "exerciseRemoved": "{name} removed",
+  "@exerciseRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moreActions": "More",
+  "complianceNotCounted": "Not counted – only {pct} % of the plan",
+  "@complianceNotCounted": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "notCountedShort": "not counted ({share})",
+  "@notCountedShort": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "setsOfPlanned": "{done} of {total} sets",
+  "@setsOfPlanned": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "coachNotCounted": "Only {share} of the plan – too little to count as done. Did more than that? Correct the session; otherwise the workout is still open.",
+  "@coachNotCounted": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "coachNotCountedSets": "Only {share} of the planned sets – too little to count as done. Did more sets? Add them on the session; otherwise the workout is still open.",
+  "@coachNotCountedSets": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "coachMuchFewerSets": "Only {share} of the planned sets – far off, but it counts as done. Don’t make them up; the next strength session starts normally again.",
+  "@coachMuchFewerSets": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "coachFewerSets": "Fewer sets than planned – no problem, don’t make them up.",
+  "coachMoreSets": "More sets than planned – give yourself enough recovery before the next strength session.",
+  "termComplianceTitle": "Plan compliance – how a workout is rated",
+  "termComplianceBody": "Compared is the distance (endurance workouts with a distance), the done work sets (strength) or else the duration – against the plan.\n\n✓ green, as planned: {greenMin}–{greenMax}\n✓ yellow, partly: {yellowMin} up to {greenMin}, or up to {yellowMax}\n✓ orange, far off: less than {yellowMin} or more than {yellowMax}\n✕ red: missed, or less than {countMin} – an aborted start doesn’t count as done.",
+  "@termComplianceBody": {
+    "placeholders": {
+      "greenMin": {
+        "type": "String"
+      },
+      "greenMax": {
+        "type": "String"
+      },
+      "yellowMin": {
+        "type": "String"
+      },
+      "yellowMax": {
+        "type": "String"
+      },
+      "countMin": {
+        "type": "String"
+      }
+    }
+  },
+  "termComplianceTip": "Partly or far off still counts as done – the plan only adapts when it happens repeatedly."
 }

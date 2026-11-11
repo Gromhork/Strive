@@ -301,7 +301,10 @@ class _TodayCardState extends ConsumerState<TodayCard> {
     final skipped = p.status == 'skipped';
     // The same state and colour as the calendar: 0,39 of 5,8 km is "partly" (orange), not a green tick.
     final c = planCompliance(p, ref.watch(planSessionsProvider)[p.id]);
-    final partly = p.isDone && (c.level == ComplianceLevel.yellow || c.level == ComplianceLevel.orange) && c.pct != null;
+    final partly = p.isDone && c.partly;
+    // A start too short to count (< 10 % of the plan) leaves the workout open: start it again.
+    final notCounted = p.isDone && c.notCounted;
+    final done = p.isDone && !notCounted;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Container(
@@ -366,6 +369,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                                 [
                                   if (skipped) l.recalDropped,
                                   if (partly) l.partlyDone(Units.pct(c.pct!.toDouble())),
+                                  if (notCounted) l.notCountedShort(Units.pct(c.pct!.toDouble())),
                                   planAmountText(p, ref.watch(profileOrDefaultProvider), templates: ref.watch(templateListProvider)),
                                   intensityLabel(l, p.intensity),
                                 ].join(' · '),
@@ -399,20 +403,20 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                   key: const ValueKey('todayStart'),
                   style: IconButton.styleFrom(
                     backgroundColor:
-                        p.isDone ? c.color(context) : (skipped ? Theme.of(context).colorScheme.surfaceContainerHighest : p.sport.color),
+                        done ? c.color(context) : (skipped ? Theme.of(context).colorScheme.surfaceContainerHighest : p.sport.color),
                     foregroundColor: Colors.black87,
                   ),
                   tooltip: skipped ? l.recalDropped : l.start,
                   onPressed:
                       skipped
                           ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id)))
-                          : p.isDone
+                          : done
                           ? (p.sessionId == null
                               ? null
                               : () =>
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: p.sessionId!))))
                           : () => startPlanned(context, ref, p),
-                  icon: Icon(p.isDone ? Icons.check_rounded : (skipped ? Icons.block_rounded : Icons.play_arrow_rounded)),
+                  icon: Icon(done ? Icons.check_rounded : (skipped ? Icons.block_rounded : Icons.play_arrow_rounded)),
                 ),
                 IconButton(
                   tooltip: l.edit,
