@@ -97,6 +97,9 @@ const _runPace = (145.0, 960.0), _ridePace = (3600 / 55, 3600 / 8), _swimPace = 
   return (lo ~/ 60 * 60, (hi / 60).ceil() * 60);
 }
 
+/// Whether [sec] over [meters] of running is a plausible pace (2:25–16:00 /km).
+bool plausibleRunPace(double meters, int sec) => meters > 0 && sec >= meters / 1000 * _runPace.$1 && sec <= meters / 1000 * _runPace.$2;
+
 /// Plausible time (s) of a pool swim test over [meters] (400 m / 200 m CSS test): 0:55–5:00 /100 m.
 (int, int) swimTestBounds(int meters) => ((meters * _swimPace.$1 / 1000) ~/ 5 * 5, (meters * _swimPace.$2 / 1000).ceil());
 

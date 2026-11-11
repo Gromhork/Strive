@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import '../core/sport.dart';
 import '../data/models.dart';
 import '../widgets/plan_amount.dart';
@@ -6,9 +8,11 @@ import 'load_prescription.dart';
 /// A planned workout logged as done without recording it ("Als erledigt eintragen"): the
 /// session gets the plan's content instead of only a duration, so history, volume and set
 /// statistics, muscle groups, the load progression and the plan compliance work as for a
-/// recorded workout. The session is marked [Session.fromPlan] ("aus Plan übernommen"): no
-/// records / best efforts and no pace or power signal come from it; the athlete can correct
-/// it afterwards on the edit page (which clears the mark).
+/// recorded workout. The session is marked [Session.fromPlan] ("aus Plan übernommen"), gym
+/// exercises also one by one ([GymExercise.fromPlan]): no records / best efforts and no pace or
+/// power signal come from it, the load progression only holds on it, and the plan compliance
+/// is 100 % by definition. The athlete can correct it afterwards on the edit page – that clears
+/// the mark of what was corrected (the edited exercises; for endurance the session).
 ///
 /// * Gym: the workout's exercises (its own, else its program's) with the weights the app
 ///   prescribes for this day ([LoadPrescriber.apply] – last used weights with the progression
@@ -49,14 +53,21 @@ class PlanFill {
     final source = p.exercises.isNotEmpty ? p.exercises : (templates.where((t) => t.id == p.templateId).firstOrNull?.exercises ?? const []);
     final list = prescriber == null ? [for (final e in source) e.copy(resetDone: true)] : prescriber.apply(source, phase: p.phase);
     for (final e in list) {
-      e.effort = null;
+      e
+        ..effort = null
+        ..fromPlan = true;
       for (final s in e.sets) {
         if (s.reps <= 0) s.reps = s.target ?? e.repMin ?? 10;
         s
           ..done = true
           ..amrap = false
           ..rpe = null;
+        // The plan's reps and weight are what was asked for (also for a program's own weights the
+        // prescriber kept): a later correction on the edit page is judged against them.
+        if (!s.warmup && s.type != SetType.drop) s.target ??= s.reps;
       }
+      final work = e.workSets.where((s) => s.type != SetType.drop).map((s) => s.weight);
+      if (e.rxKg == null && work.isNotEmpty) e.rxKg = work.reduce(max);
     }
     final ex = list.where((e) => e.sets.isNotEmpty).toList();
     return PlanFill(minutes: amount.minutes, exercises: ex, plannedSets: ex.fold<int>(0, (a, e) => a + e.workSets.length));
@@ -78,10 +89,13 @@ Session sessionFromPlan(
   int? rpe,
   String notes = '',
 }) {
-  final min = minutes ?? fill.minutes;
+  // A plan without a duration (0 min) never stores a 0-s session: the caller's value, else 1 min.
+  final min = max(1, minutes ?? fill.minutes);
   final planM = (fill.km ?? 0) * 1000;
   final m = p.sport == Sport.gym ? 0.0 : (distanceM ?? planM);
-  final asPlanned = p.sport == Sport.gym ? fill.exercises.isNotEmpty : (min == fill.minutes && (m - planM).abs() < 1);
+  // Without a planned duration the entered one is no deviation from the plan.
+  final sameTime = fill.minutes <= 0 || min == fill.minutes;
+  final asPlanned = p.sport == Sport.gym ? fill.exercises.isNotEmpty : (sameTime && (m - planM).abs() < 1);
   return Session(
     id: id,
     sport: p.sport,

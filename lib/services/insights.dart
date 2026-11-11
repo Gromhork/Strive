@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../core/event_distances.dart';
 import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/models.dart';
@@ -274,13 +275,14 @@ class ExerciseRecord {
   const ExerciseRecord(this.exId, this.name, this.bestE1rm, this.maxWeight, this.maxReps, this.date, this.sessions);
 }
 
-/// Records come from measured sessions only: a workout logged as done with the plan's
-/// prescribed weights ([Session.fromPlan]) is no proof of a lift.
+/// Records come from measured exercises only: an exercise logged as done with the plan's
+/// prescribed weights ([Session.exerciseFromPlan]) is no proof of a lift – also when the athlete
+/// corrected other exercises or the duration of the session.
 Map<String, ExerciseRecord> exerciseRecords(List<Session> sessions) {
   final out = <String, ExerciseRecord>{};
   for (final s in sessions.reversed) {
-    if (s.fromPlan) continue;
     for (final e in s.exercises) {
+      if (s.exerciseFromPlan(e)) continue;
       final prev = out[e.exId];
       final best = e.bestE1rm;
       final maxW = e.maxWeight;
@@ -308,8 +310,8 @@ Map<String, ExerciseRecord> exerciseRecords(List<Session> sessions) {
 List<(DateTime, double)> e1rmHistory(List<Session> sessions, String exId) {
   final out = <(DateTime, double)>[];
   for (final s in sessions.reversed) {
-    if (s.fromPlan) continue; // the plan's weights, not a measured lift
-    for (final e in s.exercises.where((e) => e.exId == exId)) {
+    // The plan's weights are not a measured lift.
+    for (final e in s.exercises.where((e) => e.exId == exId && !s.exerciseFromPlan(e))) {
       if (e.bestE1rm > 0) out.add((s.start, e.bestE1rm));
     }
   }
@@ -321,7 +323,7 @@ List<String> newPrs(Session current, List<Session> history) {
   if (current.fromPlan) return const [];
   final prev = exerciseRecords(history.where((s) => s.id != current.id && s.start.isBefore(current.start)).toList());
   return current.exercises
-      .where((e) => e.bestE1rm > 0 && (prev[e.exId] == null || e.bestE1rm > prev[e.exId]!.bestE1rm + 0.01))
+      .where((e) => !current.exerciseFromPlan(e) && e.bestE1rm > 0 && (prev[e.exId] == null || e.bestE1rm > prev[e.exId]!.bestE1rm + 0.01))
       .map((e) => e.name)
       .toList();
 }
@@ -368,13 +370,25 @@ class BestEffort {
 
 const bestEffortDistances = {'1k': 1000.0, '5k': 5000.0, '10k': 10000.0, 'hm': 21097.5, 'm': 42195.0};
 
+/// Whether [sec] is a plausible time for the best-effort distance [key]: the race bounds
+/// ([eventTimeBounds]) where the distance is a race, else the running pace bounds.
+bool plausibleRunEffort(String key, int sec) {
+  if (sec <= 0) return false;
+  if (eventTimeBounds(key) != null) return plausibleEventTime(key, sec);
+  final m = bestEffortDistances[key];
+  return m == null || plausibleRunPace(m, sec);
+}
+
 /// Fastest efforts from km splits (rolling windows) or, without splits, whole runs
-/// scaled to the distance (Strava-style "best efforts").
+/// scaled to the distance (Strava-style "best efforts"). Efforts outside the plausible time of
+/// the distance ([plausibleRunEffort] – a GPS jump, a typo, a run logged as a ride) are dropped:
+/// they would feed the VDOT, the forecast and the target suggestion.
 Map<String, BestEffort> runBestEfforts(List<Session> sessions) {
   final out = <String, BestEffort>{};
   void consider(String k, int sec, Session s) {
     final cur = out[k];
-    if (sec > 0 && (cur == null || sec < cur.seconds)) out[k] = BestEffort(k, bestEffortDistances[k]!, sec, s);
+    if (!plausibleRunEffort(k, sec)) return;
+    if (cur == null || sec < cur.seconds) out[k] = BestEffort(k, bestEffortDistances[k]!, sec, s);
   }
 
   for (final s in sessions.where((s) => s.sport == Sport.run && !s.indoor && !s.fromPlan)) {
@@ -387,7 +401,7 @@ Map<String, BestEffort> runBestEfforts(List<Session> sessions) {
           best = min(best, sum);
         }
         consider(e.key, (best * e.value / (km * 1000)).round(), s);
-      } else if (s.splits.isEmpty && s.distanceM >= e.value && s.distanceM < e.value * 1.25) {
+      } else if (s.splits.isEmpty && s.durationSec > 0 && s.distanceM >= e.value && s.distanceM < e.value * 1.25) {
         consider(e.key, (s.durationSec * e.value / s.distanceM).round(), s);
       }
     }

@@ -551,6 +551,12 @@ class GymExercise {
   /// temporary; the next loading week resumes at the last loading level).
   String? phase;
 
+  /// Taken over from the plan ("Als erledigt eintragen", lib/services/plan_fill.dart): the sets
+  /// are the prescribed weights at the target reps, not a measured lift – no records / e1RM,
+  /// and only a hold anchor for the load progression. Cleared per exercise when the athlete
+  /// corrects its sets on the edit page. See [Session.exerciseFromPlan].
+  bool fromPlan;
+
   GymExercise({
     required this.exId,
     required this.name,
@@ -565,6 +571,7 @@ class GymExercise {
     this.effort,
     this.rxKg,
     this.phase,
+    this.fromPlan = false,
   }) : sets = sets ?? [GymSet(), GymSet(), GymSet()];
 
   List<GymSet> get workSets => sets.where((s) => !s.warmup).toList();
@@ -595,6 +602,7 @@ class GymExercise {
     effort: Effort.fromName(m['effort']),
     rxKg: _dn(m['rx']),
     phase: m['ph'] is String ? m['ph'] : null,
+    fromPlan: m['fp'] == true,
   );
   Map<String, dynamic> toMap() => {
     'exId': exId,
@@ -610,6 +618,7 @@ class GymExercise {
     if (effort != null) 'effort': effort!.name,
     if (rxKg != null) 'rx': rxKg,
     if (phase != null) 'ph': phase,
+    if (fromPlan) 'fp': true,
   };
   GymExercise copy({bool resetDone = false}) => GymExercise(
     exId: exId,
@@ -625,6 +634,7 @@ class GymExercise {
     effort: resetDone ? null : effort,
     rxKg: rxKg,
     phase: phase,
+    fromPlan: resetDone ? false : fromPlan,
   );
 }
 
@@ -701,6 +711,12 @@ class Session {
 
   /// Real measurement (recorded, imported or entered by hand) – not taken over from the plan.
   bool get measured => !fromPlan;
+
+  /// Whether exercise [e] of this session carries the plan's prescribed sets rather than a
+  /// measured lift: the whole session was taken over from the plan, or the exercise itself was
+  /// (and the athlete has not corrected it). Records, e1RM, strength goals and the coach skip
+  /// it; the load progression only holds on it.
+  bool exerciseFromPlan(GymExercise e) => fromPlan || e.fromPlan;
 
   double get volume => exercises.fold(0, (a, e) => a + e.volume);
   int get setsDone => exercises.fold(0, (a, e) => a + e.doneSets);

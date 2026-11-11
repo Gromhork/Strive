@@ -242,14 +242,18 @@ class SessionDetailPage extends ConsumerWidget {
                     _CompareRow(
                       s.sport.usesPace ? l.avgPace : l.avgSpeed,
                       u.paceOrSpeed(s.sport, s.distanceM, s.durationSec),
-                      delta(s.durationSec / s.distanceM, prev.durationSec / prev.distanceM, lowerIsBetter: true, fmt: (_) => ''),
+                      // No pace without a duration (a 0-s entry would read as the fastest ever).
+                      s.durationSec > 0 && prev.durationSec > 0
+                          ? delta(s.durationSec / s.distanceM, prev.durationSec / prev.distanceM, lowerIsBetter: true, fmt: (_) => '')
+                          : '',
                     ),
                   ],
-                  if (s.sport == Sport.gym && s.measured && prev.measured)
-                    for (final e in s.exercises)
+                  // The plan's weights are no lift to compare – per exercise (an edited one is measured).
+                  if (s.sport == Sport.gym)
+                    for (final e in s.exercises.where((e) => !s.exerciseFromPlan(e)))
                       Builder(
                         builder: (_) {
-                          final pe = prev.exercises.where((x) => x.exId == e.exId).firstOrNull;
+                          final pe = prev.exercises.where((x) => x.exId == e.exId && !prev.exerciseFromPlan(x)).firstOrNull;
                           // Only like with like: a set logged before bodyweight mode existed (or
                           // in the other mode) has no comparable e1RM.
                           if (pe == null || e.bestE1rm <= 0 || pe.bestE1rm <= 0 || (e.bw == true) != (pe.bw == true)) {

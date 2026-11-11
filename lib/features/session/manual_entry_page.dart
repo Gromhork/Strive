@@ -44,7 +44,9 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
           );
   late Sport _sport = widget.plan?.sport ?? widget.sport ?? ref.read(sportFilterProvider) ?? Sport.run;
   late DateTime _start = _initialStart();
-  late final int _planMinutes = (_fill?.minutes ?? 45).clamp(5, 360);
+
+  /// The slider's start: the plan's minutes in its 5–360 range (45 without a planned duration).
+  late final int _planMinutes = ((_fill?.minutes ?? 0) > 0 ? _fill!.minutes : 45).clamp(5, 360);
   late int _minutes = _planMinutes;
   late final _title = TextEditingController(text: widget.plan?.title ?? '');
   late final String _planDistance = _initialDistance();
@@ -114,8 +116,9 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
         id: repo.newId(),
         start: _start,
         title: title,
-        // Untouched fields keep the plan's exact values (not the rounded display).
-        minutes: _minutes == _planMinutes ? null : _minutes,
+        // Untouched fields keep the plan's exact values (not the rounded display) – unless the
+        // plan has no duration: then the slider's value (never a 0-s session).
+        minutes: _minutes == _planMinutes && _fill.minutes > 0 ? null : _minutes,
         distanceM: _distance.text == _planDistance ? null : (_distanceM() ?? 0),
         rpe: _rpe,
         notes: _notes.text.trim(),

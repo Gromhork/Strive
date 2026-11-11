@@ -144,8 +144,8 @@ class PlanLinkCard extends ConsumerWidget {
 
     final p = plan!;
     final profile = ref.watch(profileOrDefaultProvider);
-    final ratio = complianceRatio(p, s);
-    final c = planCompliance(p, s);
+    final ratio = complianceRatio(p, s, profile: profile);
+    final c = planCompliance(p, s, profile: profile);
     final moved = !sameDay(p.date, s.start);
     final hard = s.rpe != null && s.rpe! >= expectedRpe(p.intensity) + 3;
     final coach = coachLine(l, p, s, c, hard: hard);

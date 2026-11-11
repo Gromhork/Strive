@@ -193,7 +193,7 @@ SessionFeedback evaluateSession(PlannedWorkout p, Session s, UserProfile profile
 
   // Logged as done with the plan's own numbers ("aus Plan übernommen"): distance, duration and
   // pace are the plan, not a measurement – only the athlete's rating counts.
-  if (s.fromPlan) return SessionFeedback(plan: p, session: s, signals: signals, completion: complianceRatio(p, s));
+  if (s.fromPlan) return SessionFeedback(plan: p, session: s, signals: signals, completion: complianceRatio(p, s, profile: profile));
 
   // ── Heart rate vs. the time-weighted target of the steps (added after the other
   // signals: with a predicted HRmax it may need one of them as confirmation).
@@ -284,7 +284,14 @@ SessionFeedback evaluateSession(PlannedWorkout p, Session s, UserProfile profile
     if (p.sport == Sport.ride && s.avgPower != null) ef = s.avgPower! / s.avgHr!;
   }
 
-  return SessionFeedback(plan: p, session: s, signals: signals, completion: complianceRatio(p, s), paceDelta: delta, efficiency: ef);
+  return SessionFeedback(
+    plan: p,
+    session: s,
+    signals: signals,
+    completion: complianceRatio(p, s, profile: profile),
+    paceDelta: delta,
+    efficiency: ef,
+  );
 }
 
 /// HR zone (1–5) a step aims at when it has no HR target of its own.
