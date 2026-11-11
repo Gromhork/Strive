@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../data/models.dart';
+import '../../data/exercise_names_de.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
@@ -210,7 +211,7 @@ class _ExerciseEditor extends StatelessWidget {
     final e = exercise;
     final bw = e.bw == true;
     return SectionCard(
-      title: e.name.isEmpty ? '' : e.name[0].toUpperCase() + e.name.substring(1),
+      title: exName(context, e.exId, e.name),
       trailing: FilterChip(
         key: const ValueKey('edit-bw'),
         avatar: const Icon(Icons.accessibility_new_rounded, size: 16),

@@ -25,9 +25,9 @@ const exerciseNamesDe = <String, String>{
   '0308': 'Fliegende (Kurzhantel)',
   '0319': 'Schräge Fliegende (Kurzhantel)',
   '0302': 'Negative Fliegende (Kurzhantel)',
-  '0227': 'Cable Fly stehend (Kabelzug)',
-  '0179': 'Cable Fly von unten (Kabelzug)',
-  '0188': 'Cable Fly mittig (Kabelzug)',
+  '0227': 'Fliegende stehend (Kabelzug)',
+  '0179': 'Fliegende von unten (Kabelzug)',
+  '0188': 'Fliegende mittig (Kabelzug)',
   '0171': 'Schräge Fliegende (Kabelzug)',
   '0596': 'Butterfly (Maschine)',
   '0662': 'Liegestütz',
@@ -242,13 +242,217 @@ const muscleNamesDe = <String, String>{
 SharedPreferences? exerciseNamePrefs;
 
 /// Display name of exercise [id] (English database name [en]) in [lang]: the curated
-/// German name, else a cached translation, else the English name (capitalised).
+/// German name, else a cached translation, else a rule-based German name of the database
+/// name ([germanExerciseName]) – never the raw English one (also for stored sessions).
 String exerciseName(String id, String en, String lang) {
   if (lang == 'de') {
     final de = exerciseNamesDe[id] ?? exerciseNamePrefs?.getString('trn_de_$id');
     if (de != null && de.isNotEmpty) return de;
+    // A name the user typed (custom exercise) or an already German name stays as it is.
+    if (en.isNotEmpty && !_looksGerman(en)) return germanExerciseName(en);
   }
   return en.isEmpty ? en : en[0].toUpperCase() + en.substring(1);
+}
+
+bool _looksGerman(String s) => RegExp('[äöüß]|drücken|heben|beuge|rudern|ziehen', caseSensitive: false).hasMatch(s);
+
+/// Equipment of the database names → German (in brackets after the movement).
+const _equipmentDe = <(String, String)>[
+  ('olympic barbell', 'Langhantel'),
+  ('ez barbell', 'SZ-Stange'),
+  ('ez bar', 'SZ-Stange'),
+  ('trap bar', 'Trap Bar'),
+  ('smith machine', 'Multipresse'),
+  ('smith', 'Multipresse'),
+  ('leverage machine', 'Maschine'),
+  ('lever', 'Maschine'),
+  ('sled', 'Maschine'),
+  ('machine', 'Maschine'),
+  ('barbell', 'Langhantel'),
+  ('dumbbell', 'Kurzhantel'),
+  ('cable', 'Kabelzug'),
+  ('resistance band', 'Band'),
+  ('band', 'Band'),
+  ('kettlebell', 'Kettlebell'),
+  ('stability ball', 'Gymnastikball'),
+  ('exercise ball', 'Gymnastikball'),
+  ('medicine ball', 'Medizinball'),
+  ('bosu ball', 'Bosu'),
+  ('rope', 'Seil'),
+];
+
+/// Movements (longest phrases first) → German.
+const _movementDe = <(String, String)>[
+  ('romanian deadlift', 'Rumänisches Kreuzheben'),
+  ('stiff leg deadlift', 'Kreuzheben mit gestreckten Beinen'),
+  ('sumo deadlift', 'Sumo-Kreuzheben'),
+  ('deadlift', 'Kreuzheben'),
+  ('incline bench press', 'Schrägbankdrücken'),
+  ('decline bench press', 'Negativbankdrücken'),
+  ('close grip bench press', 'Enges Bankdrücken'),
+  ('bench press', 'Bankdrücken'),
+  ('military press', 'Schulterdrücken'),
+  ('shoulder press', 'Schulterdrücken'),
+  ('overhead press', 'Schulterdrücken'),
+  ('arnold press', 'Arnold Press'),
+  ('chest press', 'Brustpresse'),
+  ('leg press', 'Beinpresse'),
+  ('floor press', 'Bodendrücken'),
+  ('front squat', 'Frontkniebeuge'),
+  ('hack squat', 'Hackenschmidt-Kniebeuge'),
+  ('split squat', 'Split Squat'),
+  ('goblet squat', 'Goblet Squat'),
+  ('squat', 'Kniebeuge'),
+  ('walking lunge', 'Gehende Ausfallschritte'),
+  ('lunge', 'Ausfallschritt'),
+  ('upright row', 'Aufrechtes Rudern'),
+  ('row', 'Rudern'),
+  ('lat pulldown', 'Latziehen'),
+  ('pulldown', 'Latziehen'),
+  ('pull-up', 'Klimmzug'),
+  ('pull up', 'Klimmzug'),
+  ('chin-up', 'Klimmzug im Untergriff'),
+  ('chin up', 'Klimmzug im Untergriff'),
+  ('push-up', 'Liegestütz'),
+  ('push up', 'Liegestütz'),
+  ('pushup', 'Liegestütz'),
+  ('hammer curl', 'Hammercurl'),
+  ('preacher curl', 'Scottcurl'),
+  ('concentration curl', 'Konzentrationscurl'),
+  ('wrist curl', 'Handgelenkcurl'),
+  ('leg curl', 'Beinbeuger'),
+  ('biceps curl', 'Bizepscurl'),
+  ('bicep curl', 'Bizepscurl'),
+  ('curl', 'Curl'),
+  ('triceps extension', 'Trizepsstrecken'),
+  ('tricep extension', 'Trizepsstrecken'),
+  ('triceps pushdown', 'Trizepsdrücken'),
+  ('pushdown', 'Trizepsdrücken'),
+  ('skull crusher', 'Stirndrücken'),
+  ('leg extension', 'Beinstrecker'),
+  ('back extension', 'Rückenstrecken'),
+  ('hyperextension', 'Rückenstrecken'),
+  ('lateral raise', 'Seitheben'),
+  ('side lateral raise', 'Seitheben'),
+  ('front raise', 'Frontheben'),
+  ('rear delt raise', 'Reverse Flys'),
+  ('rear delt fly', 'Reverse Flys'),
+  ('reverse fly', 'Reverse Flys'),
+  ('calf raise', 'Wadenheben'),
+  ('leg raise', 'Beinheben'),
+  ('fly', 'Fliegende'),
+  ('pullover', 'Überzüge'),
+  ('shrug', 'Schulterheben'),
+  ('kickback', 'Kickback'),
+  ('crunch', 'Crunch'),
+  ('sit-up', 'Sit-up'),
+  ('sit up', 'Sit-up'),
+  ('side plank', 'Seitstütz'),
+  ('plank', 'Unterarmstütz'),
+  ('dips', 'Dips'),
+  ('dip', 'Dips'),
+  ('hip thrust', 'Hip Thrust'),
+  ('glute bridge', 'Glute Bridge'),
+  ('bridge', 'Brücke'),
+  ('good morning', 'Good Morning'),
+  ('step-up', 'Step-up'),
+  ('step up', 'Step-up'),
+  ('russian twist', 'Russian Twist'),
+  ('twist', 'Rumpfdrehung'),
+  ('stretch', 'Dehnung'),
+  ('rotation', 'Rotation'),
+  ('jump', 'Sprung'),
+  ('swing', 'Swing'),
+  ('press', 'Drücken'),
+  ('raise', 'Heben'),
+];
+
+/// Positions and variations → German (after the movement).
+const _modifierDe = <(String, String)>[
+  ('close grip', 'enger Griff'),
+  ('close-grip', 'enger Griff'),
+  ('wide grip', 'breiter Griff'),
+  ('wide-grip', 'breiter Griff'),
+  ('reverse grip', 'Untergriff'),
+  ('neutral grip', 'Neutralgriff'),
+  ('underhand', 'Untergriff'),
+  ('one arm', 'einarmig'),
+  ('single arm', 'einarmig'),
+  ('one leg', 'einbeinig'),
+  ('single leg', 'einbeinig'),
+  ('two arm', 'beidarmig'),
+  ('straight arm', 'mit gestreckten Armen'),
+  ('bent over', 'vorgebeugt'),
+  ('behind the head', 'hinter dem Kopf'),
+  ('behind head', 'hinter dem Kopf'),
+  ('behind neck', 'hinter dem Nacken'),
+  ('alternating', 'abwechselnd'),
+  ('alternate', 'abwechselnd'),
+  ('seated', 'sitzend'),
+  ('standing', 'stehend'),
+  ('lying', 'liegend'),
+  ('kneeling', 'kniend'),
+  ('hanging', 'hängend'),
+  ('incline', 'schräg'),
+  ('decline', 'negativ'),
+  ('weighted', 'mit Gewicht'),
+  ('assisted', 'unterstützt'),
+  ('overhead', 'über Kopf'),
+  ('reverse', 'umgekehrt'),
+  ('high', 'hoch'),
+  ('low', 'tief'),
+];
+
+const _fillerWords = {
+  'with',
+  'on',
+  'the',
+  'to',
+  'and',
+  'a',
+  'of',
+  'v',
+  'male',
+  'female',
+  'pov',
+  'version',
+  'exercise',
+  'body',
+  'weight',
+  'bodyweight',
+};
+
+/// Rule-based German name of an English database name for exercises without a curated or
+/// translated name: the movement first, then the variation, the equipment in brackets
+/// ("dumbbell seated shoulder press" → "Schulterdrücken sitzend (Kurzhantel)"). Words it
+/// does not know (proper names like "Zottman") are kept in front of the movement.
+String germanExerciseName(String en) {
+  var s = ' ${en.toLowerCase().replaceAll(RegExp(r'\(.*?\)|v\.\s*\d|\bv\d\b'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim()} ';
+  String? take(List<(String, String)> table) {
+    for (final (k, v) in table) {
+      final re = RegExp('(?<![a-z])${RegExp.escape(k)}s?(?![a-z])');
+      if (re.hasMatch(s)) {
+        s = s.replaceFirst(re, ' ');
+        return v;
+      }
+    }
+    return null;
+  }
+
+  final equipment = take(_equipmentDe);
+  final movement = take(_movementDe);
+  final mods = <String>[];
+  for (var m = take(_modifierDe); m != null; m = take(_modifierDe)) {
+    if (!mods.contains(m)) mods.add(m);
+  }
+  final rest = [
+    for (final w in s.trim().split(RegExp(r'\s+')))
+      if (w.isNotEmpty && !_fillerWords.contains(w) && !RegExp(r'^\d+$').hasMatch(w)) w[0].toUpperCase() + w.substring(1),
+  ];
+  if (movement == null && mods.isEmpty && equipment == null) return en.isEmpty ? en : en[0].toUpperCase() + en.substring(1);
+  final head = [...rest, movement ?? ''].where((x) => x.isNotEmpty).join(' ');
+  final name = [head.isEmpty ? (equipment ?? '') : head, ...mods].join(' ');
+  return equipment == null || head.isEmpty ? name : '$name ($equipment)';
 }
 
 /// [exerciseName] in the language of [context].

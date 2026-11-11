@@ -98,6 +98,8 @@ Map<String, dynamic> cardioToJson(CardioState s) => {
     for (final r in s.stepResults) [r.index, r.sec, r.distanceM, r.complete ? 1 : 0],
   ],
   'paceTime': {for (final e in s.paceTime.entries) '${e.key}': e.value},
+  // When this state was written – a restore counts the time the app was dead as a pause.
+  'savedAt': DateTime.now().millisecondsSinceEpoch,
 };
 
 CardioState cardioFromJson(Map m, {List<LatLng> points = const []}) => CardioState(
@@ -201,9 +203,12 @@ Session sessionDraftFromJson(Map m) => Session(
 
 /// A workout found in storage on app start.
 class SavedWorkout {
-  const SavedWorkout({this.gym, this.cardio});
+  const SavedWorkout({this.gym, this.cardio, this.savedAt});
   final ActiveGym? gym;
   final CardioState? cardio;
+
+  /// When the cardio state was last written (null for files of older versions).
+  final DateTime? savedAt;
 
   DateTime get start => gym?.start ?? cardio!.start;
   String get title => gym?.title ?? cardio!.title;
@@ -281,7 +286,7 @@ class FileWorkoutStore implements WorkoutStore {
       final s = cardioFromJson(data, points: pts);
       _routeSaved = pts.length;
       _routeOf = s.start;
-      return SavedWorkout(cardio: s);
+      return SavedWorkout(cardio: s, savedAt: _time(data['savedAt']));
     } catch (e) {
       debugPrint('WorkoutStore: unreadable workout ($e)');
       return null;
@@ -367,7 +372,8 @@ class MemoryWorkoutStore implements WorkoutStore {
     if (active == null) return null;
     final m = jsonDecode(active!) as Map;
     if (m['kind'] == 'gym') return SavedWorkout(gym: activeGymFromJson(m['data'] as Map));
-    return SavedWorkout(cardio: cardioFromJson(m['data'] as Map, points: decodeRoute(route ?? '')));
+    final data = m['data'] as Map;
+    return SavedWorkout(cardio: cardioFromJson(data, points: decodeRoute(route ?? '')), savedAt: _time(data['savedAt']));
   }
 
   @override

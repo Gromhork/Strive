@@ -438,13 +438,13 @@ class _DataPage extends ConsumerWidget {
 
     // ── Pool ──
     if (s.poolMode) {
-      String pace(int? v) => v == null ? '–:––' : fmtPaceSec(v, u, swim: true);
+      String pace(int? v) => v == null ? '–' : fmtPaceSec(v, u, swim: true);
       final kcal = (p.weightKg * 0.6 * dist / 1000).round();
       return _DataLayout(
         header: header,
         primary:
             s.structured
-                ? _Primary(pace(s.swimPace100), '${l.pace100} (/100 m)', color: _paceColor(s.paceStatus))
+                ? _Primary(pace(s.swimPace100), l.pace100, color: _paceColor(s.paceStatus))
                 : _Primary(u.swimDist(dist), l.nLengths(s.laps)),
         hint: !s.structured && s.laps == 0 ? l.poolTapHint : null,
         fields: [
@@ -502,7 +502,7 @@ class _DataPage extends ConsumerWidget {
     final paceUnit = swim ? '/100 m' : (u.imperial ? '/mi' : '/km');
     String livePace() {
       final v = s.targetPace;
-      return v == null ? '–:––' : fmtPaceSec(v, u, swim: swim);
+      return v == null ? '–' : fmtPaceSec(v, u, swim: swim);
     }
 
     final paced = s.step?.paceMin != null && !s.indoor;

@@ -12,7 +12,8 @@ class PlanLogEntry {
   final String id;
   final DateTime at;
 
-  /// auto | recal | week | readiness
+  /// auto | recal | week | readiness | move | replace (a session counted as replacement for a
+  /// workout days away) | unlink (old links > ±1 day reopened by the one-off cleanup)
   final String source;
 
   /// Source-specific code: the AutoAdjuster reason, the readiness kind (sick, pain, tired, time).
@@ -109,8 +110,10 @@ PlanLogState planLogItemState(PlanLogItem i, Map<String, PlannedWorkout> current
   final cur = current[i.planId];
   final before = i.beforePlan;
   if (cur == null) return before == null ? PlanLogState.undone : PlanLogState.changed;
-  if (cur.isDone) return PlanLogState.changed;
-  if (samePlanState(cur, i.afterPlan)) return PlanLogState.undoable;
+  final after = i.afterPlan;
+  // Done since the change – unless the change itself ticked it off ("count as replacement").
+  if (cur.isDone && !after.isDone) return PlanLogState.changed;
+  if (samePlanState(cur, after) && (!after.isDone || cur.sessionId == after.sessionId)) return PlanLogState.undoable;
   if (before != null && samePlanState(cur, before)) return PlanLogState.undone;
   return PlanLogState.changed;
 }
@@ -142,8 +145,7 @@ PlanLogState planLogState(PlanLogEntry e, Map<String, PlannedWorkout> current) {
 ///   resulting workouts – e.g. a change applied twice) is shown once.
 List<PlanLogEntry> visiblePlanLog(List<PlanLogEntry> entries, Map<String, PlannedWorkout> current) {
   final out = <PlanLogEntry>[];
-  String sig(PlanLogEntry e) =>
-      '${e.source}|${e.reason}|${[for (final i in e.items) '${i.planId}:${i.after}'].join(',')}';
+  String sig(PlanLogEntry e) => '${e.source}|${e.reason}|${[for (final i in e.items) '${i.planId}:${i.after}'].join(',')}';
   for (final e in entries) {
     if (e.items.isNotEmpty && e.items.every((i) => !current.containsKey(i.planId))) continue;
     if (out.isNotEmpty && sig(out.last) == sig(e) && out.last.at.difference(e.at).inMinutes.abs() < 30) continue;

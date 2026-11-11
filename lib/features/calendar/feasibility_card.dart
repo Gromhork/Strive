@@ -65,10 +65,26 @@ class FeasibilityCard extends StatelessWidget {
           l.feasTooShort(f.weeks ?? 0),
   };
 
+  /// Issues worth showing: "the long ride only reaches 0 min" / "swimming only 0 m" means the
+  /// week has no such session at all (e.g. checked with the wrong focus) – never shown as a
+  /// limit of the athlete.
+  static List<String> shownIssues(PlanFeasibility f) => [
+    for (final i in f.issues)
+      if (switch (i) {
+        'longRideTime' => (f.longRideMin ?? 0) > 0,
+        'longSwim' => (f.longSwimM ?? 0) > 0,
+        'longRunTime' => (f.longRunKm ?? 0) >= 1,
+        _ => true,
+      })
+        i,
+  ];
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final t = f.target;
+    final issues = shownIssues(f);
+    if (!f.ok && issues.isEmpty) return const SizedBox.shrink();
     if (f.ok) {
       if (!showTargetOk || t == null) return const SizedBox.shrink();
       return Row(
@@ -116,7 +132,7 @@ class FeasibilityCard extends StatelessWidget {
               children: [
                 Text(f.onlyTarget ? l.feasTitleTarget : l.feasTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                for (final i in f.issues) Text(issueText(l, f, i), style: const TextStyle(fontSize: 13)),
+                for (final i in issues) Text(issueText(l, f, i), style: const TextStyle(fontSize: 13)),
                 if (options.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(l.feasOptions, style: small?.copyWith(fontWeight: FontWeight.w600)),

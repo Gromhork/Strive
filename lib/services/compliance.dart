@@ -137,6 +137,25 @@ double? weeklyCompletion(List<PlannedWorkout> plans, Map<String, Session> linked
   return planned == 0 ? null : done / planned;
 }
 
+/// Whether [p] counts as completed: not skipped, and a linked session or marked done.
+bool planCompleted(PlannedWorkout p, Map<String, Session> linked) => p.status != 'skipped' && (linked[p.id] != null || p.isDone);
+
+/// One definition of "x of y workouts done" for every count of a week (total, per sport, Home
+/// and week page): planned workouts that were not dropped, and how many are completed.
+({int done, int planned}) planCounts(Iterable<PlannedWorkout> plans, Map<String, Session> linked) {
+  final counted = plans.where((p) => p.status != 'skipped').toList();
+  return (done: counted.where((p) => planCompleted(p, linked)).length, planned: counted.length);
+}
+
+/// Sessions that fulfil none of [plans] (extra training), shown as "+1 extra" next to the counts.
+int extraSessions(Iterable<Session> sessions, Iterable<PlannedWorkout> plans, Map<String, Session> linked) {
+  final used = {
+    for (final p in plans)
+      if (linked[p.id] case final s?) s.id,
+  };
+  return sessions.where((s) => !used.contains(s.id)).length;
+}
+
 /// Colour of a weekly completion share.
 Color completionColor(double share) =>
     share >= 0.8

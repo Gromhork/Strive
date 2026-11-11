@@ -3643,5 +3643,164 @@
       }
     }
   },
-  "zGoalPace": "Race pace"
+  "zGoalPace": "Race pace",
+  "mismatchTitle": "Goal and plan don't match",
+  "mismatchFocusBody": "Your goal {goal} doesn't match your focus {focus} – switch the focus to {newFocus} and adjust the plan?",
+  "@mismatchFocusBody": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "focus": {
+        "type": "String"
+      },
+      "newFocus": {
+        "type": "String"
+      }
+    }
+  },
+  "mismatchPlanBody": "Your plan isn't aligned to {goal} yet – adjust the plan up to race day?",
+  "@mismatchPlanBody": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "mismatchMissing": "Missing from the plan so far: {sports}.",
+  "@mismatchMissing": {
+    "placeholders": {
+      "sports": {
+        "type": "String"
+      }
+    }
+  },
+  "mismatchAdjust": "Adjust",
+  "later": "Later",
+  "alignStatusAligned": "Your plan is aligned to this race",
+  "alignStatusAlignedSub": "A new date or distance rebuilds the plan up to race day (completed workouts are kept).",
+  "alignStatusNotAligned": "Your plan isn't aligned to this race yet.",
+  "alignFocusWizard": "The focus switches to {focus}. When you save, the plan settings open so you can set your week (with every discipline) – the check of the goal follows there.",
+  "@alignFocusWizard": {
+    "placeholders": {
+      "focus": {
+        "type": "String"
+      }
+    }
+  },
+  "weekMissingSport": "{sports} is not in your week yet – a {focus} plan needs at least one session of it.",
+  "@weekMissingSport": {
+    "placeholders": {
+      "sports": {
+        "type": "String"
+      },
+      "focus": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryNewPlan": "Your new plan",
+  "summaryWeekStructure": "Week: {structure}",
+  "@summaryWeekStructure": {
+    "placeholders": {
+      "structure": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryPlanLengthEvent": "Length: {weeks} weeks up to race day",
+  "@summaryPlanLengthEvent": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryPlanLength": "Length: {weeks} weeks",
+  "@summaryPlanLength": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "planWeeksCurrent": "{weeks} weeks · current",
+  "@planWeeksCurrent": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "planLogReplace": "Counted as replacement",
+  "planLogReplaceReason": "A session from another day ticked this workout off.",
+  "planLogUnlink": "Link reopened",
+  "planLogUnlinkReason": "Older versions ticked workouts off with sessions more than a day away. They are open again – on the session you can count it as a replacement.",
+  "planLogTickedOff": "ticked off",
+  "planLogReopened": "open again",
+  "replacementUndo": "No longer count as replacement",
+  "replacementUndone": "{title} is open again",
+  "@replacementUndone": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "coachMuchShorter": "Only {share} of the plan – it counts as partly done. Feeling good? Add a bit on an easy day; otherwise just carry on.",
+  "@coachMuchShorter": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "partlyDone": "partly done ({share})",
+  "@partlyDone": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "doneOnDay": "done on {day}",
+  "@doneOnDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePlanStart": "before the plan",
+  "workoutsDone": "Workouts done",
+  "extraSessionsN": "+{n} extra",
+  "@extraSessionsN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "planCompletionMinutes": "Plan {pct} % done (of the planned minutes due so far)",
+  "@planCompletionMinutes": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "quickRecord": "Record",
+  "noXpTooShort": "No XP – too short for a workout",
+  "coachQRace": "How do I prepare best for {race}?",
+  "@coachQRace": {
+    "placeholders": {
+      "race": {
+        "type": "String"
+      }
+    }
+  },
+  "coachQTri": "How do I combine swimming, cycling and running in one week?",
+  "coachQGym": "How do I get stronger without stalling?",
+  "coachQRide": "How do I get faster on the bike?",
+  "coachQSwim": "How do I swim more efficiently?"
 }

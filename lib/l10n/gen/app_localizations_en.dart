@@ -5511,4 +5511,150 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get zGoalPace => 'Race pace';
+
+  @override
+  String get mismatchTitle => 'Goal and plan don\'t match';
+
+  @override
+  String mismatchFocusBody(String goal, String focus, String newFocus) {
+    return 'Your goal $goal doesn\'t match your focus $focus – switch the focus to $newFocus and adjust the plan?';
+  }
+
+  @override
+  String mismatchPlanBody(String goal) {
+    return 'Your plan isn\'t aligned to $goal yet – adjust the plan up to race day?';
+  }
+
+  @override
+  String mismatchMissing(String sports) {
+    return 'Missing from the plan so far: $sports.';
+  }
+
+  @override
+  String get mismatchAdjust => 'Adjust';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get alignStatusAligned => 'Your plan is aligned to this race';
+
+  @override
+  String get alignStatusAlignedSub => 'A new date or distance rebuilds the plan up to race day (completed workouts are kept).';
+
+  @override
+  String get alignStatusNotAligned => 'Your plan isn\'t aligned to this race yet.';
+
+  @override
+  String alignFocusWizard(String focus) {
+    return 'The focus switches to $focus. When you save, the plan settings open so you can set your week (with every discipline) – the check of the goal follows there.';
+  }
+
+  @override
+  String weekMissingSport(String sports, String focus) {
+    return '$sports is not in your week yet – a $focus plan needs at least one session of it.';
+  }
+
+  @override
+  String get summaryNewPlan => 'Your new plan';
+
+  @override
+  String summaryWeekStructure(String structure) {
+    return 'Week: $structure';
+  }
+
+  @override
+  String summaryPlanLengthEvent(int weeks) {
+    return 'Length: $weeks weeks up to race day';
+  }
+
+  @override
+  String summaryPlanLength(int weeks) {
+    return 'Length: $weeks weeks';
+  }
+
+  @override
+  String planWeeksCurrent(int weeks) {
+    return '$weeks weeks · current';
+  }
+
+  @override
+  String get planLogReplace => 'Counted as replacement';
+
+  @override
+  String get planLogReplaceReason => 'A session from another day ticked this workout off.';
+
+  @override
+  String get planLogUnlink => 'Link reopened';
+
+  @override
+  String get planLogUnlinkReason => 'Older versions ticked workouts off with sessions more than a day away. They are open again – on the session you can count it as a replacement.';
+
+  @override
+  String get planLogTickedOff => 'ticked off';
+
+  @override
+  String get planLogReopened => 'open again';
+
+  @override
+  String get replacementUndo => 'No longer count as replacement';
+
+  @override
+  String replacementUndone(String title) {
+    return '$title is open again';
+  }
+
+  @override
+  String coachMuchShorter(String share) {
+    return 'Only $share of the plan – it counts as partly done. Feeling good? Add a bit on an easy day; otherwise just carry on.';
+  }
+
+  @override
+  String partlyDone(String share) {
+    return 'partly done ($share)';
+  }
+
+  @override
+  String doneOnDay(String day) {
+    return 'done on $day';
+  }
+
+  @override
+  String get beforePlanStart => 'before the plan';
+
+  @override
+  String get workoutsDone => 'Workouts done';
+
+  @override
+  String extraSessionsN(int n) {
+    return '+$n extra';
+  }
+
+  @override
+  String planCompletionMinutes(int pct) {
+    return 'Plan $pct % done (of the planned minutes due so far)';
+  }
+
+  @override
+  String get quickRecord => 'Record';
+
+  @override
+  String get noXpTooShort => 'No XP – too short for a workout';
+
+  @override
+  String coachQRace(String race) {
+    return 'How do I prepare best for $race?';
+  }
+
+  @override
+  String get coachQTri => 'How do I combine swimming, cycling and running in one week?';
+
+  @override
+  String get coachQGym => 'How do I get stronger without stalling?';
+
+  @override
+  String get coachQRide => 'How do I get faster on the bike?';
+
+  @override
+  String get coachQSwim => 'How do I swim more efficiently?';
 }

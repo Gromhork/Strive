@@ -121,7 +121,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         if (key != null && !(sameRace && a.eventDistance == key)) 'targetTimeSec': null,
         'eventName': goal.title,
       });
-      if (key != null && !eventFitsFocus(key, p.focus)) p = p.copyWith(focus: eventDistanceOf(key)!.sport.focus);
+      if (key != null && !eventFitsFocus(key, p.focus)) {
+        p = p.copyWith(focus: eventDistanceOf(key)!.sport.focus);
+        // The week of the old focus has no cycling for the new triathlon focus: derive it anew.
+        final week = [for (final v in a.dayPlan.values) ...v];
+        if (_advanced && p.focus.sports.any((s) => !week.contains(s))) a = a.merge({'dayPlan': PlanGenerator.deriveSchedule(_profile)});
+      }
       _withEvent = true;
       _eventName.text = goal.title;
     }
@@ -1138,6 +1143,22 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             padding: const EdgeInsets.only(top: 8),
             child: Text(l.noRestDayWarning, style: const TextStyle(color: AppColors.warning, fontSize: 12)),
           ),
+        // A sport of the focus without a single day (triathlon without cycling) is no plan for it.
+        if (p.focus.sports.length > 1 && p.focus.sports.any((s) => (perSport[s] ?? 0) == 0))
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              l.weekMissingSport(
+                [
+                  for (final s in sports)
+                    if (p.focus.sports.contains(s) && (perSport[s] ?? 0) == 0) s.label(l),
+                ].join(', '),
+                p.focus.label(l),
+              ),
+              key: const ValueKey('weekMissingSport'),
+              style: const TextStyle(color: AppColors.warning, fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ),
         _timeSection(
           l,
           days: [
@@ -1646,6 +1667,23 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 ],
               ),
             ),
+        if (_generatePlan) ...[
+          const SizedBox(height: 16),
+          Text(l.summaryNewPlan, style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          for (final line in planSummaryLines(l, now))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.check_rounded, size: 18, color: AppColors.success)),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(line, style: t.bodyMedium)),
+                ],
+              ),
+            ),
+        ],
         const SizedBox(height: 12),
         if (_generatePlan) Text(l.planKeepsDone, style: t.bodySmall),
       ],
@@ -1739,6 +1777,28 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       ],
     );
   }
+}
+
+/// The plan the settings will create: sessions per sport of a week ("Laufen 3× · Radfahren
+/// 2× · …") and its length (to race day when the race is within reach, else the chosen weeks).
+List<String> planSummaryLines(AppLocalizations l, UserProfile p, {DateTime? now}) {
+  final week = PlanGenerator.scheduleOf(p);
+  final count = <Sport, int>{};
+  for (final v in week.values) {
+    for (final s in v) {
+      count[s] = (count[s] ?? 0) + 1;
+    }
+  }
+  final sports = count.keys.toList()..sort((a, b) => a.index.compareTo(b.index));
+  final total = count.values.fold<int>(0, (a, n) => a + n);
+  final a = p.athlete;
+  final toEvent = a.eventDate == null ? null : GoalModel.weeksUntil(a.eventDate!, now ?? DateTime.now());
+  return [
+    l.summaryWeekStructure('${l.sessionsPerWeekN(total)} – ${sports.map((s) => '${s.label(l)} ${count[s]}×').join(' · ')}'),
+    toEvent != null && toEvent >= 2 && toEvent <= GoalModel.maxEventWeeks
+        ? l.summaryPlanLengthEvent(toEvent)
+        : l.summaryPlanLength(a.planWeeks),
+  ];
 }
 
 /// What the new plan settings change compared with [before] – one line each (empty: nothing).

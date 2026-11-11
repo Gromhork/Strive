@@ -40,8 +40,10 @@ class _WeekPageState extends ConsumerState<WeekPage> {
     final thisWeek = sameDay(_week, startOfWeek(DateTime.now()));
     final totalSec = sessions.fold<int>(0, (a, s) => a + s.durationSec);
     final totalKm = sessions.fold<double>(0, (a, s) => a + s.distanceM) / 1000;
-    final doneCount = plans.where((p) => p.isDone).length;
     final linked = ref.watch(planSessionsProvider);
+    // One definition everywhere: planned workouts (not dropped) completed by a session or
+    // marked done – the total and the per-sport rows add up.
+    final counts = planCounts(plans, linked);
     final completion = weeklyCompletion(plans, linked);
 
     return Scaffold(
@@ -72,7 +74,13 @@ class _WeekPageState extends ConsumerState<WeekPage> {
               const SizedBox(width: 10),
               Expanded(child: StatTile(label: l.distance, value: '${Units.num(u.distOut(totalKm * 1000), 1)} ${u.distUnit}')),
               const SizedBox(width: 10),
-              Expanded(child: StatTile(label: l.planDone, value: plans.isEmpty ? '–' : '$doneCount/${plans.length}')),
+              Expanded(
+                child: StatTile(
+                  key: const ValueKey('weekDoneCount'),
+                  label: l.workoutsDone,
+                  value: counts.planned == 0 ? '–' : '${counts.done}/${counts.planned}',
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -88,6 +96,7 @@ class _WeekPageState extends ConsumerState<WeekPage> {
                         sport: s,
                         done: sessions.where((x) => x.sport == s).toList(),
                         planned: plans.where((p) => p.sport == s).toList(),
+                        linked: linked,
                         units: u,
                       ),
                     ),
@@ -126,19 +135,23 @@ class _WeekPageState extends ConsumerState<WeekPage> {
 }
 
 class _SportRow extends StatelessWidget {
-  const _SportRow({required this.sport, required this.done, required this.planned, required this.units});
+  const _SportRow({required this.sport, required this.done, required this.planned, required this.linked, required this.units});
   final Sport sport;
   final List<Session> done;
   final List<PlannedWorkout> planned;
+  final Map<String, Session> linked;
   final Units units;
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final sec = done.fold<int>(0, (a, s) => a + s.durationSec);
     final km = done.fold<double>(0, (a, s) => a + s.distanceM);
     final planKm = planned.fold<double>(0, (a, p) => a + (p.distanceKm ?? 0));
-    final target = planned.length;
-    final progress = target == 0 ? (done.isEmpty ? 0.0 : 1.0) : (done.length / target).clamp(0.0, 1.0);
+    final c = planCounts(planned, linked);
+    final extra = extraSessions(done, planned, linked);
+    final target = c.planned;
+    final progress = target == 0 ? (done.isEmpty ? 0.0 : 1.0) : (c.done / target).clamp(0.0, 1.0);
     return Row(
       children: [
         SportBadge(sport, size: 38),
@@ -149,7 +162,14 @@ class _SportRow extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text('${done.length}${target > 0 ? '/$target' : ''}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Text(
+                    [
+                      if (target > 0) '${c.done}/$target' else '${done.length}',
+                      if (target > 0 && extra > 0) l.extraSessionsN(extra),
+                    ].join(' '),
+                    key: ValueKey('sportCount_${sport.name}'),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                   const Spacer(),
                   Text(
                     [
@@ -306,7 +326,8 @@ class _CompletionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = context.l10n.planCompletion((share * 100).round());
+    // Says what it measures: the due planned minutes – not the number of workouts above.
+    final text = context.l10n.planCompletionMinutes((share * 100).round());
     final color = completionColor(share);
     return Semantics(
       label: text,

@@ -229,12 +229,23 @@ void main() {
     });
   });
 
-  test('M1 completing a set selects the next open set (not the done one)', () {
+  test('M1 / round 2: completing a set selects the FIRST open set (not the done one, not a later one)', () {
     List<GymSet> sets(List<bool> done) => [for (final d in done) GymSet(reps: 5, done: d)];
-    // Set 2 (index 1) just completed, set 1 still open → set 3 next, then wraps.
-    expect(nextOpenSet(sets([false, true, false]), 1), 2);
+    // Set 2 (index 1) just completed, set 1 still open → set 1 next (the overview says the same).
+    expect(nextOpenSet(sets([false, true, false]), 1), 0);
     expect(nextOpenSet(sets([false, true, true]), 1), 0);
+    // Review: set 3 selected and completed while set 2 is open → set 2, not set 4.
+    expect(nextOpenSet(sets([true, false, true, false]), 2), 1);
     expect(nextOpenSet(sets([true, true, true]), 2), isNull);
+  });
+
+  test('round 2: AMRAP hint only on the last OPEN work set', () {
+    final s = [GymSet(reps: 5, done: true), GymSet(reps: 5), GymSet(reps: 5), GymSet(reps: 5, amrap: true)];
+    expect(showAmrapHint(s, 3), isFalse); // sets 2 and 3 still open
+    s[1].done = true;
+    s[2].done = true;
+    expect(showAmrapHint(s, 3), isTrue);
+    expect(showAmrapHint(s, 1), isFalse);
   });
 
   group('I5 plan vs actual', () {

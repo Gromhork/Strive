@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import '../core/event_distances.dart';
 import '../core/format.dart';
 import '../core/sport.dart';
+import '../data/exercise_names_de.dart';
 import '../data/models.dart';
+import 'goal_alignment.dart';
 import 'goal_forecast.dart';
 import 'insights.dart';
 import 'zones.dart';
@@ -68,8 +70,23 @@ class CoachService {
         );
       }
     } else {
-      lines.add('- main training focus: ${p.focus.name} (no race planned)');
+      // No race in the plan settings – but a saved race goal is still THE goal (never a
+      // "hybrid goal" just because the focus says hybrid).
+      final race = GoalAlignment.of(p, goals, plans, dayOnly(now));
+      if (race != null) {
+        final g = race.goal;
+        final ev = eventDistanceOf(race.raceKey);
+        lines.add(
+          '- MAIN GOAL: ${ev?.sport.name ?? g.sport?.name ?? 'endurance'} race "${g.title}"'
+          '${race.raceKey == null ? '' : ', distance ${race.raceKey}'} on ${dayKey(g.deadline!)} '
+          '(${daysBetween(dayOnly(now), g.deadline!)} days away). The training focus setting is "${p.focus.name}".',
+        );
+      } else {
+        lines.add('- main training focus: ${p.focus.name} (no race planned)');
+      }
     }
+    final mismatch = GoalAlignment.of(p, goals, plans, dayOnly(now))?.coachText(lang: lang) ?? '';
+    if (mismatch.isNotEmpty) lines.add('- $mismatch');
     for (final g in goals.take(5)) {
       lines.add(
         '- saved goal: ${g.type.name}${g.sport == null ? '' : ' (${g.sport!.name})'} "${g.title}", target ${g.target}'
@@ -148,7 +165,7 @@ class CoachService {
         ready
             ? 'Training load (7 days vs. 28-day average): ratio ${rec.ratio.toStringAsFixed(2)} (${rec.readiness.name}); fitness/form: $form'
             : 'BASELINE NOT READY: less than $baselineDays days of training history. Do NOT quote any load ratio, fitness, fatigue or form numbers '
-                'and do not describe the training base as long-standing; say the app is still learning the athlete\'s baseline.';
+                'and do not describe the training base as long-standing; say that you are still getting to know the athlete\'s baseline.';
     final past = plans.where((x) => !x.date.isBefore(addDays(dayOnly(now), -14)) && x.date.isBefore(dayOnly(now)));
     final missed = past.where((x) => x.status == 'planned').map((x) => '${dayKey(x.date)} ${x.sport.name} "${x.title}"').take(6).join('; ');
     final done = past.where((x) => x.status == 'done').length;
@@ -163,7 +180,7 @@ Last 28 days:
 ${summary.isEmpty ? '- no sessions logged yet' : summary}
 $load
 Consecutive training days: ${rec.daysSinceRest}
-${prs.isEmpty ? '' : 'Top strength estimates (e1RM): ${prs.take(5).map((r) => '${r.name} ${r.bestE1rm.round()} kg').join('; ')}\n'}Thresholds: $thresholds
+${prs.isEmpty ? '' : 'Top strength estimates (e1RM): ${prs.take(5).map((r) => '${exerciseName(r.exId, r.name, lang)} ${r.bestE1rm.round()} kg').join('; ')}\n'}Thresholds: $thresholds
 Target event: $event
 Plan adherence last 14 days: $done of ${past.length} planned workouts done${missed.isEmpty ? '' : '; missed: $missed'}
 Upcoming plan:
@@ -182,7 +199,9 @@ You are "Strive Coach", an evidence-based personal coach for strength training, 
 - Keep answers SHORT: at most about 120 words, 2-4 short bullet points or short paragraphs, no tables, no headings.
 - Use plain, everyday ${lang == 'de' ? 'German (du-form) - write like a friendly trainer, no English sports jargon' : 'English'}. No scientific jargon or study names (e.g. no "CNS", "ZNS", "interference effect", "ATL", "CTL", "TSB", "ACWR", "supercompensation").
 - The only abbreviations allowed are the ones the app explains in its glossary: ${glossaryTerms.join(', ')}. Explain each one in a few words the first time you use it (e.g. ${lang == 'de' ? '"RPE (wie anstrengend, 1-10)"' : '"RPE (how hard, 1-10)"'}).
-- Never contradict the app: if the data says the baseline is not ready, say the app is still learning the athlete's baseline. Use the app's words ${lang == 'de' ? '"Einheit", "Schlüsseleinheit", "Entlastungswoche"' : '"session", "key session", "deload week"'}.
+- You ARE the coach of this app: always speak in the first person (${lang == 'de' ? '"ich", e.g. "Ich lerne deine Grundlage noch kennen"' : '"I", e.g. "I\'m still getting to know your baseline"'}) and address the athlete directly. Never talk about the app or the coach in the third person (${lang == 'de' ? 'never "Deine App lernt …", "Der Plan von Strive …"' : 'never "Your app is learning …"'}).
+- Never invent reasons for how the plan looks (e.g. "before we add more cycling"). Explain the plan only with facts from the data below; if the data does not say why, say that plainly. If the data reports a DATA MISMATCH, name it honestly and point to the fix it names.
+- Never contradict the data: if the baseline is not ready, say you are still getting to know the athlete's baseline. Use the app's words ${lang == 'de' ? '"Einheit", "Schlüsseleinheit", "Entlastungswoche", "Plan überprüfen"' : '"session", "key session", "deload week", "Review plan"'}.
 - You are not a doctor: for pain, injuries or medical conditions recommend seeing a professional.
 - Answer in ${lang == 'de' ? 'German (du-form)' : 'English'}.
 

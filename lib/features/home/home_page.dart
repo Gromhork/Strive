@@ -31,6 +31,7 @@ import '../calendar/planned_workout_page.dart';
 import '../session/step_list.dart';
 import '../goals/goal_forecast_widgets.dart';
 import '../goals/goals_page.dart';
+import '../goals/goal_mismatch_card.dart';
 import '../onboarding/onboarding_page.dart';
 import '../session/start_helpers.dart';
 import '../stats/body_page.dart';
@@ -56,6 +57,7 @@ class HomePage extends ConsumerWidget {
           AdjustWeekBanner(),
           AutoAdjustedBanner(),
           GuestBanner(),
+          GoalMismatchCard(snoozable: true),
           TodayCard(),
           SizedBox(height: 12),
           GoalStatusCard(),
@@ -89,13 +91,15 @@ class _Greeting extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final p = ref.watch(profileOrDefaultProvider);
-    final h = DateTime.now().hour;
-    final hello = h < 11 ? l.goodMorning : (h < 18 ? l.goodAfternoon : l.goodEvening);
+    // Both tick (midnight / every hour, and on resume): the header never shows yesterday's
+    // date or an evening greeting in the morning while the app stayed open.
+    final today = ref.watch(todayProvider);
+    final hello = greetingFor(ref.watch(hourProvider), morning: l.goodMorning, afternoon: l.goodAfternoon, evening: l.goodEvening);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          DateFormat.MMMMEEEEd(context.localeName).format(DateTime.now()),
+          DateFormat.MMMMEEEEd(context.localeName).format(today),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
         ),
         Text(
@@ -275,6 +279,9 @@ class _TodayCardState extends ConsumerState<TodayCard> {
 
     final p = plans[_i];
     final skipped = p.status == 'skipped';
+    // The same state and colour as the calendar: 0,39 of 5,8 km is "partly" (orange), not a green tick.
+    final c = planCompliance(p, ref.watch(planSessionsProvider)[p.id]);
+    final partly = p.isDone && (c.level == ComplianceLevel.yellow || c.level == ComplianceLevel.orange) && c.pct != null;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Container(
@@ -338,6 +345,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                               Text(
                                 [
                                   if (skipped) l.recalDropped,
+                                  if (partly) l.partlyDone(Units.pct(c.pct!.toDouble())),
                                   planAmountText(p, ref.watch(profileOrDefaultProvider), templates: ref.watch(templateListProvider)),
                                   intensityLabel(l, p.intensity),
                                 ].join(' · '),
@@ -371,7 +379,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                   key: const ValueKey('todayStart'),
                   style: IconButton.styleFrom(
                     backgroundColor:
-                        p.isDone ? AppColors.success : (skipped ? Theme.of(context).colorScheme.surfaceContainerHighest : p.sport.color),
+                        p.isDone ? c.color(context) : (skipped ? Theme.of(context).colorScheme.surfaceContainerHighest : p.sport.color),
                     foregroundColor: Colors.black87,
                   ),
                   tooltip: skipped ? l.recalDropped : l.start,
@@ -443,8 +451,9 @@ class ComingUpCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final plans = ref.watch(planListProvider);
+    final linked = ref.watch(planSessionsProvider);
     final filter = ref.watch(sportFilterProvider);
-    final today = dayOnly(DateTime.now());
+    final today = ref.watch(todayProvider);
     final fmt = DateFormat.E(context.localeName);
     return SectionCard(
       title: l.comingUp,
@@ -466,6 +475,9 @@ class ComingUpCard extends ConsumerWidget {
                 // Workouts of other sports are hidden by the filter – not a rest day.
                 final hiddenDay = dayPlans.isEmpty && allDay.isNotEmpty;
                 final dim = Theme.of(context).colorScheme.outline;
+                // Done already (early / as a replacement): ticked like in the calendar, with the
+                // day it was done ("erledigt am Mo") instead of looking still open.
+                final doneSession = dayPlans.length == 1 && dayPlans.first.isDone ? linked[dayPlans.first.id] : null;
                 return Expanded(
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
@@ -491,29 +503,42 @@ class ComingUpCard extends ConsumerWidget {
                               child:
                                   hiddenDay
                                       ? Text('–', style: TextStyle(fontSize: 18, color: dim, fontWeight: FontWeight.w700))
-                                      : _DayBadges(plans: dayPlans),
+                                      : _DayBadges(
+                                        plans: dayPlans,
+                                        done:
+                                            dayPlans.length == 1 && dayPlans.first.isDone
+                                                ? planCompliance(dayPlans.first, linked[dayPlans.first.id])
+                                                : null,
+                                      ),
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 1),
-                            child: Text(
-                              // Six days share the row: a short label (the kind of session; gym:
-                              // "GK A") – long titles were cut off. The full title is one tap away.
-                              hiddenDay
-                                  ? l.hiddenShort
-                                  : dayPlans.isEmpty
-                                  ? l.rest
-                                  : (dayPlans.length == 1 ? shortPlanLabel(l, dayPlans.first) : l.nWorkouts(dayPlans.length)),
-                              key: ValueKey('stripLabel$i'),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                height: 1.15,
-                                color: hiddenDay || dayPlans.isEmpty ? dim : null,
-                                fontWeight: dayPlans.length > 1 ? FontWeight.w700 : FontWeight.w400,
+                          // Long-press explains the short label ("GK A" → "Ganzkörper A").
+                          Tooltip(
+                            message: dayPlans.map((p) => glueTitle(p.title)).join('\n'),
+                            triggerMode: TooltipTriggerMode.longPress,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 1),
+                              child: Text(
+                                // Six days share the row: a short label (the kind of session; gym:
+                                // "GK A") – long titles were cut off. The full title is one tap away.
+                                hiddenDay
+                                    ? l.hiddenShort
+                                    : dayPlans.isEmpty
+                                    ? l.rest
+                                    : doneSession != null && !sameDay(doneSession.start, d)
+                                    ? l.doneOnDay(fmt.format(doneSession.start))
+                                    : (dayPlans.length == 1 ? shortPlanLabel(l, dayPlans.first) : l.nWorkouts(dayPlans.length)),
+                                key: ValueKey('stripLabel$i'),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  height: 1.15,
+                                  color: hiddenDay || dayPlans.isEmpty ? dim : null,
+                                  fontWeight: dayPlans.length > 1 ? FontWeight.w700 : FontWeight.w400,
+                                ),
                               ),
                             ),
                           ),
@@ -587,8 +612,11 @@ class ComingUpCard extends ConsumerWidget {
 
 /// One badge, or overlapping badges for days with several workouts.
 class _DayBadges extends StatelessWidget {
-  const _DayBadges({required this.plans});
+  const _DayBadges({required this.plans, this.done});
   final List<PlannedWorkout> plans;
+
+  /// The single workout of the day is done: a check in its compliance colour on the badge.
+  final Compliance? done;
 
   @override
   Widget build(BuildContext context) {
@@ -601,6 +629,27 @@ class _DayBadges extends StatelessWidget {
           border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Icon(Icons.add, size: 16, color: Theme.of(context).colorScheme.outline),
+      );
+    }
+    if (plans.length == 1 && done != null) {
+      return SizedBox(
+        width: 40,
+        height: 40,
+        child: Stack(
+          children: [
+            Positioned(left: 0, top: 0, child: Opacity(opacity: 0.55, child: SportBadge(plans.first.sport, size: 34))),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                key: const ValueKey('stripDone'),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: Theme.of(context).colorScheme.surfaceContainerLow),
+                padding: const EdgeInsets.all(1),
+                child: ComplianceRing(compliance: done!, size: 18),
+              ),
+            ),
+          ],
+        ),
       );
     }
     if (plans.length == 1) return SportBadge(plans.first.sport, size: 34);
@@ -647,20 +696,25 @@ class _WeekCard extends ConsumerWidget {
     final l = context.l10n;
     final sessions = ref.watch(sessionListProvider);
     final plans = ref.watch(planListProvider);
-    final weekStart = startOfWeek(DateTime.now());
+    final weekStart = startOfWeek(ref.watch(todayProvider));
     final weekEnd = addDays(weekStart, 7);
     bool inWeek(DateTime d) => !d.isBefore(weekStart) && d.isBefore(weekEnd);
     final done = sessions.where((s) => inWeek(s.start)).toList();
     final planned = plans.where((p) => inWeek(p.date)).toList();
     final sports = {...planned.map((p) => p.sport), ...done.map((s) => s.sport)}.toList()..sort((a, b) => a.index.compareTo(b.index));
-    final values = <Sport, double>{};
-    for (final s in sports) {
-      final target = planned.where((p) => p.sport == s).length;
-      final d = done.where((x) => x.sport == s).length;
-      values[s] = target == 0 ? 1 : d / target;
+    final linked = ref.watch(planSessionsProvider);
+    // The same count as the week page: completed planned workouts / planned (not dropped).
+    final counts = {for (final s in sports) s: planCounts(planned.where((p) => p.sport == s), linked)};
+    String countText(Sport s) {
+      final c = counts[s]!;
+      return c.planned == 0 ? '${done.where((x) => x.sport == s).length}' : '${c.done}/${c.planned}';
     }
+
+    final values = <Sport, double>{
+      for (final s in sports) s: counts[s]!.planned == 0 ? 1 : (counts[s]!.done / counts[s]!.planned).clamp(0.0, 1.0),
+    };
     final totalSec = done.fold<int>(0, (a, s) => a + s.durationSec);
-    final completion = weeklyCompletion(planned, ref.watch(planSessionsProvider));
+    final completion = weeklyCompletion(planned, linked);
     final focus = ref.watch(profileOrDefaultProvider).focus.sports;
     final quickSports = [
       for (final s in Sport.values)
@@ -704,10 +758,7 @@ class _WeekCard extends ConsumerWidget {
                           children: [
                             Icon(s.icon, size: 13, color: s.color),
                             const SizedBox(width: 4),
-                            Text(
-                              '${done.where((x) => x.sport == s).length}/${planned.where((p) => p.sport == s).length}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                            ),
+                            Text(countText(s), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ),

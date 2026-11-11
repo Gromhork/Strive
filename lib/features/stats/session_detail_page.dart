@@ -8,6 +8,7 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../data/exercise_names_de.dart';
 import '../../providers.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
@@ -233,7 +234,7 @@ class SessionDetailPage extends ConsumerWidget {
                             return const SizedBox.shrink();
                           }
                           return _CompareRow(
-                            e.name.isEmpty ? '' : e.name[0].toUpperCase() + e.name.substring(1),
+                            exName(context, e.exId, e.name),
                             'e1RM ${u.weight(e.bestE1rm, digits: 0)}',
                             delta(u.weightOut(e.bestE1rm), u.weightOut(pe.bestE1rm), fmt: (d) => d.toStringAsFixed(1)),
                           );
@@ -249,7 +250,7 @@ class SessionDetailPage extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: SectionCard(
-                  title: e.name.isEmpty ? '' : e.name[0].toUpperCase() + e.name.substring(1),
+                  title: exName(context, e.exId, e.name),
                   trailing: Text(u.volume(e.volume), style: Theme.of(context).textTheme.labelSmall),
                   child: Wrap(
                     spacing: 8,

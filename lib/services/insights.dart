@@ -8,8 +8,23 @@ import '../data/models.dart';
 
 // ───────────────────────────── XP & levels ─────────────────────────────
 
-/// XP rewards effort (time × intensity) plus sport specific output.
+/// Whether [s] is a real workout that earns XP and badges – not an accidental start: at least
+/// 2 minutes, and gym with a done set, outdoor / pool sessions with a distance, indoor cardio
+/// on time from 5 minutes (a 32 s / 0 m swim earns nothing).
+bool earnsXp(Session s) =>
+    s.durationSec >= 120 &&
+    switch (s.sport) {
+      Sport.gym => s.setsDone > 0 || s.exercises.isEmpty,
+      Sport.swim => s.distanceM > 0,
+      _ => s.distanceM > 0 || (s.indoor && s.durationSec >= 300),
+    };
+
+/// Early bird: started between 4 and 8 in the morning (00:08 is late night, not early).
+bool isEarlySession(Session s) => s.start.hour >= 4 && s.start.hour < 8;
+
+/// XP rewards effort (time × intensity) plus sport specific output; 0 for no real workout ([earnsXp]).
 int xpForSession(Session s) {
+  if (!earnsXp(s)) return 0;
   final intensity = 0.6 + (s.rpe ?? 6) / 10; // 0.7 … 1.6
   var xp = s.minutes * intensity;
   switch (s.sport) {
@@ -174,7 +189,7 @@ class GameStats {
     double best(Sport sp) => s.where((e) => e.sport == sp).fold(0.0, (a, e) => max(a, e.distanceM));
     final maxVol = s.fold(0.0, (a, e) => max(a, e.volume));
     final sports = s.map((e) => e.sport).toSet().length;
-    final early = s.any((e) => e.start.hour < 7);
+    final early = s.any((e) => isEarlySession(e) && earnsXp(e));
     Achievement b(String id, double value, double target) {
       final def = badgeDefs.firstWhere((d) => d.id == id);
       return Achievement(def, value >= target, (value / target).clamp(0, 1).toDouble());

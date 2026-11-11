@@ -8,15 +8,16 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../data/exercise_names_de.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
+import '../stats/plan_link_card.dart' show askReplacement;
 import '../../services/plan_match.dart';
 import '../../services/gym_tools.dart' show sessionRpeFromEfforts;
 import '../../services/insights.dart';
 import '../../services/workout_store.dart';
-import 'gym_session_page.dart' show capitalize;
 import '../../widgets/common.dart';
 import '../../widgets/rpe_picker.dart';
 import 'route_map.dart';
@@ -123,7 +124,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     planId: widget.draft.planId,
   );
 
-  void _save() {
+  Future<void> _save() async {
     if (_saved) return;
     _saved = true;
     final repo = ref.read(repoProvider)!;
@@ -147,7 +148,10 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
         done: [(s, plan)],
       );
     }
-    Navigator.pop(context);
+    // Started from a workout days away: ask right here – not only later on the session page.
+    final candidate = plan == null ? replacementCandidate(s, plans) : null;
+    if (candidate != null) await askReplacement(context, repo, s, candidate);
+    if (mounted) Navigator.pop(context);
   }
 
   Future<void> _confirmDiscard() async {
@@ -270,7 +274,10 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                     children: [
                       const Icon(Icons.bolt_rounded, color: AppColors.brand),
                       const SizedBox(width: 8),
-                      Text('+$xp XP', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.brand)),
+                      if (xp > 0)
+                        Text('+$xp XP', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.brand))
+                      else
+                        Flexible(child: Text(l.noXpTooShort, key: const ValueKey('noXp'), style: Theme.of(context).textTheme.bodyMedium)),
                       const Spacer(),
                       if (levelUp)
                         Flexible(
@@ -284,13 +291,14 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                   ),
                   if (prs.isNotEmpty) ...[
                     const Divider(height: 24),
-                    for (final p in prs)
+                    // German display names (also for exercises without a curated name).
+                    for (final e in s.exercises.where((e) => prs.contains(e.name)))
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         dense: true,
                         leading: const Icon(Icons.trending_up_rounded, color: AppColors.success),
                         title: Text(l.newPr),
-                        subtitle: Text(capitalize(p)),
+                        subtitle: Text(exName(context, e.exId, e.name)),
                       ),
                   ],
                   if (newBadges.isNotEmpty) ...[
@@ -368,13 +376,9 @@ class _TooShortCard extends StatelessWidget {
             alignment: WrapAlignment.end,
             spacing: 8,
             children: [
-              TextButton(
-                key: const ValueKey('tooShortDiscard'),
-                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-                onPressed: onDiscard,
-                child: Text(l.discard),
-              ),
-              FilledButton.tonal(key: const ValueKey('tooShortSave'), onPressed: onSave, child: Text(l.saveAnyway)),
+              // Too short to count: discarding is the expected answer (primary), saving the exception.
+              TextButton(key: const ValueKey('tooShortSave'), onPressed: onSave, child: Text(l.saveAnyway)),
+              FilledButton(key: const ValueKey('tooShortDiscard'), onPressed: onDiscard, child: Text(l.discard)),
             ],
           ),
         ],

@@ -11,7 +11,6 @@ import '../../widgets/common.dart';
 import '../session/manual_entry_page.dart';
 import '../session/start_helpers.dart';
 import '../session/step_text.dart';
-import '../../services/zones.dart' show templateMinutes;
 import 'exercise_picker.dart';
 import 'program_preview_page.dart';
 import 'template_editor_page.dart';
@@ -33,21 +32,28 @@ class _TrainPageState extends ConsumerState<TrainPage> {
 
   /// The "New program" button shrinks to an icon once the list scrolls, so it does not
   /// cover the menus of the folders and programs below it.
-  final _scroll = ScrollController();
+  /// The tab's primary scroll controller (the shell scrolls it to the top on a second tap).
+  ScrollController? _scroll;
   bool _fabExtended = true;
 
   @override
-  void initState() {
-    super.initState();
-    _scroll.addListener(() {
-      final ext = !_scroll.hasClients || _scroll.offset < 24;
-      if (ext != _fabExtended) setState(() => _fabExtended = ext);
-    });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final c = PrimaryScrollController.maybeOf(context);
+    if (c == _scroll) return;
+    _scroll?.removeListener(_onScroll);
+    _scroll = c?..addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    final s = _scroll;
+    final ext = s == null || s.positions.length != 1 || s.offset < 24;
+    if (ext != _fabExtended) setState(() => _fabExtended = ext);
   }
 
   @override
   void dispose() {
-    _scroll.dispose();
+    _scroll?.removeListener(_onScroll);
     super.dispose();
   }
 
@@ -82,7 +88,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
         label: Text(l.newProgram),
       ),
       body: ListView(
-        controller: _scroll,
+        primary: true,
         // Room below the last folder so its menu can be scrolled clear of the button.
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 140),
         children: [
@@ -553,8 +559,14 @@ class _QuickTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(sport.label(l), style: const TextStyle(fontWeight: FontWeight.w700)),
-                    Text(sport == Sport.gym ? l.emptyWorkout : l.recordGps, style: Theme.of(context).textTheme.bodySmall),
+                    Text(sport.label(l), style: const TextStyle(fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    // One short line: "Aktivität aufzeichnen" wrapped in the half-width tile.
+                    Text(
+                      sport == Sport.gym ? l.emptyWorkout : l.quickRecord,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
@@ -577,9 +589,9 @@ class _TemplateTile extends ConsumerWidget {
     final l = context.l10n;
     final sub =
         t.sport == Sport.gym
-            ? '${t.exercises.length} ${l.exercises} · ~${t.estimatedMinutes} min'
+            ? '${t.exercises.length} ${l.exercises} · ≈ ${t.estimatedMinutes} min'
             : [
-              '~${templateMinutes(t, ref.watch(profileOrDefaultProvider))} min',
+              '≈ ${programMinutes(t, ref.watch(profileOrDefaultProvider))} min',
               if (stepsDistance(t.steps, ref.watch(profileOrDefaultProvider).units, t.sport) case final d?)
                 d
               else if (t.steps.where((s) => s.isWork).length > 1)

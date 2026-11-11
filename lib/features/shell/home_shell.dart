@@ -19,14 +19,40 @@ import '../train/train_page.dart';
 import 'streak_sheet.dart';
 import 'workout_restore.dart';
 
-class HomeShell extends ConsumerWidget {
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
   /// Time of the last back press on Home (double-press to exit).
   static DateTime? _lastBack;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends ConsumerState<HomeShell> {
+  /// One primary scroll controller per tab (the tabs' main lists use it): tapping the active
+  /// tab again scrolls that tab to the top (the calendar: to the current week).
+  final _scroll = List.generate(5, (_) => ScrollController());
+
+  @override
+  void dispose() {
+    for (final c in _scroll) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void _select(int i) {
+    if (i == ref.read(navIndexProvider)) {
+      final c = _scroll[i];
+      if (c.hasClients) c.animateTo(0, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
+      return;
+    }
+    ref.read(navIndexProvider.notifier).set(i);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l = context.l10n;
     final index = ref.watch(navIndexProvider);
     const pages = [HomePage(), TrainPage(), CalendarPage(), StatsPage(), CoachPage()];
@@ -42,14 +68,14 @@ class HomeShell extends ConsumerWidget {
         }
         final now = DateTime.now();
         final running = ref.read(activeGymProvider) != null || ref.read(trackerProvider) != null;
-        if (_lastBack != null && now.difference(_lastBack!) < const Duration(seconds: 2)) {
-          _lastBack = null;
+        if (HomeShell._lastBack != null && now.difference(HomeShell._lastBack!) < const Duration(seconds: 2)) {
+          HomeShell._lastBack = null;
           // A running workout must survive "exit": only send the app to the background
           // (finishing the activity could get the process killed and the workout lost).
           running ? moveAppToBackground() : SystemNavigator.pop();
           return;
         }
-        _lastBack = now;
+        HomeShell._lastBack = now;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
@@ -59,14 +85,17 @@ class HomeShell extends ConsumerWidget {
       child: WorkoutRestoreGate(
         child: Scaffold(
           appBar: const StriveTopBar(),
-          body: IndexedStack(index: index, children: pages),
+          body: IndexedStack(
+            index: index,
+            children: [for (final (i, p) in pages.indexed) PrimaryScrollController(controller: _scroll[i], child: p)],
+          ),
           bottomNavigationBar: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const _ActiveBanner(),
               NavigationBar(
                 selectedIndex: index,
-                onDestinationSelected: ref.read(navIndexProvider.notifier).set,
+                onDestinationSelected: _select,
                 destinations: [
                   NavigationDestination(
                     icon: const Icon(Icons.home_outlined),

@@ -52,7 +52,7 @@ class Units {
     if (meters <= 0 || seconds <= 0) return '–';
     if (sport == Sport.swim) {
       final secPer100 = seconds / (meters / 100);
-      return '${clock(secPer100.round())} /100m';
+      return '${clock(secPer100.round())} /100 m';
     }
     if (sport == Sport.run) {
       final perUnit = seconds / distOut(meters);
@@ -113,9 +113,13 @@ String clock(int seconds) {
 }
 
 /// 3725 -> "1h 2min"
+/// Rounded to the nearest minute (3:49 → "4 min", like the "≈ 4 min" elsewhere – never cut
+/// down to "3 min"); under half a minute the seconds.
 String humanDuration(int seconds) {
-  final h = seconds ~/ 3600;
-  final m = (seconds % 3600) ~/ 60;
+  final total = (seconds / 60).round();
+  if (total == 0 && seconds > 0) return '$seconds s';
+  final h = total ~/ 60;
+  final m = total % 60;
   if (h == 0) return '$m min';
   return m == 0 ? '$h h' : '$h h $m min';
 }

@@ -314,12 +314,14 @@ void undoToast(
   required String undoLabel,
   required VoidCallback onUndo,
   IconData icon = Icons.delete_outline,
+  // Long enough to read and react: an accidental delete must stay undoable (8–10 s).
+  Duration duration = const Duration(seconds: 10),
 }) {
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
-        duration: const Duration(seconds: 6),
+        duration: duration,
         content: Row(children: [Icon(icon, size: 20, color: Colors.white70), const SizedBox(width: 12), Expanded(child: Text(text))]),
         action: SnackBarAction(label: undoLabel, onPressed: onUndo),
       ),
