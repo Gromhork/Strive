@@ -271,7 +271,7 @@ void main() {
       for (final w in [0, 1]) {
         final runs = plan.where((x) => weekOf(x) == w && x.sport == Sport.run);
         // (≤ 40 km planned volume; quality runs are time-defined and add a little.)
-        expect(runs.fold(0.0, (a, x) => a + (x.distanceKm ?? 0)), lessThanOrEqualTo(45));
+        expect(runs.fold(0.0, (a, x) => a + runningKm(x)), lessThanOrEqualTo(45));
         expect(runs.where((x) => x.intensity == 'tempo' || x.intensity == 'intervals').length, lessThanOrEqualTo(1));
       }
     });

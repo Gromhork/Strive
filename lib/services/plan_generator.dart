@@ -789,7 +789,7 @@ class PlanGenerator {
                 );
                 if (!rest) {
                   rwLongSec = lrw.$2;
-                  rwLongKm = max(rwLongKm, lrw.$1.distanceKm ?? 0);
+                  rwLongKm = max(rwLongKm, runningKm(lrw.$1));
                 }
                 week.add(lrw.$1);
               } else {
@@ -897,25 +897,23 @@ class PlanGenerator {
       // session with warm-up and cool-down can otherwise match a short long run.
       if (longCtx != null) {
         final li = week.indexWhere((p) => p.sport == Sport.run && p.intensity == 'long');
-        final others = week
-            .where((p) => p.sport == Sport.run && p.intensity != 'long')
-            .fold<double>(0, (x, p) => max(x, p.distanceKm ?? 0));
-        if (li >= 0 && others > 0 && (week[li].distanceKm ?? 0) < others * 1.15) {
+        final others = week.where((p) => p.sport == Sport.run && p.intensity != 'long').fold<double>(0, (x, p) => max(x, runningKm(p)));
+        if (li >= 0 && others > 0 && runningKm(week[li]) < others * 1.15) {
           // Never beyond R1 – if that is not enough, the quality run is shortened below.
           final target = min(_r1(others * 1.2), max(longKm, r1Cap));
           final longer = _run(longCtx.$1, 'long', phase, wk, max(longKm, target), tempoMin, intervalReps, w, longCtx.$2);
-          if ((longer.distanceKm ?? 0) > (week[li].distanceKm ?? 0)) week[li] = longer;
+          if (runningKm(longer) > runningKm(week[li])) week[li] = longer;
         }
         // A long run limited by R1 or by the time that day cannot grow: shorten the quality run
         // (fewer repeats, shorter warm-up) instead.
-        final longDist = li >= 0 ? (week[li].distanceKm ?? 0) : 0.0;
+        final longDist = li >= 0 ? runningKm(week[li]) : 0.0;
         for (final (i, day, role, cap) in qualityCtx) {
-          for (var t = 0; t < 6 && (week[i].distanceKm ?? 0) * 1.15 > longDist && longDist > 0; t++) {
-            final d = week[i].distanceKm ?? 0;
+          for (var t = 0; t < 6 && runningKm(week[i]) * 1.15 > longDist && longDist > 0; t++) {
+            final d = runningKm(week[i]);
             // Scale the session's own time (not the day's, which may be far longer than the run).
             final own = min(cap, week[i].durationMin);
             final shorter = _run(day, role, phase, wk, longKm, tempoMin, intervalReps, w, max(15, (own * longDist / (d * 1.2)).floor()));
-            if ((shorter.distanceKm ?? 0) >= d) break;
+            if (runningKm(shorter) >= d) break;
             week[i] = shorter;
           }
         }
@@ -929,10 +927,7 @@ class PlanGenerator {
       final mara = a.eventDistance == 'm' && !beginner;
       final easyFloor =
           mara && (phase == 'build' || phase == 'peak')
-              ? max(
-                3.0,
-                min(6.0, (week.where((p) => p.sport == Sport.run && p.intensity == 'long').firstOrNull?.distanceKm ?? longKm) * 0.6),
-              )
+              ? max(3.0, min(6.0, (_longKmOf(week) ?? longKm) * 0.6))
               // (≤ 75 % of the week's long run – race week: of the last loading week's – so a short,
               // time-capped long run stays the longest.)
               : (mara
@@ -940,23 +935,19 @@ class PlanGenerator {
                     3.0,
                     min(
                       _taperLast ? 4.0 : (phase == 'taper' ? 4.5 : 5.0),
-                      (week.where((p) => p.sport == Sport.run && p.intensity == 'long').firstOrNull?.distanceKm ??
-                              (_taperLast && lastLongKm > 0 ? lastLongKm : longKm)) *
-                          0.75,
+                      (_longKmOf(week) ?? (_taperLast && lastLongKm > 0 ? lastLongKm : longKm)) * 0.75,
                     ),
                   )
                   : 3.0);
       if (easyRuns.isNotEmpty) {
         final runs = week.where((p) => p.sport == Sport.run);
-        final used = runs.fold<double>(0, (x, p) => x + (p.distanceKm ?? 0));
-        final longest = runs.where((p) => p.intensity == 'long').fold<double>(0, (x, p) => max(x, p.distanceKm ?? 0));
+        final used = runs.fold<double>(0, (x, p) => x + runningKm(p));
+        final longest = runs.where((p) => p.intensity == 'long').fold<double>(0, (x, p) => max(x, runningKm(p)));
         final ref = longest > 0 ? longest : longKm;
         // Multisport with ≤ 3 runs: the run day rotates between quality and easy week by week
         // (B7) – an easy run of ~half the long run keeps the run volume from jumping ±25 %.
         final multiRun = spec?.multisport == true && runPerWeek <= 3;
-        final brickKm = week
-            .where((p) => p.sport == Sport.run && p.intensity == 'moderate')
-            .fold<double>(0, (x, p) => x + (p.distanceKm ?? 0));
+        final brickKm = week.where((p) => p.sport == Sport.run && p.intensity == 'moderate').fold<double>(0, (x, p) => x + runningKm(p));
         var capKm = max(3.0, rest ? ref * 0.6 : (multiRun ? ref * 0.5 - brickKm : ref * 0.75));
         // Just off run/walk: easy runs start at the 30 min run and grow ≤ 10 % a week (R1) – the long
         // run's walk breaks do not make a 45 min continuous easy run safe.
@@ -1002,9 +993,9 @@ class PlanGenerator {
       // gives up to 8 % (the easy runs already shrank in pass 2).
       if (brick && longCtx != null) {
         final li = week.indexWhere((p) => p.sport == Sport.run && p.intensity == 'long');
-        final total = week.where((p) => p.sport == Sport.run).fold<double>(0, (x, p) => x + (p.distanceKm ?? 0));
+        final total = week.where((p) => p.sport == Sport.run).fold<double>(0, (x, p) => x + runningKm(p));
         if (li >= 0 && total > wk * 1.1) {
-          final cur = week[li].distanceKm ?? 0;
+          final cur = runningKm(week[li]);
           final trimmed = max(cur * 0.92, cur - (total - wk * 1.1));
           if (trimmed < cur - 0.25) week[li] = _run(longCtx.$1, 'long', phase, wk, trimmed, tempoMin, intervalReps, w, longCtx.$2);
         }
@@ -1018,15 +1009,15 @@ class PlanGenerator {
       }
       out.addAll(week);
       final longRun = week.where((p) => p.sport == Sport.run && p.intensity == 'long').firstOrNull;
-      if (!rest && longRun != null && _longVariant != 2) lastLongKm = longRun.distanceKm ?? lastLongKm;
+      if (!rest && longRun != null && _longVariant != 2) lastLongKm = runningKm(longRun);
       if (!rest && !runWalk && longRun != null && spec?.multisport != true) {
-        final km = longRun.distanceKm ?? 0;
+        final km = runningKm(longRun);
         // A long run the whole-week checks cut below what R1 allowed: the plan's own long runs are the
         // reference from now on (the cold-start guess would let the next one jump > 10 %).
         longestRun = _clampedThisWeek ? max(actualLongMax, km) : max(longestRun, km);
         actualLongMax = max(actualLongMax, km);
       }
-      if (!rest) lastLoadRunKm = week.where((p) => p.sport == Sport.run).fold(0.0, (x, p) => x + (p.distanceKm ?? 0));
+      if (!rest) lastLoadRunKm = week.where((p) => p.sport == Sport.run).fold(0.0, (x, p) => x + runningKm(p));
       final longRideW = week.where((p) => p.sport == Sport.ride && p.intensity == 'long').firstOrNull;
       if (!rest && longRideW != null && !imRunWeek) lastLongRide = longRideW.durationMin;
       if (phase == 'recovery') block = 0;
@@ -1137,7 +1128,7 @@ class PlanGenerator {
   }) {
     final li = week.indexWhere((p) => p.sport == Sport.run && p.intensity == 'long');
     if (li < 0) return;
-    double km(PlannedWorkout p) => p.distanceKm ?? 0;
+    double km(PlannedWorkout p) => runningKm(p);
     bool isRun(int i) => week[i].sport == Sport.run;
     final runIdx = [
       for (var i = 0; i < week.length; i++)
@@ -2291,6 +2282,12 @@ class PlanGenerator {
       hrMax: zone == 'walk' || zone == 'REC' ? null : hr.$2,
       note: note,
     );
+  }
+
+  /// Running km of the week's long run (null without one) – see [runningKm].
+  static double? _longKmOf(List<PlannedWorkout> week) {
+    final p = week.where((p) => p.sport == Sport.run && p.intensity == 'long').firstOrNull;
+    return p == null ? null : runningKm(p);
   }
 
   double _r1(double v) => (v * 2).round() / 2; // 0.5 km steps
@@ -3938,7 +3935,7 @@ class PlanGenerator {
     final target = _runTargetKm;
     if (target == null) return false;
     final longs = plan.where((w) => w.sport == Sport.run && w.intensity == 'long');
-    final km = max(a.longestRunKm ?? 0, longs.fold(0.0, (x, w) => max(x, w.distanceKm ?? 0)));
+    final km = max(a.longestRunKm ?? 0, longs.fold(0.0, (x, w) => max(x, runningKm(w))));
     final mins = longs.fold(0, (x, w) => max(x, w.durationMin));
     final timeOk = spec!.longRunMin != null && mins >= spec!.longRunMin! * farShortShare;
     return km < target * farShortShare && !timeOk;
@@ -3957,7 +3954,7 @@ class PlanGenerator {
     final target = _runTargetKm;
     if (target == null) return true;
     final longs = plan.where((w) => w.sport == Sport.run && w.intensity == 'long');
-    final km = longs.fold(0.0, (x, w) => max(x, w.distanceKm ?? 0));
+    final km = longs.fold(0.0, (x, w) => max(x, runningKm(w)));
     final mins = longs.fold(0, (x, w) => max(x, w.durationMin));
     return km >= target - 0.5 || (spec!.longRunMin != null && mins >= spec!.longRunMin! - 5);
   }
@@ -4065,9 +4062,9 @@ class PlanGenerator {
       if (s.distanceM != null) {
         meters += s.distanceM!;
       } else if (s.durationSec != null) {
-        if (sport == Sport.run && s.zone != 'walk') {
-          meters += s.durationSec! / ((s.paceMin ?? pz.easySlow) + (s.paceMax ?? pz.easySlow)) * 2 * 1000;
-        }
+        // Walks at the walking pace: a run/walk of 8 × 1 min covers its 21 min of walking too
+        // (counting the running only gave "29 min · 1.0 km").
+        if (sport == Sport.run) meters += timedRunStepM(s, pz.easySlow);
         if (sport == Sport.ride) meters += s.durationSec! / 3600 * (s.zone == 'Z1' ? 20 : 27) * 1000;
       }
     }
@@ -4104,8 +4101,10 @@ class PlanGenerator {
     final moving = steps.where((s) => s.zone != 'walk');
     // Distance-defined easy runs only (a run/walk of timed blocks has no distance of its own to fit).
     if (km != null && km > 0 && moving.isNotEmpty && moving.every((s) => (s.zone == 'E' || s.zone == 'L') && s.distanceM != null)) {
+      // ([km] counts the walk breaks' distance too: the E range applies to the running part.)
       final walk = steps.where((s) => s.zone == 'walk').fold(0, (x, s) => x + _stepSec(s, Sport.run));
-      final lo = ((km * pz.easyFast + walk) / 60).ceil(), hi = ((km * pz.easySlow + walk) / 60).floor();
+      final run = double.parse((moving.fold<double>(0, (x, s) => x + s.distanceM!) / 1000).toStringAsFixed(1));
+      final lo = ((run * pz.easyFast + walk) / 60).ceil(), hi = ((run * pz.easySlow + walk) / 60).floor();
       if (lo <= hi) m = m.clamp(lo, hi);
     }
     return m;
@@ -4308,7 +4307,7 @@ class PlanGenerator {
     final weekRunKm = <DateTime, double>{};
     for (final w in plan.where((w) => w.sport == Sport.run && w.intensity != 'race')) {
       final k = startOfWeek(dayOnly(w.date));
-      weekRunKm[k] = (weekRunKm[k] ?? 0) + (w.distanceKm ?? 0);
+      weekRunKm[k] = (weekRunKm[k] ?? 0) + runningKm(w);
     }
     final peakRunKm = weekRunKm.values.fold(0.0, max);
     final runFreq =
@@ -4330,7 +4329,7 @@ class PlanGenerator {
     final longDays = longSessionDays(p);
     if (runs && runTarget != null) {
       final longs = plan.where((w) => w.sport == Sport.run && w.intensity == 'long');
-      final longRun = longs.fold(0.0, (x, w) => max(x, w.distanceKm ?? 0));
+      final longRun = longs.fold(0.0, (x, w) => max(x, runningKm(w)));
       // Time on feet counts for slow runners ([EventSpec.longRunMin], e.g. a 2 h HM run/walk).
       final longMin = longs.fold(0, (x, w) => max(x, w.durationMin));
       final timeOk = spec!.longRunMin != null && longMin >= spec.longRunMin! - 5;
@@ -4365,13 +4364,13 @@ class PlanGenerator {
           // The other runs of the week with the longest long run: the quality runs stay as they are, the
           // easy runs carry the rest – the same share / ratio rules as [_shapeRunWeek] (3 runs: 60 % – marathon /
           // ultra 55 % – and ≤ 3.5 × the next run; 4 runs: 50 % and ≤ 2 ×; marathon 55 %, no ratio).
-          final top = longs.reduce((x, y) => (y.distanceKm ?? 0) > (x.distanceKm ?? 0) ? y : x);
+          final top = longs.reduce((x, y) => runningKm(y) > runningKm(x) ? y : x);
           final wk = plan.where((w) => w.sport == Sport.run && startOfWeek(w.date) == startOfWeek(top.date) && w != top).toList();
           final three = wk.length == 2;
           final share = wk.length <= 1 ? 0.55 : (three ? threeRunShareFor(ev) : (ev == 'm' ? 0.55 : 0.5));
           sharePct = (share * 100).round();
           final ratio = m || wk.length >= 4 ? 0.0 : (three ? threeRunLongRatio : 2.0);
-          final q = wk.where((w) => w.intensity == 'tempo' || w.intensity == 'intervals').fold(0.0, (x, w) => x + (w.distanceKm ?? 0));
+          final q = wk.where((w) => w.intensity == 'tempo' || w.intensity == 'intervals').fold(0.0, (x, w) => x + runningKm(w));
           final nEasy = max(1, wk.where((w) => w.intensity == 'easy').length);
           final needKm = max(ratio > 0 ? runTarget / ratio : 0.0, (runTarget * (1 - share) / share - q) / nEasy);
           shareNeedMin = (needKm * g.pz.easySlow / 60 / 5).ceil() * 5;
@@ -4510,7 +4509,7 @@ class PlanGenerator {
       otherRunSharePct: sharePct,
       planLongKm:
           g._longShort
-              ? plan.where((w) => w.sport == Sport.run && w.intensity == 'long').fold<double>(0, (x, w) => max(x, w.distanceKm ?? 0))
+              ? plan.where((w) => w.sport == Sport.run && w.intensity == 'long').fold<double>(0, (x, w) => max(x, runningKm(w)))
               : shortLongKm,
       planLongTargetKm: g._longShort || shortLongKm != null ? g._runTargetKm : null,
       runsPerWeek: nRuns,

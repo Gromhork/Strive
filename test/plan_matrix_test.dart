@@ -447,7 +447,7 @@ class _Week {
   double get enduranceMin => endurance.fold(0.0, (x, w) => x + w.durationMin);
   double volume(Sport s) => switch (s) {
     Sport.ride => ws.where((w) => w.sport == s).fold(0.0, (x, w) => x + w.durationMin),
-    _ => ws.where((w) => w.sport == s).fold(0.0, (x, w) => x + (w.distanceKm ?? 0)),
+    _ => ws.where((w) => w.sport == s).fold(0.0, (x, w) => x + runningKm(w)),
   };
   PlannedWorkout? long(Sport s) {
     PlannedWorkout? best;
@@ -461,7 +461,7 @@ class _Week {
 }
 
 /// Long run: km, long ride: minutes.
-double _longValue(PlannedWorkout w) => w.sport == Sport.run ? (w.distanceKm ?? 0) : w.durationMin.toDouble();
+double _longValue(PlannedWorkout w) => w.sport == Sport.run ? runningKm(w) : w.durationMin.toDouble();
 
 class _Plan {
   _Plan(this.c, this.all, this.shakeoutTitle) {
@@ -687,7 +687,7 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
     final pre = plan.where((w) => w.intensity != 'race');
     if (c.endurance.contains(Sport.run) && (spec.longRunKm != null || spec.longRunMin != null)) {
       final runs = pre.where((w) => w.sport == Sport.run && w.intensity == 'long');
-      final km = runs.fold(0.0, (x, w) => max(x, w.distanceKm ?? 0));
+      final km = runs.fold(0.0, (x, w) => max(x, runningKm(w)));
       final mins = runs.fold(0, (x, w) => max(x, w.durationMin));
       final okKm = spec.longRunKm != null && km >= spec.longRunKm! - kLongRunKmSlack;
       // Time on feet: the run's minutes, or its km at the long-run pace (a marathon-pace finish makes the
@@ -733,12 +733,12 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
     bool atCap(PlannedWorkout w) {
       final day = PlanGenerator.dayMinutesFor(p, w.date.weekday);
       final dayTotal = plan.where((x) => sameDay(x.date, w.date) && x.sport != Sport.gym).fold(0, (x, y) => x + y.durationMin);
-      return (capKm != null && (w.distanceKm ?? 0) >= capKm - 0.5) || w.durationMin >= capMin - 10 || dayTotal >= day - 10;
+      return (capKm != null && runningKm(w) >= capKm - 0.5) || w.durationMin >= capMin - 10 || dayTotal >= day - 10;
     }
 
     bool atTarget(PlannedWorkout w) =>
         s == Sport.run
-            ? (spec?.longRunKm != null && (w.distanceKm ?? 0) >= spec!.longRunKm! - kLongRunKmSlack) ||
+            ? (spec?.longRunKm != null && runningKm(w) >= spec!.longRunKm! - kLongRunKmSlack) ||
                 (spec?.longRunMin != null && w.durationMin >= spec!.longRunMin! - kLongRunMinSlack)
             : spec?.longRideMin != null && w.durationMin >= spec!.longRideMin!;
 
@@ -947,7 +947,7 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
   for (final wk in weeks) {
     final runs = wk.ws.where((w) => w.sport == Sport.run);
     for (final long in runs.where((w) => w.intensity == 'long')) {
-      final other = runs.where((w) => w != long && (w.distanceKm ?? 0) > (long.distanceKm ?? 0) + 0.05).firstOrNull;
+      final other = runs.where((w) => w != long && runningKm(w) > runningKm(long) + 0.05).firstOrNull;
       if (other != null) r.add(_inv11b, c, wk.idx, 'long run ${long.distanceKm} km < "${other.title}" ${other.distanceKm} km');
     }
   }
@@ -986,13 +986,13 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
         prevKm = null;
         prevMin = null;
         if (lr != null) {
-          maxKm = max(maxKm, lr.distanceKm ?? 0);
+          maxKm = max(maxKm, runningKm(lr));
           maxMin = max(maxMin, lr.durationMin);
         }
         continue;
       }
       if (lr == null) continue;
-      final km = lr.distanceKm ?? 0;
+      final km = runningKm(lr);
       final rw = _isRunWalk(lr);
       final shorter = lr.description.contains(l.wLongRunShortDesc);
       if (prevKm != null && !shorter && km < prevKm * 0.97 - 0.05 && !(rw && lr.durationMin >= prevMin!)) {
@@ -1032,7 +1032,7 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
     }
   }
   if (ev == 'hm') {
-    final longest = plan.where((w) => w.sport == Sport.run && w.intensity == 'long').fold(0.0, (x, w) => max(x, w.distanceKm ?? 0));
+    final longest = plan.where((w) => w.sport == Sport.run && w.intensity == 'long').fold(0.0, (x, w) => max(x, runningKm(w)));
     if (longest <= 5 && !warned()) r.add(_inv13d, c, null, 'HM with a longest long run of ${_r(longest)} km – feasibility silent');
   }
   // A suggested target time is never flagged by the target check (the feasibility card's).

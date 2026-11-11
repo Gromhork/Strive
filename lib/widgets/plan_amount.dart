@@ -36,7 +36,8 @@ PlanAmount planAmount(PlannedWorkout p, UserProfile profile, {List<WorkoutTempla
 }
 
 /// Distance of structured steps in km (null without any): distance steps as given, timed run
-/// steps at their pace target (else the easy pace), timed rides at ~20 km/h (Z1) / 27 km/h.
+/// steps at their pace target (else the easy pace), timed walk steps at the walking pace
+/// ([walkPaceSecPerKm] – a run/walk covers its walks too), timed rides at ~20 km/h (Z1) / 27 km/h.
 double? stepsKm(List<WorkoutStep> steps, Sport sport, UserProfile p) {
   final easy = PaceZones(Vdot.of(p.athlete) ?? Vdot.defaultFor(p.level)).easySlow;
   var m = 0.0;
@@ -44,7 +45,7 @@ double? stepsKm(List<WorkoutStep> steps, Sport sport, UserProfile p) {
     if (s.distanceM != null) {
       m += s.distanceM!;
     } else if (s.durationSec != null) {
-      if (sport == Sport.run && s.zone != 'walk') m += s.durationSec! / ((s.paceMin ?? easy) + (s.paceMax ?? easy)) * 2000;
+      if (sport == Sport.run) m += timedRunStepM(s, easy);
       if (sport == Sport.ride) m += s.durationSec! / 3600 * (s.zone == 'Z1' ? 20000 : 27000);
     }
   }
