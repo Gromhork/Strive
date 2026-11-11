@@ -1728,5 +1728,7 @@
   "coachMoreSets": "Mehr Sätze als geplant – gönn dir bis zur nächsten Krafteinheit genug Erholung.",
   "termComplianceTitle": "Plan-Erfüllung – so wird eine Einheit gewertet",
   "termComplianceBody": "Verglichen wird die Strecke (Ausdauer mit Distanz), die erledigten Arbeitssätze (Kraft) oder sonst die Dauer – mit dem Plan.\n\n✓ grün, wie geplant: {greenMin}–{greenMax}\n✓ gelb, teilweise: {yellowMin} bis unter {greenMin} oder bis {yellowMax}\n✓ orange, stark abweichend: unter {yellowMin} oder über {yellowMax}\n✕ rot: verpasst, oder unter {countMin} – ein abgebrochener Start zählt nicht als erledigt.",
-  "termComplianceTip": "Teilweise oder stark abweichend zählt trotzdem als erledigt – der Plan passt sich erst an, wenn es sich wiederholt."
+  "termComplianceTip": "Teilweise oder stark abweichend zählt trotzdem als erledigt – der Plan passt sich erst an, wenn es sich wiederholt.",
+  "feasTitleNote": "Hinweis zu deinem Plan",
+  "feasLongRunTimeCap": "Deine langen Läufe enden bei {time} – bei deinem lockeren Tempo sind das etwa {have} km (viele Pläne gehen bis {race} km). Länger am Stück bringt mehr Verletzungsrisiko und Erholungsbedarf als Fitness. Daher: Ankommen ist das Ziel – ruhig loslaufen und von Beginn an kurze Gehpausen einplanen (z. B. 1 min alle 10 min)."
 }

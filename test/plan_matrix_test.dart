@@ -690,7 +690,11 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
       final km = runs.fold(0.0, (x, w) => max(x, w.distanceKm ?? 0));
       final mins = runs.fold(0, (x, w) => max(x, w.durationMin));
       final okKm = spec.longRunKm != null && km >= spec.longRunKm! - kLongRunKmSlack;
-      final okMin = spec.longRunMin != null && mins >= spec.longRunMin! - kLongRunMinSlack;
+      // Time on feet: the run's minutes, or its km at the long-run pace (a marathon-pace finish makes the
+      // 26 km run shorter in minutes than 26 km at the easy pace the 3 h target is counted in).
+      final okMin =
+          spec.longRunMin != null &&
+          (mins >= spec.longRunMin! - kLongRunMinSlack || km * _longPace(p) / 60 >= spec.longRunMin! - kLongRunMinSlack);
       if (!okKm && !okMin) misses.add('long run ${_r(km)} km / $mins min < ${spec.longRunKm ?? '-'} km / ${spec.longRunMin ?? '-'} min');
     }
     if (c.endurance.contains(Sport.ride) && spec.longRideMin != null) {
@@ -718,7 +722,9 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
   for (final s in [Sport.run, Sport.ride].where(c.endurance.contains)) {
     final unit = s == Sport.run ? 'km' : 'min';
     double? capKm = s == Sport.run ? spec?.longRunCapKm : null;
-    final capMin = s == Sport.run ? (spec?.longRunCapMin ?? 150) : (spec?.longRideCapMin ?? 180);
+    // (Beginners' long runs: ≤ 150 min whatever the event – the generator's cap.)
+    final runCap = spec?.longRunCapMin ?? 150;
+    final capMin = s == Sport.run ? (p.level == 'beginner' ? min(150, runCap) : runCap) : (spec?.longRideCapMin ?? 180);
     bool atCap(PlannedWorkout w) {
       final day = PlanGenerator.dayMinutesFor(p, w.date.weekday);
       final dayTotal = plan.where((x) => sameDay(x.date, w.date) && x.sport != Sport.gym).fold(0, (x, y) => x + y.durationMin);
@@ -964,7 +970,7 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
     // Long run per loading week (a long run/walk counts with its running km): within a loading block
     // it never shrinks (except the planned shorter week of the plateau rotation), and it never grows
     // beyond the safety cap over the longest run so far – +10 % (R1), or the goal step +1.5 km
-    // ≤ +25 % (+0.5 km for the 0.5 km rounding); a long run/walk grows ≤ 10 min (+5 rounding).
+    // ≤ +25 % / +2.5 km ≤ +12 % (+0.5 km for the 0.5 km rounding); a long run/walk grows ≤ 10 min (+5 rounding).
     double? prevKm;
     int? prevMin;
     var maxKm = 0.0;
@@ -991,7 +997,8 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
         if (rw) {
           if (lr.durationMin > maxMin + 15) r.add(_inv13b, c, wk.idx, 'long run/walk ${lr.durationMin} min after $maxMin min');
         } else {
-          final allowed = max(maxKm * 1.10, min(maxKm + 1.5, maxKm * 1.25)) + 0.5;
+          // (Goal-directed longer long runs: ≤ +12 %, ≤ 2.5 km a step – marathon plans' 1.5–3 km.)
+          final allowed = max(max(maxKm * 1.10, min(maxKm + 1.5, maxKm * 1.25)), min(maxKm + 2.5, maxKm * 1.12)) + 0.5;
           if (km > allowed) r.add(_inv13b, c, wk.idx, 'long run ${_r(km)} km > ${_r(allowed)} km allowed after ${_r(maxKm)} km');
         }
       }
@@ -1050,6 +1057,13 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
   }
 }
 
+/// Long-run pace (s/km) of [p] – the plan generator's: the middle of the easy range (beginners without race
+/// times: its slow end).
+int _longPace(UserProfile p) {
+  final pz = PaceZones(Vdot.of(p.athlete) ?? Vdot.defaultFor(p.level));
+  return p.level == 'beginner' && p.athlete.raceTimes.isEmpty ? pz.easySlow : (pz.easyFast + pz.easySlow) ~/ 2;
+}
+
 // ───────────────────────────── Samples ─────────────────────────────
 
 String _sample(String name, List<PlannedWorkout> plan, AppLocalizations l) {
@@ -1090,6 +1104,8 @@ void main() {
     for (final c in cases) {
       final plan = PlanGenerator(l, c.p, templates, id).generate(start: _start, weeks: c.event == null ? c.a.planWeeks : null);
       _check(_Plan(c, plan, l.wShakeout), report, l);
+      final dbg = Platform.environment['MATRIX_DBG'];
+      if (dbg != null && dbg.split(',').any((x) => c.label.startsWith(x))) print(_sample(c.label, plan, l));
     }
     print(report.summary());
     print('${cases.length} plans checked in ${sw.elapsed.inSeconds} s');
@@ -1158,6 +1174,9 @@ void main() {
         const {6: 240, 7: 150},
       ),
       'marathon intermediate 18 wk': p(TrainingFocus.run, 'intermediate', 'm', 18, const [1, 2, 4, 6, 7], 75, const {7: 180}),
+      // User report 2026-11: hybrid marathon, 6 days, 15 weeks.
+      'marathon hybrid intermediate 6 d 15 wk': p(TrainingFocus.hybrid, 'intermediate', 'm', 15, const [1, 2, 3, 4, 6, 7], 60, const {}),
+      'HM beginner 14 wk': p(TrainingFocus.run, 'beginner', 'hm', 14, const [2, 4, 6], 60, const {6: 150}),
       'ironman advanced 28 wk': p(TrainingFocus.triathlon, 'advanced', 'ironman', 28, const [1, 2, 3, 4, 6, 7], 90, const {6: 360, 7: 180}),
       'ultra50 advanced 20 wk': p(TrainingFocus.run, 'advanced', 'ultra50', 20, const [1, 2, 4, 6, 7], 90, const {6: 240, 7: 150}),
       'olympic beginner, cannot swim 400 m, 14 wk': p(
