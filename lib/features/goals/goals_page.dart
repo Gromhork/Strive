@@ -21,6 +21,8 @@ import '../../widgets/event_distance_picker.dart';
 import '../../widgets/target_suggestion_line.dart';
 import '../train/exercise_picker.dart';
 import 'goal_forecast_widgets.dart';
+import 'goal_mismatch_card.dart';
+import '../onboarding/onboarding_page.dart';
 
 class GoalsPage extends ConsumerWidget {
   const GoalsPage({super.key});
@@ -42,6 +44,8 @@ class GoalsPage extends ConsumerWidget {
               : ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                 children: [
+                  // Race goal, focus and plan disagree (older data): say so before the goals.
+                  const GoalMismatchCard(),
                   for (final g in goals) Padding(padding: const EdgeInsets.only(bottom: 10), child: SectionCard(child: GoalTile(goal: g))),
                 ],
               ),
@@ -206,17 +210,21 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   late String? _exId = widget.existing?.exId;
   late String? _exName = widget.existing?.exName;
 
-  // Event goal → training plan alignment (new event, or a date that is not the plan's yet).
-  late bool _align = _alignDefault();
+  // Event goal → training plan alignment. The switch shows reality: on when the plan is
+  // built for this race (then it is a status, not an action), off for an existing race the
+  // plan doesn't target; a new race defaults to aligning.
+  late final bool _planAligned = _isPlanAligned();
+  late bool _align = widget.existing == null || _planAligned;
   late int? _targetSec = _initialTarget();
   final _targetCtl = TextEditingController();
   final _feasibility = FeasibilityCache();
 
-  bool _alignDefault() {
+  /// The plan settings point at this (existing) race: same day and distance.
+  bool _isPlanAligned() {
     final ex = widget.existing;
     final a = ref.read(profileOrDefaultProvider).athlete;
-    if (ex == null) return true;
-    return ex.type == GoalType.event && (a.eventDate == null || ex.deadline == null || !sameDay(a.eventDate!, ex.deadline!));
+    if (ex == null || ex.type != GoalType.event || a.eventDate == null || ex.deadline == null) return false;
+    return sameDay(a.eventDate!, ex.deadline!) && (a.eventDistance == null || a.eventDistance == _initialKey());
   }
 
   int? _initialTarget() {
@@ -311,9 +319,19 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
     final key = _key;
     if (_type != GoalType.event || !_align || _deadline == null || key == null) return null;
     final p = ref.read(profileOrDefaultProvider);
+    final a = p.athlete;
+    // Already aligned and nothing about the race changed: nothing to rebuild.
+    if (_planAligned && sameDay(a.eventDate!, _deadline!) && a.eventDistance == key && a.targetTimeSec == _targetSec) return null;
     // Goal and plan stay consistent: a triathlon is planned with the triathlon focus.
     final focus = _focusFor(key, p.focus);
-    return p.copyWith(focus: focus, athlete: p.athlete.merge({'eventDate': _deadline, 'eventDistance': key, 'targetTimeSec': _targetSec}));
+    return p.copyWith(focus: focus, athlete: a.merge({'eventDate': _deadline, 'eventDistance': key, 'targetTimeSec': _targetSec}));
+  }
+
+  /// Aligning needs another focus (triathlon goal, hybrid focus): the week of the current
+  /// settings has no cycling – the plan settings are opened instead of guessing.
+  bool get _needsWizard {
+    final key = _key;
+    return _type == GoalType.event && _align && key != null && !eventFitsFocus(key, ref.read(profileOrDefaultProvider).focus);
   }
 
   /// The training focus a race needs (the current one when it fits).
@@ -364,6 +382,12 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   /// Set while saving: a double tap must not save the goal / align the plan twice.
   bool _saving = false;
 
+  /// "Save" was tapped with something missing.
+  bool _submitted = false;
+
+  /// Errors show after a save attempt or once the target was typed (an existing goal: always).
+  bool get _showErrors => _submitted || widget.existing != null || _target.text.isNotEmpty;
+
   Future<void> _save() async {
     if (_saving) return;
     _saving = true;
@@ -375,8 +399,10 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   }
 
   Future<void> _doSave() async {
-    // Aligning replaces the upcoming plan – asked first, cancelling saves nothing.
-    final aligned = _alignedProfile();
+    // Aligning replaces the upcoming plan – asked first, cancelling saves nothing. With a
+    // focus change the plan settings take over (week with every discipline, then confirm).
+    final wizard = _needsWizard;
+    final aligned = wizard ? null : _alignedProfile();
     DateTime? planStart;
     if (aligned != null) {
       planStart = await confirmReplacePlan(context, ref.read(planListProvider));
@@ -418,7 +444,10 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
       ),
     );
     if (aligned != null) _alignPlan(aligned, planStart!);
-    Navigator.pop(context);
+    final nav = Navigator.of(context);
+    nav.pop();
+    // The plan settings read the saved goal (race, date, distance, focus of the race).
+    if (wizard) nav.push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
   }
 
   @override
@@ -560,14 +589,23 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                   ),
                 if (_type == GoalType.event) ...[
                   const SizedBox(height: 8),
-                  SwitchListTile(
-                    key: const ValueKey('alignPlan'),
-                    contentPadding: EdgeInsets.zero,
-                    value: _align,
-                    onChanged: (v) => setState(() => _align = v),
-                    title: Text(l.alignPlanToEvent),
-                    subtitle: Text(l.alignPlanToEventSub),
-                  ),
+                  if (_planAligned)
+                    ListTile(
+                      key: const ValueKey('alignPlanStatus'),
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.check_circle_rounded, color: AppColors.success),
+                      title: Text(l.alignStatusAligned),
+                      subtitle: Text(l.alignStatusAlignedSub),
+                    )
+                  else
+                    SwitchListTile(
+                      key: const ValueKey('alignPlan'),
+                      contentPadding: EdgeInsets.zero,
+                      value: _align,
+                      onChanged: (v) => setState(() => _align = v),
+                      title: Text(l.alignPlanToEvent),
+                      subtitle: Text(widget.existing != null && !_align ? l.alignStatusNotAligned : l.alignPlanToEventSub),
+                    ),
                   if (_align && eventKey == null)
                     Text(l.alignNeedsDistance, style: Theme.of(context).textTheme.bodySmall)
                   else if (_align) ...[
@@ -575,7 +613,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
-                          l.alignChangesFocus(_focusFor(eventKey!, ref.watch(profileOrDefaultProvider).focus).label(l)),
+                          l.alignFocusWizard(_focusFor(eventKey!, ref.watch(profileOrDefaultProvider).focus).label(l)),
                           key: const ValueKey('alignFocusHint'),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.brand),
                         ),
@@ -604,7 +642,9 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                               _targetCtl.text = clock(sec);
                             }),
                       ),
-                    if (aligned != null) ...[
+                    // Never a check computed with the wrong focus (its week has no cycling:
+                    // "long ride only 0 min") – the plan settings check it with the new week.
+                    if (aligned != null && !_needsWizard) ...[
                       const SizedBox(height: 12),
                       FeasibilityCard(
                         _feasibility.of(aligned, DateTime.now(), l),
@@ -620,7 +660,8 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                   ],
                 ],
                 const SizedBox(height: 20),
-                if (_invalidReason(l) != null)
+                // Validated on submit / once something was entered – no red error on a fresh sheet.
+                if (_showErrors && _invalidReason(l) != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
@@ -629,7 +670,17 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
                     ),
                   ),
-                FilledButton(key: const ValueKey('saveGoal'), onPressed: _invalidReason(l) != null ? null : _save, child: Text(l.save)),
+                FilledButton(
+                  key: const ValueKey('saveGoal'),
+                  onPressed: () {
+                    if (_invalidReason(l) != null) {
+                      setState(() => _submitted = true);
+                      return;
+                    }
+                    _save();
+                  },
+                  child: Text(l.save),
+                ),
               ],
             ),
           ),

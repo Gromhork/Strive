@@ -1,0 +1,25 @@
+{
+ # C2/C5: race goal, focus and plan don't match
+ 'mismatchTitle': ["Goal and plan don't match", 'Ziel und Plan passen nicht zusammen'],
+ 'mismatchFocusBody': ["Your goal {goal} doesn't match your focus {focus} – switch the focus to {newFocus} and adjust the plan?", 'Dein Ziel {goal} passt nicht zu deinem Fokus {focus} – Fokus auf {newFocus} ändern und Plan anpassen?'],
+ 'mismatchPlanBody': ["Your plan isn't aligned to {goal} yet – adjust the plan up to race day?", 'Dein Plan ist noch nicht auf {goal} ausgerichtet – Plan bis zum Wettkampftag anpassen?'],
+ 'mismatchMissing': ['Missing from the plan so far: {sports}.', 'Im Plan fehlt bisher: {sports}.'],
+ 'mismatchAdjust': ['Adjust', 'Anpassen'],
+ 'later': ['Later', 'Später'],
+ 'alignStatusAligned': ['Your plan is aligned to this race', 'Dein Plan ist auf diesen Wettkampf ausgerichtet'],
+ 'alignStatusAlignedSub': ['A new date or distance rebuilds the plan up to race day (completed workouts are kept).', 'Ein neues Datum oder eine neue Distanz baut den Plan bis zum Wettkampftag neu (erledigte Einheiten bleiben).'],
+ 'alignStatusNotAligned': ["Your plan isn't aligned to this race yet.", 'Dein Plan ist aktuell nicht auf diesen Wettkampf ausgerichtet.'],
+ 'alignFocusWizard': ['The focus switches to {focus}. When you save, the plan settings open so you can set your week (with every discipline) – the check of the goal follows there.', 'Der Fokus wird auf {focus} umgestellt. Beim Speichern öffnen sich die Planeinstellungen, damit du deine Woche (mit allen Disziplinen) festlegst – die Prüfung des Ziels folgt dort.'],
+ 'weekMissingSport': ['{sports} is not in your week yet – a {focus} plan needs at least one session of it.', '{sports} ist noch nicht in deiner Woche – ein {focus}-Plan braucht mindestens eine Einheit davon.'],
+ 'summaryNewPlan': ['Your new plan', 'Dein neuer Plan'],
+ 'summaryWeekStructure': ['Week: {structure}', 'Woche: {structure}'],
+ 'summaryPlanLengthEvent': ['Length: {weeks} weeks up to race day', 'Länge: {weeks} Wochen bis zum Wettkampftag'],
+ 'summaryPlanLength': ['Length: {weeks} weeks', 'Länge: {weeks} Wochen'],
+ 'planWeeksCurrent': ['{weeks} weeks · current', '{weeks} Wochen · aktuell'],
+ # Coach starter questions by goal
+ 'coachQRace': ['How do I prepare best for {race}?', 'Wie bereite ich mich am besten auf {race} vor?'],
+ 'coachQTri': ['How do I combine swimming, cycling and running in one week?', 'Wie kombiniere ich Schwimmen, Radfahren und Laufen in einer Woche?'],
+ 'coachQGym': ['How do I get stronger without stalling?', 'Wie werde ich stärker, ohne zu stagnieren?'],
+ 'coachQRide': ['How do I get faster on the bike?', 'Wie werde ich auf dem Rad schneller?'],
+ 'coachQSwim': ['How do I swim more efficiently?', 'Wie schwimme ich ökonomischer?'],
+}

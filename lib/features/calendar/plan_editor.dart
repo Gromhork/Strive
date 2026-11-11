@@ -20,6 +20,7 @@ import '../../services/zones.dart';
 import '../../widgets/segments.dart';
 import '../../core/theme.dart';
 import '../onboarding/onboarding_page.dart';
+import '../goals/goal_mismatch_card.dart';
 import 'feasibility_card.dart';
 import 'replace_plan_dialog.dart';
 import '../train/gym_exercise_editor.dart';
@@ -394,7 +395,11 @@ class _PlanGenerator extends ConsumerStatefulWidget {
 class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
   /// Plan length without an event (with one, the generator always plans to race day) –
   /// the same choices as the plan settings.
-  late int _weeks = ref.read(profileOrDefaultProvider).athlete.planWeeks;
+  late int _weeks = _currentLength(ref.read(profileOrDefaultProvider).athlete);
+
+  /// The length of the plan that is running (e.g. 14 weeks after aligning it to a race) –
+  /// the preselected chip must match "Woche 2/14", not the stored default of 12.
+  static int _currentLength(AthleteData a) => (a.planLength ?? 0) > 0 ? a.planLength! : a.planWeeks;
   bool _busy = false;
   final _feasibility = FeasibilityCache();
 
@@ -439,7 +444,15 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
     final l = context.l10n;
     final p = ref.watch(profileOrDefaultProvider);
     final eventWeeks = _eventWeeks(p);
-    final options = [(4, l.plan4w), (8, l.plan8w), (12, l.plan12w), (16, l.plan16w), (20, l.plan20w)];
+    final current = _currentLength(p.athlete);
+    final options = [
+      (4, l.plan4w),
+      (8, l.plan8w),
+      (12, l.plan12w),
+      (16, l.plan16w),
+      (20, l.plan20w),
+      if (![4, 8, 12, 16, 20].contains(current)) (current, l.planWeeksCurrent(current)),
+    ]..sort((a, b) => a.$1.compareTo(b.$1));
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SafeArea(
@@ -452,6 +465,14 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
               const SizedBox(height: 4),
               Text(l.generatePlanSub(p.focus.label(l), p.weeklyTarget), style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 12),
+              // The plan would be rebuilt for the wrong focus / without the race: fix that first.
+              GoalMismatchCard(
+                onAdjust: () {
+                  final nav = Navigator.of(context);
+                  nav.pop();
+                  nav.push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+                },
+              ),
               Card(
                 margin: EdgeInsets.zero,
                 child: ListTile(

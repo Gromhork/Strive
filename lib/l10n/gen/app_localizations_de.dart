@@ -5447,4 +5447,87 @@ class AppLocalizationsDe extends AppLocalizations {
   String daysLeftInline(int days) {
     return 'noch $days Tage';
   }
+
+  @override
+  String get mismatchTitle => 'Ziel und Plan passen nicht zusammen';
+
+  @override
+  String mismatchFocusBody(String goal, String focus, String newFocus) {
+    return 'Dein Ziel $goal passt nicht zu deinem Fokus $focus – Fokus auf $newFocus ändern und Plan anpassen?';
+  }
+
+  @override
+  String mismatchPlanBody(String goal) {
+    return 'Dein Plan ist noch nicht auf $goal ausgerichtet – Plan bis zum Wettkampftag anpassen?';
+  }
+
+  @override
+  String mismatchMissing(String sports) {
+    return 'Im Plan fehlt bisher: $sports.';
+  }
+
+  @override
+  String get mismatchAdjust => 'Anpassen';
+
+  @override
+  String get later => 'Später';
+
+  @override
+  String get alignStatusAligned => 'Dein Plan ist auf diesen Wettkampf ausgerichtet';
+
+  @override
+  String get alignStatusAlignedSub => 'Ein neues Datum oder eine neue Distanz baut den Plan bis zum Wettkampftag neu (erledigte Einheiten bleiben).';
+
+  @override
+  String get alignStatusNotAligned => 'Dein Plan ist aktuell nicht auf diesen Wettkampf ausgerichtet.';
+
+  @override
+  String alignFocusWizard(String focus) {
+    return 'Der Fokus wird auf $focus umgestellt. Beim Speichern öffnen sich die Planeinstellungen, damit du deine Woche (mit allen Disziplinen) festlegst – die Prüfung des Ziels folgt dort.';
+  }
+
+  @override
+  String weekMissingSport(String sports, String focus) {
+    return '$sports ist noch nicht in deiner Woche – ein $focus-Plan braucht mindestens eine Einheit davon.';
+  }
+
+  @override
+  String get summaryNewPlan => 'Dein neuer Plan';
+
+  @override
+  String summaryWeekStructure(String structure) {
+    return 'Woche: $structure';
+  }
+
+  @override
+  String summaryPlanLengthEvent(int weeks) {
+    return 'Länge: $weeks Wochen bis zum Wettkampftag';
+  }
+
+  @override
+  String summaryPlanLength(int weeks) {
+    return 'Länge: $weeks Wochen';
+  }
+
+  @override
+  String planWeeksCurrent(int weeks) {
+    return '$weeks Wochen · aktuell';
+  }
+
+  @override
+  String coachQRace(String race) {
+    return 'Wie bereite ich mich am besten auf $race vor?';
+  }
+
+  @override
+  String get coachQTri => 'Wie kombiniere ich Schwimmen, Radfahren und Laufen in einer Woche?';
+
+  @override
+  String get coachQGym => 'Wie werde ich stärker, ohne zu stagnieren?';
+
+  @override
+  String get coachQRide => 'Wie werde ich auf dem Rad schneller?';
+
+  @override
+  String get coachQSwim => 'Wie schwimme ich ökonomischer?';
 }

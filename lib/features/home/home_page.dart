@@ -31,6 +31,7 @@ import '../calendar/planned_workout_page.dart';
 import '../session/step_list.dart';
 import '../goals/goal_forecast_widgets.dart';
 import '../goals/goals_page.dart';
+import '../goals/goal_mismatch_card.dart';
 import '../onboarding/onboarding_page.dart';
 import '../session/start_helpers.dart';
 import '../stats/body_page.dart';
@@ -56,6 +57,7 @@ class HomePage extends ConsumerWidget {
           AdjustWeekBanner(),
           AutoAdjustedBanner(),
           GuestBanner(),
+          GoalMismatchCard(snoozable: true),
           TodayCard(),
           SizedBox(height: 12),
           GoalStatusCard(),

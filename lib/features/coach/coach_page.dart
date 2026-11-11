@@ -1,11 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/event_distances.dart';
 import '../../core/format.dart';
+import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/coach_service.dart';
+import '../../services/goal_alignment.dart';
+import '../goals/goal_mismatch_card.dart';
 import '../goals/goals_page.dart';
+
+/// Starter questions that fit the athlete: the race goal ("Wie bereite ich mich auf Hamburg
+/// Triathlon vor?") and the sport of the race / focus – no "10 km faster" for a triathlete.
+List<String> coachSuggestions(AppLocalizations l, TrainingFocus focus, GoalAlignment? race) {
+  final raceSport = eventDistanceOf(race?.raceKey)?.sport;
+  final sport = switch (raceSport) {
+    EventSport.triathlon || EventSport.duathlon => TrainingFocus.triathlon,
+    EventSport.ride => TrainingFocus.ride,
+    EventSport.swim => TrainingFocus.swim,
+    EventSport.run => TrainingFocus.run,
+    null => focus,
+  };
+  final specific = switch (sport) {
+    TrainingFocus.triathlon || TrainingFocus.duathlon => l.coachQTri,
+    TrainingFocus.ride => l.coachQRide,
+    TrainingFocus.swim => l.coachQSwim,
+    TrainingFocus.run => l.coachQ3,
+    TrainingFocus.gym || TrainingFocus.hybrid => l.coachQGym,
+  };
+  return [l.coachQ1, if (race != null) l.coachQRace(race.goal.title), l.coachQ2, specific, l.coachQ4, l.coachQ5];
+}
 
 class _Msg {
   _Msg(this.user, this.text);
@@ -92,7 +118,7 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
       ref.read(coachDraftProvider.notifier).set(null);
     });
     final l = context.l10n;
-    final suggestions = [l.coachQ1, l.coachQ2, l.coachQ3, l.coachQ4, l.coachQ5];
+    final suggestions = coachSuggestions(l, ref.watch(profileOrDefaultProvider).focus, ref.watch(goalAlignmentProvider));
     return Column(
       children: [
         Padding(

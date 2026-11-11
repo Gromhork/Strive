@@ -9970,6 +9970,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{days} days left'**
   String daysLeftInline(int days);
+
+  /// No description provided for @mismatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal and plan don\'t match'**
+  String get mismatchTitle;
+
+  /// No description provided for @mismatchFocusBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goal {goal} doesn\'t match your focus {focus} – switch the focus to {newFocus} and adjust the plan?'**
+  String mismatchFocusBody(String goal, String focus, String newFocus);
+
+  /// No description provided for @mismatchPlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan isn\'t aligned to {goal} yet – adjust the plan up to race day?'**
+  String mismatchPlanBody(String goal);
+
+  /// No description provided for @mismatchMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing from the plan so far: {sports}.'**
+  String mismatchMissing(String sports);
+
+  /// No description provided for @mismatchAdjust.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust'**
+  String get mismatchAdjust;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @alignStatusAligned.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan is aligned to this race'**
+  String get alignStatusAligned;
+
+  /// No description provided for @alignStatusAlignedSub.
+  ///
+  /// In en, this message translates to:
+  /// **'A new date or distance rebuilds the plan up to race day (completed workouts are kept).'**
+  String get alignStatusAlignedSub;
+
+  /// No description provided for @alignStatusNotAligned.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan isn\'t aligned to this race yet.'**
+  String get alignStatusNotAligned;
+
+  /// No description provided for @alignFocusWizard.
+  ///
+  /// In en, this message translates to:
+  /// **'The focus switches to {focus}. When you save, the plan settings open so you can set your week (with every discipline) – the check of the goal follows there.'**
+  String alignFocusWizard(String focus);
+
+  /// No description provided for @weekMissingSport.
+  ///
+  /// In en, this message translates to:
+  /// **'{sports} is not in your week yet – a {focus} plan needs at least one session of it.'**
+  String weekMissingSport(String sports, String focus);
+
+  /// No description provided for @summaryNewPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Your new plan'**
+  String get summaryNewPlan;
+
+  /// No description provided for @summaryWeekStructure.
+  ///
+  /// In en, this message translates to:
+  /// **'Week: {structure}'**
+  String summaryWeekStructure(String structure);
+
+  /// No description provided for @summaryPlanLengthEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Length: {weeks} weeks up to race day'**
+  String summaryPlanLengthEvent(int weeks);
+
+  /// No description provided for @summaryPlanLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Length: {weeks} weeks'**
+  String summaryPlanLength(int weeks);
+
+  /// No description provided for @planWeeksCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks} weeks · current'**
+  String planWeeksCurrent(int weeks);
+
+  /// No description provided for @coachQRace.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I prepare best for {race}?'**
+  String coachQRace(String race);
+
+  /// No description provided for @coachQTri.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I combine swimming, cycling and running in one week?'**
+  String get coachQTri;
+
+  /// No description provided for @coachQGym.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I get stronger without stalling?'**
+  String get coachQGym;
+
+  /// No description provided for @coachQRide.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I get faster on the bike?'**
+  String get coachQRide;
+
+  /// No description provided for @coachQSwim.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I swim more efficiently?'**
+  String get coachQSwim;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

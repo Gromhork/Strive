@@ -8,6 +8,7 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../data/exercise_names_de.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../calendar/auto_adjust.dart';
@@ -16,7 +17,6 @@ import '../../services/plan_match.dart';
 import '../../services/gym_tools.dart' show sessionRpeFromEfforts;
 import '../../services/insights.dart';
 import '../../services/workout_store.dart';
-import 'gym_session_page.dart' show capitalize;
 import '../../widgets/common.dart';
 import '../../widgets/rpe_picker.dart';
 import 'route_map.dart';
@@ -284,13 +284,14 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                   ),
                   if (prs.isNotEmpty) ...[
                     const Divider(height: 24),
-                    for (final p in prs)
+                    // German display names (also for exercises without a curated name).
+                    for (final e in s.exercises.where((e) => prs.contains(e.name)))
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         dense: true,
                         leading: const Icon(Icons.trending_up_rounded, color: AppColors.success),
                         title: Text(l.newPr),
-                        subtitle: Text(capitalize(p)),
+                        subtitle: Text(exName(context, e.exId, e.name)),
                       ),
                   ],
                   if (newBadges.isNotEmpty) ...[

@@ -317,8 +317,12 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.text('open'));
       await t.pumpAndSettle();
-      // Empty goal can't be saved ("0 per week").
-      expect(t.widget<FilledButton>(find.byKey(const ValueKey('saveGoal'))).onPressed, isNull);
+      // Empty goal can't be saved ("0 per week") – but no red error before the first try.
+      expect(find.byKey(const ValueKey('goalInvalid')), findsNothing);
+      await t.tap(find.byKey(const ValueKey('saveGoal')));
+      await t.pumpAndSettle();
+      expect(find.byKey(const ValueKey('goalInvalid')), findsOneWidget);
+      expect(repo.savedGoals, isEmpty);
       await t.tap(find.text(l.goalTypeEvent));
       await t.pumpAndSettle();
       await t.ensureVisible(find.byKey(const ValueKey('raceType-triathlon')));

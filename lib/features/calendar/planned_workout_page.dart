@@ -11,6 +11,7 @@ import '../../services/gym_tools.dart' show ProgressionKind;
 import '../../services/plan_text.dart';
 import '../../widgets/common.dart';
 import '../../data/models.dart';
+import '../../data/exercise_names_de.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/plan_amount.dart';
 import '../../widgets/prescription.dart';
@@ -206,7 +207,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: ExerciseMedia(exId: e.exId, animated: false, size: 48, radius: 12),
-                title: Text(e.name.isEmpty ? '' : e.name[0].toUpperCase() + e.name.substring(1)),
+                title: Text(exName(context, e.exId, e.name)),
                 subtitle: Builder(
                   builder: (_) {
                     final rx = p.isDone ? null : ref.watch(loadPrescriberProvider).forExercise(e, phase: p.phase);

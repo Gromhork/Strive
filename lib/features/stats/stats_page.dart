@@ -9,6 +9,7 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../data/exercise_names_de.dart';
 import '../../providers.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
@@ -143,7 +144,7 @@ class _PerformanceState extends ConsumerState<_Performance> {
                     value: r.exId,
                     child: SizedBox(
                       width: 150,
-                      child: Text(capFirst(r.name), overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+                      child: Text(exName(context, r.exId, r.name), overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
                     ),
                   ),
               ],
@@ -372,7 +373,7 @@ class _Records extends ConsumerWidget {
                             dense: true,
                             // No "e1RM 0 kg" trophy for core / bodyweight exercises: their best reps instead.
                             leading: Icon(r.bestE1rm > 0 ? Icons.emoji_events_outlined : Icons.repeat_rounded, color: AppColors.gym),
-                            title: Text(capFirst(r.name), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            title: Text(exName(context, r.exId, r.name), maxLines: 1, overflow: TextOverflow.ellipsis),
                             subtitle: Text(
                               [
                                 if (r.maxWeight > 0) '${l.maxWeight} ${u.weight(r.maxWeight)}',
