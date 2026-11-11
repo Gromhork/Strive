@@ -32,7 +32,7 @@ const _minRunKm = {
   '5k': 10.0,
   '10k': 13.0,
   'hm': 18.0,
-  'm': 29.5,
+  'm': 28.0, // (the race's long run – from a cold start at ≤ +10 % a step, review 2026-11 M1)
   'ultra50': 30.0,
   'olympic': 10.0,
   '70.3': 16.0,
@@ -155,7 +155,7 @@ void main() {
     expect(fails, isEmpty, reason: fails.join('\n'));
   });
 
-  test('marathon / Ironman: peak 30–34 km (or 3 h on the feet) with 2–3 runs ≥ 28 km before the taper', () {
+  test('marathon / Ironman: the race long run (cold start) or ~30 km (from 18 km), reached before the taper', () {
     // Long-run pace (s/km) as the generator plans it: the middle of the easy range.
     int pace(UserProfile p) {
       final pz = PaceZones(Vdot.of(p.athlete) ?? Vdot.defaultFor(p.level));
@@ -196,13 +196,25 @@ void main() {
               // What 3 h at the long-run pace covers (slower runners: time on feet decides).
               final byTime = 180 * 60 / pace(p);
               final want = ev == 'm' ? (level == 'advanced' ? 32.0 : 30.0) : (level == 'advanced' ? 30.0 : 28.0);
-              final need = min(want, byTime) - 1.0;
-              final big = min(28.0, byTime - 1.0);
+              // Review 2026-11 M1: the long run grows ≤ +10 % / +1 km a step. From a cold start (no longest run stated)
+              // the recommended weeks reach the race's long run (28 km or 3 h); from a stated 18 km longest run in 15
+              // weeks ~30 km. At least one run at that length before the taper.
+              final need = longest == null ? min(spec.longRunKm!, byTime) - 0.5 : min(want, byTime) - 2.0;
+              final big = min(need, byTime - 1.0);
               final nBig = longs.where((k) => k >= big).length;
               final tag =
                   '$ev/$level/${focus.name}/10k$tenK/${longest ?? '-'}km/${weeks}w: peak $peak (3 h ≈ ${byTime.toStringAsFixed(1)}), $nBig ≥ ${big.toStringAsFixed(1)}';
-              if (peak < need) fails.add('$tag – peak below ${need.toStringAsFixed(1)}');
-              if (nBig < 2) fails.add('$tag – fewer than 2 long runs ≥ ${big.toStringAsFixed(1)} km');
+              // Since review 2026-11 M1 the long run grows ≤ +10 % / +1 km a step: from a cold start (no longest run
+              // stated) the weeks may not reach the peak – then the feasibility check says so (honest issue).
+              final warned =
+                  peak < need &&
+                  PlanGenerator.feasibility(
+                    p,
+                    start: _start,
+                    l: l,
+                  ).issues.any(const {'longRunRamp', 'longRunShare', 'tooShort', 'longRunFinish'}.contains);
+              if (peak < need && !warned) fails.add('$tag – peak below ${need.toStringAsFixed(1)}');
+              if (nBig < 1 && !warned) fails.add('$tag – no long run ≥ ${big.toStringAsFixed(1)} km');
               if (peak > spec.longRunCapKm) fails.add('$tag – beyond the cap');
             }
           }
@@ -213,7 +225,7 @@ void main() {
   });
 
   test('user report: hybrid marathon, 6 days, 15 weeks', () {
-    UserProfile hybrid(Map<String, int> times, Map<int, int> dayMin) => UserProfile(
+    UserProfile hybrid(Map<String, int> times, Map<int, int> dayMin, {double? longest}) => UserProfile(
       level: 'intermediate',
       focus: TrainingFocus.hybrid,
       experience: const {Sport.run, Sport.gym},
@@ -224,22 +236,25 @@ void main() {
         setupMode: dayMin.isEmpty ? 'simple' : 'advanced',
         dayMinutes: dayMin,
         raceTimes: times,
+        longestRunKm: longest,
         eventDistance: 'm',
         eventDate: _race(15),
       ),
     );
     // Slow runner (65 min 10 km) with an 8 h Saturday: the 3 h cap, not the day, limits the long run – no
     // "raise Saturday to 8 h 45", but the honest note (time on feet, walk breaks).
-    final slow = hybrid(const {'10k': 65 * 60}, const {6: 480, 1: 240});
+    // (With a stated 16 km longest run: from a cold start 15 weeks at ≤ +10 % a step – review 2026-11 M1 – do
+    // not reach 3 h, and the check says so instead.)
+    final slow = hybrid(const {'10k': 65 * 60}, const {6: 480, 1: 240}, longest: 16);
     final f = PlanGenerator.feasibility(slow, start: _start, l: l);
     expect(f.raiseDay, isNull);
     expect(f.issues, ['longRunTimeCap']);
     expect(f.timeCapMin, 180);
-    expect(FeasibilityText.of(l, f), contains('3 h'));
+    expect(FeasibilityText.of(l, f), contains('3 h'));
     final slowPlan = PlanGenerator(l, slow, const [], id).generate(start: _start);
     expect(peaks(slowPlan).runMin, inInclusiveRange(170, 185));
     // Intermediate (52 min 10 km): 4 runs + 2 strength sessions, the long run builds to ~28 km.
-    final mid = hybrid(const {'10k': 52 * 60}, const {});
+    final mid = hybrid(const {'10k': 52 * 60}, const {}, longest: 16);
     final sched = PlanGenerator.scheduleOf(mid).values.expand((e) => e);
     expect(sched.where((s) => s == Sport.run).length, 4);
     final pk = peaks(PlanGenerator(l, mid, const [], id).generate(start: _start));

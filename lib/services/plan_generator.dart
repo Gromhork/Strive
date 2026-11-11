@@ -47,8 +47,8 @@ import 'zones.dart';
 /// * Race day is placed on the event date with a shake-out run the day before.
 /// * Athlete traits: beginners keep ≥ 2 rest days (H7) and ≤ 4 runs; quick-setup
 ///   beginners without running experience start with run/walk (also returning runners
-///   with BMI ≥ 30 or age ≥ 65, from 3 × 5 min); masters (≥ 50) get 3:1 cycles
-///   (≥ 65: 2:1), slower growth and no consecutive key days.
+///   with BMI ≥ 30 or age ≥ 65, from 3 × 5 min); masters (≥ 50) get 3:1 cycles with deeper recovery weeks
+///   (≥ 60: 2:1), slower growth and no consecutive key days.
 /// * Health limitations ([HealthFlags], §9.1): knee / hip / ankle → less running impact
 ///   (slower growth, no strides / VO2max reps, one easy run → easy ride); shoulder → swim
 ///   technique instead of CSS sets, less swim volume; heart / blood pressure → intensity
@@ -109,6 +109,7 @@ class PlanGenerator {
     };
     return _masters ? min(f, 0.65) : f;
   }
+
   double get _longCap => a.difficulty == 'easy' || hf.lowImpactRun ? 1.05 : 1.10;
 
   late final PaceZones pz = PaceZones(Vdot.of(a) ?? Vdot.defaultFor(level));
@@ -227,9 +228,9 @@ class PlanGenerator {
     return m == null ? km : min(km, _r1(m * 60 / _longPace));
   }
 
-  /// Smallest weekly step of a short long run ([_longStepCap]): 1 km (EASY / joint problems / gentle
-  /// builds 0.5 km) – below 10 km that is more than +10 %, the step novice plans take (Higdon / Galloway).
-  double get _goalStepKm => _gentleGoal || _longCap < 1.1 ? 0.5 : 1.0;
+  /// Smallest weekly step of a short long run ([_longStepCap]): 1 km (EASY / joint problems – [_longCap] 5 % –
+  /// 0.5 km) – below 10 km that is more than +10 %, the step novice plans take (Higdon / Galloway).
+  double get _goalStepKm => _longCap < 1.1 ? 0.5 : 1.0;
 
   /// Longest long run a loading week may plan after [longest] (km): + max(10 % – EASY 5 %, [_goalStepKm]),
   /// rounded down to 0.5 km but at least +0.5 km (Frandsen 2025, review 2026-11 M1).
@@ -464,7 +465,10 @@ class PlanGenerator {
       // Goal-directed build: the goal's long run may take up to half of a low-volume week (3+ runs;
       // 2 runs 55 %) – Higdon / Galloway novice plans (§1.10a).
       // (Three runs 60 % – marathon / ultra 55 % – [threeRunShareFor]; two runs 55 %, review 2026-11 H3.)
-      final g = goalBehind && wk > 0 ? max(s, min(runsActual >= 4 ? 0.5 : (runsActual == 3 ? threeRunShareFor(a.eventDistance) : 0.55), goalKm / wk)) : s;
+      final g =
+          goalBehind && wk > 0
+              ? max(s, min(runsActual >= 4 ? 0.5 : (runsActual == 3 ? threeRunShareFor(a.eventDistance) : 0.55), goalKm / wk))
+              : s;
       return runPerWeek >= 3 && w < total - 12 ? min(g, max(baseShare(wk), 0.40)) : g;
     }
 
@@ -1578,7 +1582,7 @@ class PlanGenerator {
   /// [afterRunWalk]: the schedule of the weeks after the run/walk ladder (a beginner's 4th run day
   /// is used again – review: the chosen Monday was never planned).
   static Map<int, List<Sport>> deriveSchedule(UserProfile profile, {bool afterRunWalk = false}) {
-    var days = (profile.trainingDays.isEmpty ? [1, 3, 5] : [...profile.trainingDays])..sort();
+    var days = (profile.trainingDays.isEmpty ? [...defaultTrainingDays] : [...profile.trainingDays])..sort();
     final longDay = _longDayFrom(profile, days);
     final res = <int, List<Sport>>{};
     days = _spreadDays(days, maxTrainingDays(profile), longDay);
@@ -3452,7 +3456,13 @@ class PlanGenerator {
     final lighter = !noLegs && endurance && role == 'nolegs' && legsInside && t != null && !legHeavyKeys.contains(key);
     var exercises = lighter ? [for (final e in t.exercises) _halveLegSets(e)] : const <GymExercise>[];
     // Before the race: the program without its leg exercises (upper body, core).
-    final stripped = noLegs && t != null ? [for (final e in t.exercises) if (!classifyLift(e.exId, e.name).lower) e.copy()] : const <GymExercise>[];
+    final stripped =
+        noLegs && t != null
+            ? [
+              for (final e in t.exercises)
+                if (!classifyLift(e.exId, e.name).lower) e.copy(),
+            ]
+            : const <GymExercise>[];
     if (stripped.isNotEmpty) exercises = stripped;
     // Beginners (§2.3/2.4, review 2026-11 IMPORTANT 19): the first [_regressionWeeks] weeks use the
     // regression of the technically demanding lifts – lat pulldown for pull-ups, a dumbbell RDL for the
@@ -3693,7 +3703,7 @@ class PlanGenerator {
                 // The race's own intensity: 5 km ~I, 10 km / HM ~T, marathon M (finish-only: easy).
                 // (By the race pace's actual intensity when there is one – review 2026-11 L3: an amateur's HM pace
                 // is closer to M than to T.)
-                zone: finish ? 'E' : (pace != null ? _zoneForPace(pace) : _raceZone),
+                zone: finish ? 'E' : (pace != null && a.eventDistance == 'hm' ? _zoneForPace(pace) : _raceZone),
                 paceMin: pace == null ? null : pace - 3,
                 paceMax: pace == null ? null : pace + 3,
                 note: l.stepRaceNote,
@@ -4292,7 +4302,8 @@ class PlanGenerator {
     if (spec != null && p.focus.sports.contains(Sport.swim) && nSwims < spec.minSwims) issues.add('swimFrequency');
     // The weeks are at least the recommended plan length ([recommendedWeeks]): a long run the plan cannot
     // build is then the athlete's start level and the safe weekly step (R1), not "too few weeks" (M3).
-    final weeksOk = (g.weeksToEvent ?? 0) >= recommendedWeeks(p).min;
+    // (Run/walk starters: the recommended lengths assume 30 min of running – their weeks are the limit.)
+    final weeksOk = (g.weeksToEvent ?? 0) >= recommendedWeeks(p).min && runWalkStartFor(p) == null;
     double? shortLongKm;
     // Long-run target: km, or its time at the long-run pace when that is shorter.
     final runKm = spec?.longRunKm;
@@ -4321,9 +4332,10 @@ class PlanGenerator {
         // run): more weeks do not help, longer runs on the other days do.
         // … also when R1's weekly step alone would have gone further ([_rampMaxKm]): the week's volume and its
         // other runs keep the long run short, not the safe ramp.
-        final rampLimited = longRun >= min(g._rampMaxKm, runTarget) - 1.0;
-        final byShare =
-            !byTime && !runFreq && g._rwAtRace == null && !rampLimited;
+        // (R1 alone stays short of the race's long run, and the plan is within two weekly steps of R1: a week-1 long run
+        // the volume kept a step lower is still a ramp-limited build.)
+        final rampLimited = g._rampMaxKm < runTarget - 0.25 && g._longStepCap(g._longStepCap(longRun)) >= g._rampMaxKm - 0.25;
+        final byShare = !byTime && !runFreq && g._rwAtRace == null && !rampLimited;
         // Otherwise the weeks – "N weeks are not enough" only below the recommended plan length; from it on the
         // start level and the safe weekly step are the limit ([longRunRamp], review 2026-11 M3). Too few runs
         // a week ([runFrequency]) or a finish goal ([longRunFinish]) already say why.
@@ -4580,6 +4592,14 @@ class PlanFeasibility {
   final int? timeCapMin;
   final double? timeCapKm, timeCapRaceKm;
 
+  /// Minutes as "75 min" / "2 h" / "2:15 h" with non-breaking spaces (the app-wide duration style – "2 h 00"
+  /// wrapped as "2" / "h 00" on narrow phones).
+  static String _dur(int m) {
+    if (m < 90) return '$m min';
+    final h = m ~/ 60, r = m % 60;
+    return r == 0 ? '$h h' : '$h:${r.toString().padLeft(2, '0')} h';
+  }
+
   static String _kmText(AppLocalizations l, double v) {
     final s = (v - v.roundToDouble()).abs() < 0.05 ? '${v.round()}' : v.toStringAsFixed(1);
     return l.localeName.startsWith('de') ? s.replaceAll('.', ',') : s;
@@ -4603,7 +4623,7 @@ class PlanFeasibility {
   String? extraIssueText(AppLocalizations l, String issue, {required String Function(int weekday) dayName}) => switch (issue) {
     'longDayDefault' when longDayWeekday != null && longDayNeedMin != null => l.feasLongDayDefault(
       dayName(longDayWeekday!),
-      longDayNeedMin! >= 90 ? '${longDayNeedMin! ~/ 60} h ${(longDayNeedMin! % 60).toString().padLeft(2, '0')}' : '$longDayNeedMin min',
+      _dur(longDayNeedMin!),
     ),
     'longRunShare' => l.feasLongRunShare3(otherRunSharePct ?? 50, otherRunNeedMin ?? 0),
     'runFrequency' => l.feasRunFrequency('${runsPerWeek ?? 0}', '${minRuns ?? 0}'),
@@ -4615,7 +4635,7 @@ class PlanFeasibility {
       if (!longestRunKnown) l.feasLongRunRampHint,
     ].join(' '),
     'longRunTimeCap' when timeCapMin != null && timeCapKm != null && timeCapRaceKm != null => l.feasLongRunTimeCap(
-      timeCapMin! % 60 == 0 ? '${timeCapMin! ~/ 60} h' : '${timeCapMin! ~/ 60} h ${(timeCapMin! % 60).toString().padLeft(2, '0')}',
+      _dur(timeCapMin!),
       _kmText(l, timeCapKm!),
       _kmText(l, timeCapRaceKm!),
     ),

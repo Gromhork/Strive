@@ -296,9 +296,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       if (!eventFitsFocus(a.eventDistance, p.focus)) 'eventDistance': null,
       if (!eventFitsFocus(a.eventDistance, p.focus)) 'targetTimeSec': null,
     });
-    var days = [
-      ...(p.trainingDays.isEmpty ? const [1, 3, 5] : p.trainingDays),
-    ]..sort();
+    var days = [...(p.trainingDays.isEmpty ? defaultTrainingDays : p.trainingDays)]..sort();
     var longDays = days; // days that can hold the long endurance session
     if (_advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) {
       days = (a.dayPlan.entries.where((e) => e.value.isNotEmpty).map((e) => e.key).toList()..sort());

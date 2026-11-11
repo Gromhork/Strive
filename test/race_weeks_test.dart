@@ -6,7 +6,6 @@ import 'package:strive/core/format.dart';
 import 'package:strive/core/sport.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
-import 'package:strive/services/goal_model.dart';
 import 'package:strive/services/plan_generator.dart';
 
 /// Race goal with a plan length instead of a date: the race goes on the long-session day of the
@@ -85,7 +84,8 @@ void main() {
         for (final weeks in [4, 8, 12, 16]) {
           final race = PlanGenerator.raceDayForWeeks(p, start, weeks);
           expect(race.weekday, longDay, reason: '$start, $weeks weeks');
-          expect(GoalModel.weeksUntil(race, start), weeks, reason: 'exactly $weeks plan weeks ($start)');
+          // (A start week without a training day left is no plan week – review 2026-11 M2.)
+          expect(PlanGenerator.planWeeksUntil(p, race, start), weeks, reason: 'exactly $weeks plan weeks ($start)');
           expect(race.isAfter(start), isTrue);
           expect(race, dayOnly(race));
         }

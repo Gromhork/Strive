@@ -156,7 +156,9 @@ void main() {
         final plan = gen(p);
         expect(longestSwim(plan), greaterThanOrEqualTo(need));
         expect(feas(p).issues, isNot(contains('longSwim')));
-        final sessions = plan.where((w) => w.sport == Sport.swim && w.intensity != 'race').map((w) => w.steps.fold(0.0, (x, s) => x + (s.distanceM ?? 0)));
+        final sessions = plan
+            .where((w) => w.sport == Sport.swim && w.intensity != 'race')
+            .map((w) => w.steps.fold(0.0, (x, s) => x + (s.distanceM ?? 0)));
         if (ev == 'ironman') expect(sessions.fold(0.0, max), greaterThanOrEqualTo(3000));
       });
     }
@@ -297,7 +299,10 @@ void main() {
     final p = _p(TrainingFocus.run, 'intermediate', 'm', 18, const [2, 4, 6, 7], 60, const {7: 200}, age: 60);
     final phases = PlanGenerator.phasesFor(p, start: _start);
     expect(phases.indexOf('recovery'), 2, reason: '$phases');
-    final young = PlanGenerator.phasesFor(_p(TrainingFocus.run, 'intermediate', 'm', 18, const [2, 4, 6, 7], 60, const {7: 200}), start: _start);
+    final young = PlanGenerator.phasesFor(
+      _p(TrainingFocus.run, 'intermediate', 'm', 18, const [2, 4, 6, 7], 60, const {7: 200}),
+      start: _start,
+    );
     expect(young.indexOf('recovery'), 3, reason: '$young');
   });
 
@@ -318,7 +323,7 @@ void main() {
     }
 
     for (final z in const ['M', 'T', 'I']) {
-      expect(off(step.zone!), lessThanOrEqualTo(off(z)), reason: '${step.zone} vs $z');
+      expect(off(step.zone), lessThanOrEqualTo(off(z)), reason: '${step.zone} vs $z');
     }
   });
 
@@ -338,6 +343,45 @@ void main() {
         expect(b.steps.where((s) => s.isWork).every((s) => s.zone == 'E' && s.paceMin == null), isTrue);
       }
     });
+  });
+
+  test('QA 2026-11: the long session (and a race by plan length) is on the weekend whenever the days allow it', () {
+    // Quick setup, hybrid 10 km by plan length: the preselected Mon / Wed / Fri put long run and race on a Friday.
+    expect(defaultTrainingDays.any((d) => d >= 6), isTrue);
+    final fails = <String>[];
+    for (final f in TrainingFocus.values.where((f) => f != TrainingFocus.gym)) {
+      for (final level in const ['beginner', 'intermediate']) {
+        for (final ev in const [null, '10k']) {
+          final def = UserProfile(
+            level: level,
+            focus: f,
+            experience: {...f.sports},
+            goals: const ['race'],
+            athlete: AthleteData(eventDistance: ev),
+          );
+          final race = PlanGenerator.raceDayForWeeks(def, DateTime(2026, 11, 11), 12);
+          if (race.weekday < 6) fails.add('${f.name}/$level/$ev default days: race on ${race.weekday}');
+          for (var mask = 1; mask < 128; mask++) {
+            final days = [
+              for (var i = 0; i < 7; i++)
+                if (mask & (1 << i) != 0) i + 1,
+            ];
+            if (days.length < 2 || !days.any((d) => d >= 6)) continue;
+            final p = UserProfile(
+              level: level,
+              focus: f,
+              experience: {...f.sports},
+              trainingDays: days,
+              goals: const ['race', 'strength'],
+              athlete: AthleteData(eventDistance: ev),
+            );
+            final ld = PlanGenerator.longDayOf(p);
+            if (ld != null && ld < 6) fails.add('${f.name}/$level/$ev $days: long day $ld');
+          }
+        }
+      }
+    }
+    expect(fails, isEmpty, reason: fails.take(20).join('\n'));
   });
 }
 

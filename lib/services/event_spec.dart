@@ -163,7 +163,8 @@ class EventSpec {
       longRunMin: 120,
       longRunGoalKm: 16,
       longRunCapKm: 21,
-      runKm: [30, 50, 70],
+      // (Novices 35 km: a 15–16 km long run at ≤ 50 % of a 4-run week – Higdon's novice HM peaks at ~40 km.)
+      runKm: [35, 50, 70],
       longDayMin: 150,
       shorter: ['10k', '5k'],
       // Galloway run/walk finishes are common at the HM (Hottenrott 2016: similar times, less fatigue).
@@ -245,7 +246,8 @@ class EventSpec {
       runWalkFinish: true,
       minRuns: 2,
       minRides: 2,
-      minSwims: 2,
+      // (One swim a week is the generator's own 5-day olympic week – 1.5 km builds with it; long course needs 2.)
+      minSwims: 1,
     ),
     '70.3': EventSpec(
       '70.3',
