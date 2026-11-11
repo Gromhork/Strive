@@ -5657,4 +5657,39 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coachQSwim => 'Wie schwimme ich ökonomischer?';
+
+  @override
+  String durationRange(String from, String to) {
+    return 'Wähle eine Zeit zwischen $from und $to.';
+  }
+
+  @override
+  String bestTimeFor(String distance) {
+    return 'Bestzeit · $distance';
+  }
+
+  @override
+  String swimTestFor(String distance) {
+    return 'Schwimmtest · $distance';
+  }
+
+  @override
+  String get noTargetTime => 'Keine Zielzeit – ankommen';
+
+  @override
+  String get raceWhen => 'Wann ist der Wettkampf?';
+
+  @override
+  String get raceByDate => 'Datum';
+
+  @override
+  String get raceByWeeks => 'Planlänge';
+
+  @override
+  String get raceByWeeksHint => 'Noch kein Termin? Wähle die Planlänge: Der Wettkampf liegt am Tag deiner langen Einheit in der letzten Woche, und der Plan baut darauf hin – inklusive Tapering.';
+
+  @override
+  String raceOnDate(String date) {
+    return 'Wettkampf am $date';
+  }
 }

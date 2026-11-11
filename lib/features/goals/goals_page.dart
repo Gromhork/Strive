@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -13,10 +15,12 @@ import '../../providers.dart';
 import '../../services/goal_model.dart';
 import '../../services/insights.dart';
 import '../../services/plan_service.dart';
+import '../../services/target_suggestion.dart';
 import '../calendar/feasibility_card.dart';
 import '../calendar/replace_plan_dialog.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
+import '../../widgets/duration_picker.dart';
 import '../../widgets/event_distance_picker.dart';
 import '../../widgets/target_suggestion_line.dart';
 import '../train/exercise_picker.dart';
@@ -216,7 +220,6 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   late final bool _planAligned = _isPlanAligned();
   late bool _align = widget.existing == null || _planAligned;
   late int? _targetSec = _initialTarget();
-  final _targetCtl = TextEditingController();
   final _feasibility = FeasibilityCache();
 
   /// The plan settings point at this (existing) race: same day and distance.
@@ -268,6 +271,8 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   void _pickDistance(String? key) {
     final d = eventDistanceOf(key);
     setState(() {
+      // A target time belongs to its distance.
+      if (d?.key != _key) _targetSec = null;
       _eventKey = d?.key;
       if (d != null) {
         _target.text = Units.num(d.km, 2);
@@ -284,11 +289,11 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
     // The distance of another race type doesn't carry over.
     _eventKey = null;
     _target.clear();
+    _targetSec = null;
   });
   @override
   void initState() {
     super.initState();
-    if (_targetSec != null) _targetCtl.text = clock(_targetSec!);
     _initial = _snapshot();
   }
 
@@ -302,7 +307,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
     _deadline?.millisecondsSinceEpoch,
     _exId,
     _align,
-    _targetCtl.text,
+    _targetSec,
   ].join('\u0000');
   late final String _initial;
 
@@ -310,7 +315,6 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   void dispose() {
     _title.dispose();
     _target.dispose();
-    _targetCtl.dispose();
     super.dispose();
   }
 
@@ -352,6 +356,27 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
       weeks: profile.athlete.planWeeks,
     );
     toast(context, l.planAligned(GoalModel.weeksUntil(profile.athlete.eventDate!, start)));
+  }
+
+  /// Target time of the race [key]: scroll wheels within its plausible range ([eventTimeBounds]),
+  /// starting at the suggestion.
+  Widget _targetField(AppLocalizations l, String key) {
+    final bounds = eventTimeBounds(key);
+    final p = ref.watch(profileOrDefaultProvider);
+    final date = _deadline ?? addDays(dayOnly(DateTime.now()), 84);
+    final suggested = suggestTargetTime(p, key, date, sessions: ref.watch(sessionListProvider), plans: ref.watch(planListProvider)).sec;
+    return DurationField(
+      key: const ValueKey('goalTargetTime'),
+      value: _targetSec,
+      onChanged: (v) => setState(() => _targetSec = v),
+      label: l.targetTime,
+      title: l.targetTime,
+      helperText: l.targetTimeHint,
+      emptyText: l.noTargetTime,
+      min: bounds?.$1,
+      max: bounds?.$2,
+      initial: suggested ?? (bounds == null ? null : GoalModel.roundTarget(sqrt(bounds.$1 * bounds.$2).round())),
+    );
   }
 
   /// Why the goal can't be saved yet (shown above the disabled button), null when it can.
@@ -426,7 +451,8 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
               GoalType.distance => '${Units.num(target)} km ${_sport?.label(l) ?? ''}'.trim(),
               GoalType.frequency => l.perWeekProgress(0, target.toInt()).split('/').last.trim(),
               GoalType.strength => _exName ?? l.goalTypeStrength,
-              GoalType.event => l.goalTypeEvent,
+              // Named after the race distance ("Halbmarathon") when it is a known one.
+              GoalType.event => _key == null ? l.goalTypeEvent : eventDistanceLabel(l, _key!),
             };
     repo.saveGoal(
       Goal(
@@ -619,30 +645,16 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.brand),
                         ),
                       ),
-                    TextField(
-                      controller: _targetCtl,
-                      keyboardType: TextInputType.datetime,
-                      decoration: InputDecoration(
-                        labelText: l.targetTime,
-                        helperText: l.targetTimeHint,
-                        hintText: 'h:mm:ss',
-                        prefixIcon: const Icon(Icons.timer_outlined, size: 20),
-                      ),
-                      onChanged: (v) => setState(() => _targetSec = parseClock(v)),
-                    ),
+                    _targetField(l, eventKey!),
                     if (_deadline != null)
                       TargetSuggestionLine(
                         profile: ref.watch(profileOrDefaultProvider),
-                        eventKey: eventKey!,
+                        eventKey: eventKey,
                         eventDate: _deadline!,
                         sessions: ref.watch(sessionListProvider),
                         plans: ref.watch(planListProvider),
                         current: _targetSec,
-                        onApply:
-                            (sec) => setState(() {
-                              _targetSec = sec;
-                              _targetCtl.text = clock(sec);
-                            }),
+                        onApply: (sec) => setState(() => _targetSec = sec),
                       ),
                     // Never a check computed with the wrong focus (its week has no cycling:
                     // "long ride only 0 min") – the plan settings check it with the new week.
@@ -652,11 +664,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                         _feasibility.of(aligned, DateTime.now(), l),
                         planAnyway: true,
                         showTargetOk: true,
-                        onAdjustTarget:
-                            (sec) => setState(() {
-                              _targetSec = sec;
-                              _targetCtl.text = clock(sec);
-                            }),
+                        onAdjustTarget: (sec) => setState(() => _targetSec = sec),
                       ),
                     ],
                   ],

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../core/event_distances.dart';
 import '../core/format.dart';
 import '../core/sport.dart';
 
@@ -328,10 +329,12 @@ class AthleteData {
     preferredTime: _s(m['preferredTime'], 'evening'),
     restHr: _in(m['restHr']),
     limitations: _strings(m['limitations']),
+    // Implausible times (a typo such as 4 s for 10 km) are dropped: every pace model would derive
+    // absurd paces from them ([plausibleEventTime]).
     raceTimes: {
       if (m['raceTimes'] is Map)
         for (final e in (m['raceTimes'] as Map).entries)
-          if (_in(e.value) case final v?) '${e.key}': v,
+          if (_in(e.value) case final v? when plausibleEventTime('${e.key}', v)) '${e.key}': v,
     },
     runWeeklyKm: _dn(m['runWeeklyKm']),
     longestRunKm: _dn(m['longestRunKm']),
@@ -341,8 +344,8 @@ class AthleteData {
     longestRideKm: _dn(m['longestRideKm']),
     hasPowerMeter: _b(m['hasPowerMeter']),
     indoorTrainer: _b(m['indoorTrainer']),
-    swim400Sec: _in(m['swim400Sec']),
-    swim200Sec: _in(m['swim200Sec']),
+    swim400Sec: _swimTest(m['swim400Sec'], 400),
+    swim200Sec: _swimTest(m['swim200Sec'], 200),
     swimWeeklyKm: _dn(m['swimWeeklyKm']),
     canSwim400: _b(m['canSwim400'], true),
     poolLength: _i(m['poolLength'], 25),
@@ -356,7 +359,10 @@ class AthleteData {
     },
     eventDistance: _sn(m['eventDistance']),
     eventDate: m['eventDate'] == null ? null : _date(m['eventDate']),
-    targetTimeSec: _in(m['targetTimeSec']),
+    targetTimeSec: switch (_in(m['targetTimeSec'])) {
+      final t? when plausibleEventTime(_sn(m['eventDistance']), t) => t,
+      _ => null,
+    },
     planStart: m['planStart'] == null ? null : _date(m['planStart']),
     planLength: _in(m['planLength']),
     eventName: _sn(m['eventName']),
@@ -368,6 +374,14 @@ class AthleteData {
     cssStepAt: m['cssStepAt'] == null ? null : _date(m['cssStepAt']),
     cssBase: _in(m['cssBase']),
   );
+
+  /// A swim test time within [swimTestBounds], else null.
+  static int? _swimTest(dynamic v, int meters) {
+    final t = _in(v);
+    if (t == null) return null;
+    final (lo, hi) = swimTestBounds(meters);
+    return t >= lo && t <= hi ? t : null;
+  }
 
   Map<String, dynamic> toMap() => {
     'setupMode': setupMode,

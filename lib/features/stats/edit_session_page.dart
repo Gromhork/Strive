@@ -12,6 +12,7 @@ import '../../data/exercise_names_de.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
+import '../../widgets/duration_picker.dart';
 import '../../widgets/rpe_picker.dart';
 
 /// Corrects a recorded workout (wrong GPS distance, forgotten stop, mistyped weight …).
@@ -29,7 +30,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   late final Units u = ref.read(profileOrDefaultProvider).units;
   late DateTime _start = s.start;
   late final _title = TextEditingController(text: s.title);
-  late final _duration = TextEditingController(text: clock(s.durationSec));
+  late int _durationSec = s.durationSec;
   late final _distance = TextEditingController(text: s.distanceM <= 0 ? '' : _distText(s.distanceM));
   late final _elevation = TextEditingController(text: s.elevationM <= 0 ? '' : s.elevationM.round().toString());
   late final _avgHr = TextEditingController(text: s.avgHr?.toString() ?? '');
@@ -42,7 +43,8 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   /// Editable values (for the unsaved-changes prompt on back).
   String _snapshot() => jsonEncode([
     _start.millisecondsSinceEpoch,
-    for (final c in [_title, _duration, _distance, _elevation, _avgHr, _maxHr, _calories, _notes]) c.text,
+    for (final c in [_title, _distance, _elevation, _avgHr, _maxHr, _calories, _notes]) c.text,
+    _durationSec,
     _rpe,
     [for (final e in _exercises) e.toMap()],
   ]);
@@ -60,11 +62,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
 
   void _save() {
     final l = context.l10n;
-    final sec = parseHms(_duration.text);
-    if (sec == null || sec <= 0) {
-      toast(context, l.invalidDuration);
-      return;
-    }
+    final sec = _durationSec;
     final d = parseNum(_distance.text);
     final cardio = s.sport != Sport.gym;
     final elev = parseNum(_elevation.text);
@@ -92,7 +90,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
 
   @override
   void dispose() {
-    for (final c in [_title, _duration, _distance, _elevation, _avgHr, _maxHr, _calories, _notes]) {
+    for (final c in [_title, _distance, _elevation, _avgHr, _maxHr, _calories, _notes]) {
       c.dispose();
     }
     super.dispose();
@@ -134,7 +132,15 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
               },
             ),
             row([
-              TextField(controller: _duration, keyboardType: TextInputType.datetime, decoration: InputDecoration(labelText: l.durationHms)),
+              // Scroll wheels instead of typed "h:mm:ss" – no invalid duration to reject on save.
+              DurationField(
+                key: const ValueKey('editDuration'),
+                value: _durationSec,
+                onChanged: (v) => setState(() => _durationSec = v ?? _durationSec),
+                label: l.duration,
+                maxHours: 47,
+                clearable: false,
+              ),
               if (cardio)
                 TextField(
                   controller: _distance,

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:strive/core/event_distances.dart';
 import 'package:strive/core/format.dart';
@@ -21,6 +22,7 @@ import 'package:strive/features/stats/plan_link_card.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
 import 'package:strive/services/compliance.dart';
+import 'package:strive/services/plan_generator.dart';
 import 'package:strive/services/plan_match.dart';
 import 'package:strive/widgets/plan_amount.dart';
 import 'package:strive/widgets/term_info.dart';
@@ -482,4 +484,78 @@ void main() {
       expect(t.takeException(), isNull);
     });
   }
+
+  group('time input and race without a date (fix/time-input)', () {
+    final l = lookupAppLocalizations(const Locale('de'));
+    const runner = UserProfile(level: 'intermediate', birthYear: 1990, focus: TrainingFocus.run, onboarded: true, trainingDays: [2, 4, 6]);
+
+    Future<void> toStep(WidgetTester t, Key key) async {
+      for (var i = 0; i < 12 && find.byKey(key).evaluate().isEmpty; i++) {
+        await t.tap(find.widgetWithText(FilledButton, l.next));
+        await t.pumpAndSettle();
+      }
+      expect(find.byKey(key), findsOneWidget);
+    }
+
+    testWidgets('race given as plan length: on the long day of the last week, the plan runs to it', (t) async {
+      _phone(t);
+      final o = await _overrides(_FakeRepo(), profile: runner);
+      await t.pumpWidget(_app(_opener(() => const OnboardingPage(mode: SetupMode.plan)), 'de', o));
+      await t.pumpAndSettle();
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      await toStep(t, const ValueKey('goalKind'));
+      await t.tap(find.text(l.goalKindRace));
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.byKey(const ValueKey('distance-hm')));
+      await t.tap(find.byKey(const ValueKey('distance-hm')));
+      await t.pumpAndSettle();
+      // Without a date the step says so; then the plan length instead.
+      expect(find.byKey(const ValueKey('eventNeedsDate')), findsOneWidget);
+      await t.ensureVisible(find.byKey(const ValueKey('raceWhen')));
+      await t.tap(find.text(l.raceByWeeks));
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.byKey(const ValueKey('weeks16')));
+      await t.tap(find.byKey(const ValueKey('weeks16')));
+      await t.pumpAndSettle();
+      final quick = runner.copyWith(athlete: runner.athlete.merge({'eventDistance': 'hm', 'setupMode': 'simple', 'sessionsPerDay': 1}));
+      final race = PlanGenerator.raceDayForWeeks(quick, dayOnly(DateTime.now()), 16);
+      expect(race.weekday, PlanGenerator.longDayOf(quick));
+      expect(find.text(l.raceOnDate(DateFormat.MMMEd('de').format(race))), findsOneWidget);
+      // The target time: scroll wheels starting at the suggestion, no free text.
+      await t.ensureVisible(find.byKey(const ValueKey('targetTime')));
+      await t.tap(find.byKey(const ValueKey('targetTime')));
+      await t.pumpAndSettle();
+      expect(find.byKey(const ValueKey('durationWheel-h')), findsOneWidget);
+      await t.tap(find.byKey(const ValueKey('durationApply')));
+      await t.pumpAndSettle();
+      expect(find.text(l.noTargetTime), findsNothing);
+      await t.tap(find.widgetWithText(FilledButton, l.next));
+      await t.pumpAndSettle();
+      expect(find.textContaining(l.planToEvent(16)), findsOneWidget);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('race times by wheels: the setup stays on its step (no reset to the first step)', (t) async {
+      _phone(t);
+      final p = runner.copyWith(athlete: runner.athlete.merge({'setupMode': 'advanced'}));
+      final o = await _overrides(_FakeRepo(), profile: p);
+      await t.pumpWidget(_app(_opener(() => const OnboardingPage(mode: SetupMode.plan)), 'de', o));
+      await t.pumpAndSettle();
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      await toStep(t, const ValueKey('raceTime-10k'));
+      await t.ensureVisible(find.byKey(const ValueKey('raceTime-10k')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('raceTime-10k')));
+      await t.pumpAndSettle();
+      await t.drag(find.byKey(const ValueKey('durationWheel-min')), const Offset(0, -88));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('durationApply')));
+      await t.pumpAndSettle();
+      expect(find.byKey(const ValueKey('raceTime-10k')), findsOneWidget, reason: 'still on the running step');
+      expect(find.textContaining(l.yourPaceZones), findsOneWidget, reason: 'zones from the new 10 km time');
+      expect(t.takeException(), isNull);
+    });
+  });
 }

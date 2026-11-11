@@ -1697,5 +1697,14 @@
   "coachQTri": "Wie kombiniere ich Schwimmen, Radfahren und Laufen in einer Woche?",
   "coachQGym": "Wie werde ich stärker, ohne zu stagnieren?",
   "coachQRide": "Wie werde ich auf dem Rad schneller?",
-  "coachQSwim": "Wie schwimme ich ökonomischer?"
+  "coachQSwim": "Wie schwimme ich ökonomischer?",
+  "durationRange": "Wähle eine Zeit zwischen {from} und {to}.",
+  "bestTimeFor": "Bestzeit · {distance}",
+  "swimTestFor": "Schwimmtest · {distance}",
+  "noTargetTime": "Keine Zielzeit – ankommen",
+  "raceWhen": "Wann ist der Wettkampf?",
+  "raceByDate": "Datum",
+  "raceByWeeks": "Planlänge",
+  "raceByWeeksHint": "Noch kein Termin? Wähle die Planlänge: Der Wettkampf liegt am Tag deiner langen Einheit in der letzten Woche, und der Plan baut darauf hin – inklusive Tapering.",
+  "raceOnDate": "Wettkampf am {date}"
 }

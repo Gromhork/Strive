@@ -10282,6 +10282,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How do I swim more efficiently?'**
   String get coachQSwim;
+
+  /// No description provided for @durationRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a time between {from} and {to}.'**
+  String durationRange(String from, String to);
+
+  /// No description provided for @bestTimeFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Best time · {distance}'**
+  String bestTimeFor(String distance);
+
+  /// No description provided for @swimTestFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Swim test · {distance}'**
+  String swimTestFor(String distance);
+
+  /// No description provided for @noTargetTime.
+  ///
+  /// In en, this message translates to:
+  /// **'No target time – just finish'**
+  String get noTargetTime;
+
+  /// No description provided for @raceWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'When is the race?'**
+  String get raceWhen;
+
+  /// No description provided for @raceByDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get raceByDate;
+
+  /// No description provided for @raceByWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan length'**
+  String get raceByWeeks;
+
+  /// No description provided for @raceByWeeksHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No date yet? Choose the plan length: the race goes on the day of your long session in the last week, and the plan builds up to it – taper included.'**
+  String get raceByWeeksHint;
+
+  /// No description provided for @raceOnDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Race on {date}'**
+  String raceOnDate(String date);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

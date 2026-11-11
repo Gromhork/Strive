@@ -116,48 +116,77 @@ void _notify(String text) =>
       ..showSnackBar(SnackBar(content: Text(text), behavior: SnackBarBehavior.floating));
 
 /// Second confirmation: the user types the confirmation word.
-Future<bool> _typedConfirm(BuildContext context) async {
-  final l = context.l10n;
-  final ctrl = TextEditingController();
-  final ok = await showDialog<bool>(
-    context: context,
-    builder:
-        (c) => StatefulBuilder(
-          builder: (c, setState) {
-            final match = ctrl.text.trim().toUpperCase() == l.deleteAccountWord.toUpperCase();
-            return AlertDialog(
-              title: Text(l.deleteAccountConfirm2Title),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l.deleteAccountConfirm2),
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: const ValueKey('deleteAccountWord'),
-                    controller: ctrl,
-                    autofocus: true,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: InputDecoration(hintText: l.deleteAccountWord),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l.cancel)),
-                FilledButton(
-                  key: const ValueKey('deleteAccountGo'),
-                  style: FilledButton.styleFrom(backgroundColor: Theme.of(c).colorScheme.error),
-                  onPressed: match ? () => Navigator.pop(c, true) : null,
-                  child: Text(l.delete),
-                ),
-              ],
-            );
-          },
+Future<bool> _typedConfirm(BuildContext context) async =>
+    await showDialog<bool>(context: context, builder: (_) => const TypedDeleteConfirmDialog()) == true;
+
+/// Whether [input] is the confirmation [word] – case and surrounding blanks aside, and with an
+/// umlaut typed out ("LOESCHEN" for "LÖSCHEN": not every keyboard offers "Ö").
+bool matchesConfirmWord(String input, String word) {
+  String norm(String s) => s.trim().toUpperCase().replaceAll('Ä', 'AE').replaceAll('Ö', 'OE').replaceAll('Ü', 'UE').replaceAll('ß', 'SS');
+  return input.trim().isNotEmpty && norm(input) == norm(word);
+}
+
+/// The typed confirmation of the account deletion. Pops true when confirmed.
+///
+/// The text controller lives in this widget's state: it is disposed only when the dialog has
+/// left the tree. Disposing it right after `showDialog` returned (the route is popped, but still
+/// animating out – the keyboard closing rebuilds the field) made the field use a disposed
+/// controller, and the broken element tree then failed with "_elements.contains(element)".
+class TypedDeleteConfirmDialog extends StatefulWidget {
+  const TypedDeleteConfirmDialog({super.key});
+
+  @override
+  State<TypedDeleteConfirmDialog> createState() => _TypedDeleteConfirmDialogState();
+}
+
+class _TypedDeleteConfirmDialogState extends State<TypedDeleteConfirmDialog> {
+  final _ctrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final match = matchesConfirmWord(_ctrl.text, l.deleteAccountWord);
+    return AlertDialog(
+      title: Text(l.deleteAccountConfirm2Title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l.deleteAccountConfirm2),
+          const SizedBox(height: 12),
+          TextField(
+            key: const ValueKey('deleteAccountWord'),
+            controller: _ctrl,
+            autofocus: true,
+            autocorrect: false,
+            enableSuggestions: false,
+            textCapitalization: TextCapitalization.characters,
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(hintText: l.deleteAccountWord),
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) {
+              if (match) Navigator.pop(context, true);
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l.cancel)),
+        FilledButton(
+          key: const ValueKey('deleteAccountGo'),
+          style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+          onPressed: match ? () => Navigator.pop(context, true) : null,
+          child: Text(l.delete),
         ),
-  );
-  ctrl.dispose();
-  return ok == true;
+      ],
+    );
+  }
 }
 
 /// Firebase only deletes an account whose last login is recent (~5 min): ask for a new
@@ -172,32 +201,10 @@ Future<bool> _ensureRecentLogin(BuildContext context, User user) async {
 Future<bool> _reauthenticate(BuildContext context, User user) async {
   final l = context.l10n;
   final providers = {for (final p in user.providerData) p.providerId};
-  final pw = TextEditingController();
   final usePassword = providers.contains('password') && user.email != null;
-  final ok = await showDialog<bool>(
-    context: context,
-    builder:
-        (c) => AlertDialog(
-          title: Text(l.reauthTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l.reauthBody),
-              if (usePassword) ...[
-                const SizedBox(height: 12),
-                TextField(controller: pw, obscureText: true, autofocus: true, decoration: InputDecoration(labelText: l.password)),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l.cancel)),
-            FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(usePassword ? l.reauthConfirm : l.reauthGoogle)),
-          ],
-        ),
-  );
-  final password = pw.text;
-  pw.dispose();
-  if (ok != true) return false;
+  // The password (null = cancelled); the field's controller lives in the dialog (see [TypedDeleteConfirmDialog]).
+  final password = await showDialog<String>(context: context, builder: (_) => _ReauthDialog(usePassword: usePassword));
+  if (password == null) return false;
   try {
     if (usePassword) {
       await user.reauthenticateWithCredential(EmailAuthProvider.credential(email: user.email!, password: password));
@@ -209,6 +216,58 @@ Future<bool> _reauthenticate(BuildContext context, User user) async {
     debugPrint('re-authentication failed: $e');
     if (context.mounted) toast(context, l.authError);
     return false;
+  }
+}
+
+/// "Sign in again" before deleting the account: the password (e-mail accounts) or a hint that
+/// Google asks next. Pops the password ('' for Google), null when cancelled.
+class _ReauthDialog extends StatefulWidget {
+  const _ReauthDialog({required this.usePassword});
+  final bool usePassword;
+
+  @override
+  State<_ReauthDialog> createState() => _ReauthDialogState();
+}
+
+class _ReauthDialogState extends State<_ReauthDialog> {
+  final _pw = TextEditingController();
+
+  @override
+  void dispose() {
+    _pw.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return AlertDialog(
+      title: Text(l.reauthTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(l.reauthBody),
+          if (widget.usePassword) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _pw,
+              obscureText: true,
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(labelText: l.password),
+              onSubmitted: (v) => Navigator.pop(context, v),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel)),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, widget.usePassword ? _pw.text : ''),
+          child: Text(widget.usePassword ? l.reauthConfirm : l.reauthGoogle),
+        ),
+      ],
+    );
   }
 }
 

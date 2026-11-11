@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/format.dart';
 import '../../data/models.dart';
+import '../../widgets/segments.dart';
 
 /// Number of planned (not done / skipped) workouts on or after [from] that a new plan replaces.
 int plannedFrom(List<PlannedWorkout> plans, DateTime from) {
@@ -33,24 +34,26 @@ Future<DateTime?> confirmReplacePlan(BuildContext context, List<PlannedWorkout> 
           final date = DateFormat.MMMEd(c.localeName).format(start);
           return AlertDialog(
             title: Text(l.replacePlanTitle),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l.replacePlanBody(date, plannedFrom(plans, start))),
-                const SizedBox(height: 4),
-                Text(l.replacePlanKeeps, style: Theme.of(c).textTheme.bodySmall),
-                const SizedBox(height: 12),
-                SegmentedButton<bool>(
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(value: false, label: Text(l.replaceFromToday)),
-                    ButtonSegment(value: true, label: Text(l.replaceFromMonday)),
-                  ],
-                  selected: {start == monday},
-                  onSelectionChanged: (s) => setState(() => start = s.first ? monday : today),
-                ),
-              ],
+            // The full dialog width: the dialog sizes its content by its intrinsic width, which the
+            // segmented control (it lays out by the width it gets) cannot report.
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l.replacePlanBody(date, plannedFrom(plans, start))),
+                  const SizedBox(height: 4),
+                  Text(l.replacePlanKeeps, style: Theme.of(c).textTheme.bodySmall),
+                  const SizedBox(height: 12),
+                  Segments<bool>(
+                    key: const ValueKey('replaceStart'),
+                    segments: [Seg(false, label: l.replaceFromToday), Seg(true, label: l.replaceFromMonday)],
+                    value: start == monday,
+                    onChanged: (v) => setState(() => start = v ? monday : today),
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(c), child: Text(l.cancel)),

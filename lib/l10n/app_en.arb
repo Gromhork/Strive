@@ -3802,5 +3802,45 @@
   "coachQTri": "How do I combine swimming, cycling and running in one week?",
   "coachQGym": "How do I get stronger without stalling?",
   "coachQRide": "How do I get faster on the bike?",
-  "coachQSwim": "How do I swim more efficiently?"
+  "coachQSwim": "How do I swim more efficiently?",
+  "durationRange": "Choose a time between {from} and {to}.",
+  "@durationRange": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "bestTimeFor": "Best time · {distance}",
+  "@bestTimeFor": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "swimTestFor": "Swim test · {distance}",
+  "@swimTestFor": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "noTargetTime": "No target time – just finish",
+  "raceWhen": "When is the race?",
+  "raceByDate": "Date",
+  "raceByWeeks": "Plan length",
+  "raceByWeeksHint": "No date yet? Choose the plan length: the race goes on the day of your long session in the last week, and the plan builds up to it – taper included.",
+  "raceOnDate": "Race on {date}",
+  "@raceOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

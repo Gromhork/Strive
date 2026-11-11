@@ -1650,4 +1650,13 @@ const l10nPairs = <(String, String)>[
   ('How do I get stronger without stalling?', 'Wie werde ich stärker, ohne zu stagnieren?'),
   ('How do I get faster on the bike?', 'Wie werde ich auf dem Rad schneller?'),
   ('How do I swim more efficiently?', 'Wie schwimme ich ökonomischer?'),
+  ('Choose a time between {from} and {to}.', 'Wähle eine Zeit zwischen {from} und {to}.'),
+  ('Best time · {distance}', 'Bestzeit · {distance}'),
+  ('Swim test · {distance}', 'Schwimmtest · {distance}'),
+  ('No target time – just finish', 'Keine Zielzeit – ankommen'),
+  ('When is the race?', 'Wann ist der Wettkampf?'),
+  ('Date', 'Datum'),
+  ('Plan length', 'Planlänge'),
+  ('No date yet? Choose the plan length: the race goes on the day of your long session in the last week, and the plan builds up to it – taper included.', 'Noch kein Termin? Wähle die Planlänge: Der Wettkampf liegt am Tag deiner langen Einheit in der letzten Woche, und der Plan baut darauf hin – inklusive Tapering.'),
+  ('Race on {date}', 'Wettkampf am {date}'),
 ];

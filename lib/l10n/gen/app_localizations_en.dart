@@ -5657,4 +5657,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachQSwim => 'How do I swim more efficiently?';
+
+  @override
+  String durationRange(String from, String to) {
+    return 'Choose a time between $from and $to.';
+  }
+
+  @override
+  String bestTimeFor(String distance) {
+    return 'Best time · $distance';
+  }
+
+  @override
+  String swimTestFor(String distance) {
+    return 'Swim test · $distance';
+  }
+
+  @override
+  String get noTargetTime => 'No target time – just finish';
+
+  @override
+  String get raceWhen => 'When is the race?';
+
+  @override
+  String get raceByDate => 'Date';
+
+  @override
+  String get raceByWeeks => 'Plan length';
+
+  @override
+  String get raceByWeeksHint => 'No date yet? Choose the plan length: the race goes on the day of your long session in the last week, and the plan builds up to it – taper included.';
+
+  @override
+  String raceOnDate(String date) {
+    return 'Race on $date';
+  }
 }
