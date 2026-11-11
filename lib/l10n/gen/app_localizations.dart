@@ -1670,7 +1670,7 @@ abstract class AppLocalizations {
   /// No description provided for @generatePlanSub.
   ///
   /// In en, this message translates to:
-  /// **'Focus: {focus} · {days} days/week (change in profile)'**
+  /// **'Focus: {focus} · {days} days/week (change in plan settings)'**
   String generatePlanSub(String focus, int days);
 
   /// No description provided for @planLocalDesc.
@@ -3758,7 +3758,7 @@ abstract class AppLocalizations {
   /// No description provided for @planLengthHint.
   ///
   /// In en, this message translates to:
-  /// **'Recommended for your goal: {lo}–{hi} weeks (👍).'**
+  /// **'Recommended for your goal: {lo}–{hi} weeks.'**
   String planLengthHint(int lo, int hi);
 
   /// No description provided for @planToEvent.
@@ -9194,7 +9194,7 @@ abstract class AppLocalizations {
   /// No description provided for @feasLongDayDefault.
   ///
   /// In en, this message translates to:
-  /// **'The long session on {day} needs up to {time} – far more than the time you set. The plan uses it; set that day\'s time yourself if it does not fit.'**
+  /// **'The long session on {day} needs up to {time} – far more than your other sessions. The plan schedules it like that; set that day’s time yourself if it does not fit.'**
   String feasLongDayDefault(String day, String time);
 
   /// No description provided for @feasLongRunShare.
@@ -10460,14 +10460,14 @@ abstract class AppLocalizations {
   /// No description provided for @termComplianceBody.
   ///
   /// In en, this message translates to:
-  /// **'Compared with the plan is the distance (endurance workouts with a distance; structured workouts: distance or duration, whichever is closer to the plan), the done work sets (strength – sets done at a much lighter weight or with far fewer reps count partly) or else the duration. A workout marked as done with the plan\'s numbers counts as planned.\n\n✓ green, as planned: {greenMin}–{greenMax}\n✓ yellow, partly: {yellowMin} up to {greenMin}, or up to {yellowMax}\n✓ orange, far off: less than {yellowMin} or more than {yellowMax}\n✕ red: missed, or less than {countMin} – an aborted start doesn’t count as done.'**
+  /// **'Compared with the plan is the distance (endurance workouts with a distance; structured workouts: distance or duration, whichever is closer to the plan), the done work sets (strength – sets done at a much lighter weight or with far fewer reps count partly) or else the duration. A workout marked as done with the plan\'s numbers counts as planned.\n\n✓ green, as planned: {greenMin}–{greenMax}\n✓ yellow, partly / above plan: {yellowMin} to under {greenMin}, or over {greenMax} up to {yellowMax}\n✓ orange, far off: {countMin} to under {yellowMin}, or over {yellowMax}\n✕ red: missed, or under {countMin} – an aborted start doesn’t count as done.'**
   String termComplianceBody(String greenMin, String greenMax, String yellowMin, String yellowMax, String countMin);
 
   /// No description provided for @termComplianceTip.
   ///
   /// In en, this message translates to:
-  /// **'Partly or far off still counts as done – the plan only adapts when it happens repeatedly. For that, a long run or a key session needs at least half of the plan, and clearly more than planned (over 150 %) counts like a session that was too hard.'**
-  String get termComplianceTip;
+  /// **'Partly or far off still counts as done – the plan only adapts when it happens repeatedly. For that, a long run or a key session needs at least {half} of the plan, and clearly more than planned (over {over}) counts like a session that was too hard.'**
+  String termComplianceTip(String half, String over);
 
   /// No description provided for @feasTitleNote.
   ///
@@ -10546,6 +10546,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'as many reps as this range allows – add load or a harder variation to progress'**
   String get progRepCap;
+
+  /// No description provided for @summaryRemoveRaceGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the race goal “{name}” ({date})'**
+  String summaryRemoveRaceGoal(String name, String date);
+
+  /// No description provided for @summaryRemoveRaceGoalOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Your new plan has no race – the goal the previous plan was built for is removed with it.'**
+  String get summaryRemoveRaceGoalOn;
+
+  /// No description provided for @summaryRemoveRaceGoalOff.
+  ///
+  /// In en, this message translates to:
+  /// **'The goal stays: its countdown and the hint “Goal and plan don’t match” remain until you align a plan with it again.'**
+  String get summaryRemoveRaceGoalOff;
+
+  /// No description provided for @fcEarlyMore.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{One more workout of the plan and the forecast uses your training data.} other{{count} more workouts of the plan and the forecast uses your training data.}}'**
+  String fcEarlyMore(int count);
+
+  /// No description provided for @recNow.
+  ///
+  /// In en, this message translates to:
+  /// **'now {count}×'**
+  String recNow(int count);
+
+  /// No description provided for @yourSwimZones.
+  ///
+  /// In en, this message translates to:
+  /// **'Your swim zones'**
+  String get yourSwimZones;
+
+  /// No description provided for @swimCssEstimated.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated from your 400 m – add the 200 m for an exact CSS.'**
+  String get swimCssEstimated;
+
+  /// No description provided for @swimTestOnly200.
+  ///
+  /// In en, this message translates to:
+  /// **'The CSS test needs the 400 m time too – the 200 m alone is not enough.'**
+  String get swimTestOnly200;
+
+  /// No description provided for @swimTestImplausible.
+  ///
+  /// In en, this message translates to:
+  /// **'These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.'**
+  String get swimTestImplausible;
+
+  /// No description provided for @plannedNotCountedSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session on {date} ({duration}) was too short to count for this workout – it stays open.'**
+  String plannedNotCountedSub(String date, String duration);
+
+  /// No description provided for @overPlanShort.
+  ///
+  /// In en, this message translates to:
+  /// **'above plan ({share})'**
+  String overPlanShort(String share);
+
+  /// No description provided for @farOffShort.
+  ///
+  /// In en, this message translates to:
+  /// **'far off plan ({share})'**
+  String farOffShort(String share);
+
+  /// No description provided for @logCompletesPlanOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Completes the workout planned for {day}'**
+  String logCompletesPlanOf(String day);
+
+  /// No description provided for @invalidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a number'**
+  String get invalidNumber;
+
+  /// No description provided for @withoutDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Without distance'**
+  String get withoutDistance;
+
+  /// No description provided for @enterDistanceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. from the treadmill'**
+  String get enterDistanceHint;
+
+  /// No description provided for @streakThisWeekShort.
+  ///
+  /// In en, this message translates to:
+  /// **'This week: {done} of {target} training days'**
+  String streakThisWeekShort(int done, int target);
+
+  /// No description provided for @freeGymTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Free workout'**
+  String get freeGymTitle;
+
+  /// No description provided for @sessionEndsInFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'With this start and duration the workout would end in the future ({time}) – please check both.'**
+  String sessionEndsInFuture(String time);
+
+  /// No description provided for @sessionPaceImplausible.
+  ///
+  /// In en, this message translates to:
+  /// **'Average {pace} – hardly possible. Are the distance and duration right?'**
+  String sessionPaceImplausible(String pace);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

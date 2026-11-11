@@ -380,6 +380,8 @@ Future<bool> confirmGuestLogout(BuildContext context) async {
           title: Text(l.guestLogoutTitle),
           content: Text(l.guestLogoutBody),
           actions: [
+            // A way out that changes nothing (the barrier alone was not obvious).
+            TextButton(key: const ValueKey('guestLogoutCancel'), onPressed: () => Navigator.pop(c), child: Text(l.cancel)),
             // Destructive: deletes the guest's data on this device – styled as such.
             TextButton(
               key: const ValueKey('guestLogoutAnyway'),

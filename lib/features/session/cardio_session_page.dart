@@ -89,9 +89,16 @@ class _CardioSessionPageState extends ConsumerState<CardioSessionPage> {
     final u = ref.read(profileOrDefaultProvider).units;
     double? manual;
     if (s.indoor && s.sport != Sport.swim) {
-      final v = await askNumber(context, l.enterDistance, suffix: u.distUnit);
+      // No distance known (no treadmill display): "Ohne Distanz" saves the session by time.
+      final v = await askOptionalNumber(
+        context,
+        l.enterDistance,
+        suffix: u.distUnit,
+        noneLabel: l.withoutDistance,
+        hint: l.enterDistanceHint,
+      );
       if (v == null) return;
-      manual = u.distIn(v);
+      manual = v.value == null ? null : u.distIn(v.value!);
     }
     if (!mounted) return;
     final session = n.finish(ref.read(repoProvider)!.newId(), manualDistanceM: manual);
@@ -901,7 +908,8 @@ class _StepCard extends ConsumerWidget {
     final remaining =
         m != null
             ? (m >= 1000 && s.sport != Sport.swim ? '${Units.num(u.distOut(m), 2)} ${u.distUnit}' : '${m.round()} m')
-            : (sec != null ? clock(sec) : clock(s.stepElapsed));
+            // Indoors a distance step runs on its estimated time (no distance source): "≈ 11:20".
+            : (sec != null ? '${s.blindDistanceStep ? '≈ ' : ''}${clock(sec)}' : clock(s.stepElapsed));
     final lengthsLeft = s.lengthsLeft;
     final target = stepTarget(l, st, u, s.sport);
     final next = s.nextStep;

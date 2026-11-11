@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/format.dart';
+import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../data/models.dart';
+import '../../services/compliance.dart';
 import '../../providers.dart';
 import '../../services/goal_forecast.dart';
 import '../../services/plan_generator.dart';
@@ -27,6 +30,7 @@ class GoalStatusPage extends ConsumerWidget {
     final f = ref.watch(goalForecastProvider);
     final plans = ref.watch(planListProvider);
     final profile = ref.watch(profileOrDefaultProvider);
+    final sessions = ref.watch(sessionListProvider);
     return Scaffold(
       appBar: AppBar(title: Text(l.goalStatusTitle)),
       body:
@@ -37,12 +41,29 @@ class GoalStatusPage extends ConsumerWidget {
                 segments: f.planStart == null ? const [] : phaseSegments(plans, f.planStart!, f.raceDate),
                 outlook: f.planStart == null ? const [] : PlanGenerator.outlook(profile, start: f.planStart!, baseline: f.baselineVdot),
                 now: DateTime.now(),
+                completion: shownCompletion(f, plans, sessions, profile, DateTime.now()),
                 onAdjustTarget: (sec) => applyTargetTime(context, ref, sec),
                 onRecalibrate: () => showRecalibration(context, ref),
                 onSettings: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
               ),
     );
   }
+}
+
+/// Plan completion shown on the page: the forecast's adherence, and before it has enough workouts
+/// (it needs 3 due) the same measure over the endurance workouts due so far – a done workout never
+/// leaves "Planerfüllung –" at 0 %.
+double? shownCompletion(GoalForecast f, List<PlannedWorkout> plans, List<Session> sessions, UserProfile p, DateTime now) {
+  if (f.adherence != null) return f.adherence;
+  final start = f.planStart;
+  if (start == null) return null;
+  final today = dayOnly(now);
+  final due =
+      plans
+          .where((x) => x.sport != Sport.gym && x.intensity != 'race' && !x.date.isBefore(start) && !dayOnly(x.date).isAfter(today))
+          .toList();
+  if (due.isEmpty) return null;
+  return weeklyCompletion(due, linkPlanSessions(due, sessions, profile: p), now: now, profile: p);
 }
 
 /// The page body (pure – also used by the layout tests).
@@ -53,6 +74,7 @@ class GoalStatusView extends StatelessWidget {
     required this.segments,
     required this.outlook,
     required this.now,
+    this.completion,
     this.onAdjustTarget,
     this.onRecalibrate,
     this.onSettings,
@@ -62,6 +84,9 @@ class GoalStatusView extends StatelessWidget {
   final List<(String, int)> segments;
   final List<PhaseOutlook> outlook;
   final DateTime now;
+
+  /// Plan completion (0…1) – [shownCompletion]; defaults to the forecast's adherence.
+  final double? completion;
   final ValueChanged<int>? onAdjustTarget;
   final VoidCallback? onRecalibrate;
   final VoidCallback? onSettings;
@@ -78,6 +103,7 @@ class GoalStatusView extends StatelessWidget {
     final position = span <= 0 ? 0.0 : elapsed / span;
     final currentWeek = elapsed ~/ 7;
     final small = theme.textTheme.bodySmall;
+    final adherence = completion ?? f.adherence;
     final conf = switch (f.confidence) {
       ForecastConfidence.high => l.fcConfHigh,
       ForecastConfidence.medium => l.fcConfMedium,
@@ -147,7 +173,7 @@ class GoalStatusView extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text('${l.fcRange(clock(f.fastSec!), clock(f.slowSec!))} · $conf', style: small),
               ],
-              if (f.early) ...[const SizedBox(height: 8), Text(l.fcEarlySub, style: small)],
+              if (f.early) ...[const SizedBox(height: 8), Text(forecastEarlyText(l, f), style: small)],
               if (!f.early && f.status == ForecastStatus.atRisk && f.targetSec != null && f.raceDaySec != null) ...[
                 const SizedBox(height: 8),
                 Text(l.fcRiskBody(clock(f.raceDaySec!), clock(f.targetSec!)), style: TextStyle(color: color, fontSize: 13)),
@@ -210,12 +236,12 @@ class GoalStatusView extends StatelessWidget {
             children: [
               _Meter(
                 label: l.goalCompletion,
-                value: f.adherence == null ? '–' : Units.pct(f.adherence! * 100),
-                progress: f.adherence ?? 0,
+                value: adherence == null ? '–' : Units.pct(adherence * 100),
+                progress: adherence ?? 0,
                 color:
-                    f.adherence == null
+                    adherence == null
                         ? theme.colorScheme.outline
-                        : (f.adherence! >= 0.8 ? AppColors.success : (f.adherence! >= 0.6 ? AppColors.warning : AppColors.danger)),
+                        : (adherence >= 0.8 ? AppColors.success : (adherence >= 0.6 ? AppColors.warning : AppColors.danger)),
               ),
               if (f.longRunNeededKm != null) ...[
                 const SizedBox(height: 14),

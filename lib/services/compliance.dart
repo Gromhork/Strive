@@ -87,6 +87,21 @@ class Compliance {
     ComplianceLevel.none => Icons.circle_outlined,
   };
 
+  /// Short status next to a workout in the bucket's words: "teilweise erledigt (70 %)", "über Plan
+  /// (129 %)" (yellow above the plan), "stark abweichend (161 %)", "nicht gewertet (8 %)"; null for
+  /// green / open.
+  String? shortLabel(AppLocalizations l) {
+    final r = ratio;
+    if (r == null) return null;
+    final share = Units.pct(r * 100);
+    return switch (level) {
+      ComplianceLevel.yellow => r > 1 ? l.overPlanShort(share) : l.partlyDone(share),
+      ComplianceLevel.orange => l.farOffShort(share),
+      ComplianceLevel.red => l.notCountedShort(share),
+      _ => null,
+    };
+  }
+
   /// Screen-reader text.
   String label(AppLocalizations l, {bool skipped = false}) {
     final p = pct;

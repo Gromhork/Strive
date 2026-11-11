@@ -620,10 +620,10 @@ class _ExerciseCard extends ConsumerWidget {
     final w = ref.watch(activeGymProvider)!;
     final allDone = exercise.allDone;
     final work = previous?.where((s) => !s.warmup).toList();
-    final rx =
-        exercise.doneSets == 0
-            ? ref.watch(loadPrescriberProvider).forExercise(exercise, phase: planPhaseOf(ref.watch(planListProvider), w.planId))
-            : null;
+    // Watched unconditionally (not only while no set is done): see [PlannedWorkoutPage.build].
+    final prescriber = ref.watch(loadPrescriberProvider);
+    final plans = ref.watch(planListProvider);
+    final rx = exercise.doneSets == 0 ? prescriber.forExercise(exercise, phase: planPhaseOf(plans, w.planId)) : null;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Card(

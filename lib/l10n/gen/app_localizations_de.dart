@@ -814,7 +814,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String generatePlanSub(String focus, int days) {
-    return 'Fokus: $focus · $days Tage/Woche (im Profil änderbar)';
+    return 'Fokus: $focus · $days Tage/Woche (in den Planeinstellungen änderbar)';
   }
 
   @override
@@ -1914,7 +1914,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String planLengthHint(int lo, int hi) {
-    return 'Empfohlen für dein Ziel: $lo–$hi Wochen (👍).';
+    return 'Empfohlen für dein Ziel: $lo–$hi Wochen.';
   }
 
   @override
@@ -3272,7 +3272,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get bodyweight => 'Körpergewicht';
 
   @override
-  String get bodyweightShort => 'KG';
+  String get bodyweightShort => 'Körpergew.';
 
   @override
   String get bodyweightHint => 'Gewicht = Zusatzlast zu deinem Körpergewicht (negativ = Unterstützung).';
@@ -4986,7 +4986,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String feasLongDayDefault(String day, String time) {
-    return 'Die lange Einheit am $day braucht bis zu $time – deutlich mehr als deine angegebene Zeit. Der Plan nutzt sie; trag die Zeit für diesen Tag selbst ein, falls sie nicht passt.';
+    return 'Die lange Einheit am $day braucht bis zu $time – deutlich mehr als deine übrigen Einheiten. Der Plan plant sie so ein; trag die Zeit für diesen Tag selbst ein, falls sie nicht passt.';
   }
 
   @override
@@ -5763,11 +5763,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String termComplianceBody(String greenMin, String greenMax, String yellowMin, String yellowMax, String countMin) {
-    return 'Mit dem Plan verglichen wird die Strecke (Ausdauer mit Distanz; strukturierte Einheiten: Strecke oder Dauer, je nachdem, was näher am Plan liegt), die erledigten Arbeitssätze (Kraft – Sätze mit deutlich weniger Gewicht oder Wiederholungen zählen teilweise) oder sonst die Dauer. Eine mit den Planwerten als erledigt eingetragene Einheit zählt wie geplant.\n\n✓ grün, wie geplant: $greenMin–$greenMax\n✓ gelb, teilweise: $yellowMin bis unter $greenMin oder bis $yellowMax\n✓ orange, stark abweichend: unter $yellowMin oder über $yellowMax\n✕ rot: verpasst, oder unter $countMin – ein abgebrochener Start zählt nicht als erledigt.';
+    return 'Mit dem Plan verglichen wird die Strecke (Ausdauer mit Distanz; strukturierte Einheiten: Strecke oder Dauer, je nachdem, was näher am Plan liegt), die erledigten Arbeitssätze (Kraft – Sätze mit deutlich weniger Gewicht oder Wiederholungen zählen teilweise) oder sonst die Dauer. Eine mit den Planwerten als erledigt eingetragene Einheit zählt wie geplant.\n\n✓ grün, wie geplant: $greenMin–$greenMax\n✓ gelb, teilweise / über Plan: $yellowMin bis unter $greenMin oder über $greenMax bis $yellowMax\n✓ orange, stark abweichend: $countMin bis unter $yellowMin oder über $yellowMax\n✕ rot: verpasst, oder unter $countMin – ein abgebrochener Start zählt nicht als erledigt.';
   }
 
   @override
-  String get termComplianceTip => 'Teilweise oder stark abweichend zählt trotzdem als erledigt – der Plan passt sich erst an, wenn es sich wiederholt. Dafür braucht ein langer Lauf oder eine Schlüsseleinheit mindestens die Hälfte des Plans, und deutlich mehr als geplant (über 150 %) zählt wie eine zu harte Einheit.';
+  String termComplianceTip(String half, String over) {
+    return 'Teilweise oder stark abweichend zählt trotzdem als erledigt – der Plan passt sich erst an, wenn es sich wiederholt. Dafür braucht ein langer Lauf oder eine Schlüsseleinheit mindestens $half des Plans, und deutlich mehr als geplant (über $over) zählt wie eine zu harte Einheit.';
+  }
 
   @override
   String get feasTitleNote => 'Hinweis zu deinem Plan';
@@ -5817,4 +5819,90 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get progRepCap => 'so viele Wiederholungen, wie dieser Bereich vorsieht – steigere mit Zusatzgewicht oder einer schwereren Variante';
+
+  @override
+  String summaryRemoveRaceGoal(String name, String date) {
+    return 'Wettkampfziel „$name“ ($date) entfernen';
+  }
+
+  @override
+  String get summaryRemoveRaceGoalOn => 'Dein neuer Plan hat keinen Wettkampf – das Ziel, auf das der bisherige Plan ausgerichtet war, wird entfernt.';
+
+  @override
+  String get summaryRemoveRaceGoalOff => 'Das Ziel bleibt: Countdown und der Hinweis „Ziel und Plan passen nicht zusammen“ bleiben, bis du einen Plan wieder darauf ausrichtest.';
+
+  @override
+  String fcEarlyMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Nach $count weiteren Einheiten des Plans nutzt die Prognose deine Trainingsdaten.',
+      one: 'Nach einer weiteren Einheit des Plans nutzt die Prognose deine Trainingsdaten.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recNow(int count) {
+    return 'jetzt $count×';
+  }
+
+  @override
+  String get yourSwimZones => 'Deine Schwimmzonen';
+
+  @override
+  String get swimCssEstimated => 'Geschätzt aus deinen 400 m – mit der 200-m-Zeit wird die CSS genau.';
+
+  @override
+  String get swimTestOnly200 => 'Für den CSS-Test brauchst du auch die 400-m-Zeit – die 200 m allein reichen nicht.';
+
+  @override
+  String get swimTestImplausible => 'Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.';
+
+  @override
+  String plannedNotCountedSub(String date, String duration) {
+    return 'Deine Einheit am $date ($duration) war zu kurz, um für diese Einheit zu zählen – sie bleibt offen.';
+  }
+
+  @override
+  String overPlanShort(String share) {
+    return 'über Plan ($share)';
+  }
+
+  @override
+  String farOffShort(String share) {
+    return 'stark abweichend ($share)';
+  }
+
+  @override
+  String logCompletesPlanOf(String day) {
+    return 'Zählt für die Einheit vom $day';
+  }
+
+  @override
+  String get invalidNumber => 'Bitte eine Zahl eingeben';
+
+  @override
+  String get withoutDistance => 'Ohne Distanz';
+
+  @override
+  String get enterDistanceHint => 'z. B. vom Laufband';
+
+  @override
+  String streakThisWeekShort(int done, int target) {
+    return 'Diese Woche: $done von $target Trainingstagen';
+  }
+
+  @override
+  String get freeGymTitle => 'Freies Training';
+
+  @override
+  String sessionEndsInFuture(String time) {
+    return 'Mit diesem Start und dieser Dauer würde die Einheit in der Zukunft enden ($time) – bitte prüfe beides.';
+  }
+
+  @override
+  String sessionPaceImplausible(String pace) {
+    return 'Durchschnitt $pace – kaum möglich. Stimmen Distanz und Dauer?';
+  }
 }

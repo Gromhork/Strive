@@ -146,10 +146,20 @@ class CardioState {
   int get stepElapsed => elapsed - stepStartSec;
   double get stepDistance => effectiveDistance - stepStartDist;
 
+  /// A distance step indoors without a distance source (treadmill / trainer: no GPS, nothing
+  /// entered): it would show "2 km übrig" for ever and never end. It runs on the time the step is
+  /// expected to take ([approxStepSec] from its pace target) instead – "≈ 11:20" counting down,
+  /// then the next step; the lap button skips ahead earlier.
+  bool get blindDistanceStep => indoor && !poolMode && (step?.distanceM ?? 0) > 0 && effectiveDistance <= 0;
+
+  /// Seconds the current [blindDistanceStep] is expected to take.
+  int get _blindStepSec => approxStepSec(step!, sport);
+
   /// 0..1 progress of the current step.
   double get stepProgress {
     final s = step;
     if (s == null) return 1;
+    if (blindDistanceStep) return _blindStepSec <= 0 ? 0 : (stepElapsed / _blindStepSec).clamp(0, 1);
     if (s.distanceM != null && s.distanceM! > 0) return (stepDistance / s.distanceM!).clamp(0, 1);
     if (s.durationSec != null && s.durationSec! > 0) return (stepElapsed / s.durationSec!).clamp(0, 1);
     return 0;
@@ -160,6 +170,7 @@ class CardioState {
   bool get stepComplete {
     final s = step;
     if (s == null) return false;
+    if (blindDistanceStep) return stepElapsed >= _blindStepSec;
     if (s.distanceM != null) return poolMode ? stepDistance + poolLen / 2 > s.distanceM! : stepDistance >= s.distanceM!;
     return s.durationSec != null && stepElapsed >= s.durationSec!;
   }
@@ -207,8 +218,7 @@ class CardioState {
   int get workoutLeftSec {
     if (!structured || stepsDone) return 0;
     final st = step;
-    final blind = indoor && !poolMode && stepDistance <= 0 && st?.distanceM != null;
-    if (blind) {
+    if (blindDistanceStep) {
       return max(0, approxStepSec(st!, sport) - stepElapsed) + workoutRemainingSec(steps, stepIndex + 1, sport);
     }
     return workoutRemainingSec(steps, stepIndex, sport, stepElapsed: stepElapsed, stepDistance: stepDistance);
@@ -281,6 +291,7 @@ class CardioState {
   (double? meters, int? seconds) get stepRemaining {
     final s = step;
     if (s == null) return (null, null);
+    if (blindDistanceStep) return (null, max(0, _blindStepSec - stepElapsed));
     if (s.distanceM != null) return (max(0, s.distanceM! - stepDistance), null);
     if (s.durationSec != null) return (null, max(0, s.durationSec! - stepElapsed));
     return (null, null);

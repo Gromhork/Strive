@@ -31,7 +31,7 @@ class FeasibilityCache {
 String eventDistanceName(AppLocalizations l, String d) => eventDistanceLabel(l, d);
 
 /// "3 h 45" / "90 min" for a minute value.
-String _hm(int m) => m < 60 || (m % 60 != 0 && m < 90) ? '$m min' : (m % 60 == 0 ? '${m ~/ 60} h' : '${m ~/ 60} h ${m % 60}');
+String _hm(int m) => formatMinutes(m);
 
 /// Short warning when the event goal is not realistic in the time left, with what would
 /// make it work (later date, shorter distance, run/walk). Nothing when the goal is fine.

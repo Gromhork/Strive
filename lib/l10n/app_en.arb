@@ -328,7 +328,7 @@
   "none": "None",
   "markSkipped": "Mark as skipped",
   "generatePlan": "Create plan",
-  "generatePlanSub": "Focus: {focus} · {days} days/week (change in profile)",
+  "generatePlanSub": "Focus: {focus} · {days} days/week (change in plan settings)",
   "@generatePlanSub": {
     "placeholders": {
       "focus": {
@@ -911,7 +911,7 @@
   "plan12w": "12 weeks",
   "plan16w": "16 weeks",
   "plan20w": "20 weeks · max. build-up",
-  "planLengthHint": "Recommended for your goal: {lo}–{hi} weeks (👍).",
+  "planLengthHint": "Recommended for your goal: {lo}–{hi} weeks.",
   "@planLengthHint": {
     "placeholders": {
       "lo": {
@@ -3131,7 +3131,7 @@
   "reauthBody": "For your security, please sign in again before deleting your account.",
   "reauthGoogle": "Continue with Google",
   "reauthConfirm": "Confirm",
-  "feasLongDayDefault": "The long session on {day} needs up to {time} – far more than the time you set. The plan uses it; set that day's time yourself if it does not fit.",
+  "feasLongDayDefault": "The long session on {day} needs up to {time} – far more than your other sessions. The plan schedules it like that; set that day’s time yourself if it does not fit.",
   "@feasLongDayDefault": {
     "placeholders": {
       "day": {
@@ -3897,7 +3897,7 @@
   "coachFewerSets": "Fewer sets than planned – no problem, don’t make them up.",
   "coachMoreSets": "More sets than planned – give yourself enough recovery before the next strength session.",
   "termComplianceTitle": "Plan compliance – how a workout is rated",
-  "termComplianceBody": "Compared with the plan is the distance (endurance workouts with a distance; structured workouts: distance or duration, whichever is closer to the plan), the done work sets (strength – sets done at a much lighter weight or with far fewer reps count partly) or else the duration. A workout marked as done with the plan's numbers counts as planned.\n\n✓ green, as planned: {greenMin}–{greenMax}\n✓ yellow, partly: {yellowMin} up to {greenMin}, or up to {yellowMax}\n✓ orange, far off: less than {yellowMin} or more than {yellowMax}\n✕ red: missed, or less than {countMin} – an aborted start doesn’t count as done.",
+  "termComplianceBody": "Compared with the plan is the distance (endurance workouts with a distance; structured workouts: distance or duration, whichever is closer to the plan), the done work sets (strength – sets done at a much lighter weight or with far fewer reps count partly) or else the duration. A workout marked as done with the plan's numbers counts as planned.\n\n✓ green, as planned: {greenMin}–{greenMax}\n✓ yellow, partly / above plan: {yellowMin} to under {greenMin}, or over {greenMax} up to {yellowMax}\n✓ orange, far off: {countMin} to under {yellowMin}, or over {yellowMax}\n✕ red: missed, or under {countMin} – an aborted start doesn’t count as done.",
   "@termComplianceBody": {
     "placeholders": {
       "greenMin": {
@@ -3917,7 +3917,7 @@
       }
     }
   },
-  "termComplianceTip": "Partly or far off still counts as done – the plan only adapts when it happens repeatedly. For that, a long run or a key session needs at least half of the plan, and clearly more than planned (over 150 %) counts like a session that was too hard.",
+  "termComplianceTip": "Partly or far off still counts as done – the plan only adapts when it happens repeatedly. For that, a long run or a key session needs at least {half} of the plan, and clearly more than planned (over {over}) counts like a session that was too hard.",
   "feasTitleNote": "Note on your plan",
   "feasLongRunTimeCap": "Your long runs stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km). Running longer in one go adds more injury risk and recovery time than fitness. So: finishing is the goal – start easy and plan short walk breaks from the start (e.g. 1 min every 10 min).",
   "@feasLongRunTimeCap": {
@@ -3974,5 +3974,114 @@
     }
   },
   "progFromPlan": "last session was logged from the plan, not measured – same weight and reps once more",
-  "progRepCap": "as many reps as this range allows – add load or a harder variation to progress"
+  "progRepCap": "as many reps as this range allows – add load or a harder variation to progress",
+  "summaryRemoveRaceGoal": "Remove the race goal “{name}” ({date})",
+  "@summaryRemoveRaceGoal": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryRemoveRaceGoalOn": "Your new plan has no race – the goal the previous plan was built for is removed with it.",
+  "summaryRemoveRaceGoalOff": "The goal stays: its countdown and the hint “Goal and plan don’t match” remain until you align a plan with it again.",
+  "fcEarlyMore": "{count, plural, =1{One more workout of the plan and the forecast uses your training data.} other{{count} more workouts of the plan and the forecast uses your training data.}}",
+  "@fcEarlyMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recNow": "now {count}×",
+  "@recNow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yourSwimZones": "Your swim zones",
+  "swimCssEstimated": "Estimated from your 400 m – add the 200 m for an exact CSS.",
+  "swimTestOnly200": "The CSS test needs the 400 m time too – the 200 m alone is not enough.",
+  "swimTestImplausible": "These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.",
+  "plannedNotCountedSub": "Your session on {date} ({duration}) was too short to count for this workout – it stays open.",
+  "@plannedNotCountedSub": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "overPlanShort": "above plan ({share})",
+  "@overPlanShort": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "farOffShort": "far off plan ({share})",
+  "@farOffShort": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "@termComplianceTip": {
+    "placeholders": {
+      "half": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "logCompletesPlanOf": "Completes the workout planned for {day}",
+  "@logCompletesPlanOf": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidNumber": "Please enter a number",
+  "withoutDistance": "Without distance",
+  "enterDistanceHint": "e.g. from the treadmill",
+  "streakThisWeekShort": "This week: {done} of {target} training days",
+  "@streakThisWeekShort": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "freeGymTitle": "Free workout",
+  "sessionEndsInFuture": "With this start and duration the workout would end in the future ({time}) – please check both.",
+  "@sessionEndsInFuture": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionPaceImplausible": "Average {pace} – hardly possible. Are the distance and duration right?",
+  "@sessionPaceImplausible": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  }
 }

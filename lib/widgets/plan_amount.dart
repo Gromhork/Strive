@@ -1,3 +1,4 @@
+import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/models.dart';
 import '../services/zones.dart';
@@ -55,7 +56,7 @@ String planAmountText(PlannedWorkout p, UserProfile profile, {List<WorkoutTempla
   final a = planAmount(p, profile, templates: templates);
   final u = profile.units;
   return [
-    '${a.estimated ? '≈ ' : ''}${a.minutes} min',
+    '${a.estimated ? '≈ ' : ''}${a.minutes}${nbsp}min',
     if (a.km != null) p.sport == Sport.swim ? u.swimDist(a.km! * 1000) : u.dist(a.km! * 1000, digits: 1),
   ].join(' · ');
 }

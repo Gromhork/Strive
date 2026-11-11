@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Central design tokens for Strive.
 class AppColors {
@@ -53,6 +54,9 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: dark ? AppColors.bgDark : AppColors.bgLight,
         surfaceTintColor: Colors.transparent,
+        // Status-bar icons per theme: an app bar with a transparent background (active workout)
+        // otherwise guesses light icons – invisible on the light background.
+        systemOverlayStyle: (dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark).copyWith(statusBarColor: Colors.transparent),
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(fontFamily: 'Poppins', fontSize: 20, fontWeight: FontWeight.w600, color: scheme.onSurface),

@@ -126,11 +126,19 @@ class GoalStatusCardView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(l.goalStatusTitle, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                        // Name over two lines when needed, the date on its own: a long name never
+                        // hides the race day ("Halbmarathon · …").
                         Text(
-                          '${eventLabel(l, f.event)} · ${DateFormat.MMMd(context.localeName).format(f.raceDate)}',
-                          maxLines: 1,
+                          eventLabel(l, f.event),
+                          key: const ValueKey('goalStatusName'),
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                        ),
+                        Text(
+                          DateFormat.yMMMEd(context.localeName).format(f.raceDate),
+                          key: const ValueKey('goalStatusDate'),
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -156,7 +164,7 @@ class GoalStatusCardView extends StatelessWidget {
               ForecastTimes(f),
               const SizedBox(height: 8),
               Align(alignment: Alignment.centerLeft, child: ForecastChip(f)),
-              if (f.early) ...[const SizedBox(height: 6), Text(l.fcEarlySub, style: theme.textTheme.bodySmall)],
+              if (f.early) ...[const SizedBox(height: 6), Text(forecastEarlyText(l, f), style: theme.textTheme.bodySmall)],
               if (showAlert) ...[
                 const SizedBox(height: 12),
                 _RiskNotice(f: f, onAdjustTarget: onAdjustTarget, onRecalibrate: onRecalibrate, onDismiss: onDismiss),

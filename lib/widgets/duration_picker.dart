@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,6 +20,18 @@ enum DurationUnits {
   /// The wheels for durations up to [maxSec]: minutes + seconds below 100 min (5 km, 400 m swim
   /// test, 1500 m open water), else hours + minutes + seconds.
   static DurationUnits upTo(int? maxSec) => maxSec != null && maxSec < 100 * 60 ? ms : hms;
+
+  /// [seconds] the way these wheels show it: "80:10" with minutes + seconds (the minute wheel runs
+  /// past 59 – never "1:20:10" above wheels reading 80 min 10 s), else "1:20:10" / "7:35".
+  /// Hours + minutes: "0:29 h" – "29:00" would read as 29 minutes and 0 seconds of the other modes.
+  String format(int seconds) {
+    String two(int v) => v.toString().padLeft(2, '0');
+    return switch (this) {
+      ms => '${seconds ~/ 60}:${two(seconds % 60)}',
+      hm => '${seconds ~/ 3600}:${two((seconds % 3600) ~/ 60)}${nbsp}h',
+      hms => clock(seconds),
+    };
+  }
 }
 
 /// Result of [showDurationPicker]; the sheet returns null when it was dismissed.
@@ -80,7 +94,7 @@ class DurationField extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final empty = value == null;
-    final text = empty ? (emptyText ?? _placeholder) : clock(value!);
+    final text = empty ? (emptyText ?? _placeholder) : (units ?? DurationUnits.upTo(max)).format(value!);
     return Semantics(
       button: true,
       label: [label ?? inlineLabel ?? title, if (!empty) text].whereType<String>().join(', '),
@@ -211,6 +225,11 @@ class _DurationSheetState extends State<_DurationSheet> {
   bool get _hasHours => widget.units != DurationUnits.ms;
   bool get _hasSeconds => widget.units != DurationUnits.hm;
 
+  /// First value of the leading wheel: the wheels start at [min] where they can (hours, or the
+  /// minutes without an hour wheel) – no scrolling through values that can't be taken.
+  late final int _hFirst = _hasHours ? ((widget.min ?? 0) ~/ 3600).clamp(0, widget.maxHours) : 0;
+  late final int _mFirst = _hasHours ? 0 : ((widget.min ?? 0) ~/ 60).clamp(0, widget.maxMinutes);
+
   int get _seconds => _hasHours ? _h * 3600 + _m * 60 + (_hasSeconds ? _s : 0) : _m * 60 + _s;
 
   @override
@@ -218,12 +237,13 @@ class _DurationSheetState extends State<_DurationSheet> {
     super.initState();
     // Within what the wheels can show.
     final most = _hasHours ? widget.maxHours * 3600 + 59 * 60 + (_hasSeconds ? 59 : 0) : widget.maxMinutes * 60 + 59;
-    final total = widget.start.clamp(0, most);
+    final least = _hasHours ? _hFirst * 3600 : _mFirst * 60;
+    final int total = widget.start.clamp(least, max(least, most));
     _h = _hasHours ? total ~/ 3600 : 0;
     _m = _hasHours ? (total % 3600) ~/ 60 : total ~/ 60;
     _s = _hasSeconds ? total % 60 : 0;
-    _hc = FixedExtentScrollController(initialItem: _h);
-    _mc = FixedExtentScrollController(initialItem: _m);
+    _hc = FixedExtentScrollController(initialItem: _h - _hFirst);
+    _mc = FixedExtentScrollController(initialItem: _m - _mFirst);
     _sc = FixedExtentScrollController(initialItem: _s);
   }
 
@@ -239,7 +259,8 @@ class _DurationSheetState extends State<_DurationSheet> {
     final v = _seconds;
     final lo = widget.min, hi = widget.max;
     if ((lo != null && v < lo) || (hi != null && v > hi)) {
-      return context.l10n.durationRange(clock(lo ?? 1), hi == null ? '–' : clock(hi));
+      final f = widget.units.format;
+      return context.l10n.durationRange(f(lo ?? 1), hi == null ? '–' : f(hi));
     }
     return null;
   }
@@ -252,8 +273,8 @@ class _DurationSheetState extends State<_DurationSheet> {
     final error = _rangeError(context);
     final ok = _seconds > 0 && error == null;
     final wheels = <Widget>[
-      if (_hasHours) _wheel('h', _hc, widget.maxHours + 1, looping: false, onChanged: (i) => _h = i),
-      _wheel('min', _mc, _hasHours ? 60 : widget.maxMinutes + 1, looping: _hasHours, onChanged: (i) => _m = i),
+      if (_hasHours) _wheel('h', _hc, widget.maxHours + 1 - _hFirst, first: _hFirst, looping: false, onChanged: (i) => _h = i),
+      _wheel('min', _mc, _hasHours ? 60 : widget.maxMinutes + 1 - _mFirst, first: _mFirst, looping: _hasHours, onChanged: (i) => _m = i),
       if (_hasSeconds) _wheel('s', _sc, 60, looping: true, onChanged: (i) => _s = i),
     ];
     return SafeArea(
@@ -266,7 +287,7 @@ class _DurationSheetState extends State<_DurationSheet> {
             Text(widget.title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             Text(
-              clock(_seconds),
+              widget.units.format(_seconds),
               key: const ValueKey('durationValue'),
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
@@ -295,22 +316,23 @@ class _DurationSheetState extends State<_DurationSheet> {
                 ],
               ),
             ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 160),
-              child:
-                  error == null
-                      ? const SizedBox(width: double.infinity)
-                      : Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
+            // The line is reserved: the sheet does not jump when the range hint appears.
+            SizedBox(
+              height: 40,
+              child: Center(
+                child:
+                    error == null
+                        ? null
+                        : Text(
                           error,
                           key: const ValueKey('durationRange'),
                           textAlign: TextAlign.center,
+                          maxLines: 2,
                           style: theme.textTheme.bodySmall?.copyWith(color: scheme.error, fontWeight: FontWeight.w600),
                         ),
-                      ),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
             Row(
               children: [
                 if (widget.clearable)
@@ -335,15 +357,22 @@ class _DurationSheetState extends State<_DurationSheet> {
     );
   }
 
-  /// One wheel ([count] values from 0) with its unit next to the selected value.
-  Widget _wheel(String unit, FixedExtentScrollController c, int count, {required bool looping, required ValueChanged<int> onChanged}) {
+  /// One wheel ([count] values from [first]) with its unit next to the selected value.
+  Widget _wheel(
+    String unit,
+    FixedExtentScrollController c,
+    int count, {
+    int first = 0,
+    required bool looping,
+    required ValueChanged<int> onChanged,
+  }) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     // The leading wheel (hours, or minutes without an hour wheel) without a leading zero: "7:35".
     final plain = unit == 'h' || (unit == 'min' && !_hasHours);
     Widget item(int i) => Center(
       child: Text(
-        plain ? '$i' : i.toString().padLeft(2, '0'),
+        plain ? '${first + i}' : (first + i).toString().padLeft(2, '0'),
         style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
           color: scheme.onSurface,
@@ -367,7 +396,7 @@ class _DurationSheetState extends State<_DurationSheet> {
               overAndUnderCenterOpacity: 0.4,
               onSelectedItemChanged: (i) {
                 HapticFeedback.selectionClick();
-                setState(() => onChanged(i % count));
+                setState(() => onChanged(first + i % count));
               },
               childDelegate:
                   looping ? ListWheelChildLoopingListDelegate(children: children) : ListWheelChildListDelegate(children: children),

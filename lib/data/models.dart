@@ -680,6 +680,11 @@ class Session {
   /// against it. Null for older sessions and free workouts.
   final int? plannedSets;
 
+  /// XP the session earned before it was first corrected ([xpForSession] caps at it): a correction
+  /// can lower the XP (a forgotten stop), never raise it – XP can't be farmed by editing the
+  /// duration or the effort afterwards. Null for sessions never edited.
+  final int? xpCap;
+
   Session({
     required this.id,
     required this.sport,
@@ -707,6 +712,7 @@ class Session {
     this.avgPower,
     this.fromPlan = false,
     this.plannedSets,
+    this.xpCap,
   });
 
   /// Real measurement (recorded, imported or entered by hand) – not taken over from the plan.
@@ -761,6 +767,7 @@ class Session {
       avgPower: _in(m['avgPower']),
       fromPlan: _b(m['fromPlan']),
       plannedSets: _in(m['plannedSets']),
+      xpCap: _in(m['xpCap']),
     );
   }
 
@@ -792,6 +799,7 @@ class Session {
     if (avgPower != null) 'avgPower': avgPower,
     if (fromPlan) 'fromPlan': true,
     if (plannedSets != null) 'plannedSets': plannedSets,
+    if (xpCap != null) 'xpCap': xpCap,
   };
 }
 

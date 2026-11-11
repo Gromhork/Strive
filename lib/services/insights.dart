@@ -38,7 +38,9 @@ int xpForSession(Session s) {
     case Sport.swim:
       xp += s.distanceM / 100 * 3;
   }
-  return max(5, xp.round());
+  final earned = max(5, xp.round());
+  // Edited afterwards: at most what it earned before the first correction ([Session.xpCap]).
+  return s.xpCap == null ? earned : min(earned, s.xpCap!);
 }
 
 /// Cumulative XP needed to reach [level] (level 1 = 0 XP).

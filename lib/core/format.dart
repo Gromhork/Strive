@@ -21,6 +21,15 @@ DateTime addDays(DateTime d, int n) => DateTime(d.year, d.month, d.day + n);
 int daysBetween(DateTime a, DateTime b) => DateTime.utc(b.year, b.month, b.day).difference(DateTime.utc(a.year, a.month, a.day)).inDays;
 
 DateTime startOfWeek(DateTime d) => addDays(d, -(d.weekday - 1));
+
+/// Where a race date picker opens: [weeks] weeks after [today], moved forward to the next race
+/// day – the long-session day ([longDay], 1 = Monday), else Sunday (most races are on a weekend).
+DateTime defaultRaceDate(DateTime today, int weeks, {int? longDay}) {
+  final d = addDays(dayOnly(today), 7 * weeks);
+  final target = longDay ?? DateTime.sunday;
+  return addDays(d, (target - d.weekday) % 7);
+}
+
 bool sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 String dayKey(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 DateTime parseDayKey(String s) => DateFormat('yyyy-MM-dd').parse(s);
@@ -112,16 +121,28 @@ String clock(int seconds) {
   return h > 0 ? '$h:${two(m)}:${two(s)}' : '$m:${two(s)}';
 }
 
-/// 3725 -> "1h 2min"
+/// Non-breaking space: a number and its unit ("2 h", "45 min") never wrap apart.
+const nbsp = ' ';
+
+/// A planned / allowed time in minutes – the one compact format of the app: "45 min", "1:15 h",
+/// "2 h" (never "2 h 00"), with non-breaking spaces so the value never wraps inside. Below 90
+/// minutes in minutes ("75 min" reads easier than "1:15 h"); whole hours as "2 h".
+String formatMinutes(int minutes) {
+  if (minutes < 90 && minutes % 60 != 0) return '$minutes${nbsp}min';
+  final h = minutes ~/ 60, m = minutes % 60;
+  return m == 0 ? '$h${nbsp}h' : '$h:${m.toString().padLeft(2, '0')}${nbsp}h';
+}
+
+/// 3725 -> "1 h 2 min" (non-breaking between number and unit).
 /// Rounded to the nearest minute (3:49 → "4 min", like the "≈ 4 min" elsewhere – never cut
 /// down to "3 min"); under half a minute the seconds.
 String humanDuration(int seconds) {
   final total = (seconds / 60).round();
-  if (total == 0 && seconds > 0) return '$seconds s';
+  if (total == 0 && seconds > 0) return '$seconds${nbsp}s';
   final h = total ~/ 60;
   final m = total % 60;
-  if (h == 0) return '$m min';
-  return m == 0 ? '$h h' : '$h h $m min';
+  if (h == 0) return '$m${nbsp}min';
+  return m == 0 ? '$h${nbsp}h' : '$h${nbsp}h $m${nbsp}min';
 }
 
 /// Counts (steps, reps): grouped in the app language up to 99.999 ("8.432" / "8,432"),

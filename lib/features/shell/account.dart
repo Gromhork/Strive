@@ -9,6 +9,7 @@ import '../../providers.dart';
 import '../../services/google_auth.dart';
 import '../../widgets/common.dart';
 import '../calendar/auto_adjust.dart' show rootMessengerKey;
+import '../auth/login_page.dart' show loginNotice;
 import 'health_sync.dart';
 
 /// Firestore settings of the app (offline mode: everything cached locally).
@@ -102,7 +103,8 @@ Future<void> deleteAccountFlow(BuildContext context, WidgetRef ref) async {
     _invalidateUserScoped(container);
     nav.popUntil((r) => r.isFirst);
     await clearLocalCache();
-    _notify(l.deleteAccountDone);
+    // On the login page the app shows next (a snackbar of the page that started this got lost).
+    loginNotice.value = l.deleteAccountDone;
   } catch (e) {
     debugPrint('account deletion failed: $e');
     if (nav.canPop()) nav.pop();

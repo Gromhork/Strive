@@ -7,6 +7,7 @@ import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../providers.dart';
 import '../../services/active_workout.dart';
+import '../../services/insights.dart' show GameStats;
 import '../../services/tracker.dart';
 import '../calendar/calendar_page.dart';
 import '../coach/coach_page.dart';
@@ -159,6 +160,12 @@ class StriveTopBar extends ConsumerWidget implements PreferredSizeWidget {
     final filter = ref.watch(sportFilterProvider);
     final profile = ref.watch(profileOrDefaultProvider);
     final scheme = Theme.of(context).colorScheme;
+    // The streak counts finished weeks with the training-day goal met (four sessions on one day are
+    // one training day). The week under way shows next to it – "0" alone read as if today's
+    // training didn't count.
+    final week =
+        GameStats.weekHistory(ref.watch(sessionListProvider), profile.weeklyTarget, plans: ref.watch(planListProvider), weeks: 1).last;
+    final inProgress = !week.met && week.done > 0;
     return SafeArea(
       bottom: false,
       child: SizedBox(
@@ -168,7 +175,7 @@ class StriveTopBar extends ConsumerWidget implements PreferredSizeWidget {
           child: Row(
             children: [
               Tooltip(
-                message: l.weekStreakTooltip,
+                message: '${l.weekStreakTooltip}\n${l.streakThisWeekShort(week.done, week.goal)}',
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
                   onTap: () => showStreakSheet(context, ref),
@@ -188,6 +195,14 @@ class StriveTopBar extends ConsumerWidget implements PreferredSizeWidget {
                         ),
                         const SizedBox(width: 4),
                         Text('${stats.weekStreak}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                        if (inProgress) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            '${week.done}/${week.goal}',
+                            key: const ValueKey('streakWeekProgress'),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
+                          ),
+                        ],
                       ],
                     ),
                   ),

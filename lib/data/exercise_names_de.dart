@@ -247,7 +247,7 @@ SharedPreferences? exerciseNamePrefs;
 String exerciseName(String id, String en, String lang) {
   if (lang == 'de') {
     final de = exerciseNamesDe[id] ?? exerciseNamePrefs?.getString('trn_de_$id');
-    if (de != null && de.isNotEmpty) return de;
+    if (de != null && de.trim().isNotEmpty) return de.replaceFirst(RegExp(r'^[\s\-–·:]+'), '');
     // A name the user typed (custom exercise) or an already German name stays as it is.
     if (en.isNotEmpty && !_looksGerman(en)) return germanExerciseName(en);
   }
@@ -447,7 +447,10 @@ String germanExerciseName(String en) {
   }
   final rest = [
     for (final w in s.trim().split(RegExp(r'\s+')))
-      if (w.isNotEmpty && !_fillerWords.contains(w) && !RegExp(r'^\d+$').hasMatch(w)) w[0].toUpperCase() + w.substring(1),
+      // Separators of the database names ("calf raise - hammer grip") are no words: never a
+      // leading "- Hammer Grip Wadenheben".
+      if (w.isNotEmpty && !_fillerWords.contains(w) && !RegExp(r'^\d+$').hasMatch(w) && RegExp('[a-z0-9äöüß]').hasMatch(w))
+        w[0].toUpperCase() + w.substring(1),
   ];
   if (movement == null && mods.isEmpty && equipment == null) return en.isEmpty ? en : en[0].toUpperCase() + en.substring(1);
   final head = [...rest, movement ?? ''].where((x) => x.isNotEmpty).join(' ');

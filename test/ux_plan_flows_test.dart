@@ -203,7 +203,7 @@ void main() {
       final a = planAmount(p, profile);
       expect(a.minutes, 36);
       expect(a.estimated, isTrue);
-      expect(planAmountText(p, profile), startsWith('≈ 36 min'));
+      expect(planAmountText(p, profile), startsWith('≈ 36\u00a0min'));
     });
   });
 
