@@ -1795,7 +1795,9 @@ List<String> planSummaryLines(AppLocalizations l, UserProfile p, {DateTime? now}
   final toEvent = a.eventDate == null ? null : GoalModel.weeksUntil(a.eventDate!, now ?? DateTime.now());
   return [
     l.summaryWeekStructure('${l.sessionsPerWeekN(total)} – ${sports.map((s) => '${s.label(l)} ${count[s]}×').join(' · ')}'),
-    toEvent != null && toEvent >= 2 && toEvent <= GoalModel.maxEventWeeks ? l.summaryPlanLengthEvent(toEvent) : l.summaryPlanLength(a.planWeeks),
+    toEvent != null && toEvent >= 2 && toEvent <= GoalModel.maxEventWeeks
+        ? l.summaryPlanLengthEvent(toEvent)
+        : l.summaryPlanLength(a.planWeeks),
   ];
 }
 

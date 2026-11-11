@@ -403,7 +403,24 @@ const _modifierDe = <(String, String)>[
   ('low', 'tief'),
 ];
 
-const _fillerWords = {'with', 'on', 'the', 'to', 'and', 'a', 'of', 'v', 'male', 'female', 'pov', 'version', 'exercise', 'body', 'weight', 'bodyweight'};
+const _fillerWords = {
+  'with',
+  'on',
+  'the',
+  'to',
+  'and',
+  'a',
+  'of',
+  'v',
+  'male',
+  'female',
+  'pov',
+  'version',
+  'exercise',
+  'body',
+  'weight',
+  'bodyweight',
+};
 
 /// Rule-based German name of an English database name for exercises without a curated or
 /// translated name: the movement first, then the variation, the equipment in brackets

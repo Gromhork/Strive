@@ -111,8 +111,15 @@ void main() {
         distanceKm: km,
         durationMin: min,
       );
-  Session session(String id, int day, Sport sport, {String? planId, double m = 0, int sec = 1800}) =>
-      Session(id: id, sport: sport, title: 'S$id', start: addDays(today, day).add(const Duration(hours: 9)), durationSec: sec, distanceM: m, planId: planId);
+  Session session(String id, int day, Sport sport, {String? planId, double m = 0, int sec = 1800}) => Session(
+    id: id,
+    sport: sport,
+    title: 'S$id',
+    start: addDays(today, day).add(const Duration(hours: 9)),
+    durationSec: sec,
+    distanceM: m,
+    planId: planId,
+  );
   final hybridPlan = [plan('a', 1, Sport.run), plan('b', 2, Sport.gym), plan('c', 3, Sport.swim)];
 
   group('C2/C5 goal ↔ focus ↔ plan mismatch', () {
@@ -127,10 +134,7 @@ void main() {
     });
 
     test('an aligned triathlon plan has no mismatch', () {
-      final p = UserProfile(
-        focus: TrainingFocus.triathlon,
-        athlete: AthleteData(eventDate: triGoal.deadline, eventDistance: 'olympic'),
-      );
+      final p = UserProfile(focus: TrainingFocus.triathlon, athlete: AthleteData(eventDate: triGoal.deadline, eventDistance: 'olympic'));
       final plans = [...hybridPlan, plan('d', 4, Sport.ride)];
       expect(GoalAlignment.of(p, [triGoal], plans, today)!.mismatch, isFalse);
     });
@@ -188,7 +192,14 @@ void main() {
     testWidgets('goal editor: the align switch shows reality, no feasibility with the wrong focus', (t) async {
       final o = await _overrides(_FakeRepo(), profile: hybrid, goals: [triGoal], plans: hybridPlan);
       await t.pumpWidget(
-        _app(Consumer(builder: (c, ref, _) => Scaffold(body: TextButton(onPressed: () => showGoalEditor(c, ref, existing: triGoal), child: const Text('open')))), o),
+        _app(
+          Consumer(
+            builder:
+                (c, ref, _) =>
+                    Scaffold(body: TextButton(onPressed: () => showGoalEditor(c, ref, existing: triGoal), child: const Text('open'))),
+          ),
+          o,
+        ),
       );
       await t.pumpAndSettle();
       await t.tap(find.text('open'));
@@ -219,7 +230,10 @@ void main() {
 
   group('C4 replacement, partial completion, cleanup', () {
     test('old links > ±1 day are reopened (and logged)', () {
-      final plans = [plan('sat', 5, Sport.run, status: 'done', sessionId: 's1'), plan('mon', 0, Sport.run, status: 'done', sessionId: 's2')];
+      final plans = [
+        plan('sat', 5, Sport.run, status: 'done', sessionId: 's1'),
+        plan('mon', 0, Sport.run, status: 'done', sessionId: 's2'),
+      ];
       final sessions = [session('s1', 0, Sport.run, planId: 'sat'), session('s2', 0, Sport.run, planId: 'mon')];
       final c = staleLinks(plans, sessions);
       expect(c.map((x) => x.$1.id), ['sat']);

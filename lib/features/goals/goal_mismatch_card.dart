@@ -61,7 +61,8 @@ class _GoalMismatchCardState extends ConsumerState<GoalMismatchCard> {
     final t = Theme.of(context).textTheme;
     final body = [
       m.focusWrong ? l.mismatchFocusBody(m.goal.title, m.focus.label(l), m.neededFocus.label(l)) : l.mismatchPlanBody(m.goal.title),
-      if (m.missingSports.isNotEmpty && (m.planAligned || m.focusWrong)) l.mismatchMissing(m.missingSports.map((s) => s.label(l)).join(', ')),
+      if (m.missingSports.isNotEmpty && (m.planAligned || m.focusWrong))
+        l.mismatchMissing(m.missingSports.map((s) => s.label(l)).join(', ')),
     ].join(' ');
     return Padding(
       padding: widget.padding,

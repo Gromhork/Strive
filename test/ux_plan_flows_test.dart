@@ -319,6 +319,8 @@ void main() {
       await t.pumpAndSettle();
       // Empty goal can't be saved ("0 per week") – but no red error before the first try.
       expect(find.byKey(const ValueKey('goalInvalid')), findsNothing);
+      await t.ensureVisible(find.byKey(const ValueKey('saveGoal')));
+      await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey('saveGoal')));
       await t.pumpAndSettle();
       expect(find.byKey(const ValueKey('goalInvalid')), findsOneWidget);

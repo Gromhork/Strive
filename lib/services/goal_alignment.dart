@@ -74,7 +74,13 @@ class GoalAlignment {
       EventSport.duathlon => const [Sport.run, Sport.ride],
       _ => const <Sport>[],
     };
-    final missing = upcoming.isEmpty ? const <Sport>[] : [for (final s in raceSports) if (!upcoming.any((w) => w.sport == s)) s];
+    final missing =
+        upcoming.isEmpty
+            ? const <Sport>[]
+            : [
+              for (final s in raceSports)
+                if (!upcoming.any((w) => w.sport == s)) s,
+            ];
     return GoalAlignment(goal: g, raceKey: key, focus: p.focus, neededFocus: needed, planAligned: aligned, missingSports: missing);
   }
 

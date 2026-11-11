@@ -145,8 +145,7 @@ PlanLogState planLogState(PlanLogEntry e, Map<String, PlannedWorkout> current) {
 ///   resulting workouts – e.g. a change applied twice) is shown once.
 List<PlanLogEntry> visiblePlanLog(List<PlanLogEntry> entries, Map<String, PlannedWorkout> current) {
   final out = <PlanLogEntry>[];
-  String sig(PlanLogEntry e) =>
-      '${e.source}|${e.reason}|${[for (final i in e.items) '${i.planId}:${i.after}'].join(',')}';
+  String sig(PlanLogEntry e) => '${e.source}|${e.reason}|${[for (final i in e.items) '${i.planId}:${i.after}'].join(',')}';
   for (final e in entries) {
     if (e.items.isNotEmpty && e.items.every((i) => !current.containsKey(i.planId))) continue;
     if (out.isNotEmpty && sig(out.last) == sig(e) && out.last.at.difference(e.at).inMinutes.abs() < 30) continue;

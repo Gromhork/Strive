@@ -518,28 +518,28 @@ class ComingUpCard extends ConsumerWidget {
                             message: dayPlans.map((p) => glueTitle(p.title)).join('\n'),
                             triggerMode: TooltipTriggerMode.longPress,
                             child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 1),
-                            child: Text(
-                              // Six days share the row: a short label (the kind of session; gym:
-                              // "GK A") – long titles were cut off. The full title is one tap away.
-                              hiddenDay
-                                  ? l.hiddenShort
-                                  : dayPlans.isEmpty
-                                  ? l.rest
-                                  : doneSession != null && !sameDay(doneSession.start, d)
-                                  ? l.doneOnDay(fmt.format(doneSession.start))
-                                  : (dayPlans.length == 1 ? shortPlanLabel(l, dayPlans.first) : l.nWorkouts(dayPlans.length)),
-                              key: ValueKey('stripLabel$i'),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                height: 1.15,
-                                color: hiddenDay || dayPlans.isEmpty ? dim : null,
-                                fontWeight: dayPlans.length > 1 ? FontWeight.w700 : FontWeight.w400,
+                              padding: const EdgeInsets.symmetric(horizontal: 1),
+                              child: Text(
+                                // Six days share the row: a short label (the kind of session; gym:
+                                // "GK A") – long titles were cut off. The full title is one tap away.
+                                hiddenDay
+                                    ? l.hiddenShort
+                                    : dayPlans.isEmpty
+                                    ? l.rest
+                                    : doneSession != null && !sameDay(doneSession.start, d)
+                                    ? l.doneOnDay(fmt.format(doneSession.start))
+                                    : (dayPlans.length == 1 ? shortPlanLabel(l, dayPlans.first) : l.nWorkouts(dayPlans.length)),
+                                key: ValueKey('stripLabel$i'),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  height: 1.15,
+                                  color: hiddenDay || dayPlans.isEmpty ? dim : null,
+                                  fontWeight: dayPlans.length > 1 ? FontWeight.w700 : FontWeight.w400,
+                                ),
                               ),
-                            ),
                             ),
                           ),
                         ],

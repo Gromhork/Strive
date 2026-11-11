@@ -42,7 +42,11 @@ final linkCleanupSyncProvider = Provider<void>((ref) {
   _running.add(key);
   repo.logPlanChange(PlanLogEntry.of('unlink', changes));
   repo
-      .updateMany(plans: {for (final (_, a) in changes) a.id: {'status': 'planned', 'sessionId': null}})
+      .updateMany(
+        plans: {
+          for (final (_, a) in changes) a.id: {'status': 'planned', 'sessionId': null},
+        },
+      )
       .then((_) => prefs.setBool(key, true))
       .catchError((Object e) {
         debugPrint('Link cleanup failed: $e');
