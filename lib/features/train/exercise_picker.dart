@@ -55,6 +55,20 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
   String? _body;
   String? _equip;
   final _selected = <Exercise>[];
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Applies a new query or filter and shows the new list from its top – its best hits
+  /// (the ranking puts the exact name first), not the position of the previous list.
+  void _refine(VoidCallback change) {
+    setState(change);
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+  }
 
   // Memo of the shown list and the inputs it was computed from.
   List<Exercise> _list = const [];
@@ -115,7 +129,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                 child: TextField(
                   autofocus: widget.selectMode,
                   decoration: InputDecoration(hintText: l.searchExercises, prefixIcon: const Icon(Icons.search)),
-                  onChanged: (v) => setState(() => _q = v),
+                  onChanged: (v) => _refine(() => _q = v),
                 ),
               ),
               SizedBox(
@@ -129,7 +143,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                       active: _body != null,
                       options: db.bodyPartsFor(lang),
                       lang: lang,
-                      onSelected: (v) => setState(() => _body = v),
+                      onSelected: (v) => _refine(() => _body = v),
                     ),
                     const SizedBox(width: 8),
                     _FilterMenu(
@@ -137,7 +151,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                       active: _equip != null,
                       options: db.equipmentFor(lang),
                       lang: lang,
-                      onSelected: (v) => setState(() => _equip = v),
+                      onSelected: (v) => _refine(() => _equip = v),
                     ),
                   ],
                 ),
@@ -151,6 +165,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
               ),
               Expanded(
                 child: ListView.builder(
+                  controller: _scroll,
                   padding: const EdgeInsets.only(bottom: 96),
                   itemCount: list.length,
                   itemBuilder: (_, i) {

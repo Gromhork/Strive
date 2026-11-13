@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
+import '../core/collation.dart';
 import 'models.dart';
 import 'plan_log.dart';
 
@@ -173,7 +174,7 @@ class Repository {
   Stream<List<WorkoutTemplate>> templates() => _templates.snapshots().map(
     (q) => parseDocs(q.docs, WorkoutTemplate.tryFromMap)..sort((a, b) {
       final o = a.order.compareTo(b.order);
-      return o != 0 ? o : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      return o != 0 ? o : compareNames(a.name, b.name);
     }),
   );
 
