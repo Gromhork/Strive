@@ -146,6 +146,7 @@ class AppSettings {
   final ThemeMode themeMode;
   final bool trainingReminder;
   final int reminderHour;
+  final int reminderMinute;
   final bool vibrate;
 
   /// Gym: log the reserve (reps in the tank) of every set – off by default; the per-exercise
@@ -157,6 +158,7 @@ class AppSettings {
     this.themeMode = ThemeMode.dark,
     this.trainingReminder = false,
     this.reminderHour = 8,
+    this.reminderMinute = 0,
     this.vibrate = true,
     this.logRir = false,
   });
@@ -167,6 +169,7 @@ class AppSettings {
     ThemeMode? themeMode,
     bool? trainingReminder,
     int? reminderHour,
+    int? reminderMinute,
     bool? vibrate,
     bool? logRir,
   }) => AppSettings(
@@ -174,6 +177,7 @@ class AppSettings {
     themeMode: themeMode ?? this.themeMode,
     trainingReminder: trainingReminder ?? this.trainingReminder,
     reminderHour: reminderHour ?? this.reminderHour,
+    reminderMinute: reminderMinute ?? this.reminderMinute,
     vibrate: vibrate ?? this.vibrate,
     logRir: logRir ?? this.logRir,
   );
@@ -190,6 +194,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       themeMode: ThemeMode.values[p.getInt('themeMode') ?? ThemeMode.dark.index],
       trainingReminder: p.getBool('trainingReminder') ?? false,
       reminderHour: p.getInt('reminderHour') ?? 8,
+      reminderMinute: p.getInt('reminderMinute') ?? 0,
       vibrate: p.getBool('vibrate') ?? true,
       logRir: p.getBool('logRir') ?? false,
     );
@@ -201,6 +206,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _p.setInt('themeMode', s.themeMode.index);
     _p.setBool('trainingReminder', s.trainingReminder);
     _p.setInt('reminderHour', s.reminderHour);
+    _p.setInt('reminderMinute', s.reminderMinute);
     _p.setBool('vibrate', s.vibrate);
     _p.setBool('logRir', s.logRir);
   }
