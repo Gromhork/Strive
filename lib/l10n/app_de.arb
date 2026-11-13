@@ -1773,6 +1773,8 @@
   "swimCssEstimated": "Geschätzt aus deinen 400 m – mit der 200-m-Zeit wird die CSS genau.",
   "swimTestOnly200": "Für den CSS-Test brauchst du auch die 400-m-Zeit – die 200 m allein reichen nicht.",
   "swimTestImplausible": "Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.",
+  "calJumpCurrentWeek": "Zurück zur aktuellen Woche",
+  "calJumpTodayMonth": "Zurück zum aktuellen Monat",
   "progHoldLonger": "alle Sätze gehalten – etwas länger",
   "progHoldAddLoad": "oberes Ende der Haltezeit – mit Zusatzgewicht, wieder kürzer",
   "progHoldTop": "oberes Ende der Haltezeit – halten (schwerer über eine Variante)",
@@ -1791,6 +1793,6 @@
   "holdRangeHint": "Jeder Satz hat seine Zielzeit gehalten → nächstes Mal 5–10 s länger, bis zum oberen Ende; dann mit Zusatzgewicht und wieder kürzer.",
   "volumeInclBody": "inkl. Körpergewicht",
   "volumeInclBodyKg": "inkl. Körpergewicht ({weight})",
-  "longestHoldN": "längstes Halten {time}",
-  "longestHold": "Längstes Halten"
+  "longestHold": "Längstes Halten",
+  "longestHoldN": "längstes Halten {time}"
 }

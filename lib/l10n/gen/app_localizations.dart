@@ -10733,6 +10733,18 @@ abstract class AppLocalizations {
   /// **'These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.'**
   String get swimTestImplausible;
 
+  /// No description provided for @calJumpCurrentWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to the current week'**
+  String get calJumpCurrentWeek;
+
+  /// No description provided for @calJumpTodayMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to today\'s month'**
+  String get calJumpTodayMonth;
+
   /// No description provided for @progHoldLonger.
   ///
   /// In en, this message translates to:
@@ -10841,17 +10853,17 @@ abstract class AppLocalizations {
   /// **'incl. body weight ({weight})'**
   String volumeInclBodyKg(String weight);
 
-  /// No description provided for @longestHoldN.
-  ///
-  /// In en, this message translates to:
-  /// **'longest hold {time}'**
-  String longestHoldN(String time);
-
   /// No description provided for @longestHold.
   ///
   /// In en, this message translates to:
   /// **'Longest hold'**
   String get longestHold;
+
+  /// No description provided for @longestHoldN.
+  ///
+  /// In en, this message translates to:
+  /// **'longest hold {time}'**
+  String longestHoldN(String time);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -5952,6 +5952,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get swimTestImplausible => 'Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.';
 
   @override
+  String get calJumpCurrentWeek => 'Zurück zur aktuellen Woche';
+
+  @override
+  String get calJumpTodayMonth => 'Zurück zum aktuellen Monat';
+
+  @override
   String get progHoldLonger => 'alle Sätze gehalten – etwas länger';
 
   @override
@@ -6012,10 +6018,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get longestHold => 'Längstes Halten';
+
+  @override
   String longestHoldN(String time) {
     return 'längstes Halten $time';
   }
-
-  @override
-  String get longestHold => 'Längstes Halten';
 }

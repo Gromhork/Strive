@@ -4158,6 +4158,8 @@
   "swimCssEstimated": "Estimated from your 400 m – add the 200 m for an exact CSS.",
   "swimTestOnly200": "The CSS test needs the 400 m time too – the 200 m alone is not enough.",
   "swimTestImplausible": "These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.",
+  "calJumpCurrentWeek": "Back to the current week",
+  "calJumpTodayMonth": "Back to today's month",
   "progHoldLonger": "every set held – a little longer",
   "progHoldAddLoad": "top of the time range – add weight, a shorter time again",
   "progHoldTop": "top of the time range – keep it (harder with a variation)",
@@ -4197,6 +4199,7 @@
       }
     }
   },
+  "longestHold": "Longest hold",
   "longestHoldN": "longest hold {time}",
   "@longestHoldN": {
     "placeholders": {
@@ -4204,6 +4207,5 @@
         "type": "String"
       }
     }
-  },
-  "longestHold": "Longest hold"
+  }
 }

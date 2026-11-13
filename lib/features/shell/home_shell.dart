@@ -88,7 +88,13 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           appBar: const StriveTopBar(),
           body: IndexedStack(
             index: index,
-            children: [for (final (i, p) in pages.indexed) PrimaryScrollController(controller: _scroll[i], child: p)],
+            // Hidden tabs stay alive but asleep: IndexedStack keeps their tickers running, so their
+            // providers stayed subscribed and every data change rebuilt all five tabs in one frame.
+            // With tickers off, Riverpod pauses their watches; a tab catches up when shown again.
+            children: [
+              for (final (i, p) in pages.indexed)
+                TickerMode(enabled: i == index, child: PrimaryScrollController(controller: _scroll[i], child: p)),
+            ],
           ),
           bottomNavigationBar: Column(
             mainAxisSize: MainAxisSize.min,
