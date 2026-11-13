@@ -159,8 +159,10 @@ class ExerciseDb {
         final q = _equipmentRank(a).compareTo(_equipmentRank(b));
         return q != 0 ? q : compareNames(shown(a), shown(b));
       });
-    } else if (lang != 'en') {
-      // German alphabetical order: "Überzüge" under U, not after Z.
+    } else {
+      // Alphabetical by the shown name – also in English, where display names
+      // ([exerciseNamesEn], e.g. 9001 "Front plank") differ from the database names the JSON
+      // is sorted by. German order: "Überzüge" under U, not after Z.
       final keys = {for (final e in res) e.id: collationKey(shown(e))};
       res.sort((a, b) {
         final c = keys[a.id]!.compareTo(keys[b.id]!);
@@ -216,14 +218,23 @@ String germanAlias(Exercise e) {
     for (final (re, alias) in _aliases)
       if (re.hasMatch(n)) alias,
   ];
-  // "Curl" names the biceps curl, the leg curl and the wrist curl: tagged by what it trains.
+  // "Curl" names the biceps curl, the leg curl and the wrist curl: tagged by the movement the
+  // name spells out ("leg curl", "wrist curl"), otherwise by what it trains – a "bicep curl
+  // with leg raised" or a "leg concentration curl" stays a biceps curl.
   if (_curl.hasMatch(n)) {
-    if (_legCurl.hasMatch(n) || e.target == 'hamstrings') {
+    if (_legCurl.hasMatch(n)) {
       out.add('beinbeuger');
-    } else if (_wristCurl.hasMatch(n) || e.target == 'forearms') {
+    } else if (_wristCurl.hasMatch(n)) {
       out.add('unterarm handgelenk');
-    } else if (e.target == 'biceps') {
-      out.add('bizeps');
+    } else {
+      switch (e.target) {
+        case 'biceps':
+          out.add('bizeps');
+        case 'hamstrings':
+          out.add('beinbeuger');
+        case 'forearms':
+          out.add('unterarm handgelenk');
+      }
     }
   }
   return out.join(' ');
@@ -251,8 +262,8 @@ final _aliases = <(RegExp, String)>[
   (RegExp(r'\b(wood ?chop|chop)\b|\bcable standing lift\b'), 'holzhacker woodchop'),
 ];
 final _curl = RegExp(r'\bcurls?\b');
-final _legCurl = RegExp(r'\b(leg|hamstring|nordic)\b');
-final _wristCurl = RegExp(r'\b(wrist|finger)\b');
+final _legCurl = RegExp(r'\b(leg|hamstring) curls?\b|\bnordic\b');
+final _wristCurl = RegExp(r'\b(wrist|finger) curls?\b');
 
 const _deTerms = {
   'back': 'Rücken',

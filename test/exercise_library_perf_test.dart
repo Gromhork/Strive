@@ -111,7 +111,8 @@ void main() {
     final before = small.searches;
     await tester.tap(find.text('Exercise 1'));
     await tester.pump();
-    await tester.tap(find.text('Exercise 2'));
+    // Alphabetical (also in English): "Exercise 10" follows "Exercise 1".
+    await tester.tap(find.text('Exercise 10'));
     await tester.pump();
     expect(small.searches, before, reason: 'the list is memoised – a selection tap only rebuilds');
     final l = lookupAppLocalizations(const Locale('en'));

@@ -13,6 +13,7 @@ import 'package:strive/features/train/exercise_picker.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
 import 'package:strive/services/exercise_class.dart';
+import 'package:strive/widgets/exercise_media.dart';
 
 /// Review round 7, exercise library (F3): duplicates, wrong / inconsistent German names, word
 /// based search aliases, the plain plank, German alphabetical order and the scroll position of
@@ -131,6 +132,30 @@ void main() {
       expect(germanAlias(db.byId('3167')!), isNot(contains('kniebeuge'))); // "squatting row"
       expect(germanAlias(db.byId('1494')!), isNot(contains('fliegende'))); // "butterfly yoga pose"
     });
+
+    test('biceps curls with "leg" in the name stay biceps curls, not "Beinbeuger"', () {
+      final hits = db.search('beinbeuger', lang: 'de');
+      for (final e in hits) {
+        expect(e.target, isNot('biceps'), reason: '${e.id} ${e.name}');
+      }
+      // "leg concentration curl", "bicep curl … with leg raised", "single leg balance with bicep curl"
+      for (final id in ['1770', '1684', '1652', '1649', '1679']) {
+        final alias = germanAlias(db.byId(id)!);
+        expect(alias, contains('bizeps'), reason: id);
+        expect(alias, isNot(contains('beinbeuger')), reason: id);
+      }
+      // Leg curls named as such keep the keyword, whatever their target ("kick hamstring curl": glutes).
+      expect(ids('beinbeuger'), containsAll(['0795', '1417', '1766', '0496']));
+      // Neutral wrist curls (target biceps in the database) are wrist curls.
+      expect(germanAlias(db.byId('0365')!), contains('handgelenk'));
+      // Every curl of the database is tagged by the movement it is.
+      for (final e in raw.map((e) => Exercise.fromJson(e))) {
+        final a = germanAlias(e);
+        if (e.target == 'hamstrings' && e.name.contains('curl')) expect(a, contains('beinbeuger'), reason: '${e.id} ${e.name}');
+        if (e.target == 'forearms' && e.name.contains('curl')) expect(a, contains('handgelenk'), reason: '${e.id} ${e.name}');
+        expect(a.contains('beinbeuger') && a.contains('bizeps'), isFalse, reason: '${e.id} ${e.name}');
+      }
+    });
   });
 
   group('DE-4 / R7-9 cardio machines, plank', () {
@@ -156,6 +181,17 @@ void main() {
       expect(ids('side plank').first, '0705');
       expect(ids('side bridge', lang: 'en'), contains('0705'));
       expect(exerciseName('0705', 'side bridge v. 2', 'en'), 'Side plank');
+    });
+
+    test('the app-added plank has no demo asset, so no asset is tried for it', () {
+      expect(ExerciseMedia.hasMedia('9001'), isFalse);
+      expect(ExerciseMedia.hasMedia('0464'), isTrue);
+      // hasMedia promises exactly the bundled animations and thumbnails.
+      for (final e in db.visible) {
+        final has = ExerciseMedia.hasMedia(e.id);
+        expect(File('assets/exercises/anim/${e.id}.webp').existsSync(), has, reason: e.id);
+        expect(File('assets/exercises/thumb/${e.id}.webp').existsSync(), has, reason: e.id);
+      }
     });
 
     test('the self-assisted Nordic curl is visible under its own name', () {
@@ -226,6 +262,19 @@ void main() {
       expect(firstU, greaterThan(0));
       expect(list.indexWhere((n) => n.startsWith('V')), greaterThan(firstU));
       expect(list.last, isNot(startsWith('Ü')));
+    });
+
+    test('the English library is alphabetical by the shown name too ("Front plank" under F)', () {
+      final list = db.search('', lang: 'en').map((e) => exerciseName(e.id, e.name, 'en')).toList();
+      final keys = list.map(collationKey).toList();
+      expect(keys, [...keys]..sort());
+      expect(list.last, isNot('Front plank'));
+      final plank = list.indexOf('Front plank');
+      expect(list[plank - 1].toLowerCase().compareTo('front plank'), lessThan(0));
+      expect(list[plank + 1].toLowerCase().compareTo('front plank'), greaterThan(0));
+      // Renamed entries sit at their new names, e.g. 0139 among the "Inverted row…" rows.
+      final i0139 = db.search('', lang: 'en').indexWhere((e) => e.id == '0139');
+      expect(list[i0139 - 1].toLowerCase().startsWith('b'), isFalse);
     });
   });
 
