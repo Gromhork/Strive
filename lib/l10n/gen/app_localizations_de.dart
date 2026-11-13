@@ -1124,7 +1124,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get vibration => 'Vibration';
 
   @override
-  String get vibrationSub => 'Nach Pausentimern und jedem km';
+  String get vibrationSub => 'Nach Pausen- und Haltetimern und jedem km';
 
   @override
   String get reminders => 'Erinnerungen';
@@ -3817,7 +3817,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get termVolumeTitle => 'Volumen';
 
   @override
-  String get termVolumeBody => 'Gewicht × Wiederholungen aller Arbeitssätze zusammengezählt (Aufwärmsätze zählen nicht). Bei Körpergewichtsübungen zählt der bewegte Anteil deines Körpergewichts (z. B. Liegestütz ≈ 64 %, Klimmzug 100 %, Kniebeuge ≈ 70 %) plus Zusatzgewicht. Halteübungen wie Unterarmstütz zählen als Haltezeit, nicht als Volumen.';
+  String get termVolumeBody => 'Gewicht × Wiederholungen aller Arbeitssätze zusammengezählt (Aufwärmsätze zählen nicht). Wo dein Körper ein Gewicht ersetzt – Liegestütz (≈ 64 % deines Körpergewichts, wie beim Bankdrücken), Klimmzüge und Dips (100 %), Rudern am Tisch – zählt dieser Anteil plus Zusatzgewicht. Kniebeugen, Ausfallschritte, Wadenheben, Brücken und Rumpfübungen zählen nur das Zusatzgewicht, so wie ihre Varianten mit Hantel nur die Hantel zählen – so bricht das Volumen nicht ein, wenn du von Kniebeugen ohne zu Kniebeugen mit Gewicht wechselst. Halteübungen wie Unterarmstütz zählen als Haltezeit, nicht als Volumen.';
 
   @override
   String get termVolumeTip => 'Mehr Volumen ist nicht automatisch besser – entscheidend ist der Fortschritt über Wochen.';
@@ -6040,7 +6040,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trainingReminderShort => 'An geplanten Trainingstagen';
 
   @override
-  String get vibrationInfo => 'Vibriert, wenn ein Pausentimer abläuft, bei jedem neuen Abschnitt eines strukturierten Trainings und bei jedem Kilometer einer aufgezeichneten Aktivität.';
+  String get vibrationInfo => 'Vibriert, wenn ein Pausen- oder Haltetimer abläuft, bei jedem neuen Abschnitt eines strukturierten Trainings und bei jedem Kilometer einer aufgezeichneten Aktivität – auch wenn die Vibration bei Berührung in den Systemeinstellungen aus ist.';
 
   @override
   String get reorderHint => 'Ordner und Programme lang drücken, um sie zu verschieben.';
@@ -6141,4 +6141,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String gymAssignWarnLegs(String program, String day) {
     return '$program am $day, dem Tag vor deiner langen Einheit – schwere Beine erschweren sie.';
   }
+
+  @override
+  String get holdGetReady => 'In Position gehen';
+
+  @override
+  String get holdLeadInSetting => '3-s-Countdown vor dem Halten';
+
+  @override
+  String get timerSound => 'Timer-Töne';
+
+  @override
+  String get timerSoundSub => 'Countdown und Ende beim Halten, Ende der Pause';
 }

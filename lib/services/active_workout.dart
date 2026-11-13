@@ -9,6 +9,13 @@ import '../core/sport.dart';
 import '../data/models.dart';
 import '../providers.dart';
 import 'supersets.dart';
+import 'workout_alerts.dart';
+
+/// Lead-in of the hold timer: "3, 2, 1" to get into position before the hold time runs.
+const holdLeadInSec = 3;
+
+/// Countdown pips before the end of a hold (the last seconds).
+const holdCountdownSec = 3;
 
 /// State of the gym workout currently in progress (survives tab switches).
 class ActiveGym {
@@ -30,11 +37,18 @@ class ActiveGym {
   /// optional effort rating for it.
   final GymExercise? effortFor;
 
-  /// Running hold timer of a timed exercise (plank, wall sit, …): exercise / set index, when it
-  /// started and the target time it counts down from (then on as a stopwatch).
+  /// Running hold timer of a timed exercise (plank, wall sit, …): exercise / set index, when the
+  /// hold time starts (after the lead-in – in the future while "3, 2, 1" runs, [holdLeadInLeft])
+  /// and the target time it counts down from (then on as a stopwatch).
   final int? holdEx, holdSet;
   final DateTime? holdStart;
   final int holdTarget;
+
+  /// Work sets of the planned workout when it was started from the plan (the program's sets for
+  /// that day); null for free workouts. Exercises or sets removed in the tracker still count as
+  /// planned – the compliance compares against the program, not against what is left
+  /// ([plannedWorkSets]).
+  final int? programSets;
 
   const ActiveGym({
     required this.title,
@@ -42,6 +56,7 @@ class ActiveGym {
     this.planId,
     required this.start,
     required this.exercises,
+    this.programSets,
     this.restEnd,
     this.restTotal = 0,
     this.restIsTransition = false,
@@ -56,12 +71,26 @@ class ActiveGym {
   /// Whether the hold timer runs for set [set] of exercise [ex].
   bool holding(int ex, int set) => holdStart != null && holdEx == ex && holdSet == set;
 
-  /// Seconds held so far (0 without a running hold).
-  int holdElapsed([DateTime? now]) => holdStart == null ? 0 : (now ?? DateTime.now()).difference(holdStart!).inMilliseconds ~/ 1000;
+  /// Seconds held so far (0 without a running hold and during the lead-in).
+  int holdElapsed([DateTime? now]) => holdStart == null ? 0 : max(0, (now ?? DateTime.now()).difference(holdStart!).inMilliseconds ~/ 1000);
+
+  /// Seconds left of the lead-in ("3, 2, 1") before the hold time runs; 0 once it runs.
+  int holdLeadInLeft([DateTime? now]) {
+    if (holdStart == null) return 0;
+    final ms = holdStart!.difference(now ?? DateTime.now()).inMilliseconds;
+    return ms <= 0 ? 0 : (ms + 999) ~/ 1000;
+  }
 
   double get volume => exercises.fold(0, (a, e) => a + e.volume);
   int get doneSets => exercises.fold(0, (a, e) => a + e.doneSets);
   int get totalSets => exercises.fold(0, (a, e) => a + e.sets.length);
+
+  /// Work sets in the tracker now (incl. exercises without a done set).
+  int get workSets => exercises.fold<int>(0, (a, e) => a + e.workSets.length);
+
+  /// Work sets the done sets are compared with ([Session.plannedSets]): the program's sets of a
+  /// planned workout ([programSets]) or, when more were added in the tracker, those.
+  int get plannedWorkSets => max(programSets ?? 0, workSets);
 
   /// Members of the superset that exercise [i] belongs to (adjacent, in order).
   List<int> groupOf(int i) => supersetOf(exercises, i);
@@ -94,6 +123,7 @@ class ActiveGym {
     planId: planId,
     start: start,
     exercises: exercises,
+    programSets: programSets,
     restEnd: clearRest ? null : (restEnd ?? this.restEnd),
     restTotal: restTotal ?? this.restTotal,
     restIsTransition: clearRest ? false : (restIsTransition ?? this.restIsTransition),
@@ -109,16 +139,25 @@ class ActiveGym {
 class ActiveGymNotifier extends Notifier<ActiveGym?> {
   Timer? _restTimer;
   Timer? _holdTimer;
+  Timer? _holdTicks;
+
+  /// The running hold is still in its lead-in (nothing held yet) – set by the timers, not the
+  /// wall clock, so "Stop" and the check-off agree with the pips.
+  bool _inLeadIn = false;
 
   /// Preference key: a hold that reaches its target time is checked off by itself (and the
   /// rest starts); off = it counts on as a stopwatch until "Stop".
   static const holdAutoDoneKey = 'holdAutoDone';
+
+  /// Preference key: the hold timer starts with a [holdLeadInSec] "3, 2, 1" to get into position.
+  static const holdLeadInKey = 'holdLeadIn';
 
   @override
   ActiveGym? build() {
     ref.onDispose(() {
       _restTimer?.cancel();
       _holdTimer?.cancel();
+      _holdTicks?.cancel();
     });
     return null;
   }
@@ -138,11 +177,47 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     _touch();
   }
 
+  bool get holdLeadIn {
+    try {
+      return ref.read(prefsProvider).getBool(holdLeadInKey) ?? true;
+    } catch (_) {
+      return true; // no preferences (tests)
+    }
+  }
+
+  void setHoldLeadIn(bool on) {
+    try {
+      ref.read(prefsProvider).setBool(holdLeadInKey, on);
+    } catch (_) {}
+    _touch();
+  }
+
+  /// Plays a timer signal with the user's sound / vibration settings (both on without settings).
+  void _alert(AlertSignal signal) {
+    var sound = true, vibrate = true;
+    try {
+      final st = ref.read(settingsProvider);
+      sound = st.timerSound;
+      vibrate = st.vibrate;
+    } catch (_) {}
+    try {
+      ref.read(workoutAlertsProvider).play(signal, sound: sound, vibrate: vibrate);
+    } catch (_) {}
+  }
+
   void start({required String title, String? templateId, String? planId, List<GymExercise> exercises = const []}) {
     final list = exercises.map((e) => e.copy(resetDone: true)).toList();
     // Repairs superset data of older programs (non-adjacent letters, long chains).
     normalizeSupersets(list);
-    state = ActiveGym(title: title, templateId: templateId, planId: planId, start: DateTime.now(), exercises: list);
+    state = ActiveGym(
+      title: title,
+      templateId: templateId,
+      planId: planId,
+      start: DateTime.now(),
+      exercises: list,
+      // Started from the plan: its sets are the reference, whatever is removed in the tracker.
+      programSets: planId == null ? null : list.fold<int>(0, (a, e) => a + e.workSets.length),
+    );
     WakelockPlus.enable();
   }
 
@@ -242,9 +317,11 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     var w = cur;
     final s = e.sets[set];
     if (w.holding(ex, set)) {
-      // Checked off while its hold timer runs: the time held so far.
-      _holdTimer?.cancel();
-      if (!s.done) s.sec = max(1, w.holdElapsed());
+      // Checked off while its hold timer runs: the time held so far (during the lead-in nothing
+      // was held yet – the planned time, like checking it off without the timer).
+      final leadIn = _inLeadIn;
+      _cancelHoldTimers();
+      if (!s.done && !leadIn) s.sec = max(1, w.holdElapsed());
       state = w = w.copyWith(clearHold: true);
     }
     s.done = !s.done;
@@ -400,43 +477,70 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
 
   // ───────────────────────────── Hold timer (timed exercises) ─────────────────────────────
 
-  /// Starts the hold timer for open set [set] of timed exercise [ex]: it counts down from the
-  /// set's planned time; at zero the phone vibrates and – with [holdAutoDone] – the set is
-  /// checked off with that time and the rest starts, otherwise it counts on (overtime) until
-  /// [stopHold]. A running rest ends; a hold running on another set is cancelled.
+  /// Starts the hold timer for open set [set] of timed exercise [ex]: with [holdLeadIn] a
+  /// "3, 2, 1" lead-in (pips) to get into position, then it counts down from the set's planned
+  /// time with pips in the last [holdCountdownSec] seconds; at zero a beep and a vibration
+  /// pattern signal the end ([WorkoutAlerts] – also with touch vibration off and the phone on
+  /// the floor) and – with [holdAutoDone] – the set is checked off with that time and the rest
+  /// starts, otherwise it counts on (overtime) until [stopHold]. A running rest ends; a hold
+  /// running on another set is cancelled.
   void startHold(int ex, int set) {
     final w = state;
     final e = w?.exercises[ex];
     if (w == null || e == null || set >= e.sets.length || e.sets[set].done) return;
     _restTimer?.cancel();
-    _holdTimer?.cancel();
+    _cancelHoldTimers();
     final s = e.sets[set];
     final target = s.sec > 0 ? s.sec : (s.targetSec ?? e.holdRange.$1);
-    state = w.copyWith(clearRest: true).copyWith(holdEx: ex, holdSet: set, holdStart: DateTime.now(), holdTarget: target, focus: ex);
-    _holdTimer = Timer(Duration(seconds: target), _holdReached);
+    final lead = holdLeadIn ? holdLeadInSec : 0;
+    _inLeadIn = lead > 0;
+    final start = DateTime.now().add(Duration(seconds: lead));
+    state = w.copyWith(clearRest: true).copyWith(holdEx: ex, holdSet: set, holdStart: start, holdTarget: target, focus: ex);
+    _holdTimer = Timer(Duration(seconds: lead + target), _holdReached);
     HapticFeedback.mediumImpact();
+    // Second k after the tap: lead-in pips (3, 2, 1), "go", then the last seconds of the hold.
+    var k = 0;
+    void tick() {
+      final held = k - lead;
+      if (held < 0) {
+        _alert(AlertSignal.tick);
+      } else if (held == 0) {
+        _inLeadIn = false;
+        if (lead > 0) _alert(AlertSignal.go);
+      } else if (held < target && target - held <= holdCountdownSec) {
+        _alert(AlertSignal.tick);
+      }
+      k++;
+      if (k - lead >= target) _holdTicks?.cancel();
+    }
+
+    tick();
+    _holdTicks = Timer.periodic(const Duration(seconds: 1), (_) => tick());
   }
 
-  Future<void> _holdReached() async {
+  void _cancelHoldTimers() {
+    _holdTimer?.cancel();
+    _holdTicks?.cancel();
+    _inLeadIn = false;
+  }
+
+  void _holdReached() {
     final w = state;
     if (w?.holdStart == null) return;
-    final auto = holdAutoDone;
-    if (auto) stopHold(sec: w!.holdTarget);
-    if (ref.read(settingsProvider).vibrate) {
-      for (var i = 0; i < 3; i++) {
-        await HapticFeedback.vibrate();
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
-    }
+    _holdTicks?.cancel();
+    _alert(AlertSignal.end);
+    if (holdAutoDone) stopHold(sec: w!.holdTarget);
   }
 
   /// Ends the running hold: the set gets the held time ([sec], else the time since the start,
-  /// at least 1 s) and is checked off – the rest starts like after any set.
+  /// at least 1 s) and is checked off – the rest starts like after any set. Stopped during the
+  /// lead-in (nothing held yet) the hold is just cancelled.
   void stopHold({int? sec}) {
     final w = state;
     final ex = w?.holdEx, set = w?.holdSet;
     if (w == null || ex == null || set == null || w.holdStart == null) return;
-    _holdTimer?.cancel();
+    if (sec == null && _inLeadIn) return cancelHold();
+    _cancelHoldTimers();
     final held = max(1, sec ?? w.holdElapsed());
     state = w.copyWith(clearHold: true);
     final e = state!.exercises[ex];
@@ -447,7 +551,7 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
 
   /// Stops the hold timer without logging anything.
   void cancelHold() {
-    _holdTimer?.cancel();
+    _cancelHoldTimers();
     if (state?.holdStart != null) state = state?.copyWith(clearHold: true);
   }
 
@@ -492,14 +596,9 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     state = state?.copyWith(clearRest: true);
   }
 
-  Future<void> _restDone() async {
+  void _restDone() {
     state = state?.copyWith(clearRest: true);
-    if (ref.read(settingsProvider).vibrate) {
-      for (var i = 0; i < 3; i++) {
-        await HapticFeedback.vibrate();
-        await Future.delayed(const Duration(milliseconds: 350));
-      }
-    }
+    _alert(AlertSignal.end);
   }
 
   /// Builds the session (without saving) and clears the active workout.
@@ -518,8 +617,9 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
       exercises: s.exercises.where((e) => e.sets.any((x) => x.done)).toList(),
       templateId: s.templateId,
       planId: s.planId,
-      // All work sets incl. exercises without a done set (not stored) – plan compliance.
-      plannedSets: s.exercises.fold<int>(0, (a, e) => a + e.workSets.length),
+      // All work sets incl. exercises without a done set (not stored), at least the program's
+      // sets of a planned workout (removed exercises count as not done) – plan compliance.
+      plannedSets: s.plannedWorkSets,
       // Body weight of the day: the body load of bodyweight exercises in the volume stays as it
       // was, whatever the scale says later.
       bodyWeightKg: bodyWeight != null && bodyWeight > 0 ? bodyWeight : null,
@@ -530,7 +630,7 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
 
   void discard() {
     _restTimer?.cancel();
-    _holdTimer?.cancel();
+    _cancelHoldTimers();
     state = null;
     WakelockPlus.disable();
   }

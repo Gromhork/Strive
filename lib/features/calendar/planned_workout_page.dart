@@ -12,7 +12,7 @@ import '../../services/gym_tools.dart' show ProgressionKind;
 import '../../services/plan_text.dart';
 import '../../widgets/common.dart';
 import '../../data/models.dart';
-import '../../data/exercise_measure.dart' show formatHold;
+import '../../data/exercise_measure.dart' show formatHold, holdPerSide;
 import '../../data/exercise_names_de.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/plan_amount.dart';
@@ -27,6 +27,7 @@ import '../../widgets/term_info.dart';
 import 'not_fit_sheet.dart';
 import 'plan_editor.dart';
 import '../../services/plan_exercises.dart';
+import '../../services/supersets.dart' show supersetOf;
 
 String phaseLabel(AppLocalizations l, String? phase) => switch (phase) {
   'base' => l.phaseBase,
@@ -256,11 +257,19 @@ class PlannedWorkoutPage extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
-            for (final e in exercises)
+            for (final (i, e) in exercises.indexed) ...[
+              // Supersets as the program and the running workout show them: "Supersatz A" above
+              // its first member, the letter before each member's name.
+              if (supersetOf(exercises, i).length > 1 && supersetOf(exercises, i).first == i)
+                Padding(
+                  key: ValueKey('plannedSuperset-${e.group}'),
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text('${l.superset} ${e.group}', style: t.labelLarge?.copyWith(color: AppColors.gym, fontWeight: FontWeight.w700)),
+                ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: ExerciseMedia(exId: e.exId, animated: false, size: 48, radius: 12),
-                title: Text(exName(context, e.exId, e.name)),
+                title: Text('${supersetOf(exercises, i).length > 1 ? '${e.group} · ' : ''}${exName(context, e.exId, e.name)}'),
                 subtitle: Builder(
                   builder: (_) {
                     final rx = p.isDone ? null : prescriber.forExercise(e, phase: p.phase);
@@ -275,7 +284,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
                     final line = Text(
                       e.isTimed
                           ? [
-                            '${e.workSets.length} × ${formatHold(sec)}',
+                            '${e.workSets.length} × ${formatHold(sec)}${holdPerSide(e.name) ? ' ${l.perSide}' : ''}',
                             if (kg.abs() > 1e-6) holdWeight(kg, u, bodyweight: rx?.bodyweight ?? e.bw == true),
                           ].join(' · ')
                           : ['${e.workSets.length} × $reps', if (rx != null && rx.weight > 0) prescriptionLabel(l, rx, u)].join(' · '),
@@ -307,6 +316,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
                   },
                 ),
               ),
+            ],
           ],
         ],
       ),

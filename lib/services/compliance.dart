@@ -125,8 +125,10 @@ ComplianceLevel complianceLevelOf(double ratio) {
   return ComplianceLevel.orange;
 }
 
-/// Work sets a gym session is compared with: the sets the workout had when it was finished
-/// ([Session.plannedSets]), else the work sets of the planned workout's own exercises. 0 when
+/// Work sets a gym session is compared with: [Session.plannedSets] – the program's sets of the
+/// planned workout it was started from, or the sets it had at the finish when more were added
+/// (exercises removed in the tracker still count as planned, ActiveGym.plannedWorkSets) – else
+/// the work sets of the planned workout's own exercises. 0 when
 /// unknown or when the session has no set data (imported / summary-only entry) – then the
 /// duration is compared.
 int plannedGymSets(PlannedWorkout p, Session s) {
