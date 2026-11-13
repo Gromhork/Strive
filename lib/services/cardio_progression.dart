@@ -282,6 +282,7 @@ class AutoAdjuster {
         phase: p.phase,
         isKey: p.isKey,
         exercises: p.exercises,
+        gymMods: p.gymMods,
         auto: auto ?? p.auto,
       );
 

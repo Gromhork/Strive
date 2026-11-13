@@ -8,6 +8,7 @@ import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/services/goal_model.dart';
+import 'package:strive/services/plan_exercises.dart';
 import 'package:strive/services/plan_generator.dart';
 import 'package:strive/services/zones.dart';
 
@@ -286,7 +287,7 @@ void main() {
     expect(all.where((p) => p.title == l.wBackToBack).every((p) => p.description.split('\n').contains(l.wTrailNote)), isTrue);
   });
 
-  test('IMPORTANT 9 hybrid: the halved full-body session rotates, the sessions use more of the 60 min', () {
+  test('IMPORTANT 9 hybrid: the full-body session before the key day keeps all its sets, A/B alternate continuously', () {
     final plan = gen(
       prof(
         focus: TrainingFocus.hybrid,
@@ -295,11 +296,19 @@ void main() {
       ),
       weeks: 12,
     );
-    final halved = plan.where((p) => p.sport == Sport.gym && p.description.split('\n').contains(l.wGymLegsHalvedNote)).toList();
-    expect(halved, isNotEmpty);
-    expect({for (final p in halved) p.templateId}.length, 2); // before: always "Ganzkörper B"
-    final load = plan.where((p) => p.sport == Sport.gym && p.phase != 'recovery' && p.phase != 'taper').toList();
-    expect(load.fold(0, (x, p) => x + p.durationMin) / load.length, greaterThanOrEqualTo(40)); // before: 35
+    final gym = plan.where((p) => p.sport == Sport.gym).toList()..sort((x, y) => x.date.compareTo(y.date));
+    // The user's decision: the plan never changes set counts – legs go lighter by load / RIR instead.
+    expect(gym.where((p) => p.description.split('\n').contains(l.wGymLegsHalvedNote)), isEmpty);
+    expect(gym.where((p) => p.description.split('\n').contains(l.wGymLegsEasyNote)), isNotEmpty);
+    expect(gym.every((p) => p.exercises.isEmpty), isTrue);
+    for (var i = 1; i < gym.length; i++) {
+      expect(gym[i].templateId, isNot(gym[i - 1].templateId), reason: '${gym[i].date}');
+    }
+    // Each session as long as its program (no sets added or removed).
+    for (final p in gym) {
+      final t = templates.firstWhere((t) => t.id == p.templateId);
+      expect(p.durationMin, min(60, t.estimatedMinutes), reason: '${p.date} ${p.title}');
+    }
   });
 
   test('IMPORTANT 19 beginner gym: regressions first, the full lifts later, no deload promised without one', () {
@@ -308,8 +317,7 @@ void main() {
       weeks: 8,
     );
     const full = {'0652', '0032', '0472'}; // pull-up, barbell deadlift, hanging leg raise
-    List<GymExercise> ex(PlannedWorkout p) =>
-        p.exercises.isNotEmpty ? p.exercises : templates.firstWhere((t) => t.id == p.templateId).exercises;
+    List<GymExercise> ex(PlannedWorkout p) => plannedGymExercises(p, templates.firstWhere((t) => t.id == p.templateId));
     final firstWeeks = plan.where((p) => p.date.difference(start).inDays < 42);
     final later = plan.where((p) => p.date.difference(start).inDays >= 42);
     expect(firstWeeks.expand(ex).where((e) => full.contains(e.exId)), isEmpty);

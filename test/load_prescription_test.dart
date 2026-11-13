@@ -252,21 +252,19 @@ void main() {
       ]),
     ];
 
-    test('deload week: ~90 % load and about half the sets', () {
+    test('deload week: ~90 % load, the program\'s sets', () {
       final p = lp(h).forExercise(bench, phase: 'recovery')!;
       expect(p.weight, 52.5); // 60 × 0.9 = 54 → 52.5 on the 2.5 kg grid
       expect(p.phaseAdjusted, isTrue);
       final applied = lp(h).apply([bench], phase: 'recovery').single;
-      expect(applied.workSets.length, 2);
+      // The plan never changes set counts: a deload is lighter, not shorter.
+      expect(applied.workSets.length, bench.workSets.length);
+      expect(applied.workSets.every((s) => s.weight == 52.5), isTrue);
       expect(applied.phase, 'recovery');
       expect(applied.sets.any((s) => s.amrap), isFalse);
-      expect(lp(h).apply([planned('0025', 'barbell bench press', sets: 6)], phase: 'recovery').single.workSets.length, 3);
-      expect(
-        [
-          for (final n in [1, 2, 3, 4, 5, 6, 8]) LoadPrescriber.deloadSets(n),
-        ],
-        [1, 1, 2, 2, 2, 3, 4],
-      );
+      for (final phase in ['recovery', 'taper']) {
+        expect(lp(h).apply([planned('0025', 'barbell bench press', sets: 6)], phase: phase).single.workSets.length, 6);
+      }
     });
 
     test('deload sessions are skipped: the second deload session and the next loading week use the loading level', () {

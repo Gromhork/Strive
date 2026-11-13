@@ -26,6 +26,7 @@ import 'auto_adjust.dart';
 import '../../widgets/term_info.dart';
 import 'not_fit_sheet.dart';
 import 'plan_editor.dart';
+import '../../services/plan_exercises.dart';
 
 String phaseLabel(AppLocalizations l, String? phase) => switch (phase) {
   'base' => l.phaseBase,
@@ -57,11 +58,12 @@ class PlannedWorkoutPage extends ConsumerWidget {
     final template = ref.watch(templateListProvider).where((t) => t.id == p.templateId).firstOrNull;
     final t = Theme.of(context).textTheme;
     final phase = phaseLabel(l, p.phase);
-    final exercises = p.exercises.isNotEmpty ? p.exercises : (template?.exercises ?? const []);
     // Watched unconditionally at the top: a first subscription inside `isDone && …` happened in
     // the build right after "mark as done" and flushed pending provider updates during that build
     // ("setState() or markNeedsBuild() called during build").
     final profile = ref.watch(profileOrDefaultProvider);
+    // The program as it is now (its sets and exercises), with the plan's day adaptations.
+    final exercises = plannedGymExercises(p, template, gymGoal: profile.athlete.gymGoal);
     final linked = ref.watch(planSessionsProvider)[p.id];
     final prescriber = ref.watch(loadPrescriberProvider);
     final compliance = planCompliance(p, linked, profile: profile);

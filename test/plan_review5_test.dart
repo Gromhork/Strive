@@ -10,6 +10,7 @@ import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/services/event_spec.dart';
 import 'package:strive/services/exercise_class.dart';
+import 'package:strive/services/plan_exercises.dart';
 import 'package:strive/services/plan_generator.dart';
 import 'package:strive/services/zones.dart';
 
@@ -290,8 +291,12 @@ void main() {
     final late = plan.where((w) => w.sport == Sport.gym && daysBetween(w.date, race) <= 10).toList();
     expect(late, isNotEmpty);
     for (final g in late) {
-      expect(g.exercises, isNotEmpty);
-      expect(g.exercises.where((e) => classifyLift(e.exId, e.name).lower), isEmpty, reason: '${g.date} ${g.title}');
+      // By reference: the program without its leg exercises (gymModNoLegs) – no leg day at all.
+      final t = templates.firstWhere((t) => t.id == g.templateId);
+      expect(legHeavyProgram(t), isFalse, reason: '${g.date} ${g.title}');
+      final ex = plannedGymExercises(g, t);
+      expect(ex, isNotEmpty);
+      expect(ex.where((e) => classifyLift(e.exId, e.name).lower), isEmpty, reason: '${g.date} ${g.title}');
       expect(g.description, contains(l.wGymRaceWeekNote));
     }
   });

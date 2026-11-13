@@ -203,13 +203,9 @@ class LoadPrescriber {
   /// Phases that reduce load (deload / taper weeks).
   static bool lighterPhase(String? phase) => phase == 'recovery' || phase == 'taper';
 
-  /// Deload weeks also cut the work sets to about half (volume is the main fatigue
-  /// driver; Bell et al. 2023 deload consensus: ~50 % volume, load ~90 %).
-  static bool dropsSet(String? phase) => phase == 'recovery';
-
-  /// Work sets kept in a deload week out of [n]: about half, at least 2 of 3+ sets
-  /// (1 of 2).
-  static int deloadSets(int n) => n <= 1 ? n : max(n ~/ 2, n >= 3 ? 2 : 1);
+  // Deload / taper weeks keep the program's sets (the athlete's decision: the plan never changes set
+  // counts) – they are easier through the load (~90 %, [forExercise]) and the effort (RIR 4 in the
+  // plan's note) only.
 
   // ───────────────────────────── Public API ─────────────────────────────
 
@@ -383,14 +379,6 @@ class LoadPrescriber {
         }
       }
     }
-    if (dropsSet(phase)) {
-      // Deload: about half the work sets, no drop sets.
-      e.sets.removeWhere((s) => s.type == SetType.drop);
-      final work = e.sets.where((s) => !s.warmup).toList();
-      for (final s in work.skip(deloadSets(work.length))) {
-        e.sets.remove(s);
-      }
-    }
     return e;
   }
 
@@ -418,13 +406,7 @@ class LoadPrescriber {
       if (s.sec <= 0) s.sec = max(10, ((work.firstOrNull?.sec ?? 30) / 2 / 5).round() * 5);
       s.reps = 0;
     }
-    if (dropsSet(phase)) {
-      e.sets.removeWhere((s) => s.type == SetType.drop);
-      final w = e.sets.where((s) => !s.warmup).toList();
-      for (final s in w.skip(deloadSets(w.length))) {
-        e.sets.remove(s);
-      }
-    }
+    // Set counts always follow the program – deloads only lighten the hold (see above).
     return e;
   }
 

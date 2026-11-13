@@ -246,6 +246,15 @@ class AthleteData {
   final String gymGoal; // strength | hypertrophy | general
   final String gymSplit; // auto | fullbody | upperlower | ppl | ulppl | bro
   final Map<String, double> oneRm; // squat | bench | deadlift | ohp → kg
+
+  /// Programs the athlete assigned to gym days in the plan setup ("Programme selbst zuweisen"):
+  /// weekday (1..7) → program reference ([gymProgramRef]: `key:<built-in key>` or `id:<template id>`).
+  /// [gymPlanB] is week B of an A/B alternation ([gymAB]); the plan uses week A in its even weeks
+  /// (0, 2, …) and week B in the odd ones. Days without an entry follow the split's rotation.
+  final bool gymAssign;
+  final bool gymAB;
+  final Map<int, String> gymPlanA;
+  final Map<int, String> gymPlanB;
   // Event
   final String? eventDistance; // 5k | 10k | hm | m | sprint | olympic | 70.3
   final DateTime? eventDate;
@@ -304,6 +313,10 @@ class AthleteData {
     this.gymGoal = 'general',
     this.gymSplit = 'auto',
     this.oneRm = const {},
+    this.gymAssign = false,
+    this.gymAB = false,
+    this.gymPlanA = const {},
+    this.gymPlanB = const {},
     this.eventDistance,
     this.eventDate,
     this.targetTimeSec,
@@ -363,6 +376,10 @@ class AthleteData {
         for (final e in (m['oneRm'] as Map).entries)
           if (_dn(e.value) case final v?) '${e.key}': v,
     },
+    gymAssign: _b(m['gymAssign']),
+    gymAB: _b(m['gymAB']),
+    gymPlanA: _intKeyed(m['gymPlanA'], _sn),
+    gymPlanB: _intKeyed(m['gymPlanB'], _sn),
     eventDistance: _sn(m['eventDistance']),
     eventDate: m['eventDate'] == null ? null : _date(m['eventDate']),
     targetTimeSec: switch (_in(m['targetTimeSec'])) {
@@ -418,6 +435,10 @@ class AthleteData {
     'gymGoal': gymGoal,
     'gymSplit': gymSplit,
     'oneRm': oneRm,
+    'gymAssign': gymAssign,
+    'gymAB': gymAB,
+    'gymPlanA': {for (final e in gymPlanA.entries) '${e.key}': e.value},
+    'gymPlanB': {for (final e in gymPlanB.entries) '${e.key}': e.value},
     'eventDistance': eventDistance,
     'eventDate': eventDate == null ? null : Timestamp.fromDate(eventDate!),
     'targetTimeSec': targetTimeSec,
@@ -448,6 +469,9 @@ class AthleteData {
     }
     if (c['dayMinutes'] is Map<int, int>) {
       c['dayMinutes'] = {for (final e in (c['dayMinutes'] as Map<int, int>).entries) '${e.key}': e.value};
+    }
+    for (final k in const ['gymPlanA', 'gymPlanB']) {
+      if (c[k] is Map<int, String>) c[k] = {for (final e in (c[k] as Map<int, String>).entries) '${e.key}': e.value};
     }
     return AthleteData.fromMap({...m, ...c});
   }
@@ -1085,6 +1109,12 @@ class PlannedWorkout {
   /// Gym: exercises adjusted for this one workout (empty = use the program's exercises).
   final List<GymExercise> exercises;
 
+  /// Gym: how the plan adapts the program's exercises for this day without copying them
+  /// ([gymModRegress], [gymModNoLegs] – lib/services/plan_exercises.dart), so the workout
+  /// always shows the program as it is now (sets, reps, exercises) – also after the program
+  /// was edited. Ignored when [exercises] is set.
+  final List<String> gymMods;
+
   /// Small automatic adjustment after a completed session (original values for undo).
   final AutoAdjustment? auto;
 
@@ -1104,6 +1134,7 @@ class PlannedWorkout {
     this.phase,
     this.isKey = false,
     this.exercises = const [],
+    this.gymMods = const [],
     this.auto,
   });
 
@@ -1138,6 +1169,7 @@ class PlannedWorkout {
     phase: _sn(m['phase']),
     isKey: _b(m['isKey']),
     exercises: _maps(m['exercises']).map(GymExercise.fromMap).toList(),
+    gymMods: _strings(m['gymMods']),
     auto: m['auto'] is Map ? AutoAdjustment.fromMap(m['auto'] as Map) : null,
   );
 
@@ -1156,6 +1188,7 @@ class PlannedWorkout {
     if (phase != null) 'phase': phase,
     if (isKey) 'isKey': true,
     'exercises': exercises.map((e) => e.toMap()).toList(),
+    if (gymMods.isNotEmpty) 'gymMods': gymMods,
     if (auto != null) 'auto': auto!.toMap(),
   };
 }

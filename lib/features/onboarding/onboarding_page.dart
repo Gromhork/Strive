@@ -15,6 +15,7 @@ import '../../data/default_programs.dart';
 import '../../data/repository.dart' show deepEquals;
 import '../calendar/feasibility_card.dart';
 import '../calendar/replace_plan_dialog.dart';
+import 'gym_assign_section.dart';
 import '../shell/account.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
@@ -1481,6 +1482,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           value: a.gymGoal,
           onChanged: (v) => _setA({'gymGoal': v}),
         ),
+        // Programs per gym day (own or built-in), optionally week A / week B.
+        GymAssignSection(profile: _advanced ? _profile : _quickProfile, templates: ref.watch(templateListProvider), onChanged: _setA),
         if (_advanced) _label(l.oneRmTitle, hint: l.oneRmHint),
         if (_advanced)
           GridView.count(

@@ -13,6 +13,7 @@ import 'step_list.dart';
 import 'gym_session_page.dart';
 import 'manual_entry_page.dart';
 import '../../widgets/segments.dart';
+import '../../services/plan_exercises.dart';
 
 /// Starts a planned workout from the calendar / home screen.
 Future<void> startPlanned(BuildContext context, WidgetRef ref, PlannedWorkout p) async {
@@ -25,7 +26,12 @@ Future<void> startPlanned(BuildContext context, WidgetRef ref, PlannedWorkout p)
       template: template,
       planId: p.id,
       phase: p.phase,
-      exercises: p.exercises.isNotEmpty ? p.exercises : null,
+      // The workout's own exercises, or its program's with the plan's day adaptations (regressions,
+      // no legs before a race) – the program's sets either way.
+      exercises:
+          p.exercises.isNotEmpty || p.gymMods.isNotEmpty
+              ? plannedGymExercises(p, template, gymGoal: ref.read(profileOrDefaultProvider).athlete.gymGoal)
+              : null,
     );
   } else {
     await showCardioStart(context, ref, p.sport, title: p.title, planId: p.id, steps: p.steps);

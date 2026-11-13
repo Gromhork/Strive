@@ -10960,6 +10960,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Moved to {folder}'**
   String movedToFolder(String folder);
+
+  /// No description provided for @wGymDeloadNote4.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery week: same sets as in the program, the weights are entered about 10 % lighter. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
+  String get wGymDeloadNote4;
+
+  /// No description provided for @wGymLegsEasyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Leg exercises today with all their sets but about 10–15 % lighter (about 4 reps in the tank) – tomorrow’s key session needs fresh legs.'**
+  String get wGymLegsEasyNote;
+
+  /// No description provided for @wGymOverTimeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The program takes about {total} min, {min} min are planned for this day – allow more time or choose a shorter program for this day.'**
+  String wGymOverTimeNote(int total, int min);
+
+  /// No description provided for @gymAssignTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign programs yourself'**
+  String get gymAssignTitle;
+
+  /// No description provided for @gymAssignSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which program you train on each gym day – your own or a built-in one. Sets and exercises come from the program; the plan adjusts load and reps in reserve.'**
+  String get gymAssignSub;
+
+  /// No description provided for @gymAssignAB.
+  ///
+  /// In en, this message translates to:
+  /// **'Alternate week A / week B'**
+  String get gymAssignAB;
+
+  /// No description provided for @gymAssignABSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Two weeks that alternate, e.g. A: Push, Pull, Legs · B: Pull, Legs, Push.'**
+  String get gymAssignABSub;
+
+  /// No description provided for @gymWeekA.
+  ///
+  /// In en, this message translates to:
+  /// **'Week A'**
+  String get gymWeekA;
+
+  /// No description provided for @gymWeekB.
+  ///
+  /// In en, this message translates to:
+  /// **'Week B'**
+  String get gymWeekB;
+
+  /// No description provided for @gymAssignPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose program'**
+  String get gymAssignPick;
+
+  /// No description provided for @gymAssignSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search programs'**
+  String get gymAssignSearch;
+
+  /// No description provided for @gymAssignNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No programs found'**
+  String get gymAssignNone;
+
+  /// No description provided for @gymAssignNoDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Your week has no gym day yet – add one in the week step.'**
+  String get gymAssignNoDays;
+
+  /// No description provided for @gymAssignSuggest.
+  ///
+  /// In en, this message translates to:
+  /// **'Use suggestion'**
+  String get gymAssignSuggest;
+
+  /// No description provided for @gymAssignBuiltin.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in'**
+  String get gymAssignBuiltin;
+
+  /// No description provided for @gymAssignWarnRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'{program} on two days in a row ({dayPair}) – the same muscles need about 48 h to recover.'**
+  String gymAssignWarnRepeat(String program, String dayPair);
+
+  /// No description provided for @gymAssignWarnLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'{program} on {day}, the day before your long session – heavy legs make it harder.'**
+  String gymAssignWarnLegs(String program, String day);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

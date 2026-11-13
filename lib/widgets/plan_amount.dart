@@ -2,6 +2,7 @@ import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/models.dart';
 import '../services/zones.dart';
+import '../services/plan_exercises.dart';
 
 /// Duration and distance of a planned workout as every screen shows them (Today card,
 /// calendar, planned-workout page, editor, week strip): one computation, so a workout never
@@ -22,7 +23,11 @@ PlanAmount planAmount(PlannedWorkout p, UserProfile profile, {List<WorkoutTempla
   if (p.sport == Sport.gym) {
     if (p.exercises.isNotEmpty) return PlanAmount(estimateGymMinutes(p.exercises), null, estimated: true);
     final t = templates.where((t) => t.id == p.templateId).firstOrNull;
-    if (t != null && t.exercises.isNotEmpty) return PlanAmount(t.estimatedMinutes, null, estimated: true);
+    if (t != null && t.exercises.isNotEmpty) {
+      // The plan's day adaptations (e.g. no legs before a race) change the exercises, not the sets.
+      if (p.gymMods.isNotEmpty) return PlanAmount(estimateGymMinutes(applyGymMods(t.exercises, p.gymMods)), null, estimated: true);
+      return PlanAmount(t.estimatedMinutes, null, estimated: true);
+    }
     return PlanAmount(p.durationMin, null);
   }
   if (p.steps.isEmpty) return PlanAmount(p.durationMin, (p.distanceKm ?? 0) > 0 ? p.distanceKm : null);

@@ -24,6 +24,7 @@ import '../goals/goal_mismatch_card.dart';
 import 'feasibility_card.dart';
 import 'replace_plan_dialog.dart';
 import '../train/gym_exercise_editor.dart';
+import '../../services/plan_exercises.dart';
 
 /// Result of [showPlanEditor] when the workout was deleted (the page showing it closes too).
 const planDeleted = 'deleted';
@@ -65,7 +66,9 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
     if (ex == null || ex.sport != Sport.gym) return [];
     if (ex.exercises.isNotEmpty) return [for (final e in ex.exercises) e.copy(resetDone: true)];
     final t = ref.read(templateListProvider).where((t) => t.id == ex.templateId).firstOrNull;
-    return [for (final e in t?.exercises ?? const <GymExercise>[]) e.copy(resetDone: true)];
+    // The program with the plan's day adaptations ([PlannedWorkout.gymMods]) – what the workout shows.
+    final goal = ref.read(profileOrDefaultProvider).athlete.gymGoal;
+    return [for (final e in plannedGymExercises(ex, t, gymGoal: goal)) e.copy(resetDone: true)];
   }
 
   int _editorGen = 0; // forces a fresh StepEditor when steps are replaced from outside
@@ -137,6 +140,9 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
       phase: widget.existing?.phase,
       isKey: _isKey,
       exercises: _sport == Sport.gym && _customEx ? _gymEx : const [],
+      // The plan's day adaptations stay while the workout keeps following the same program.
+      gymMods:
+          _sport == Sport.gym && !_customEx && _templateId == widget.existing?.templateId ? widget.existing?.gymMods ?? const [] : const [],
     );
     repo.savePlan(plan);
     _initial = _snapshot();

@@ -131,8 +131,8 @@ void main() {
     // Both deload sessions are ~90 % of the loading level – the second is not derived from the first.
     expect(steps[6].weight, closeTo(before * 0.9, 2.5));
     expect(steps[7].weight, closeTo(before * 0.9, 2.5));
-    // Deload halves the work sets (3 → 2 here; ~50 % volume, Bell 2023).
-    expect(steps[6].targets.length, lessThan(steps[5].targets.length));
+    // The deload keeps the program's work sets (the plan never changes set counts) – it is lighter only.
+    expect(steps[6].targets.length, steps[5].targets.length);
     // The next loading session resumes at (or above) the last loading level.
     expect(steps[8].weight, greaterThanOrEqualTo(before));
     expect(steps.last.weight, greaterThanOrEqualTo(before));
