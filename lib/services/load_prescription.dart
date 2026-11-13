@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../core/format.dart';
 import '../data/exercise_db.dart';
+import '../data/exercise_measure.dart';
 import '../data/models.dart';
 import 'exercise_class.dart';
 import 'gym_tools.dart';
@@ -69,6 +70,10 @@ class Prescription {
   /// rating (see [LoadPrescriber.forExercise]).
   final bool amrap;
 
+  /// Timed hold (plank, wall sit, …, [GymExercise.isTimed]): [reps] / [setReps] are the hold
+  /// times in seconds, [weight] the added load (0 = none).
+  final bool timed;
+
   const Prescription({
     required this.weight,
     required this.reps,
@@ -88,6 +93,7 @@ class Prescription {
     this.effort,
     this.trend = E1rmTrend.unknown,
     this.amrap = false,
+    this.timed = false,
   });
 
   /// Same prescription with the rep range attached.
@@ -125,6 +131,7 @@ class Prescription {
     effort: effort,
     trend: trend,
     amrap: amrap ?? this.amrap,
+    timed: timed,
   );
 
   int repsForSet(int workIndex) => workIndex < setReps.length ? setReps[workIndex] : reps;
@@ -204,6 +211,7 @@ class LoadPrescriber {
 
   Prescription? forExercise(GymExercise e, {String? phase}) {
     if (e.exId.isEmpty || e.exId == 'manual') return null;
+    if (e.isTimed) return _timed(e, phase);
     final info = _info(e);
     final bw = isBodyweight(e);
     final hist = _history(e, info, bodyweight: bw);
@@ -261,20 +269,24 @@ class LoadPrescriber {
     return info.kind == _Kind.bodyweight || (info.kind == _Kind.unknown && _looksBodyweight(e.exId));
   }
 
-  /// Body load per rep (kg) for a bodyweight exercise: body weight × lifted share.
-  /// Loaded exercises the user switched to bodyweight mode (e.g. squats or rows without
-  /// equipment) get the share of their movement pattern instead of 0, so volume and
-  /// e1RM still count the body: squat / lunge ≈ 85 % (body minus shanks and feet,
-  /// Winter 2009 segment data), vertical pull / push 100 %, push-up pattern 65 %,
-  /// horizontal pull 60 %.
+  /// Body load per rep (kg) for a bodyweight exercise: body weight × the share of it that is
+  /// moved ([bodyShareOf]: push-up ≈ 64 %, pull-up / dip 100 %, squat / lunge ≈ 70 %, glute
+  /// bridge ≈ 50 %, sit-up ≈ 30 %, …) – also for bodyweight leg and core work, so its volume is
+  /// not 0 kg. Loaded exercises the user switched to bodyweight mode (e.g. squats or rows
+  /// without equipment) get the share of their movement pattern: squat / lunge 70 %, vertical
+  /// pull / push 100 %, push-up pattern 64 %, horizontal pull 60 %. Timed holds: 0 (their
+  /// measure is the hold time).
   double bodyLoad(GymExercise e) {
-    final lift = classifyLift(e.exId, e.name, info: db?.byId(e.exId));
+    if (e.isTimed) return 0;
+    final info = db?.byId(e.exId);
+    final lift = classifyLift(e.exId, e.name, info: info);
     var share = lift.bodyFraction;
+    if (share <= 0 && lift.bodyweight) share = bodyShareOf(e.exId, info?.name ?? e.name, equipment: info?.equipment);
     if (share <= 0 && !lift.bodyweight && e.bw == true) {
       share = switch (lift.move) {
-        Movement.squat || Movement.lunge => 0.85,
+        Movement.squat || Movement.lunge => 0.7,
         Movement.verticalPull || Movement.verticalPush => 1.0,
-        Movement.horizontalPush => 0.65,
+        Movement.horizontalPush => 0.64,
         Movement.horizontalPull => 0.6,
         _ => 0.0,
       };
@@ -333,6 +345,7 @@ class LoadPrescriber {
       e.bw = true;
       e.bodyKg = bodyLoad(e);
     }
+    if (e.isTimed) return _applyTimed(e, phase);
     final p = forExercise(e, phase: phase);
     final explicit = e.workSets.any((s) => s.weight > 0);
     if (p != null && !(explicit && !p.fromHistory)) {
@@ -367,6 +380,135 @@ class LoadPrescriber {
       }
     }
     return e;
+  }
+
+  /// [_applyOne] for a timed hold: the work sets get the prescribed hold time (seconds) and
+  /// added weight. A program's own times and weights are kept until there is history (like the
+  /// explicit weights of rep exercises); warm-up holds get half the time.
+  GymExercise _applyTimed(GymExercise e, String? phase) {
+    final p = forExercise(e, phase: phase);
+    final work = e.sets.where((s) => !s.warmup).toList();
+    final ownSec = work.any((s) => s.sec > 0), ownKg = work.any((s) => s.weight > 0);
+    if (p != null) {
+      final keep = !p.fromHistory;
+      var k = 0;
+      for (final s in work) {
+        final t = p.repsForSet(k++);
+        if (!(keep && ownSec && s.sec > 0)) s.sec = t;
+        if (!(keep && ownKg)) s.weight = p.weight;
+        s
+          ..reps = 0
+          ..targetSec = s.sec;
+      }
+      e.rxKg = work.isEmpty ? null : work.map((s) => s.weight).reduce(max);
+    }
+    for (final s in e.sets.where((s) => s.warmup)) {
+      if (s.sec <= 0) s.sec = max(10, ((work.firstOrNull?.sec ?? 30) / 2 / 5).round() * 5);
+      s.reps = 0;
+    }
+    if (dropsSet(phase)) {
+      e.sets.removeWhere((s) => s.type == SetType.drop);
+      final w = e.sets.where((s) => !s.warmup).toList();
+      for (final s in w.skip(deloadSets(w.length))) {
+        e.sets.remove(s);
+      }
+    }
+    return e;
+  }
+
+  // ───────────────────────────── Timed holds ─────────────────────────────
+
+  /// Hold-time step: 5 s for holds under 30 s, else 10 s (≈ 10–20 % – small enough to be
+  /// reachable next time, like one rep more for a rep exercise).
+  static int holdStep(int sec) => sec < 30 ? 5 : 10;
+
+  /// Load step of a timed hold that reached the top of its range: a plate on the back (plank,
+  /// wall sit), a heavier dumbbell (side plank, carries) or a belt (dead hang).
+  static const holdLoadStep = 2.5;
+
+  /// Timed holds (plank, wall sit, dead hang, …): double progression on the hold time. Once
+  /// every work set held its target, the next time is 5–10 s longer ([holdStep]) up to the top
+  /// of the hold range ([GymExercise.holdRange]); at the top, loadable holds add
+  /// [holdLoadStep] kg and start again at the bottom, stretches and skill holds (L-sit,
+  /// levers, handstand) stay at the top. A set more than 10 % short of its target repeats the
+  /// time; short twice in a row → one step shorter. A last session taken over from the plan
+  /// holds its targets. Deload / taper weeks: ~80 % of the time, no step up. Without history:
+  /// the bottom of the range.
+  Prescription _timed(GymExercise e, String? phase) {
+    final (lo, hi) = e.holdRange;
+    final bw = isBodyweight(e);
+    final src = bw ? LoadSource.bodyweight : LoadSource.history;
+    final hist = <({DateTime date, List<GymSet> sets, bool fromPlan, Effort? effort})>[];
+    for (final s in _sessions) {
+      if (now.difference(s.start).inDays > 42) break; // time span
+      for (final x in s.exercises) {
+        if (x.exId != e.exId || lighterPhase(x.phase)) continue;
+        final sets = x.sets.where((st) => st.done && !st.warmup && st.type != SetType.drop && st.sec > 0).toList();
+        if (sets.isEmpty) continue;
+        hist.add((date: s.start, sets: sets, fromPlan: s.exerciseFromPlan(x), effort: x.effort));
+        break;
+      }
+    }
+    int round5(num v) => max(5, (v / 5).round() * 5);
+    final light = lighterPhase(phase);
+    Prescription out(
+      int sec,
+      double kg, {
+      ProgressionKind? kind,
+      ProgressReason? reason,
+      List<int> setSec = const [],
+      bool fromHistory = true,
+    }) => Prescription(
+      weight: kg,
+      reps: sec,
+      source: src,
+      progression: kind,
+      fromHistory: fromHistory,
+      setReps: setSec,
+      repMin: lo,
+      repMax: hi,
+      bodyweight: bw,
+      reason: reason,
+      phaseAdjusted: light,
+      phase: light ? phase : null,
+      timed: true,
+    );
+
+    if (hist.isEmpty) return out(lo, 0, fromHistory: false);
+    final last = hist.first;
+    final kg = last.sets.map((s) => s.weight).reduce(max);
+    final targets = [for (final s in last.sets) s.targetSec ?? s.sec];
+    final held = [for (final s in last.sets) s.sec];
+    List<int> listOf(List<int> v) => v.toSet().length > 1 ? v : const [];
+    if (light) {
+      // Deload / taper: the last loading level at ~80 % of its time, no step up.
+      final base = min(held.reduce(min), targets.reduce(min));
+      return out(max(min(lo, base), round5(base * 0.8)), kg, kind: ProgressionKind.hold);
+    }
+    if (last.fromPlan) {
+      return out(targets.reduce(min), kg, kind: ProgressionKind.hold, reason: ProgressReason.fromPlan, setSec: listOf(targets));
+    }
+    bool short(({DateTime date, List<GymSet> sets, bool fromPlan, Effort? effort}) h) =>
+        h.sets.any((s) => s.targetSec != null && s.sec < s.targetSec! * 0.9);
+    if (short(last)) {
+      final base = targets.reduce(min);
+      if (hist.length > 1 && !hist[1].fromPlan && short(hist[1])) {
+        return out(max(min(lo, base), round5(base - holdStep(base))), kg, kind: ProgressionKind.deload, reason: ProgressReason.holdShorter);
+      }
+      return out(base, kg, kind: ProgressionKind.hold, reason: ProgressReason.holdMissed, setSec: listOf(targets));
+    }
+    // Progress from what was actually held (a longer hold than asked counts).
+    final base = held.reduce(min);
+    if (last.effort == Effort.limit) {
+      return out(max(base, targets.reduce(min)), kg, kind: ProgressionKind.hold, reason: ProgressReason.holdLimit);
+    }
+    if (base >= hi) {
+      if (holdTakesLoad(e.name)) {
+        return out(lo, kg + holdLoadStep, kind: ProgressionKind.increase, reason: ProgressReason.holdAddLoad);
+      }
+      return out(hi, kg, kind: ProgressionKind.hold, reason: ProgressReason.holdTop);
+    }
+    return out(min(hi, round5(base + holdStep(base))), kg, kind: ProgressionKind.addReps, reason: ProgressReason.holdLonger);
   }
 
   // ───────────────────────────── History ─────────────────────────────

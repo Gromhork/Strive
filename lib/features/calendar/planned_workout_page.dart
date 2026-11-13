@@ -12,6 +12,7 @@ import '../../services/gym_tools.dart' show ProgressionKind;
 import '../../services/plan_text.dart';
 import '../../widgets/common.dart';
 import '../../data/models.dart';
+import '../../data/exercise_measure.dart' show formatHold;
 import '../../data/exercise_names_de.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/plan_amount.dart';
@@ -267,8 +268,17 @@ class PlannedWorkoutPage extends ConsumerWidget {
                         e.repMin != null && e.repMax != null
                             ? '${e.repMin}–${e.repMax}'
                             : '${e.workSets.isEmpty ? '' : e.workSets.first.reps}';
+                    // Timed holds: "3 × 45 s · +10 kg" (today's hold time, else the planned one).
+                    final first = e.workSets.firstOrNull;
+                    final sec = rx?.reps ?? (first != null && first.sec > 0 ? first.sec : e.holdRange.$1);
+                    final kg = rx?.weight ?? first?.weight ?? 0;
                     final line = Text(
-                      ['${e.workSets.length} × $reps', if (rx != null && rx.weight > 0) prescriptionLabel(l, rx, u)].join(' · '),
+                      e.isTimed
+                          ? [
+                            '${e.workSets.length} × ${formatHold(sec)}',
+                            if (kg.abs() > 1e-6) holdWeight(kg, u, bodyweight: rx?.bodyweight ?? e.bw == true),
+                          ].join(' · ')
+                          : ['${e.workSets.length} × $reps', if (rx != null && rx.weight > 0) prescriptionLabel(l, rx, u)].join(' · '),
                     );
                     // What changes since last time (from the user's own history only).
                     final why = rx != null && rx.fromHistory ? prescriptionReason(l, rx) : null;

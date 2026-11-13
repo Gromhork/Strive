@@ -256,8 +256,13 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                             for (var k = 0; k < e.sets.length; k++) {
                               final s = e.sets[k];
                               if (s.warmup || s.type == SetType.drop) continue;
-                              final reps = rx.repsForSet(wi++);
-                              if (!s.done) n.updateSet(widget.index, k, weight: rx.weight, reps: reps);
+                              final t = rx.repsForSet(wi++);
+                              if (s.done) continue;
+                              if (rx.timed) {
+                                n.updateSet(widget.index, k, weight: rx.weight, sec: t);
+                              } else {
+                                n.updateSet(widget.index, k, weight: rx.weight, reps: t);
+                              }
                             }
                           },
                 ),
@@ -279,6 +284,8 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                           })(),
                   units: u,
                   bw: e.bw == true ? l.bodyweightShort : null,
+                  timed: e.isTimed,
+                  holding: w.holding(widget.index, k),
                   onTap: () => setState(() => _sel = k),
                   onType: (tp) => n.updateSet(widget.index, k, type: tp),
                   onToggle: () => _toggle(k),
@@ -292,11 +299,12 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
               Row(
                 children: [
                   TextButton.icon(onPressed: () => n.addSet(widget.index), icon: const Icon(Icons.add, size: 18), label: Text(l.addSet)),
-                  TextButton.icon(
-                    onPressed: () => n.addDropSet(widget.index),
-                    icon: const Icon(Icons.trending_down_rounded, size: 18),
-                    label: Text(l.dropSet),
-                  ),
+                  if (!e.isTimed)
+                    TextButton.icon(
+                      onPressed: () => n.addDropSet(widget.index),
+                      icon: const Icon(Icons.trending_down_rounded, size: 18),
+                      label: Text(l.dropSet),
+                    ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -305,18 +313,19 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  ActionChip(
-                    avatar: const Icon(Icons.whatshot_outlined, size: 18),
-                    label: Text(l.warmupSets),
-                    onPressed: () {
-                      final work = e.workSets.isEmpty ? 0.0 : e.workSets.map((s) => s.weight).reduce(max);
-                      final ws = warmupSets(work, bar: info?.equipment == 'barbell' ? 20 : max(0, work * 0.3));
-                      n.insertWarmups(widget.index, ws);
-                      setState(() => _sel = 0);
-                      toast(context, l.warmupAdded(ws.length));
-                    },
-                  ),
-                  if (info == null || const {'barbell', 'smith machine', 'trap bar', 'ez barbell'}.contains(info.equipment))
+                  if (!e.isTimed)
+                    ActionChip(
+                      avatar: const Icon(Icons.whatshot_outlined, size: 18),
+                      label: Text(l.warmupSets),
+                      onPressed: () {
+                        final work = e.workSets.isEmpty ? 0.0 : e.workSets.map((s) => s.weight).reduce(max);
+                        final ws = warmupSets(work, bar: info?.equipment == 'barbell' ? 20 : max(0, work * 0.3));
+                        n.insertWarmups(widget.index, ws);
+                        setState(() => _sel = 0);
+                        toast(context, l.warmupAdded(ws.length));
+                      },
+                    ),
+                  if (!e.isTimed && (info == null || const {'barbell', 'smith machine', 'trap bar', 'ez barbell'}.contains(info.equipment)))
                     ActionChip(
                       avatar: const Icon(Icons.album_outlined, size: 18),
                       label: Text(l.plateCalculator),
@@ -343,7 +352,9 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
             ],
           ),
         ),
-        if (sel != null)
+        if (sel != null && e.isTimed)
+          _HoldEditor(index: widget.index, set: sel, units: u, onToggle: () => _toggle(sel))
+        else if (sel != null)
           _SetEditor(
             index: widget.index,
             set: sel,
@@ -418,8 +429,8 @@ bool _matches(GymExercise e, Prescription p) {
   var wi = 0;
   for (final s in e.sets) {
     if (s.warmup || s.type == SetType.drop) continue;
-    final reps = p.repsForSet(wi++);
-    if (!s.done && ((s.weight - p.weight).abs() > 0.01 || s.reps != reps)) return false;
+    final t = p.repsForSet(wi++);
+    if (!s.done && ((s.weight - p.weight).abs() > 0.01 || (p.timed ? s.sec : s.reps) != t)) return false;
   }
   return true;
 }
@@ -437,6 +448,8 @@ class _SetLine extends StatelessWidget {
     required this.onToggle,
     required this.onDelete,
     this.bw,
+    this.timed = false,
+    this.holding = false,
   });
   final GymSet set;
   final int index, workIndex;
@@ -444,6 +457,8 @@ class _SetLine extends StatelessWidget {
   final GymSet? previous;
   final Units units;
   final String? bw; // short bodyweight label in bodyweight mode
+  final bool timed; // hold time instead of reps
+  final bool holding; // the hold timer runs for this set
   final VoidCallback onTap, onToggle, onDelete;
   final ValueChanged<SetType> onType;
 
@@ -483,7 +498,9 @@ class _SetLine extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        setLabel(set, units, bw: bw) + (set.rpe != null ? '  ·  ${l.reserveN(reserveLabel(set.rpe!))}' : ''),
+                        (holding ? '${l.holdRunning} · ' : '') +
+                            setLabel(set, units, bw: bw, timed: timed) +
+                            (set.rpe != null ? '  ·  ${l.reserveN(reserveLabel(set.rpe!))}' : ''),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -491,7 +508,10 @@ class _SetLine extends StatelessWidget {
                         ),
                       ),
                       if (previous != null)
-                        Text('${l.lastTime}: ${setLabel(previous!, units, bw: bw)}', style: Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          '${l.lastTime}: ${setLabel(previous!, units, bw: bw, timed: timed)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                     ],
                   ),
                 ),
@@ -660,8 +680,205 @@ class _SetEditor extends ConsumerWidget {
   }
 }
 
+/// Bottom panel of a timed hold (plank, wall sit, …): added weight and hold time steppers, the
+/// hold timer (counts down from the set's time, then on as a stopwatch) and the check button.
+class _HoldEditor extends ConsumerWidget {
+  const _HoldEditor({required this.index, required this.set, required this.units, required this.onToggle});
+  final int index, set;
+  final Units units;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final w = ref.watch(activeGymProvider)!;
+    final n = ref.read(activeGymProvider.notifier);
+    final e = w.exercises[index];
+    if (set >= e.sets.length) return const SizedBox.shrink();
+    final s = e.sets[set];
+    final bw = e.bw == true;
+    final step = units.imperial ? units.weightIn(5) : 2.5;
+    final holding = w.holding(index, set);
+    final planned = s.sec > 0 ? s.sec : (s.targetSec ?? e.holdRange.$1);
+    final workPos = e.sets.take(set).where((x) => !x.warmup).length;
+    String fmt(double kg) => '${bw && kg > 0 ? '+' : ''}${Units.num(units.weightOut(kg), 2)}';
+
+    final Widget action;
+    if (holding) {
+      action = StreamBuilder(
+        stream: Stream.periodic(const Duration(milliseconds: 200)),
+        builder: (context, _) {
+          final elapsed = w.holdElapsed();
+          final over = elapsed >= w.holdTarget;
+          return Column(
+            key: const ValueKey('holdRunning'),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                holdClock(w),
+                style: TextStyle(
+                  fontSize: 52,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                  color: over ? AppColors.success : null,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+              Text(over ? l.holdOvertime : l.holdRunning, style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: w.holdTarget <= 0 ? 1 : (elapsed / w.holdTarget).clamp(0.0, 1.0),
+                  minHeight: 8,
+                  color: over ? AppColors.success : AppColors.gym,
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: FilledButton.icon(
+                  key: const ValueKey('holdStop'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.gym,
+                    foregroundColor: Colors.white,
+                    textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                  ),
+                  icon: const Icon(Icons.stop_rounded),
+                  label: Text(l.holdStop),
+                  onPressed: () {
+                    HapticFeedback.mediumImpact();
+                    n.stopHold();
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } else if (s.done) {
+      action = SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: FilledButton.icon(
+          key: const ValueKey('focusToggleSet'),
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: AppColors.gym,
+            side: const BorderSide(color: AppColors.gym, width: 1.5),
+            textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
+          icon: const Icon(Icons.undo_rounded),
+          label: Text(l.undo),
+          onPressed: onToggle,
+        ),
+      );
+    } else {
+      action = Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 56,
+              child: FilledButton.icon(
+                key: const ValueKey('holdStart'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.gym,
+                  foregroundColor: Colors.white,
+                  textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: Text(s.warmup ? '${l.setTypeWarmup} · ${clock(planned)}' : l.holdStartBtn(clock(planned))),
+                onPressed: () => n.startHold(index, set),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Held without the timer (e.g. timed on a watch): log the planned time.
+          SizedBox(
+            width: 56,
+            height: 56,
+            child: IconButton.outlined(
+              key: const ValueKey('holdLogWithout'),
+              tooltip: '${l.holdLogWithout} · ${l.completeSet(workPos + 1)}',
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                onToggle();
+              },
+              icon: const Icon(Icons.check_rounded),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!holding)
+                Row(
+                  children: [
+                    Expanded(
+                      child: _Stepper(
+                        label: '${bw ? l.addedWeight : l.weight} (${units.weightUnit})',
+                        value: fmt(s.weight),
+                        onMinus: () => n.updateSet(index, set, weight: max(bw ? -40.0 : 0.0, s.weight - step)),
+                        onPlus: () => n.updateSet(index, set, weight: s.weight + step),
+                        onEdit: () async {
+                          final v = await askNumber(
+                            context,
+                            bw ? l.addedWeight : l.weight,
+                            initial: units.weightOut(s.weight),
+                            suffix: units.weightUnit,
+                            signed: bw,
+                          );
+                          if (v != null) n.updateSet(index, set, weight: units.weightIn(v));
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _Stepper(
+                        key: const ValueKey('holdTimeStepper'),
+                        label: l.holdTime,
+                        value: clock(planned),
+                        // 5-s steps up to 30 s, 10-s steps above.
+                        onMinus: () => n.updateSet(index, set, sec: planned > 30 ? max(30, planned - 10) : max(5, planned - 5)),
+                        onPlus: () => n.updateSet(index, set, sec: planned >= 30 ? planned + 10 : planned + 5),
+                        onEdit: () => pickHoldTime(context, l, s, (v) => n.updateSet(index, set, sec: v)),
+                      ),
+                    ),
+                  ],
+                ),
+              if (!holding && !s.done)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(l.holdAutoDone, style: Theme.of(context).textTheme.bodySmall)),
+                      Switch(key: const ValueKey('holdAutoDone'), value: n.holdAutoDone, onChanged: n.setHoldAutoDone),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 6),
+              action,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Stepper extends StatelessWidget {
-  const _Stepper({required this.label, required this.value, required this.onMinus, required this.onPlus, required this.onEdit});
+  const _Stepper({super.key, required this.label, required this.value, required this.onMinus, required this.onPlus, required this.onEdit});
   final String label, value;
   final VoidCallback onMinus, onPlus, onEdit;
 

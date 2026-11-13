@@ -2,6 +2,8 @@ import 'dart:math';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -39,6 +41,29 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   final _feasibility = FeasibilityCache();
   bool _hideFeasibility = false;
 
+  /// Scroll controller of the week list and the month view: the tab's primary one (tapping the
+  /// tab again scrolls back), an own one where there is none.
+  final _ownScroll = ScrollController();
+  ScrollController get _scroll => PrimaryScrollController.maybeOf(context) ?? _ownScroll;
+
+  /// Where the current week (month view: today's cell) is, relative to the viewport: 0 in view,
+  /// 1 above (scrolled into the future – the "Today" button points up), -1 below; month view
+  /// showing a later month 2 (the button points back, left), an earlier one -2. A notifier, so
+  /// showing the button rebuilds only the button, not the weeks being scrolled.
+  final _jumpDir = ValueNotifier(0);
+
+  /// Arrow of the button while it fades out (the last direction it showed).
+  int _shownJumpDir = 1;
+  final _currentWeekKey = GlobalKey();
+  final _todayCellKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _ownScroll.dispose();
+    _jumpDir.dispose();
+    super.dispose();
+  }
+
   /// Feasibility of the event goal for the generated plan leading to it: checked from the
   /// plan's first week (the plan's own start), not from today.
   PlanFeasibility _goalCheck() {
@@ -56,20 +81,18 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     ]..sort((x, y) => x.date.compareTo(y.date));
     final start = FitnessState.currentPlanStart(profile, phased);
     if (start == null) return const PlanFeasibility();
-    // The target check on the one fitness model of the running plan (= the goal forecast's race day).
-    final fitness = FitnessState.of(
-      profile,
-      plans: ref.watch(planListProvider),
-      sessions: ref.watch(sessionListProvider),
-      now: DateTime.now(),
-    );
-    return _feasibility.of(profile, start, context.l10n, fitness: fitness);
+    // The target check on the one fitness model of the running plan (= the goal forecast's race day),
+    // computed once per data change – not on every rebuild of the page.
+    return _feasibility.of(profile, start, context.l10n, fitness: ref.watch(currentFitnessProvider));
   }
 
   @override
   Widget build(BuildContext context) {
     ref.watch(todayProvider); // "today" / missed workouts change at midnight
     final l = context.l10n;
+    final goal = _goalCheck();
+    // Content, view or month changed: is the current week still in view?
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateJump());
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         heroTag: 'addPlan',
@@ -130,15 +153,101 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               ],
             ),
           ),
-          if (!_goalCheck().ok)
+          if (!goal.ok)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: FeasibilityCard(_goalCheck(), onClose: () => setState(() => _hideFeasibility = true)),
+              child: FeasibilityCard(goal, onClose: () => setState(() => _hideFeasibility = true)),
             ),
-          Expanded(child: _month ? _monthView() : _weekList()),
+          Expanded(
+            child: Stack(
+              children: [
+                NotificationListener<ScrollNotification>(
+                  onNotification: (n) {
+                    if (n.depth == 0) _updateJump(n.metrics);
+                    return false;
+                  },
+                  child: _month ? _monthView() : _weekList(),
+                ),
+                // Bottom centre, level with the add button (16 px margin, 56 px high) – never on it.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 24,
+                  child: Center(
+                    child: ValueListenableBuilder<int>(
+                      valueListenable: _jumpDir,
+                      builder:
+                          (_, dir, __) => JumpToTodayButton(
+                            visible: dir != 0,
+                            icon: switch (_shownJumpDir) {
+                              2 => Icons.arrow_back_rounded,
+                              -2 => Icons.arrow_forward_rounded,
+                              -1 => Icons.arrow_downward_rounded,
+                              _ => Icons.arrow_upward_rounded,
+                            },
+                            tooltip: _month ? l.calJumpTodayMonth : l.calJumpCurrentWeek,
+                            onPressed: _jumpBack,
+                          ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  // ── "Today" button: shown while the current week is scrolled out of view.
+
+  void _updateJump([ScrollMetrics? metrics]) {
+    if (!mounted) return;
+    final c = _scroll;
+    final m = metrics ?? (c.hasClients && c.positions.length == 1 && c.position.hasContentDimensions ? c.position : null);
+    final dir = m == null ? 0 : _jumpDirection(m);
+    if (dir == _jumpDir.value) return;
+    void apply() {
+      if (!mounted) return;
+      if (dir != 0) _shownJumpDir = dir;
+      _jumpDir.value = dir;
+    }
+
+    // Notifications can arrive during layout: no setState there.
+    SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks
+        ? WidgetsBinding.instance.addPostFrameCallback((_) => apply())
+        : apply();
+  }
+
+  int _jumpDirection(ScrollMetrics m) {
+    if (_month) {
+      final cell = _todayCellKey.currentContext;
+      if (cell != null) return scrolledAwayDirection(cell, m);
+      // Today is not in the grid: another month is shown.
+      final now = ref.read(todayProvider);
+      return DateTime(_focused.year, _focused.month).isAfter(DateTime(now.year, now.month)) ? 2 : -2;
+    }
+    final card = _currentWeekKey.currentContext;
+    // Not built: far away – the current week is at scroll offset 0 (the list's anchor).
+    if (card == null) return m.pixels > 0 ? 1 : (m.pixels < 0 ? -1 : 0);
+    return scrolledAwayDirection(card, m);
+  }
+
+  Future<void> _jumpBack() async {
+    if (_month) {
+      final now = ref.read(todayProvider);
+      setState(() {
+        _focused = now;
+        _selected = now;
+      });
+    }
+    final c = _scroll;
+    if (!c.hasClients || c.positions.length != 1) return;
+    final p = c.position;
+    // Far away: jump close first – animating across dozens of weeks would build every week on the way.
+    final near = p.viewportDimension * 1.5;
+    if (p.pixels.abs() > near) p.jumpTo(p.pixels.sign * near);
+    await p.animateTo(0, duration: const Duration(milliseconds: 380), curve: Curves.easeOutCubic);
   }
 
   List<PlannedWorkout> _plans() {
@@ -151,17 +260,37 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     return ref.watch(sessionListProvider).where((s) => f == null || s.sport == f).toList();
   }
 
+  /// The shown plans and sessions indexed by day – rebuilt only when the data or the filter change.
+  CalendarIndex _index() {
+    final key = (
+      ref.watch(planListProvider),
+      ref.watch(sessionListProvider),
+      ref.watch(sportFilterProvider),
+      ref.watch(planSessionsProvider),
+      ref.watch(sessionPlanProvider),
+      ref.watch(planFirstDayProvider),
+    );
+    if (key != _indexKey) {
+      _indexKey = key;
+      _indexCache = CalendarIndex(plans: _plans(), sessions: _sessions(), linked: key.$4, sessionPlan: key.$5, firstDay: key.$6);
+    }
+    return _indexCache!;
+  }
+
+  Object? _indexKey;
+  CalendarIndex? _indexCache;
+
   // ── Week list with drag & drop between days. The current week is the scroll anchor;
   // past weeks (with completed workouts) are above it and revealed by scrolling up.
   static const _pastWeeks = 12;
   final _nowKey = GlobalKey();
   final _lastWeekKey = GlobalKey();
 
-  Widget _weekCard(int w, List<PlannedWorkout> plans, List<Session> sessions, {Key? key}) {
+  Widget _weekCard(int w, CalendarIndex idx, {Key? key}) {
     final l = context.l10n;
     final df = DateFormat.MMMd(context.localeName);
     final week = addDays(startOfWeek(DateTime.now()), 7 * w);
-    final end = addDays(week, 7);
+    final days = [for (var d = 0; d < 7; d++) addDays(week, d)];
     final label = switch (w) {
       0 => l.currentWeek,
       1 => l.nextWeek,
@@ -171,11 +300,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     Widget? trailing;
     if (w < 0) {
       // Past week: completed vs. planned at a glance.
-      final weekPlans = plans.where((p) => !p.date.isBefore(week) && p.date.isBefore(end)).toList();
+      final weekPlans = [for (final d in days) ...idx.plansOn(d)];
       // The one count of the app ([planCounts]): a session too short to count is no "done".
-      final counts = planCounts(weekPlans, ref.watch(planSessionsProvider), profile: ref.watch(profileOrDefaultProvider));
+      final counts = planCounts(weekPlans, idx.linked, profile: ref.watch(profileOrDefaultProvider));
       final planned = counts.planned;
-      final done = planned > 0 ? counts.done : sessions.where((s) => !s.start.isBefore(week) && s.start.isBefore(end)).length;
+      final done = planned > 0 ? counts.done : days.fold<int>(0, (n, d) => n + idx.sessionsOn(d).length);
       trailing = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -188,25 +317,22 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     } else if (label != null) {
       trailing = Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.brand));
     }
+    // No Opacity layer for past weeks: an offscreen layer per card made fast scrolling stutter.
     return Padding(
       key: key,
       padding: const EdgeInsets.only(bottom: 12),
-      child: Opacity(
-        opacity: w < 0 ? 0.92 : 1,
-        child: SectionCard(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-          title: '${df.format(week)} – ${df.format(addDays(week, 6))}',
-          trailing: trailing,
-          child: Column(children: [for (var d = 0; d < 7; d++) _DayRow(day: addDays(week, d), plans: plans, sessions: sessions)]),
-        ),
+      child: SectionCard(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+        title: '${df.format(week)} – ${df.format(days.last)}',
+        trailing: trailing,
+        child: Column(children: [for (final d in days) _DayRow(day: d, index: idx)]),
       ),
     );
   }
 
   Widget _weekList() {
     final l = context.l10n;
-    final plans = _plans();
-    final sessions = _sessions();
+    final idx = _index();
     // Down to the last week of the plan (at least 8 weeks ahead, at most ~1 year) and up
     // to the plan's first week (at least 12 weeks back).
     final all = ref.watch(planListProvider);
@@ -215,16 +341,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final ahead = all.isEmpty ? 8 : (all.map((p) => weeksTo(p.date)).reduce(max) + 1).clamp(8, 60);
     final back = all.isEmpty ? _pastWeeks : (-all.map((p) => weeksTo(p.date)).reduce(min)).clamp(_pastWeeks, 60);
     return CustomScrollView(
+      controller: _scroll,
       center: _nowKey,
       slivers: [
         // Grows upwards from the anchor: index 0 = last week.
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (_, i) => _weekCard(-(i + 1), plans, sessions, key: i == 0 ? _lastWeekKey : null),
-              childCount: back,
-            ),
+            delegate: SliverChildBuilderDelegate((_, i) => _weekCard(-(i + 1), idx, key: i == 0 ? _lastWeekKey : null), childCount: back),
           ),
         ),
         SliverPadding(
@@ -246,7 +370,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   ),
                 );
               }
-              return _weekCard(i - 1, plans, sessions);
+              return _weekCard(i - 1, idx, key: i == 1 ? _currentWeekKey : null);
             }, childCount: ahead + 1), // hint + current week … last plan week
           ),
         ),
@@ -254,20 +378,39 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     );
   }
 
+  /// Month grid marks – recomputed only when their inputs change (not on every day tap).
+  Map<String, List<DayMark>> _marks(List<PlannedWorkout> plans, List<Session> sessions) {
+    final key = (
+      ref.watch(planListProvider),
+      ref.watch(sessionListProvider),
+      ref.watch(sportFilterProvider),
+      ref.watch(planSessionsProvider),
+      ref.watch(todayProvider),
+      ref.watch(profileOrDefaultProvider),
+    );
+    if (key != _marksKey) {
+      _marksKey = key;
+      _marksCache = monthMarks(key.$1, plans, sessions, key.$4, now: key.$5, profile: key.$6);
+    }
+    return _marksCache!;
+  }
+
+  Object? _marksKey;
+  Map<String, List<DayMark>>? _marksCache;
+
   // ── Month grid
   Widget _monthView() {
     final l = context.l10n;
-    final plans = _plans();
-    final sessions = _sessions();
+    final idx = _index();
     final first = DateTime(_focused.year, _focused.month, 1);
     final gridStart = startOfWeek(first);
     final names = DateFormat.E(context.localeName);
-    final dayPlans = plans.where((p) => sameDay(p.date, _selected)).toList();
-    final daySessions = sessions.where((s) => sameDay(s.start, _selected)).toList();
-    final now = ref.watch(todayProvider);
-    final linked = ref.watch(planSessionsProvider);
-    final marks = monthMarks(ref.watch(planListProvider), plans, sessions, linked, now: now, profile: ref.watch(profileOrDefaultProvider));
+    final dayPlans = idx.plansOn(_selected);
+    final daySessions = idx.sessionsOn(_selected);
+    final linked = idx.linked;
+    final marks = _marks(idx.plans, idx.sessions);
     return ListView(
+      controller: _scroll,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
       children: [
         Row(
@@ -314,6 +457,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       child: GestureDetector(
                         onTap: () => setState(() => _selected = day),
                         child: Container(
+                          key: today ? _todayCellKey : null,
                           height: 54,
                           margin: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
@@ -407,6 +551,138 @@ final planFirstDayProvider = Provider<DateTime?>((ref) {
   return first;
 });
 
+/// Session id → the planned workout it fulfils (the first one linked to it) – a lookup instead of
+/// a scan of all links for every session shown.
+final sessionPlanProvider = Provider<Map<String, PlannedWorkout>>((ref) {
+  final byId = {for (final p in ref.watch(planListProvider)) p.id: p};
+  final out = <String, PlannedWorkout>{};
+  for (final e in ref.watch(planSessionsProvider).entries) {
+    final p = byId[e.key];
+    if (p != null) out.putIfAbsent(e.value.id, () => p);
+  }
+  return out;
+});
+
+/// The running plan's fitness model (the goal forecast's), computed once per change of the
+/// profile, plans, sessions or day – the calendar rebuilt it twice on every rebuild.
+final currentFitnessProvider = Provider<FitnessState>((ref) {
+  ref.watch(todayProvider);
+  return FitnessState.of(
+    ref.watch(profileOrDefaultProvider),
+    plans: ref.watch(planListProvider),
+    sessions: ref.watch(sessionListProvider),
+    now: DateTime.now(),
+  );
+});
+
+/// The shown plans and sessions of the calendar indexed by day (each day row used to scan all
+/// of them – seven times for every week scrolled into view).
+class CalendarIndex {
+  CalendarIndex({required this.plans, required this.sessions, required this.linked, required this.sessionPlan, required this.firstDay})
+    : byId = {for (final p in plans) p.id: p} {
+    for (final p in plans) {
+      _plansByDay.putIfAbsent(dayKey(p.date), () => []).add(p);
+    }
+    for (final s in sessions) {
+      _sessionsByDay.putIfAbsent(dayKey(s.start), () => []).add(s);
+    }
+  }
+
+  final List<PlannedWorkout> plans;
+  final List<Session> sessions;
+
+  /// Plan id → linked session ([planSessionsProvider]).
+  final Map<String, Session> linked;
+
+  /// Session id → the planned workout (of any sport) it fulfils ([sessionPlanProvider]).
+  final Map<String, PlannedWorkout> sessionPlan;
+
+  /// First day of any plan ([planFirstDayProvider]).
+  final DateTime? firstDay;
+
+  /// The shown plans by id.
+  final Map<String, PlannedWorkout> byId;
+  final _plansByDay = <String, List<PlannedWorkout>>{};
+  final _sessionsByDay = <String, List<Session>>{};
+
+  List<PlannedWorkout> plansOn(DateTime day) => _plansByDay[dayKey(day)] ?? const [];
+  List<Session> sessionsOn(DateTime day) => _sessionsByDay[dayKey(day)] ?? const [];
+}
+
+/// Where [target] (inside the scroll view of [m]) is: 0 in view (a third of it – at most of the
+/// viewport – on screen), 1 above the viewport, -1 below.
+int scrolledAwayDirection(BuildContext target, ScrollMetrics m) {
+  final box = target.findRenderObject();
+  if (box is! RenderBox || !box.attached || !box.hasSize) return 0;
+  final viewport = RenderAbstractViewport.maybeOf(box);
+  if (viewport == null) return 0;
+  final top = viewport.getOffsetToReveal(box, 0).offset;
+  final h = box.size.height;
+  final shown = min(top + h, m.pixels + m.viewportDimension) - max(top, m.pixels);
+  if (shown >= min(h, m.viewportDimension) / 3) return 0;
+  return top + h / 2 < m.pixels + m.viewportDimension / 2 ? 1 : -1;
+}
+
+/// Floating "Today" pill of the calendar: back to the current week (month view: today's month),
+/// with an arrow towards it. Fades and slides in and out.
+class JumpToTodayButton extends StatelessWidget {
+  const JumpToTodayButton({super.key, required this.visible, required this.icon, required this.tooltip, required this.onPressed});
+  final bool visible;
+
+  /// Arrow towards today (up / down in the week list, back / forward to today's month).
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedSlide(
+        offset: visible ? Offset.zero : const Offset(0, 0.6),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        child: AnimatedOpacity(
+          opacity: visible ? 1 : 0,
+          duration: const Duration(milliseconds: 180),
+          child: Tooltip(
+            message: tooltip,
+            child: Material(
+              key: const ValueKey('jumpToToday'),
+              color: cs.secondaryContainer,
+              elevation: 3,
+              shape: const StadiumBorder(),
+              child: InkWell(
+                customBorder: const StadiumBorder(),
+                onTap: onPressed,
+                child: SizedBox(
+                  height: 40,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 16),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icon, size: 18, color: cs.onSecondaryContainer),
+                        const SizedBox(width: 6),
+                        Text(context.l10n.today, style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSecondaryContainer)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Short weekday names ("Mo") per locale – one DateFormat, not a new one for every day row.
+final _weekdayFormats = <String, DateFormat>{};
+DateFormat _weekdayFormat(String locale) => _weekdayFormats[locale] ??= DateFormat.E(locale);
+
 /// A planned workout that was done on another day, on its own day: "Fahrtspiel · erledigt am
 /// Mo" (tap: the session) – the calendar and Home's "Demnächst" show the day the same way.
 class DoneElsewhereLine extends ConsumerWidget {
@@ -431,7 +707,7 @@ class DoneElsewhereLine extends ConsumerWidget {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                '${glueTitle(plan.title)} · ${l.doneOnDay(DateFormat.E(context.localeName).format(session.start))}',
+                '${glueTitle(plan.title)} · ${l.doneOnDay(_weekdayFormat(context.localeName).format(session.start))}',
                 style: t?.copyWith(color: Theme.of(context).colorScheme.outline),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -445,26 +721,24 @@ class DoneElsewhereLine extends ConsumerWidget {
 }
 
 class _DayRow extends ConsumerWidget {
-  const _DayRow({required this.day, required this.plans, required this.sessions});
+  const _DayRow({required this.day, required this.index});
   final DateTime day;
-  final List<PlannedWorkout> plans;
-  final List<Session> sessions;
+  final CalendarIndex index;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final linked = ref.watch(planSessionsProvider);
-    final byId = {for (final x in plans) x.id: x};
+    final linked = index.linked;
     // A workout done on another day (early / late, as a replacement) is shown once: as the
     // session on the day it was done ("ersetzt Sa-Einheit"), not again on its planned day.
     bool doneElsewhere(PlannedWorkout x) => x.isDone && linked[x.id] != null && !sameDay(linked[x.id]!.start, x.date);
-    final p = plans.where((x) => sameDay(x.date, day) && !doneElsewhere(x)).toList();
+    final dayPlans = index.plansOn(day);
+    final p = dayPlans.where((x) => !doneElsewhere(x)).toList();
     // … but its own day says where it went ("erledigt am Mo") instead of "Pause".
-    final elsewhere = plans.where((x) => sameDay(x.date, day) && doneElsewhere(x)).toList();
-    final first = ref.watch(planFirstDayProvider);
-    final s = sessions.where((x) => sameDay(x.start, day) && !p.any((pl) => pl.sessionId == x.id || linked[pl.id]?.id == x.id)).toList();
+    final elsewhere = dayPlans.where(doneElsewhere).toList();
+    final first = index.firstDay;
+    final s = index.sessionsOn(day).where((x) => !p.any((pl) => pl.sessionId == x.id || linked[pl.id]?.id == x.id)).toList();
     PlannedWorkout? replaced(Session x) {
-      final id = linked.entries.where((e) => e.value.id == x.id).map((e) => e.key).firstOrNull;
-      final pl = id == null ? null : byId[id];
+      final pl = index.byId[index.sessionPlan[x.id]?.id];
       return pl != null && !sameDay(pl.date, x.start) ? pl : null;
     }
 
@@ -487,7 +761,7 @@ class _DayRow extends ConsumerWidget {
                   child: Column(
                     children: [
                       Text(
-                        DateFormat.E(context.localeName).format(day),
+                        _weekdayFormat(context.localeName).format(day),
                         style: TextStyle(fontSize: 11, color: today ? AppColors.brand : Theme.of(context).colorScheme.outline),
                       ),
                       Text('${day.day}', style: TextStyle(fontWeight: FontWeight.w700, color: today ? AppColors.brand : null)),
@@ -531,10 +805,21 @@ class _DayRow extends ConsumerWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.add, size: 18),
-                  onPressed: () => showPlanEditor(context, ref, date: day),
+                // A plain ink button, not an IconButton: seven per week, and the M3 IconButton was
+                // the largest part of building a week while scrolling (same 40 px target).
+                Semantics(
+                  button: true,
+                  label: context.l10n.planWorkout,
+                  child: InkResponse(
+                    key: ValueKey('addOn_${dayKey(day)}'),
+                    radius: 20,
+                    onTap: () => showPlanEditor(context, ref, date: day),
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Icon(Icons.add, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -631,10 +916,7 @@ class _SessionChip extends ConsumerWidget {
     final u = profile.units;
     // The planned workout this session fulfils (same day or replaced) – its compliance, the same
     // ring as the planned-workout cards; a session outside the plan gets a neutral done mark.
-    final linked = ref.watch(planSessionsProvider);
-    final planId = linked.entries.where((e) => e.value.id == s.id).map((e) => e.key).firstOrNull;
-    final all = ref.watch(planListProvider);
-    final plan = planId == null ? null : all.where((p) => p.id == planId).firstOrNull;
+    final plan = ref.watch(sessionPlanProvider)[s.id];
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
@@ -661,7 +943,7 @@ class _SessionChip extends ConsumerWidget {
                       ),
                       if (replaces != null)
                         Text(
-                          context.l10n.replacesDayWorkout(DateFormat.E(context.localeName).format(replaces!.date)),
+                          context.l10n.replacesDayWorkout(_weekdayFormat(context.localeName).format(replaces!.date)),
                           key: const ValueKey('replacesLabel'),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),

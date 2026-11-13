@@ -158,11 +158,21 @@ double plannedKm(PlannedWorkout p) {
 /// How fully the done work sets of [s] delivered what was prescribed (0…1): per set with a
 /// prescribed rep target, its load × reps against the prescribed load × target reps (reps
 /// alone without a prescribed load), each set at most 1 – more on one set does not make up
-/// for another. Null without prescribed sets (free sets, older sessions).
+/// for another. Timed holds: the held time against the prescribed time (the added load is part
+/// of the hold, not a multiplier). Null without prescribed sets (free sets, older sessions).
 double? gymExecution(Session s) {
   var sum = 0.0;
   var n = 0;
   for (final e in s.exercises) {
+    if (e.isTimed) {
+      for (final set in e.sets) {
+        final t = set.targetSec ?? 0;
+        if (!set.done || set.warmup || set.type == SetType.drop || t <= 0) continue;
+        sum += min(1.0, max(0.0, set.sec / t));
+        n++;
+      }
+      continue;
+    }
     final body = e.bw == true ? e.bodyKg : 0.0;
     final rx = e.rxKg == null ? 0.0 : e.rxKg! + body;
     for (final set in e.sets) {

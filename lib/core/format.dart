@@ -31,8 +31,13 @@ DateTime defaultRaceDate(DateTime today, int weeks, {int? longDay}) {
 }
 
 bool sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
-String dayKey(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
-DateTime parseDayKey(String s) => DateFormat('yyyy-MM-dd').parse(s);
+
+/// 'yyyy-MM-dd' of [d]'s day. Built by hand: it keys maps in hot paths (calendar, compliance),
+/// where a new DateFormat (pattern parsing) per call was measurable.
+String dayKey(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${_two(d.month)}-${_two(d.day)}';
+String _two(int n) => n < 10 ? '0$n' : '$n';
+DateTime parseDayKey(String s) => _dayKeyFormat.parse(s);
+final _dayKeyFormat = DateFormat('yyyy-MM-dd');
 
 /// Unit system. All data is stored metric; this only affects display/input.
 class Units {

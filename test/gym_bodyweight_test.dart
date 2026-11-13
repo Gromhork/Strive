@@ -129,9 +129,9 @@ void main() {
 
     test('loaded exercises switched to bodyweight count the moving body share', () {
       final squat = ex('9997', 'dumbbell goblet squat', [(0, 10)])..bw = true;
-      expect(lp(const []).bodyLoad(squat), 68); // 85 % of 80 kg
+      expect(lp(const []).bodyLoad(squat), 56); // 70 % of 80 kg (squat pattern)
       final jump = ex('0514', 'jump squat', [(0, 10)])..bw = true;
-      expect(lp(const []).bodyLoad(jump), 0); // bodyweight leg work: progressed by reps
+      expect(lp(const []).bodyLoad(jump), 56); // bodyweight leg work counts the moved body (70 %) – no 0-kg volume
       final legExt = ex('0585', 'lever leg extension', [(0, 10)])..bw = true;
       expect(lp(const []).bodyLoad(legExt), 0); // the body does not move
     });

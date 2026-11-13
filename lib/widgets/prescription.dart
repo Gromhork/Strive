@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../core/theme.dart';
+import '../data/exercise_measure.dart' show formatHold;
 import '../l10n/gen/app_localizations.dart';
 import '../services/gym_tools.dart';
 import '../services/load_prescription.dart';
@@ -10,6 +13,7 @@ import '../services/smart_progression.dart';
 /// Compact load text, e.g. "≈ 60 kg × 8", "≈ 12 kg × 10 per hand" or "Bodyweight × 8".
 /// Usable anywhere a prescription should be shown (planned workout detail, plan editor, …).
 String prescriptionLabel(AppLocalizations l, Prescription p, Units u) {
+  if (p.timed) return holdLoadLabel(p.weight, p.reps, u, bodyweight: p.bodyweight);
   if (p.source == LoadSource.bodyweight || p.bodyweight) {
     if (p.weight < 0) return '${bodyweightLoad(l.bodyweight, p.weight, u)} × ${p.reps}';
     return p.weight > 0 ? l.loadBodyweightPlus(u.weight(p.weight), p.reps) : l.loadBodyweight(p.reps);
@@ -21,6 +25,7 @@ String prescriptionLabel(AppLocalizations l, Prescription p, Units u) {
 /// Load part of a target without reps, e.g. "≈ 60 kg", "≈ 12 kg per hand",
 /// "Bodyweight", "Bodyweight +5 kg" or "Bodyweight −10 kg" (assisted).
 String prescriptionLoad(AppLocalizations l, Prescription p, Units u) {
+  if (p.timed) return p.weight.abs() < 1e-6 ? '' : holdWeight(p.weight, u, bodyweight: p.bodyweight);
   if (p.bodyweight || p.source == LoadSource.bodyweight) return bodyweightLoad(l.bodyweight, p.weight, u);
   final w = u.weight(p.weight);
   return p.perHand ? l.loadWeightPerHand(w) : l.loadWeightApprox(w);
@@ -30,6 +35,17 @@ String prescriptionLoad(AppLocalizations l, Prescription p, Units u) {
 String bodyweightLoad(String label, double added, Units u) {
   if (added.abs() < 1e-6) return label;
   return '$label ${added > 0 ? '+' : '−'}${u.weight(added.abs())}';
+}
+
+/// Weight part of a timed hold: "+10 kg" (added to the body), "−10 kg" (assistance) or
+/// "24 kg" (a carry's dumbbells).
+String holdWeight(double kg, Units u, {required bool bodyweight}) =>
+    bodyweight || kg < 0 ? '${kg > 0 ? '+' : '−'}${u.weight(kg.abs())}' : u.weight(kg);
+
+/// One timed set / target: "45 s", "+10 kg · 45 s", "24 kg · 1:30 min".
+String holdLoadLabel(double kg, int sec, Units u, {required bool bodyweight}) {
+  final t = formatHold(sec);
+  return kg.abs() < 1e-6 ? t : '${holdWeight(kg, u, bodyweight: bodyweight)} · $t';
 }
 
 String capitalizeFirst(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
@@ -91,11 +107,22 @@ String progressReasonText(AppLocalizations l, ProgressReason r) => switch (r) {
   ProgressReason.e1rmFloor => l.progE1rmFloor,
   ProgressReason.fromPlan => l.progFromPlan,
   ProgressReason.repCap => l.progRepCap,
+  ProgressReason.holdLonger => l.progHoldLonger,
+  ProgressReason.holdAddLoad => l.progHoldAddLoad,
+  ProgressReason.holdTop => l.progHoldTop,
+  ProgressReason.holdMissed => l.progHoldMissed,
+  ProgressReason.holdShorter => l.progHoldShorter,
 };
 
 /// Today's target in one line: "Today: 3 × 6 @ 72.5 kg", or with differing rep targets
 /// "Today: 9 · 9 · 8 reps @ 72.5 kg" ([sets] = number of work sets; 0 = unknown).
 String prescriptionToday(AppLocalizations l, Prescription p, Units u, {int sets = 0}) {
+  if (p.timed) {
+    final secs = [for (var i = 0; i < (sets > 0 ? sets : max(1, p.setReps.length)); i++) p.repsForSet(i)];
+    final load = prescriptionLoad(l, p, u);
+    final time = secs.toSet().length == 1 ? '${secs.length} × ${formatHold(secs.first)}' : '${secs.join(' · ')} s';
+    return l.rxTodayText(load.isEmpty ? time : '$time @ $load');
+  }
   final load = prescriptionLoad(l, p, u).replaceFirst('≈ ', '');
   final reps = [for (var i = 0; i < (sets > 0 ? sets : p.setReps.length); i++) p.repsForSet(i)];
   if (reps.isEmpty) return l.rxToday(1, p.reps, load);
