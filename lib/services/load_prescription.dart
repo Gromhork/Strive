@@ -200,12 +200,28 @@ class LoadPrescriber {
   /// Older data (up to a year) is still better than a body-weight guess, but discounted.
   static const maxWindow = Duration(days: 365); // time span
 
-  /// Phases that reduce load (deload / taper weeks).
-  static bool lighterPhase(String? phase) => phase == 'recovery' || phase == 'taper';
+  /// Load phases ([gymLoadPhase]) that reduce the load: deload ('recovery') and 'taper' weeks, the
+  /// race window ('race', a gym session in the last ~10 days before an endurance race) and
+  /// 'legsEasy' (the day before a key endurance session – lower-body exercises only,
+  /// [lighterFor]). Exercises done in such a phase are tagged with it ([GymExercise.phase]) and
+  /// are no progression anchor.
+  static bool lighterPhase(String? phase) => phase == 'recovery' || phase == 'taper' || phase == 'race' || phase == 'legsEasy';
+
+  /// Whether load phase [phase] lightens exercise [e] ('legsEasy': its lower-body exercises only).
+  bool lighterFor(GymExercise e, String? phase) =>
+      phase == 'legsEasy' ? classifyLift(e.exId, e.name, info: db?.byId(e.exId)).lower : lighterPhase(phase);
+
+  /// Load of a lighter phase relative to the loading prescription: legs before a key session ~12 %
+  /// lighter (the plan note says 10–15 %), deload / taper / race window ~10 %.
+  static double lighterLoadFactor(String? phase) => phase == 'legsEasy' ? 0.875 : 0.9;
+
+  /// Reps of a bodyweight exercise in a lighter phase relative to the loading prescription (its
+  /// load cannot drop – the volume does instead: 12 push-ups → 9).
+  static const lighterRepFactor = 0.8;
 
   // Deload / taper weeks keep the program's sets (the athlete's decision: the plan never changes set
-  // counts) – they are easier through the load (~90 %, [forExercise]) and the effort (RIR 4 in the
-  // plan's note) only.
+  // counts) – they are easier through the load (~90 %, [forExercise]; bodyweight exercises through
+  // fewer reps) and the effort (RIR 4 in the plan's note) only.
 
   // ───────────────────────────── Public API ─────────────────────────────
 
@@ -232,7 +248,7 @@ class LoadPrescriber {
     }
     p = _capReps(p?.withRange(lo, hi), hi);
     if (p == null) return null;
-    if (!lighterPhase(phase)) {
+    if (!lighterFor(e, phase)) {
       // AMRAP on the last set while calibrating (first sessions of an exercise) and when
       // the targets are at the top of the range (how much reserve is left decides the
       // next jump). Loaded exercises only.
@@ -240,19 +256,50 @@ class LoadPrescriber {
       final amrap = !p.bodyweight && p.weight > 0 && (hist.length < 3 || atTop);
       return amrap ? p._copy(amrap: true) : p;
     }
-    if (p.weight <= 0) return p;
-    // Deload / taper: ~90 % of the loading prescription (Bosquet 2007 taper meta-analysis:
-    // keep intensity high, cut volume; a ~10 % lighter load keeps the week clearly
-    // easier). Deload/taper sessions are skipped in the history, so a second deload
-    // session is again 90 % of the loading level, not of the first deload session.
+    return _lighter(p, e, info, phase);
+  }
+
+  /// [p] (the loading prescription) for a lighter phase ([lighterFor]): no step up, no AMRAP, the
+  /// program's sets. The plan keeps the set counts (the athlete's decision), so the week is
+  /// easier through the load and the effort (RIR 4 in the plan's note): loaded exercises
+  /// ~90 % of the loading weight ([lighterLoadFactor]; Pritchard 2015 / Bell 2023 deload practice:
+  /// reduce load or volume for a week). Bodyweight exercises lose ~10 % of their total load
+  /// (body + added) – more assistance, less added weight – and when the added load cannot carry
+  /// that, reps instead ([lighterRepFactor]; review r7 S5: push-ups went 12 → 13 in a deload
+  /// week). Lighter sessions are skipped in the history, so a second deload session is again
+  /// relative to the loading level, not to the first deload session.
+  Prescription _lighter(Prescription p, GymExercise e, _Info info, String? phase) {
     final increase = p.progression == ProgressionKind.increase;
+    final step = increase || p.progression == ProgressionKind.addReps;
+    // The loading level the step started from: one rep less after an "add reps" step.
+    final baseReps = p.progression == ProgressionKind.addReps ? max(1, p.reps - 1) : p.reps;
+    final factor = lighterLoadFactor(phase);
+    var weight = p.weight, reps = p.reps;
+    if (p.bodyweight) {
+      final body = e.bodyKg > 0 ? e.bodyKg : bodyLoad(e);
+      final total = body + p.weight;
+      var added = ((total * factor - body) / 2.5 + 1e-6).floorToDouble() * 2.5;
+      // A weighted lift goes down to no added load at most (not into assistance).
+      if (p.weight >= 0 && added < 0) added = 0;
+      final removed = p.weight - added;
+      weight = added;
+      // Less than half of the intended reduction came off the load: fewer reps.
+      reps = body <= 0 || removed < total * (1 - factor) / 2 ? max(1, (baseReps * lighterRepFactor).floor()) : baseReps;
+    } else if (p.weight > 0) {
+      weight = _floorStep(p.weight * factor, info);
+      reps = step ? baseReps : p.reps;
+    } else {
+      reps = max(1, (baseReps * lighterRepFactor).floor());
+    }
     return p._copy(
-      weight: _floorStep(p.weight * 0.9, info),
-      progression: increase ? ProgressionKind.hold : p.progression,
+      weight: weight,
+      reps: reps,
+      progression: step ? ProgressionKind.hold : p.progression,
       phaseAdjusted: true,
       phase: phase,
       setReps: const [],
-      clearReason: increase || p.progression == ProgressionKind.addReps,
+      amrap: false,
+      clearReason: step,
     );
   }
 
@@ -301,7 +348,7 @@ class LoadPrescriber {
   /// * open work sets get the load prescribed for the new mode (switching off without
   ///   own history: the same total load as before); reps stay, open warm-ups lose
   ///   their weight in bodyweight mode.
-  void switchBodyweight(GymExercise e, bool on) {
+  void switchBodyweight(GymExercise e, bool on, {String? phase}) {
     final oldKg = e.bw == true ? e.bodyKg : 0.0;
     e.bw = on;
     final kg = on ? bodyLoad(e) : 0.0;
@@ -310,7 +357,7 @@ class LoadPrescriber {
       if (on && kg > 0 && s.weight >= kg * 0.5) s.weight -= kg;
       if (!on && oldKg > 0) s.weight += oldKg;
     }
-    final p = forExercise(e);
+    final p = forExercise(e, phase: phase);
     final loadOk = p != null && (on || p.fromHistory);
     for (final s in e.sets.where((s) => !s.done)) {
       if (s.warmup) {
@@ -335,7 +382,7 @@ class LoadPrescriber {
     final e = src.copy(resetDone: true);
     // Tags from a copied session are stale – set them afresh.
     e.rxKg = null;
-    e.phase = lighterPhase(phase) ? phase : null;
+    e.phase = lighterFor(e, phase) ? phase : null;
     for (final s in e.sets) {
       s
         ..target = null
@@ -444,7 +491,7 @@ class LoadPrescriber {
       }
     }
     int round5(num v) => max(5, (v / 5).round() * 5);
-    final light = lighterPhase(phase);
+    final light = lighterFor(e, phase);
     Prescription out(
       int sec,
       double kg, {
@@ -468,7 +515,22 @@ class LoadPrescriber {
       timed: true,
     );
 
-    if (hist.isEmpty) return out(lo, 0, fromHistory: false);
+    if (hist.isEmpty) {
+      final carry = bw ? null : _carryStart(e, light ? lighterLoadFactor(phase) : 1);
+      if (carry == null) return out(lo, 0, fromHistory: false);
+      // A loaded carry is about its load (review r7 S9: the farmer's walk was prefilled at 0 kg).
+      return Prescription(
+        weight: carry.$1,
+        reps: lo,
+        source: carry.$2,
+        perHand: true,
+        repMin: lo,
+        repMax: hi,
+        phaseAdjusted: light,
+        phase: light ? phase : null,
+        timed: true,
+      );
+    }
     final last = hist.first;
     final kg = last.sets.map((s) => s.weight).reduce(max);
     final targets = [for (final s in last.sets) s.targetSec ?? s.sec];
@@ -503,6 +565,21 @@ class LoadPrescriber {
       return out(hi, kg, kind: ProgressionKind.hold, reason: ProgressReason.holdTop);
     }
     return out(min(hi, round5(base + holdStep(base))), kg, kind: ProgressionKind.addReps, reason: ProgressReason.holdLonger);
+  }
+
+  /// Starting load per hand (kg) of a loaded carry (farmer's walk, suitcase / overhead / waiter
+  /// carry) without history, with its source: ~25 % of the deadlift 1RM per hand (overhead: of the
+  /// overhead press) – a 75 kg intermediate man starts at ~28 kg per hand, on the light side of
+  /// common farmer's-walk standards (~½ body weight per hand for trained men), so the first
+  /// session calibrates upwards. [factor]: a lighter phase. Null for other holds (a plate on a
+  /// plank is optional).
+  (double, LoadSource)? _carryStart(GymExercise e, double factor) {
+    final n = (db?.byId(e.exId)?.name ?? e.name).toLowerCase();
+    if (!RegExp(r'farmer|carry|suitcase|waiter').hasMatch(n)) return null;
+    final overhead = n.contains('overhead') || n.contains('waiter');
+    final (oneRm, src) = anchorOneRm(overhead ? Anchor.ohp : Anchor.deadlift);
+    const info = _Info(_Kind.dumbbell, false);
+    return (_clampMin(_floorStep(oneRm * 0.25 * factor, info), info), src);
   }
 
   // ───────────────────────────── History ─────────────────────────────
@@ -1019,6 +1096,9 @@ class LoadPrescriber {
     (['pushdown', 'push-down', 'skull', 'kickback', 'triceps', 'tricep'], [], Anchor.bench, 0.35, 0.12, 0.4),
   ];
 
+  /// Gymnastic skill holds (bodyweight; they progress by variation, not load – [holdTakesLoad]).
+  static const _skillHoldWords = ['handstand', 'l-sit', 'l sit', 'v-sit', 'front lever', 'back lever', 'planche', 'hollow'];
+
   static const _bwWords = [
     'push-up',
     'push up',
@@ -1099,6 +1179,11 @@ class LoadPrescriber {
   };
 
   static _Kind _kindOfName(String n) {
+    // Skill holds are bodyweight work (review r7 S9: a handstand's weight field read as an external
+    // load) – before the machine words ("front lever" is no lever machine).
+    if (_skillHoldWords.any(n.contains) && !n.contains('dumbbell') && !n.contains('barbell') && !n.contains('kettlebell')) {
+      return _Kind.bodyweight;
+    }
     if (n.contains('dumbbell') || n.contains('kettlebell')) return _Kind.dumbbell;
     if (n.contains('barbell') || n.contains('ez bar') || n.contains('trap bar')) return _Kind.barbell;
     if (RegExp(r'smith|cable|lever|machine|sled|leg press|pulldown|pec deck').hasMatch(n)) return _Kind.machine;

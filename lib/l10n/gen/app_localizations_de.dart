@@ -6141,4 +6141,32 @@ class AppLocalizationsDe extends AppLocalizations {
   String gymAssignWarnLegs(String program, String day) {
     return '$program am $day, dem Tag vor deiner langen Einheit – schwere Beine erschweren sie.';
   }
+
+  @override
+  String get wGymDeloadNote5 => 'Entlastungswoche: gleiche Sätze wie im Programm, die Gewichte sind etwa 10 % leichter eingetragen (Übungen mit Körpergewicht: ein paar Wiederholungen weniger). Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.';
+
+  @override
+  String get loadRaceLighter => 'Wettkampf in Sicht';
+
+  @override
+  String get loadLegsEasyLighter => 'Beine leichter vor der Schlüsseleinheit';
+
+  @override
+  String get gymGroupPush => 'Push';
+
+  @override
+  String get gymGroupPull => 'Pull';
+
+  @override
+  String get gymGroupLegs => 'Beine';
+
+  @override
+  String gymAssignWarnBackToBack(String program, String dayPair) {
+    return '$program in zwei Einheiten hintereinander ($dayPair) – die anderen Programme warten eine ganze Einheit länger.';
+  }
+
+  @override
+  String gymAssignWarnFrequency(String group, String freq, String other, String otherFreq) {
+    return '$group nur $freq× pro Woche, $other $otherFreq× – ideal ist jeder Muskel etwa 2× pro Woche. Ohne eigene Zuweisung wechselt der Plan die Programme über die Wochen gleichmäßig ab.';
+  }
 }

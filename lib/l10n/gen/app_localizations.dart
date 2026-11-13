@@ -11062,6 +11062,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{program} on {day}, the day before your long session – heavy legs make it harder.'**
   String gymAssignWarnLegs(String program, String day);
+
+  /// No description provided for @wGymDeloadNote5.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery week: same sets as in the program, the weights are entered about 10 % lighter (bodyweight exercises: a few reps fewer). Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.'**
+  String get wGymDeloadNote5;
+
+  /// No description provided for @loadRaceLighter.
+  ///
+  /// In en, this message translates to:
+  /// **'race coming up'**
+  String get loadRaceLighter;
+
+  /// No description provided for @loadLegsEasyLighter.
+  ///
+  /// In en, this message translates to:
+  /// **'legs lighter before the key session'**
+  String get loadLegsEasyLighter;
+
+  /// No description provided for @gymGroupPush.
+  ///
+  /// In en, this message translates to:
+  /// **'Push'**
+  String get gymGroupPush;
+
+  /// No description provided for @gymGroupPull.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull'**
+  String get gymGroupPull;
+
+  /// No description provided for @gymGroupLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'Legs'**
+  String get gymGroupLegs;
+
+  /// No description provided for @gymAssignWarnBackToBack.
+  ///
+  /// In en, this message translates to:
+  /// **'{program} in two sessions in a row ({dayPair}) – the other programs wait a whole extra session.'**
+  String gymAssignWarnBackToBack(String program, String dayPair);
+
+  /// No description provided for @gymAssignWarnFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'{group} only {freq}× a week, {other} {otherFreq}× – ideally every muscle about 2× a week. Without your own assignment the plan rotates the programs evenly over the weeks.'**
+  String gymAssignWarnFrequency(String group, String freq, String other, String otherFreq);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

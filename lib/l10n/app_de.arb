@@ -1827,5 +1827,13 @@
   "gymAssignSuggest": "Vorschlag übernehmen",
   "gymAssignBuiltin": "Vorlage",
   "gymAssignWarnRepeat": "{program} an zwei Tagen hintereinander ({dayPair}) – dieselben Muskeln brauchen etwa 48 h Erholung.",
-  "gymAssignWarnLegs": "{program} am {day}, dem Tag vor deiner langen Einheit – schwere Beine erschweren sie."
+  "gymAssignWarnLegs": "{program} am {day}, dem Tag vor deiner langen Einheit – schwere Beine erschweren sie.",
+  "wGymDeloadNote5": "Entlastungswoche: gleiche Sätze wie im Programm, die Gewichte sind etwa 10 % leichter eingetragen (Übungen mit Körpergewicht: ein paar Wiederholungen weniger). Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.",
+  "loadRaceLighter": "Wettkampf in Sicht",
+  "loadLegsEasyLighter": "Beine leichter vor der Schlüsseleinheit",
+  "gymGroupPush": "Push",
+  "gymGroupPull": "Pull",
+  "gymGroupLegs": "Beine",
+  "gymAssignWarnBackToBack": "{program} in zwei Einheiten hintereinander ({dayPair}) – die anderen Programme warten eine ganze Einheit länger.",
+  "gymAssignWarnFrequency": "{group} nur {freq}× pro Woche, {other} {otherFreq}× – ideal ist jeder Muskel etwa 2× pro Woche. Ohne eigene Zuweisung wechselt der Plan die Programme über die Wochen gleichmäßig ab."
 }

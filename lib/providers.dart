@@ -15,6 +15,7 @@ import 'data/repository.dart';
 import 'services/compliance.dart';
 import 'services/insights.dart';
 import 'services/load_prescription.dart';
+import 'services/plan_exercises.dart';
 import 'services/weather_service.dart';
 
 // ───────────────────────────── Auth & repository ─────────────────────────────
@@ -99,9 +100,11 @@ final loadPrescriberProvider = Provider<LoadPrescriber>(
   ),
 );
 
-/// Plan phase ('base' | 'build' | 'peak' | 'taper' | 'recovery') of a planned workout id.
+/// Load phase of a planned workout id for the load prescription ([gymLoadPhase]): its plan phase
+/// ('base' | 'build' | 'peak' | 'taper' | 'recovery'), or the gym day's lighter load ('race' /
+/// 'legsEasy').
 String? planPhaseOf(List<PlannedWorkout> plans, String? planId) =>
-    planId == null ? null : plans.where((p) => p.id == planId).firstOrNull?.phase;
+    planId == null ? null : gymLoadPhase(plans.where((p) => p.id == planId).firstOrNull);
 
 final weatherProvider = FutureProvider<Weather>((ref) async {
   final lang = ref.watch(settingsProvider).locale ?? 'de';

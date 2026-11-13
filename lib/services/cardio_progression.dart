@@ -266,25 +266,7 @@ class AutoAdjuster {
   }
 
   static PlannedWorkout _copy(PlannedWorkout p, {List<WorkoutStep>? steps, int? durationMin, double? distanceKm, AutoAdjustment? auto}) =>
-      PlannedWorkout(
-        id: p.id,
-        date: p.date,
-        sport: p.sport,
-        title: p.title,
-        description: p.description,
-        durationMin: durationMin ?? p.durationMin,
-        distanceKm: distanceKm ?? p.distanceKm,
-        intensity: p.intensity,
-        templateId: p.templateId,
-        status: p.status,
-        sessionId: p.sessionId,
-        steps: steps ?? p.steps,
-        phase: p.phase,
-        isKey: p.isKey,
-        exercises: p.exercises,
-        gymMods: p.gymMods,
-        auto: auto ?? p.auto,
-      );
+      p.copyWith(steps: steps, durationMin: durationMin, distanceKm: distanceKm, auto: auto);
 
   /// Firestore update that restores the original values of an adjusted workout.
   static Map<String, dynamic> undoUpdate(PlannedWorkout p) {

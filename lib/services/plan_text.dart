@@ -19,9 +19,11 @@ String planDescription(String description, AppLocalizations l) {
       out
         ..add(l.wGymLoadDesc(rir))
         ..add(l.wGymProgressNote);
-    } else if (_oldDeload.hasMatch(line) || _isAny(line, l, (x) => [x.wGymDeloadNote, x.wGymDeloadNote2, x.wGymDeloadNote3])) {
-      // Deload weeks no longer drop sets (the plan never changes the program's set counts).
-      out.add(l.wGymDeloadNote4);
+    } else if (_oldDeload.hasMatch(line) ||
+        _isAny(line, l, (x) => [x.wGymDeloadNote, x.wGymDeloadNote2, x.wGymDeloadNote3, x.wGymDeloadNote4])) {
+      // Deload weeks no longer drop sets (the plan never changes the program's set counts); bodyweight
+      // exercises get fewer reps (review r7 S5).
+      out.add(l.wGymDeloadNote5);
     } else if (_isAny(line, l, (x) => [x.wRecoveryWeekNote])) {
       // Stored as "Deload week: …" in English – shown with today's term "Recovery week".
       out.add(l.wRecoveryWeekNote2);

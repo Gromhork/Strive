@@ -79,6 +79,8 @@ String? prescriptionReason(AppLocalizations l, Prescription p) {
   final phase = switch (p.phase) {
     'recovery' => l.loadPhaseLighter,
     'taper' => l.loadTaperLighter,
+    'race' => l.loadRaceLighter,
+    'legsEasy' => l.loadLegsEasyLighter,
     _ => null,
   };
   if (base == null) return phase;

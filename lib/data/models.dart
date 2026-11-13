@@ -1138,6 +1138,43 @@ class PlannedWorkout {
     this.auto,
   });
 
+  /// A copy with the given fields replaced – every other field (also ones added later, e.g.
+  /// [gymMods]) is kept. Use it instead of rebuilding a workout field by field (review r7 R1:
+  /// health notes silently dropped [gymMods]). [clearAuto] removes [auto].
+  PlannedWorkout copyWith({
+    DateTime? date,
+    String? title,
+    String? description,
+    int? durationMin,
+    double? distanceKm,
+    String? intensity,
+    String? status,
+    List<WorkoutStep>? steps,
+    bool? isKey,
+    List<GymExercise>? exercises,
+    List<String>? gymMods,
+    AutoAdjustment? auto,
+    bool clearAuto = false,
+  }) => PlannedWorkout(
+    id: id,
+    date: date ?? this.date,
+    sport: sport,
+    title: title ?? this.title,
+    description: description ?? this.description,
+    durationMin: durationMin ?? this.durationMin,
+    distanceKm: distanceKm ?? this.distanceKm,
+    intensity: intensity ?? this.intensity,
+    templateId: templateId,
+    status: status ?? this.status,
+    sessionId: sessionId,
+    steps: steps ?? this.steps,
+    phase: phase,
+    isKey: isKey ?? this.isKey,
+    exercises: exercises ?? this.exercises,
+    gymMods: gymMods ?? this.gymMods,
+    auto: clearAuto ? null : (auto ?? this.auto),
+  );
+
   bool get isDone => status == 'done';
   bool get isMissed => isMissedOn(DateTime.now());
 

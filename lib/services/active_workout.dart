@@ -298,10 +298,13 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
   }
 
   /// Switches bodyweight mode of exercise [ex] (see [LoadPrescriber.switchBodyweight]).
+  /// Load phase of the planned workout this one was started from ([planPhaseOf]).
+  String? get _loadPhase => planPhaseOf(ref.read(planListProvider), state?.planId);
+
   void setBodyweight(int ex, bool on) {
     final e = state?.exercises[ex];
     if (e == null) return;
-    ref.read(loadPrescriberProvider).switchBodyweight(e, on);
+    ref.read(loadPrescriberProvider).switchBodyweight(e, on, phase: _loadPhase);
     _touch();
   }
 
@@ -325,7 +328,10 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
       e.bw = true;
       e.bodyKg = rx.bodyLoad(e);
     }
-    final p = rx.forExercise(e);
+    // (In a deload / taper week or on a lighter-legs day the new exercise is prescribed lighter too.)
+    final phase = _loadPhase;
+    e.phase = rx.lighterFor(e, phase) ? phase : null;
+    final p = rx.forExercise(e, phase: phase);
     e.rxKg = p?.weight;
     final timed = e.isTimed;
     var k = 0;
@@ -359,7 +365,7 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     e.holdMin = null;
     e.holdMax = null;
     final rx = ref.read(loadPrescriberProvider);
-    final p = rx.forExercise(e);
+    final p = rx.forExercise(e, phase: _loadPhase);
     var k = 0;
     for (final s in e.sets) {
       if (s.done || s.warmup) continue;

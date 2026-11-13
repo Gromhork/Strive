@@ -6141,4 +6141,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String gymAssignWarnLegs(String program, String day) {
     return '$program on $day, the day before your long session – heavy legs make it harder.';
   }
+
+  @override
+  String get wGymDeloadNote5 => 'Recovery week: same sets as in the program, the weights are entered about 10 % lighter (bodyweight exercises: a few reps fewer). Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+
+  @override
+  String get loadRaceLighter => 'race coming up';
+
+  @override
+  String get loadLegsEasyLighter => 'legs lighter before the key session';
+
+  @override
+  String get gymGroupPush => 'Push';
+
+  @override
+  String get gymGroupPull => 'Pull';
+
+  @override
+  String get gymGroupLegs => 'Legs';
+
+  @override
+  String gymAssignWarnBackToBack(String program, String dayPair) {
+    return '$program in two sessions in a row ($dayPair) – the other programs wait a whole extra session.';
+  }
+
+  @override
+  String gymAssignWarnFrequency(String group, String freq, String other, String otherFreq) {
+    return '$group only $freq× a week, $other $otherFreq× – ideally every muscle about 2× a week. Without your own assignment the plan rotates the programs evenly over the weeks.';
+  }
 }

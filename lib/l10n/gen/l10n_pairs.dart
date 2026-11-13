@@ -1778,4 +1778,10 @@ const l10nPairs = <(String, String)>[
   ('Built-in', 'Vorlage'),
   ('{program} on two days in a row ({dayPair}) – the same muscles need about 48 h to recover.', '{program} an zwei Tagen hintereinander ({dayPair}) – dieselben Muskeln brauchen etwa 48 h Erholung.'),
   ('{program} on {day}, the day before your long session – heavy legs make it harder.', '{program} am {day}, dem Tag vor deiner langen Einheit – schwere Beine erschweren sie.'),
+  ('Recovery week: same sets as in the program, the weights are entered about 10 % lighter (bodyweight exercises: a few reps fewer). Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.', 'Entlastungswoche: gleiche Sätze wie im Programm, die Gewichte sind etwa 10 % leichter eingetragen (Übungen mit Körpergewicht: ein paar Wiederholungen weniger). Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.'),
+  ('race coming up', 'Wettkampf in Sicht'),
+  ('legs lighter before the key session', 'Beine leichter vor der Schlüsseleinheit'),
+  ('Legs', 'Beine'),
+  ('{program} in two sessions in a row ({dayPair}) – the other programs wait a whole extra session.', '{program} in zwei Einheiten hintereinander ({dayPair}) – die anderen Programme warten eine ganze Einheit länger.'),
+  ('{group} only {freq}× a week, {other} {otherFreq}× – ideally every muscle about 2× a week. Without your own assignment the plan rotates the programs evenly over the weeks.', '{group} nur {freq}× pro Woche, {other} {otherFreq}× – ideal ist jeder Muskel etwa 2× pro Woche. Ohne eigene Zuweisung wechselt der Plan die Programme über die Wochen gleichmäßig ab.'),
 ];
