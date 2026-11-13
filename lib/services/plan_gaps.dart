@@ -214,7 +214,16 @@ class PlanGaps {
       final eventAhead = ev != null && !dayOnly(ev).isBefore(start);
       final weeks = max(1, a.planWeeks);
       for (var i = 0; i < 4 && start.isBefore(until); i++) {
-        final next = _gen(_continuation(start, out), start, weeks);
+        // The gym rotation continues from the block before.
+        final next = _gen(
+          _continuation(start, out),
+          start,
+          weeks,
+          gymHistory: [
+            for (final p in out)
+              if (p.sport == Sport.gym && p.templateId != null) (p.date, p.templateId!),
+          ],
+        );
         if (next.isEmpty) break;
         out.addAll(next);
         ext.addAll(next.map((p) => p.id));
@@ -225,8 +234,8 @@ class PlanGaps {
     return (out, ext);
   }
 
-  List<PlannedWorkout> _gen(UserProfile p, DateTime start, int weeks) =>
-      PlanGenerator(l, p, templates, () => 'ref${_refSeq++}').generate(start: start, weeks: weeks);
+  List<PlannedWorkout> _gen(UserProfile p, DateTime start, int weeks, {List<(DateTime, String)> gymHistory = const []}) =>
+      PlanGenerator(l, p, templates, () => 'ref${_refSeq++}').generate(start: start, weeks: weeks, gymHistory: gymHistory);
 
   /// The plan from its stored start, else from the start that reproduces the phases of the
   /// generated workouts best (≥ 75 % agree).

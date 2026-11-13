@@ -1466,6 +1466,7 @@ class Recalibrator {
     phase: p.phase,
     isKey: isKey ?? p.isKey,
     exercises: p.exercises,
+    gymMods: p.gymMods,
     auto: auto ?? p.auto,
   );
 }

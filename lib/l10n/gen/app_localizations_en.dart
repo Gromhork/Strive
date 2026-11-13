@@ -5950,4 +5950,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swimTestImplausible => 'These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.';
+
+  @override
+  String get wGymDeloadNote4 => 'Recovery week: same sets as in the program, the weights are entered about 10 % lighter. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+
+  @override
+  String get wGymLegsEasyNote => 'Leg exercises today with all their sets but about 10–15 % lighter (about 4 reps in the tank) – tomorrow’s key session needs fresh legs.';
+
+  @override
+  String wGymOverTimeNote(int total, int min) {
+    return 'The program takes about $total min, $min min are planned for this day – allow more time or choose a shorter program for this day.';
+  }
+
+  @override
+  String get gymAssignTitle => 'Assign programs yourself';
+
+  @override
+  String get gymAssignSub => 'Choose which program you train on each gym day – your own or a built-in one. Sets and exercises come from the program; the plan adjusts load and reps in reserve.';
+
+  @override
+  String get gymAssignAB => 'Alternate week A / week B';
+
+  @override
+  String get gymAssignABSub => 'Two weeks that alternate, e.g. A: Push, Pull, Legs · B: Pull, Legs, Push.';
+
+  @override
+  String get gymWeekA => 'Week A';
+
+  @override
+  String get gymWeekB => 'Week B';
+
+  @override
+  String get gymAssignPick => 'Choose program';
+
+  @override
+  String get gymAssignSearch => 'Search programs';
+
+  @override
+  String get gymAssignNone => 'No programs found';
+
+  @override
+  String get gymAssignNoDays => 'Your week has no gym day yet – add one in the week step.';
+
+  @override
+  String get gymAssignSuggest => 'Use suggestion';
+
+  @override
+  String get gymAssignBuiltin => 'Built-in';
+
+  @override
+  String gymAssignWarnRepeat(String program, String dayPair) {
+    return '$program on two days in a row ($dayPair) – the same muscles need about 48 h to recover.';
+  }
+
+  @override
+  String gymAssignWarnLegs(String program, String day) {
+    return '$program on $day, the day before your long session – heavy legs make it harder.';
+  }
 }

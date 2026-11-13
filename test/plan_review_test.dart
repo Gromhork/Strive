@@ -7,7 +7,7 @@ import 'package:strive/core/sport.dart';
 import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
-import 'package:strive/services/exercise_class.dart';
+import 'package:strive/services/plan_exercises.dart';
 import 'package:strive/services/plan_generator.dart';
 
 /// Findings of the sports-science review of generated plans (30 athlete profiles):
@@ -314,7 +314,7 @@ void main() {
     }
   });
 
-  test('I8 full body the day before a key session: half the leg sets', () {
+  test('I8 full body the day before a key session: all sets, the legs lighter (load / RIR)', () {
     for (final p in [
       UserProfile(level: 'beginner', focus: TrainingFocus.hybrid, experience: const {Sport.run}, trainingDays: const [1, 2, 4, 6]),
       UserProfile(
@@ -329,31 +329,16 @@ void main() {
       final before = plan.where((w) => w.sport == Sport.gym && keyDays.contains(dayOnly(w.date).add(const Duration(days: 1)))).toList();
       expect(before, isNotEmpty);
       for (final g in before) {
-        final t = templates.firstWhere((t) => t.id == g.templateId);
-        expect(g.exercises, isNotEmpty, reason: g.title);
-        expect(g.description.split('\n'), contains(l.wGymLegsHalvedNote));
-        for (final (i, e) in g.exercises.indexed) {
-          final full = t.exercises[i].workSets.length;
-          final lower = classifyLift(e.exId, e.name).lower;
-          // Review 2026-11 (IMPORTANT 9): non-beginners may get one more upper-body set to use the time.
-          if (lower) {
-            expect(e.workSets.length, max(1, full ~/ 2), reason: '${g.title} ${e.name}');
-          } else {
-            expect(e.workSets.length, inInclusiveRange(full, full + (p.level == 'beginner' ? 0 : 1)), reason: '${g.title} ${e.name}');
-          }
-        }
+        expect(g.description.split('\n'), contains(l.wGymLegsEasyNote));
+        expect(g.description.split('\n'), isNot(contains(l.wGymLegsHalvedNote)));
       }
-      // Other days keep the full program: no per-day copy, or a copy with (non-beginners, time left) one
-      // more set on the upper-body exercises / (beginners) the regressions of the first weeks – never
-      // fewer sets, never more leg sets.
-      for (final w in plan.where((w) => w.sport == Sport.gym && !before.contains(w) && w.exercises.isNotEmpty)) {
+      // Every gym day: the program's sets (the user's decision – the plan never changes set counts); the
+      // beginners' regressions swap an exercise, never its sets.
+      for (final w in plan.where((w) => w.sport == Sport.gym)) {
         final t = templates.firstWhere((t) => t.id == w.templateId);
-        for (final (i, e) in w.exercises.indexed) {
-          final full = t.exercises[i].workSets.length;
-          final lower = classifyLift(e.exId, e.name).lower;
-          final extra = lower || p.level == 'beginner' ? 0 : 1;
-          expect(e.workSets.length, inInclusiveRange(full, full + extra), reason: '${w.title} ${e.name}');
-        }
+        expect(w.exercises, isEmpty, reason: w.title);
+        final ex = plannedGymExercises(w, t);
+        expect([for (final e in ex) e.workSets.length], [for (final e in t.exercises) e.workSets.length], reason: '${w.date} ${w.title}');
       }
     }
   });

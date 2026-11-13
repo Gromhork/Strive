@@ -4157,5 +4157,52 @@
   "yourSwimZones": "Your swim zones",
   "swimCssEstimated": "Estimated from your 400 m – add the 200 m for an exact CSS.",
   "swimTestOnly200": "The CSS test needs the 400 m time too – the 200 m alone is not enough.",
-  "swimTestImplausible": "These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m."
+  "swimTestImplausible": "These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.",
+  "wGymDeloadNote4": "Recovery week: same sets as in the program, the weights are entered about 10 % lighter. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.",
+  "wGymLegsEasyNote": "Leg exercises today with all their sets but about 10–15 % lighter (about 4 reps in the tank) – tomorrow’s key session needs fresh legs.",
+  "wGymOverTimeNote": "The program takes about {total} min, {min} min are planned for this day – allow more time or choose a shorter program for this day.",
+  "@wGymOverTimeNote": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "gymAssignTitle": "Assign programs yourself",
+  "gymAssignSub": "Choose which program you train on each gym day – your own or a built-in one. Sets and exercises come from the program; the plan adjusts load and reps in reserve.",
+  "gymAssignAB": "Alternate week A / week B",
+  "gymAssignABSub": "Two weeks that alternate, e.g. A: Push, Pull, Legs · B: Pull, Legs, Push.",
+  "gymWeekA": "Week A",
+  "gymWeekB": "Week B",
+  "gymAssignPick": "Choose program",
+  "gymAssignSearch": "Search programs",
+  "gymAssignNone": "No programs found",
+  "gymAssignNoDays": "Your week has no gym day yet – add one in the week step.",
+  "gymAssignSuggest": "Use suggestion",
+  "gymAssignBuiltin": "Built-in",
+  "gymAssignWarnRepeat": "{program} on two days in a row ({dayPair}) – the same muscles need about 48 h to recover.",
+  "@gymAssignWarnRepeat": {
+    "placeholders": {
+      "program": {
+        "type": "String"
+      },
+      "dayPair": {
+        "type": "String"
+      }
+    }
+  },
+  "gymAssignWarnLegs": "{program} on {day}, the day before your long session – heavy legs make it harder.",
+  "@gymAssignWarnLegs": {
+    "placeholders": {
+      "program": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  }
 }

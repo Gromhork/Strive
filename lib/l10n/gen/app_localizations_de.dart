@@ -5950,4 +5950,61 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get swimTestImplausible => 'Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.';
+
+  @override
+  String get wGymDeloadNote4 => 'Entlastungswoche: gleiche Sätze wie im Programm, die Gewichte sind etwa 10 % leichter eingetragen. Sauber mit etwa 4 Wdh. im Tank trainieren – so baust du Ermüdung ab und kommst stärker zurück.';
+
+  @override
+  String get wGymLegsEasyNote => 'Beinübungen heute mit allen Sätzen, aber etwa 10–15 % leichter (etwa 4 Wdh. im Tank) – die Schlüsseleinheit morgen braucht frische Beine.';
+
+  @override
+  String wGymOverTimeNote(int total, int min) {
+    return 'Das Programm dauert etwa $total min, für diesen Tag sind $min min eingeplant – nimm dir mehr Zeit oder wähle für diesen Tag ein kürzeres Programm.';
+  }
+
+  @override
+  String get gymAssignTitle => 'Programme selbst zuweisen';
+
+  @override
+  String get gymAssignSub => 'Lege fest, welches Programm du an welchem Gym-Tag trainierst – eigene oder vorgefertigte. Sätze und Übungen kommen aus dem Programm, der Plan steuert Gewicht und Wdh. im Tank.';
+
+  @override
+  String get gymAssignAB => 'Woche A / Woche B abwechseln';
+
+  @override
+  String get gymAssignABSub => 'Zwei Wochen im Wechsel, z. B. A: Push, Pull, Beine · B: Pull, Beine, Push.';
+
+  @override
+  String get gymWeekA => 'Woche A';
+
+  @override
+  String get gymWeekB => 'Woche B';
+
+  @override
+  String get gymAssignPick => 'Programm wählen';
+
+  @override
+  String get gymAssignSearch => 'Programme durchsuchen';
+
+  @override
+  String get gymAssignNone => 'Keine Programme gefunden';
+
+  @override
+  String get gymAssignNoDays => 'Deine Woche hat noch keinen Gym-Tag – füge im Wochen-Schritt einen hinzu.';
+
+  @override
+  String get gymAssignSuggest => 'Vorschlag übernehmen';
+
+  @override
+  String get gymAssignBuiltin => 'Vorlage';
+
+  @override
+  String gymAssignWarnRepeat(String program, String dayPair) {
+    return '$program an zwei Tagen hintereinander ($dayPair) – dieselben Muskeln brauchen etwa 48 h Erholung.';
+  }
+
+  @override
+  String gymAssignWarnLegs(String program, String day) {
+    return '$program am $day, dem Tag vor deiner langen Einheit – schwere Beine erschweren sie.';
+  }
 }
