@@ -1839,5 +1839,13 @@
   "gymGroupPull": "Pull",
   "gymGroupLegs": "Beine",
   "gymAssignWarnBackToBack": "{program} in zwei Einheiten hintereinander ({dayPair}) – die anderen Programme warten eine ganze Einheit länger.",
-  "gymAssignWarnFrequency": "{group} nur {freq}× pro Woche, {other} {otherFreq}× – ideal ist jeder Muskel etwa 2× pro Woche. Ohne eigene Zuweisung wechselt der Plan die Programme über die Wochen gleichmäßig ab."
+  "gymAssignWarnFrequency": "{group} nur {freq}× pro Woche, {other} {otherFreq}× – ideal ist jeder Muskel etwa 2× pro Woche. Ohne eigene Zuweisung wechselt der Plan die Programme über die Wochen gleichmäßig ab.",
+  "programDeleteUsed": "{n, plural, =1{Dein Plan verwendet es in 1 anstehenden Einheit – sie behält ihre Übungen.} other{Dein Plan verwendet es in {n} anstehenden Einheiten – sie behalten ihre Übungen.}}",
+  "folderDeleteUsed": "{n, plural, =1{Dein Plan verwendet Programme dieses Ordners in 1 anstehenden Einheit – sie behält ihre Übungen.} other{Dein Plan verwendet Programme dieses Ordners in {n} anstehenden Einheiten – sie behalten ihre Übungen.}}",
+  "programDeleteAssigned": "In deinen Planeinstellungen {weekdays} zugewiesen – der Plan wählt für diese Tage wieder selbst ein Programm.",
+  "restoreKeepsAssigned": "In deinen Planeinstellungen bleibt {weekdays} deine Version zugewiesen.",
+  "planProgramMissing": "Das Programm dieser Einheit wurde gelöscht",
+  "planProgramMissingSub": "Wähle ein Programm oder Übungen dafür – oder starte eine leere Einheit.",
+  "planProgramChoose": "Programm wählen",
+  "startEmptyWorkout": "Leer starten"
 }

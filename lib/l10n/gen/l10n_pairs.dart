@@ -1788,4 +1788,10 @@ const l10nPairs = <(String, String)>[
   ('Legs', 'Beine'),
   ('{program} in two sessions in a row ({dayPair}) – the other programs wait a whole extra session.', '{program} in zwei Einheiten hintereinander ({dayPair}) – die anderen Programme warten eine ganze Einheit länger.'),
   ('{group} only {freq}× a week, {other} {otherFreq}× – ideally every muscle about 2× a week. Without your own assignment the plan rotates the programs evenly over the weeks.', '{group} nur {freq}× pro Woche, {other} {otherFreq}× – ideal ist jeder Muskel etwa 2× pro Woche. Ohne eigene Zuweisung wechselt der Plan die Programme über die Wochen gleichmäßig ab.'),
+  ('Assigned to {weekdays} in your plan settings – the plan chooses the program for these days again.', 'In deinen Planeinstellungen {weekdays} zugewiesen – der Plan wählt für diese Tage wieder selbst ein Programm.'),
+  ('Your plan settings keep your version on {weekdays}.', 'In deinen Planeinstellungen bleibt {weekdays} deine Version zugewiesen.'),
+  ('The program of this workout was deleted', 'Das Programm dieser Einheit wurde gelöscht'),
+  ('Choose a program or exercises for it – or start an empty workout.', 'Wähle ein Programm oder Übungen dafür – oder starte eine leere Einheit.'),
+  ('Choose program', 'Programm wählen'),
+  ('Start empty', 'Leer starten'),
 ];

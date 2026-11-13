@@ -1011,6 +1011,11 @@ class WorkoutTemplate {
   final String? key; // stable id of a built-in program (e.g. 'ul_upper_a'), used by the plan generator
   final int order; // position inside its folder
 
+  /// The built-in program this one was a changed version of, before "restore the originals" gave
+  /// the key ([key]) to the restored original (lib/data/builtin_upgrade.dart). The plan's gym
+  /// rotation counts workouts of it as that program, so it continues after a restore.
+  final String? origKey;
+
   WorkoutTemplate({
     required this.id,
     required this.name,
@@ -1024,6 +1029,7 @@ class WorkoutTemplate {
     this.steps = const [],
     this.key,
     this.order = 0,
+    this.origKey,
   });
 
   /// Null for a document that is not a program (no sport / name, e.g. a stray partial write).
@@ -1043,6 +1049,7 @@ class WorkoutTemplate {
     steps: _maps(m['steps']).map(WorkoutStep.fromMap).toList(),
     key: _sn(m['key']),
     order: _i(m['order']),
+    origKey: _sn(m['origKey']),
   );
 
   WorkoutTemplate copyWith({String? name, String? folder, int? order, List<GymExercise>? exercises, List<WorkoutStep>? steps}) =>
@@ -1059,6 +1066,7 @@ class WorkoutTemplate {
         steps: steps ?? this.steps,
         key: key,
         order: order ?? this.order,
+        origKey: origKey,
       );
 
   Map<String, dynamic> toMap() => {
@@ -1073,6 +1081,7 @@ class WorkoutTemplate {
     if (steps.isNotEmpty) 'steps': steps.map((e) => e.toMap()).toList(),
     if (key != null) 'key': key,
     'order': order,
+    if (origKey != null) 'origKey': origKey,
   };
 
   int get estimatedMinutes {

@@ -54,18 +54,25 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
   late final _km = TextEditingController(text: widget.existing?.distanceKm == null ? '' : Units.num(widget.existing!.distanceKm!));
   late int _min = widget.existing?.durationMin ?? 45;
   late String _intensity = widget.existing?.intensity ?? 'easy';
-  late String? _templateId = widget.existing?.templateId;
+  // The workout's program – also when found again after it was deleted ([plannedProgramOf]).
+  late final String? _initialTemplateId = _programOfExisting()?.id ?? widget.existing?.templateId;
+  late String? _templateId = _initialTemplateId;
   late List<WorkoutStep> _steps = [...?widget.existing?.steps];
   late bool _isKey = widget.existing?.isKey ?? false;
   // Gym: exercises of this workout. `_customEx` = adjusted for this day only.
   late List<GymExercise> _gymEx = _initialGymExercises();
   late bool _customEx = widget.existing?.exercises.isNotEmpty ?? false;
 
+  WorkoutTemplate? _programOfExisting() {
+    final ex = widget.existing;
+    return ex == null ? null : plannedProgramOf(ex, ref.read(templateListProvider));
+  }
+
   List<GymExercise> _initialGymExercises() {
     final ex = widget.existing;
     if (ex == null || ex.sport != Sport.gym) return [];
     if (ex.exercises.isNotEmpty) return [for (final e in ex.exercises) e.copy(resetDone: true)];
-    final t = ref.read(templateListProvider).where((t) => t.id == ex.templateId).firstOrNull;
+    final t = _programOfExisting();
     // The program with the plan's day adaptations ([PlannedWorkout.gymMods]) – what the workout shows.
     final goal = ref.read(profileOrDefaultProvider).athlete.gymGoal;
     return [for (final e in plannedGymExercises(ex, t, gymGoal: goal)) e.copy(resetDone: true)];
@@ -143,7 +150,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
       // The plan's day adaptations stay while the workout keeps following the same program; the load
       // ones ([gymLoadMods]: lighter legs, race window) also with exercises adjusted here.
       gymMods: [
-        if (_sport == Sport.gym && widget.existing != null && _templateId == widget.existing!.templateId)
+        if (_sport == Sport.gym && widget.existing != null && _templateId == _initialTemplateId)
           for (final m in widget.existing!.gymMods)
             if (!_customEx || gymLoadMods.contains(m)) m,
       ],

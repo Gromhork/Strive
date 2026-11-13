@@ -14,10 +14,40 @@ import 'gym_session_page.dart';
 import 'manual_entry_page.dart';
 import '../../widgets/segments.dart';
 import '../../services/plan_exercises.dart';
+import '../calendar/plan_editor.dart' show showPlanEditor;
 
-/// Starts a planned workout from the calendar / home screen.
+/// Starts a planned workout from the calendar / home screen. A gym workout whose program was
+/// deleted ([plannedProgramMissing]) asks first: choose a program (the workout's editor) or start
+/// an empty workout – never an unexplained empty session.
 Future<void> startPlanned(BuildContext context, WidgetRef ref, PlannedWorkout p) async {
-  final template = ref.read(templateListProvider).where((t) => t.id == p.templateId).firstOrNull;
+  final templates = ref.read(templateListProvider);
+  final template = plannedProgramOf(p, templates);
+  if (plannedProgramMissing(p, templates)) {
+    final l = context.l10n;
+    final choice = await showDialog<String>(
+      context: context,
+      builder:
+          (c) => AlertDialog(
+            title: Text(l.planProgramMissing),
+            content: Text(l.planProgramMissingSub),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(c), child: Text(l.cancel)),
+              TextButton(key: const ValueKey('startEmpty'), onPressed: () => Navigator.pop(c, 'empty'), child: Text(l.startEmptyWorkout)),
+              FilledButton(
+                key: const ValueKey('chooseProgram'),
+                onPressed: () => Navigator.pop(c, 'choose'),
+                child: Text(l.planProgramChoose),
+              ),
+            ],
+          ),
+    );
+    if (choice == null || !context.mounted) return;
+    if (choice == 'choose') {
+      await showPlanEditor(context, ref, existing: p);
+      return;
+    }
+  }
+  if (!context.mounted) return;
   if (p.sport == Sport.gym) {
     await startGym(
       context,

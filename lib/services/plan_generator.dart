@@ -507,7 +507,7 @@ class PlanGenerator {
     final history = [
       for (final (day, id) in [...gymHistory]..sort((x, y) => x.$1.compareTo(y.$1)))
         if (dayOnly(day).isBefore(dayOnly(start)))
-          if (templates.any((t) => t.id == id && t.sport == Sport.gym)) (dayOnly(day), _normRef('id:$id')),
+          if (templates.any((t) => t.id == id && t.sport == Sport.gym)) (dayOnly(day), _historyRef(id)),
     ];
     gymQueue.seed(history);
     final abOffset = _abOffset(history, startOfWeek(start));
@@ -3470,6 +3470,18 @@ class PlanGenerator {
       if (_template(k)?.id == t.id) return k;
     }
     return ref;
+  }
+
+  /// The rotation reference of a gym workout done with program [id] ([gymHistory]): [_normRef], but
+  /// the athlete's changed version of a built-in that "restore the originals" turned into an own
+  /// program ([WorkoutTemplate.origKey]) still counts as that built-in – the rotation continues
+  /// after a restore (no Pull right after Pull) – unless the plan settings assign it by itself.
+  String _historyRef(String id) {
+    final norm = _normRef('id:$id');
+    final base = _templateOfRef('id:$id')?.origKey;
+    if (base == null || norm != 'id:$id') return norm;
+    final assigned = a.gymAssign && [...a.gymPlanA.values, if (a.gymAB) ...a.gymPlanB.values].any((r) => _normRef(r) == norm);
+    return assigned ? norm : base;
   }
 
   /// The athlete's program behind [ref] (built-in key or `id:<template id>`).

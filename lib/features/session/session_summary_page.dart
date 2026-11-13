@@ -18,6 +18,7 @@ import '../../services/plan_match.dart';
 import '../../services/compliance.dart' show ComplianceScale, linkedPlannedSets, plannedKm;
 import '../../services/gym_tools.dart' show sessionRpeFromEfforts;
 import '../../services/insights.dart';
+import '../../services/plan_exercises.dart' show plannedProgramOf;
 import '../../services/workout_store.dart';
 import '../../widgets/common.dart';
 import '../../widgets/rpe_picker.dart';
@@ -119,7 +120,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
   (PlannedWorkout?, int?) _linkPlan(Session s, List<PlannedWorkout> plans, List<WorkoutTemplate> templates, String gymGoal) {
     final plan = matchPlan(s, plans);
     if (plan == null) return (null, null);
-    final t = templates.where((t) => t.id == plan.templateId).firstOrNull;
+    final t = plannedProgramOf(plan, templates);
     final sets = linkedPlannedSets(s, plan, t, gymGoal: gymGoal);
     return (plan, sets == s.plannedSets ? null : sets);
   }

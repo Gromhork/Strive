@@ -85,6 +85,16 @@ final Map<String, Set<String>> _builtinNames = () {
   return out;
 }();
 
+/// Keys of the built-in programs shipped with the name [name] (any language, ignoring case) –
+/// several for a shared name ("Beine": the PPL and the bro split's leg day).
+Set<String> builtinKeysNamed(String name) {
+  final n = name.trim().toLowerCase();
+  return {
+    for (final e in _builtinNames.entries)
+      if (e.value.any((x) => x.toLowerCase() == n)) e.key,
+  };
+}
+
 /// The built-in programs (English, general goal) by key.
 final Map<String, WorkoutTemplate> _builtinByKey = {for (final t in defaultTemplates(() => '')) t.key!: t};
 
@@ -205,7 +215,12 @@ BuiltinRestore planBuiltinRestore(
       final names = {for (final n in _builtinNames[b.key]!) n.toLowerCase()};
       final clash = names.contains(t.name.trim().toLowerCase());
       keep.add(
-        WorkoutTemplate.fromMap(t.id, {...t.toMap(), 'key': null, if (clash) 'name': unique(t.folder, '${t.name.trim()} ($ownSuffix)')}),
+        WorkoutTemplate.fromMap(t.id, {
+          ...t.toMap(),
+          'key': null,
+          'origKey': b.key,
+          if (clash) 'name': unique(t.folder, '${t.name.trim()} ($ownSuffix)'),
+        }),
       );
     }
     // The original keeps its shipped name; an unrelated own program of that name in the
@@ -214,4 +229,47 @@ BuiltinRestore planBuiltinRestore(
     add.add(WorkoutTemplate.fromMap(b.id, {...b.toMap(), 'folder': folder}));
   }
   return BuiltinRestore(add: add, keep: keep, changed: changed);
+}
+
+/// Athlete-data changes ([AthleteData.merge]) that keep the program assignment of the plan
+/// settings ([AthleteData.gymPlanA] / [AthleteData.gymPlanB]) on the version the athlete picked:
+/// a `key:<k>` reference stands for the athlete's program with that key, and restoring the
+/// originals ([plan]) moves the key from their changed version to the restored original – the
+/// reference becomes `id:<their version>`. Null when no assignment is affected.
+Map<String, dynamic>? restoreAssignmentPatch(AthleteData a, BuiltinRestore plan, List<WorkoutTemplate> existing) {
+  final kept = {for (final t in plan.keep) t.id};
+  // The program a `key:` reference stood for so far: the first with that key (gymProgramOf).
+  final target = <String, String>{
+    for (final k in plan.changed)
+      if (existing.where((t) => t.key == k).firstOrNull case final t? when kept.contains(t.id)) k: t.id,
+  };
+  Map<int, String>? rewrite(Map<int, String> week) {
+    var changed = false;
+    final out = <int, String>{};
+    for (final e in week.entries) {
+      final id = e.value.startsWith('key:') ? target[e.value.substring(4)] : null;
+      changed |= id != null;
+      out[e.key] = id != null ? 'id:$id' : e.value;
+    }
+    return changed ? out : null;
+  }
+
+  final ra = rewrite(a.gymPlanA), rb = rewrite(a.gymPlanB);
+  if (ra == null && rb == null) return null;
+  return {if (ra != null) 'gymPlanA': ra, if (rb != null) 'gymPlanB': rb};
+}
+
+/// Weekdays (1..7, assignment on) whose program [restoreAssignmentPatch] keeps on the athlete's
+/// version.
+List<int> restoreKeptDays(AthleteData a, Map<String, dynamic>? patch) {
+  if (patch == null || !a.gymAssign) return const [];
+  final days = <int>{};
+  for (final (k, old) in [('gymPlanA', a.gymPlanA), if (a.gymAB) ('gymPlanB', a.gymPlanB)]) {
+    final now = patch[k] as Map<int, String>?;
+    if (now == null) continue;
+    for (final e in now.entries) {
+      if (old[e.key] != e.value) days.add(e.key);
+    }
+  }
+  return days.toList()..sort();
 }

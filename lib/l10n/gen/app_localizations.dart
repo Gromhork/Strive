@@ -11134,6 +11134,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{group} only {freq}× a week, {other} {otherFreq}× – ideally every muscle about 2× a week. Without your own assignment the plan rotates the programs evenly over the weeks.'**
   String gymAssignWarnFrequency(String group, String freq, String other, String otherFreq);
+
+  /// No description provided for @programDeleteUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{Your plan uses it in 1 upcoming workout – that workout keeps its exercises.} other{Your plan uses it in {n} upcoming workouts – they keep their exercises.}}'**
+  String programDeleteUsed(int n);
+
+  /// No description provided for @folderDeleteUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{Your plan uses programs of this folder in 1 upcoming workout – it keeps its exercises.} other{Your plan uses programs of this folder in {n} upcoming workouts – they keep their exercises.}}'**
+  String folderDeleteUsed(int n);
+
+  /// No description provided for @programDeleteAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to {weekdays} in your plan settings – the plan chooses the program for these days again.'**
+  String programDeleteAssigned(String weekdays);
+
+  /// No description provided for @restoreKeepsAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan settings keep your version on {weekdays}.'**
+  String restoreKeepsAssigned(String weekdays);
+
+  /// No description provided for @planProgramMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The program of this workout was deleted'**
+  String get planProgramMissing;
+
+  /// No description provided for @planProgramMissingSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a program or exercises for it – or start an empty workout.'**
+  String get planProgramMissingSub;
+
+  /// No description provided for @planProgramChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose program'**
+  String get planProgramChoose;
+
+  /// No description provided for @startEmptyWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Start empty'**
+  String get startEmptyWorkout;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

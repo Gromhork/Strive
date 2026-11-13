@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:strive/core/format.dart';
 import 'package:strive/core/sport.dart';
 import 'package:strive/core/theme.dart';
 import 'package:strive/data/builtin_upgrade.dart';
@@ -11,6 +12,7 @@ import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/data/repository.dart';
 import 'package:strive/features/train/program_order.dart';
+import 'package:strive/features/train/template_editor_page.dart';
 import 'package:strive/features/train/train_page.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
@@ -28,6 +30,21 @@ class _FakeRepo extends Repository {
   void saveTemplate(WorkoutTemplate t) => saved.add([t]);
   @override
   void saveFolderOrder(List<String> folders) => folderOrders.add(folders);
+  final deleted = <String>[];
+  final planUpdates = <String, Map<String, dynamic>>{};
+  final profiles = <UserProfile>[];
+  @override
+  Future<void> deleteTemplates(Iterable<String> ids) async => deleted.addAll(ids);
+  @override
+  void deleteTemplate(String id) => deleted.add(id);
+  @override
+  Future<void> updateMany({
+    Map<String, Map<String, dynamic>> plans = const {},
+    Map<String, Map<String, dynamic>> templates = const {},
+    Map<String, Map<String, dynamic>> sessions = const {},
+  }) async => planUpdates.addAll(plans);
+  @override
+  void saveProfile(UserProfile p) => profiles.add(p);
 }
 
 List<WorkoutTemplate> _defaults({bool de = true}) {
@@ -195,6 +212,8 @@ void main() {
       List<WorkoutTemplate> templates, {
       List<String> folderOrder = const [],
       Size size = const Size(900, 2600),
+      List<PlannedWorkout> plans = const [],
+      AthleteData athlete = const AthleteData(),
     }) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
@@ -207,10 +226,10 @@ void main() {
           overrides: [
             prefsProvider.overrideWithValue(prefs),
             repoProvider.overrideWithValue(repo),
-            profileProvider.overrideWith((ref) => Stream.value(UserProfile(folderOrder: folderOrder))),
+            profileProvider.overrideWith((ref) => Stream.value(UserProfile(folderOrder: folderOrder, athlete: athlete))),
             templatesProvider.overrideWith((ref) => Stream.value(templates)),
             sessionsProvider.overrideWith((ref) => Stream.value(const <Session>[])),
-            plansProvider.overrideWith((ref) => Stream.value(const <PlannedWorkout>[])),
+            plansProvider.overrideWith((ref) => Stream.value(plans)),
             goalsProvider.overrideWith((ref) => Stream.value(const <Goal>[])),
           ],
           child: MaterialApp(
@@ -288,6 +307,171 @@ void main() {
       expect(controller.offset, greaterThan(50));
       await g.up();
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('R7-3: a program held still at the bottom edge keeps the list scrolling to its end', (tester) async {
+      await pump(tester, _defaults(), size: const Size(500, 900), folderOrder: folders);
+      await tester.tap(find.text('Bro-Split'));
+      await tester.pumpAndSettle();
+      final controller = PrimaryScrollController.of(tester.element(find.byType(CustomScrollView)));
+      final start = tester.getCenter(find.text('Rücken'));
+      final g = await tester.startGesture(start);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 100));
+      for (var i = 1; i <= 10; i++) {
+        await g.moveTo(Offset(start.dx, start.dy + (885 - start.dy) * i / 10));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      // The finger rests at the edge: no further pointer moves – the list keeps scrolling to its end.
+      for (var i = 0; i < 80; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(controller.offset, controller.position.maxScrollExtent);
+      expect(controller.offset, greaterThan(300));
+      await g.up();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('R7-3: released while the list scrolls under the resting finger, the program lands under the finger', (tester) async {
+      final repo = await pump(tester, _defaults(), size: const Size(500, 900), folderOrder: folders);
+      await tester.tap(find.text('Bro-Split'));
+      await tester.pumpAndSettle();
+      final controller = PrimaryScrollController.of(tester.element(find.byType(CustomScrollView)));
+      const finger = Offset(250, 885);
+      final start = tester.getCenter(find.text('Rücken'));
+      final g = await tester.startGesture(start);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 100));
+      for (var i = 1; i <= 10; i++) {
+        await g.moveTo(Offset.lerp(start, finger, i / 10)!);
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      final before = controller.offset;
+      for (var i = 0; i < 40 && controller.offset < before + 250; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(controller.offset, greaterThan(before + 200));
+      // The folders under the finger now – or one auto-scroll step (≤ 20 px) before: the list
+      // ignores pointers while it animates, so the drag re-checks its target between the steps. The
+      // rows under the finger at its last real move scrolled away long ago.
+      String? folderAt(Offset o) {
+        for (final f in folders) {
+          final card = find.byKey(ValueKey('f-$f'));
+          if (card.evaluate().isNotEmpty && tester.getRect(card).contains(o)) return f;
+        }
+        return null;
+      }
+
+      final candidates = {folderAt(finger), folderAt(finger - const Offset(0, 21))}..remove(null);
+      expect(candidates, isNotEmpty);
+      expect(candidates, isNot(contains('Bro-Split')));
+      await g.up();
+      await tester.pumpAndSettle();
+      final moved = repo.saved.expand((l) => l).where((t) => t.name == 'Rücken').toList();
+      expect(moved, isNotEmpty);
+      expect(candidates, contains(moved.last.folder));
+    });
+
+    testWidgets('R7-1: deleting a program the plan uses warns and keeps the workouts\' exercises', (tester) async {
+      final list = _defaults();
+      final legs = list.firstWhere((t) => t.key == 'ppl_legs');
+      final today = dayOnly(DateTime.now());
+      final plans = [
+        for (var i = 0; i < 3; i++)
+          PlannedWorkout(id: 'w$i', date: addDays(today, 2 + 7 * i), sport: Sport.gym, title: legs.name, templateId: legs.id),
+      ];
+      final repo = await pump(
+        tester,
+        list,
+        plans: plans,
+        athlete: const AthleteData().merge({
+          'gymAssign': true,
+          'gymPlanA': {3: 'key:ppl_legs', 5: 'key:ppl_push'},
+        }),
+      );
+      await tester.tap(find.text('Push Pull Beine'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ValueKey('programMenu-${legs.id}')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Löschen').last);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Dein Plan verwendet es in 3 anstehenden Einheiten'), findsOneWidget);
+      expect(find.textContaining('In deinen Planeinstellungen Mi zugewiesen'), findsOneWidget);
+      await tester.tap(find.text('Löschen').last);
+      await tester.pumpAndSettle();
+      expect(repo.deleted, [legs.id]);
+      expect(repo.planUpdates.keys.toSet(), {'w0', 'w1', 'w2'});
+      expect((repo.planUpdates['w0']!['exercises'] as List).length, legs.exercises.length);
+      expect(repo.profiles.last.athlete.gymPlanA, {5: 'key:ppl_push'});
+    });
+
+    testWidgets('R7-1: a program no plan uses is deleted without a plan notice', (tester) async {
+      final list = _defaults();
+      final legs = list.firstWhere((t) => t.key == 'ppl_legs');
+      final repo = await pump(tester, list);
+      await tester.tap(find.text('Push Pull Beine'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ValueKey('programMenu-${legs.id}')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Löschen').last);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Dein Plan'), findsNothing);
+      await tester.tap(find.text('Löschen').last);
+      await tester.pumpAndSettle();
+      expect(repo.deleted, [legs.id]);
+      expect(repo.planUpdates, isEmpty);
+      expect(repo.profiles, isEmpty);
+    });
+
+    testWidgets('R7-1: deleting a whole folder names the plan workouts and keeps their exercises', (tester) async {
+      final list = _defaults();
+      final ppl = list.where((t) => t.folder == 'Push Pull Beine').toList();
+      final today = dayOnly(DateTime.now());
+      final plans = [
+        for (final (i, t) in ppl.indexed)
+          PlannedWorkout(id: 'w$i', date: addDays(today, i), sport: Sport.gym, title: t.name, templateId: t.id),
+      ];
+      final repo = await pump(tester, list, plans: plans);
+      await tester.tap(find.byKey(const ValueKey('folderMenu-Push Pull Beine')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Löschen'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Dein Plan verwendet Programme dieses Ordners in 3 anstehenden Einheiten'), findsOneWidget);
+      await tester.tap(find.text('Alles löschen'));
+      await tester.pumpAndSettle();
+      expect(repo.deleted.toSet(), {for (final t in ppl) t.id});
+      expect(repo.planUpdates.keys.toSet(), {'w0', 'w1', 'w2'});
+    });
+
+    testWidgets('R7-1 / R5 / R7-7: restoring relinks orphaned workouts and keeps assigned own versions', (tester) async {
+      final list = [
+        for (final t in _defaults())
+          if (t.key != 'ppl_legs') t.key == 'ppl_push' ? _edited(t) : t,
+      ];
+      final mine = list.firstWhere((t) => t.key == 'ppl_push');
+      final plans = [
+        PlannedWorkout(id: 'orphan', date: dayOnly(DateTime.now()), sport: Sport.gym, title: 'Beine', templateId: 'deletedLegs'),
+      ];
+      final repo = await pump(
+        tester,
+        list,
+        plans: plans,
+        athlete: const AthleteData().merge({
+          'gymAssign': true,
+          'gymPlanA': {1: 'key:ppl_push', 3: 'key:ppl_pull'},
+        }),
+      );
+      await tester.tap(find.byKey(const ValueKey('folderMenu-Push Pull Beine')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Standardprogramme wiederherstellen'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('In deinen Planeinstellungen bleibt Mo deine Version zugewiesen.'), findsOneWidget);
+      await tester.tap(find.text('Wiederherstellen'));
+      await tester.pumpAndSettle();
+      final legs = repo.saved.last.firstWhere((t) => t.key == 'ppl_legs');
+      expect(repo.planUpdates, {
+        'orphan': {'templateId': legs.id},
+      });
+      expect(repo.profiles.last.athlete.gymPlanA, {1: 'id:${mine.id}', 3: 'key:ppl_pull'});
+      expect(repo.saved.last.firstWhere((t) => t.id == mine.id).origKey, 'ppl_push');
     });
 
     testWidgets('folder menu "Nach unten" moves it one place down', (tester) async {
@@ -390,6 +574,134 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.saved.last.length, _defaults().length);
       expect(repo.saved.last.every(isUntouchedBuiltin), isTrue);
+    });
+  });
+
+  group('program editor delete (R7-1 / R2)', () {
+    /// Opens the editor of [program] on top of a plain page, like the Train tab does.
+    Future<_FakeRepo> pumpEditor(
+      WidgetTester tester,
+      List<WorkoutTemplate> templates,
+      WorkoutTemplate program, {
+      List<PlannedWorkout> plans = const [],
+      AthleteData athlete = const AthleteData(),
+    }) async {
+      tester.view.physicalSize = const Size(900, 2000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final repo = _FakeRepo();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            prefsProvider.overrideWithValue(prefs),
+            repoProvider.overrideWithValue(repo),
+            profileProvider.overrideWith((ref) => Stream.value(UserProfile(athlete: athlete))),
+            templatesProvider.overrideWith((ref) => Stream.value(templates)),
+            sessionsProvider.overrideWith((ref) => Stream.value(const <Session>[])),
+            plansProvider.overrideWith((ref) => Stream.value(plans)),
+            goalsProvider.overrideWith((ref) => Stream.value(const <Goal>[])),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.dark(),
+            locale: const Locale('de'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: Builder(
+              builder:
+                  (context) => Scaffold(
+                    body: TextButton(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TemplateEditorPage(template: program))),
+                      child: const Text('open'),
+                    ),
+                  ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TemplateEditorPage), findsOneWidget);
+      return repo;
+    }
+
+    Future<void> openDelete(WidgetTester tester) async {
+      await tester.tap(find.descendant(of: find.byType(AppBar), matching: find.byType(PopupMenuButton<String>)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Löschen').last);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('deleting a program the plan uses from its editor warns, keeps the exercises and drops the assignment', (tester) async {
+      final list = _defaults();
+      final legs = list.firstWhere((t) => t.key == 'ppl_legs');
+      final today = dayOnly(DateTime.now());
+      final plans = [
+        for (var i = 0; i < 2; i++)
+          PlannedWorkout(id: 'w$i', date: addDays(today, 2 + 7 * i), sport: Sport.gym, title: legs.name, templateId: legs.id),
+      ];
+      final repo = await pumpEditor(
+        tester,
+        list,
+        legs,
+        plans: plans,
+        athlete: const AthleteData().merge({
+          'gymAssign': true,
+          'gymPlanA': {3: 'key:ppl_legs', 5: 'key:ppl_push'},
+          'gymPlanB': {3: 'id:${legs.id}'},
+        }),
+      );
+      await openDelete(tester);
+      expect(find.textContaining('Dein Plan verwendet es in 2 anstehenden Einheiten'), findsOneWidget);
+      expect(find.textContaining('In deinen Planeinstellungen Mi zugewiesen'), findsOneWidget);
+      await tester.tap(find.text('Löschen').last);
+      await tester.pumpAndSettle();
+      expect(repo.deleted, [legs.id]);
+      expect(repo.planUpdates.keys.toSet(), {'w0', 'w1'});
+      expect((repo.planUpdates['w0']!['exercises'] as List).length, legs.exercises.length);
+      expect(repo.profiles.last.athlete.gymPlanA, {5: 'key:ppl_push'});
+      expect(repo.profiles.last.athlete.gymPlanB, isEmpty);
+      // The editor closes once its program is gone.
+      expect(find.byType(TemplateEditorPage), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('cancelling the editor delete changes nothing and keeps the editor open', (tester) async {
+      final list = _defaults();
+      final legs = list.firstWhere((t) => t.key == 'ppl_legs');
+      final plans = [
+        PlannedWorkout(id: 'w0', date: addDays(dayOnly(DateTime.now()), 1), sport: Sport.gym, title: legs.name, templateId: legs.id),
+      ];
+      final repo = await pumpEditor(tester, list, legs, plans: plans);
+      await openDelete(tester);
+      expect(find.textContaining('Dein Plan verwendet es in 1 anstehenden Einheit'), findsOneWidget);
+      await tester.tap(find.text('Abbrechen'));
+      await tester.pumpAndSettle();
+      expect(repo.deleted, isEmpty);
+      expect(repo.planUpdates, isEmpty);
+      expect(repo.profiles, isEmpty);
+      expect(find.byType(TemplateEditorPage), findsOneWidget);
+    });
+
+    testWidgets('a program no plan uses is deleted from its editor without a plan notice', (tester) async {
+      final list = _defaults();
+      final legs = list.firstWhere((t) => t.key == 'ppl_legs');
+      final repo = await pumpEditor(tester, list, legs);
+      await openDelete(tester);
+      expect(find.textContaining('Dein Plan'), findsNothing);
+      await tester.tap(find.text('Löschen').last);
+      await tester.pumpAndSettle();
+      expect(repo.deleted, [legs.id]);
+      expect(repo.planUpdates, isEmpty);
+      expect(repo.profiles, isEmpty);
+      expect(find.byType(TemplateEditorPage), findsNothing);
     });
   });
 }
