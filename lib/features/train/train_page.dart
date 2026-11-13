@@ -5,7 +5,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/format.dart';
 import '../../core/sport.dart';
@@ -13,15 +12,14 @@ import '../../core/theme.dart';
 import '../../data/builtin_upgrade.dart';
 import '../../data/default_programs.dart';
 import '../../data/models.dart';
-import '../../data/repository.dart';
 import '../../providers.dart';
 import '../../services/plan_exercises.dart';
-import '../../services/program_deletion.dart';
 import '../../widgets/common.dart';
 import '../session/manual_entry_page.dart';
 import '../session/start_helpers.dart';
 import '../session/step_text.dart';
 import 'exercise_picker.dart';
+import 'program_delete_actions.dart';
 import 'program_order.dart';
 import 'program_preview_page.dart';
 import 'template_editor_page.dart';
@@ -463,7 +461,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
       case 'delete':
         if (!mounted) return;
         final ids = {for (final t in inside) t.id};
-        final usage = await _deletionOf(ref, ids);
+        final usage = await programDeletionOf(ref, ids);
         if (!mounted) return;
         final choice = await showDialog<String>(
           context: context,
@@ -473,7 +471,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                 content: Text(
                   [
                     inside.isEmpty ? l.deleteFolderEmpty : l.deleteFolderBody(inside.length),
-                    ..._deletionNotes(context, usage, folder: true),
+                    ...programDeletionNotes(context, usage, folder: true),
                   ].join('\n\n'),
                 ),
                 actions: [
@@ -490,7 +488,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
         if (choice == 'keep') {
           repo.saveTemplates([for (final t in inside) t.copyWith(folder: '')]);
         } else {
-          _deletePrograms(repo, ref.read(profileOrDefaultProvider), ids, usage);
+          deletePrograms(repo, ref.read(profileOrDefaultProvider), ids, usage);
         }
         _saveFolderOrder(full.where((f) => f != folder).toList());
     }
@@ -529,7 +527,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     final repo = ref.read(repoProvider)!;
     final existing = ref.read(templateListProvider);
     final profile = ref.read(profileOrDefaultProvider);
-    final plans = await _plans(ref);
+    final plans = await loadedPlans(ref);
     if (!mounted) return;
     repo.saveTemplates(plan.writes);
     final kept = {for (final t in plan.keep) t.id: t};
@@ -1127,13 +1125,7 @@ class _TemplateTile extends ConsumerWidget {
           onMoveToFolder();
         case 'delete':
           // The plan keeps the workouts of this program ([programDeletion]) – the dialog says so.
-          final usage = await _deletionOf(ref, {t.id});
-          if (!context.mounted) return;
-          final profile = ref.read(profileOrDefaultProvider);
-          final body = [t.name, ..._deletionNotes(context, usage, folder: false)].join('\n\n');
-          if (await confirm(context, l.deleteProgram, body: body, ok: l.delete, danger: true)) {
-            _deletePrograms(repo, profile, {t.id}, usage);
-          }
+          await confirmDeleteProgram(context, ref, t);
       }
     }
 
@@ -1207,48 +1199,4 @@ class _TemplateTile extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// What deleting the programs [ids] does to the plan ([programDeletion]).
-Future<ProgramDeletion> _deletionOf(WidgetRef ref, Set<String> ids) async {
-  final templates = ref.read(templateListProvider);
-  final athlete = ref.read(profileOrDefaultProvider).athlete;
-  return programDeletion(ids, templates: templates, plans: await _plans(ref), athlete: athlete, today: DateTime.now());
-}
-
-/// The planned workouts (the Train tab keeps them loaded, [TrainPage]) – awaited while they are
-/// still loading, so a delete or restore never misses the plan.
-Future<List<PlannedWorkout>> _plans(WidgetRef ref) async {
-  final now = ref.read(plansProvider);
-  if (now.hasValue) return now.requireValue;
-  try {
-    return await ref.read(plansProvider.future).timeout(const Duration(seconds: 5));
-  } catch (_) {
-    return ref.read(planListProvider);
-  }
-}
-
-/// The delete confirmation's lines about the plan: upcoming workouts using the programs and gym
-/// days assigned to them.
-List<String> _deletionNotes(BuildContext context, ProgramDeletion d, {required bool folder}) {
-  final l = context.l10n;
-  return [
-    if (d.upcoming > 0) folder ? l.folderDeleteUsed(d.upcoming) : l.programDeleteUsed(d.upcoming),
-    if (d.assignedDays.isNotEmpty) l.programDeleteAssigned(weekdayNames(context, d.assignedDays)),
-  ];
-}
-
-/// Deletes the programs [ids]; the planned workouts using them keep their exercises and their
-/// assignments in the plan settings go ([d]).
-void _deletePrograms(Repository repo, UserProfile profile, Set<String> ids, ProgramDeletion d) {
-  if (d.plans.isNotEmpty) repo.updateMany(plans: d.plans).ignore();
-  if (d.athlete case final patch?) repo.saveProfile(profile.copyWith(athlete: profile.athlete.merge(patch)));
-  repo.deleteTemplates(ids).ignore();
-}
-
-/// Short weekday names of [days] (1 = Monday): "Mo, Mi".
-String weekdayNames(BuildContext context, List<int> days) {
-  final f = DateFormat.E(context.localeName);
-  final monday = startOfWeek(DateTime.now());
-  return days.map((d) => f.format(addDays(monday, d - 1))).join(', ');
 }

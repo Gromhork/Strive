@@ -12,6 +12,7 @@ import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/data/repository.dart';
 import 'package:strive/features/train/program_order.dart';
+import 'package:strive/features/train/template_editor_page.dart';
 import 'package:strive/features/train/train_page.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
@@ -573,6 +574,134 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.saved.last.length, _defaults().length);
       expect(repo.saved.last.every(isUntouchedBuiltin), isTrue);
+    });
+  });
+
+  group('program editor delete (R7-1 / R2)', () {
+    /// Opens the editor of [program] on top of a plain page, like the Train tab does.
+    Future<_FakeRepo> pumpEditor(
+      WidgetTester tester,
+      List<WorkoutTemplate> templates,
+      WorkoutTemplate program, {
+      List<PlannedWorkout> plans = const [],
+      AthleteData athlete = const AthleteData(),
+    }) async {
+      tester.view.physicalSize = const Size(900, 2000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final repo = _FakeRepo();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            prefsProvider.overrideWithValue(prefs),
+            repoProvider.overrideWithValue(repo),
+            profileProvider.overrideWith((ref) => Stream.value(UserProfile(athlete: athlete))),
+            templatesProvider.overrideWith((ref) => Stream.value(templates)),
+            sessionsProvider.overrideWith((ref) => Stream.value(const <Session>[])),
+            plansProvider.overrideWith((ref) => Stream.value(plans)),
+            goalsProvider.overrideWith((ref) => Stream.value(const <Goal>[])),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.dark(),
+            locale: const Locale('de'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: Builder(
+              builder:
+                  (context) => Scaffold(
+                    body: TextButton(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TemplateEditorPage(template: program))),
+                      child: const Text('open'),
+                    ),
+                  ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TemplateEditorPage), findsOneWidget);
+      return repo;
+    }
+
+    Future<void> openDelete(WidgetTester tester) async {
+      await tester.tap(find.descendant(of: find.byType(AppBar), matching: find.byType(PopupMenuButton<String>)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Löschen').last);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('deleting a program the plan uses from its editor warns, keeps the exercises and drops the assignment', (tester) async {
+      final list = _defaults();
+      final legs = list.firstWhere((t) => t.key == 'ppl_legs');
+      final today = dayOnly(DateTime.now());
+      final plans = [
+        for (var i = 0; i < 2; i++)
+          PlannedWorkout(id: 'w$i', date: addDays(today, 2 + 7 * i), sport: Sport.gym, title: legs.name, templateId: legs.id),
+      ];
+      final repo = await pumpEditor(
+        tester,
+        list,
+        legs,
+        plans: plans,
+        athlete: const AthleteData().merge({
+          'gymAssign': true,
+          'gymPlanA': {3: 'key:ppl_legs', 5: 'key:ppl_push'},
+          'gymPlanB': {3: 'id:${legs.id}'},
+        }),
+      );
+      await openDelete(tester);
+      expect(find.textContaining('Dein Plan verwendet es in 2 anstehenden Einheiten'), findsOneWidget);
+      expect(find.textContaining('In deinen Planeinstellungen Mi zugewiesen'), findsOneWidget);
+      await tester.tap(find.text('Löschen').last);
+      await tester.pumpAndSettle();
+      expect(repo.deleted, [legs.id]);
+      expect(repo.planUpdates.keys.toSet(), {'w0', 'w1'});
+      expect((repo.planUpdates['w0']!['exercises'] as List).length, legs.exercises.length);
+      expect(repo.profiles.last.athlete.gymPlanA, {5: 'key:ppl_push'});
+      expect(repo.profiles.last.athlete.gymPlanB, isEmpty);
+      // The editor closes once its program is gone.
+      expect(find.byType(TemplateEditorPage), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('cancelling the editor delete changes nothing and keeps the editor open', (tester) async {
+      final list = _defaults();
+      final legs = list.firstWhere((t) => t.key == 'ppl_legs');
+      final plans = [
+        PlannedWorkout(id: 'w0', date: addDays(dayOnly(DateTime.now()), 1), sport: Sport.gym, title: legs.name, templateId: legs.id),
+      ];
+      final repo = await pumpEditor(tester, list, legs, plans: plans);
+      await openDelete(tester);
+      expect(find.textContaining('Dein Plan verwendet es in 1 anstehenden Einheit'), findsOneWidget);
+      await tester.tap(find.text('Abbrechen'));
+      await tester.pumpAndSettle();
+      expect(repo.deleted, isEmpty);
+      expect(repo.planUpdates, isEmpty);
+      expect(repo.profiles, isEmpty);
+      expect(find.byType(TemplateEditorPage), findsOneWidget);
+    });
+
+    testWidgets('a program no plan uses is deleted from its editor without a plan notice', (tester) async {
+      final list = _defaults();
+      final legs = list.firstWhere((t) => t.key == 'ppl_legs');
+      final repo = await pumpEditor(tester, list, legs);
+      await openDelete(tester);
+      expect(find.textContaining('Dein Plan'), findsNothing);
+      await tester.tap(find.text('Löschen').last);
+      await tester.pumpAndSettle();
+      expect(repo.deleted, [legs.id]);
+      expect(repo.planUpdates, isEmpty);
+      expect(repo.profiles, isEmpty);
+      expect(find.byType(TemplateEditorPage), findsNothing);
     });
   });
 }

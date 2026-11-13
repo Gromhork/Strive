@@ -14,6 +14,7 @@ import '../../widgets/segments.dart';
 import '../session/start_helpers.dart';
 import '../session/step_editor.dart';
 import 'gym_exercise_editor.dart';
+import 'program_delete_actions.dart';
 
 /// Create / edit a program: gym exercises (sets, rep ranges, set types, supersets,
 /// rest) or a structured endurance workout (phases and repeat blocks).
@@ -99,6 +100,9 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    // Keeps the plan loaded (no rebuilds) for the delete below, which keeps the planned workouts'
+    // exercises – also when the editor is opened from a page that does not listen to the plan.
+    ref.listen(plansProvider, (_, _) {});
     final folders = ref.watch(templateListProvider).map((t) => t.folder).where((f) => f.isNotEmpty).toSet().toList();
     return PopScope(
       canPop: !_dirty,
@@ -115,10 +119,9 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
               PopupMenuButton<String>(
                 onSelected: (v) async {
                   if (v == 'share') return _share();
-                  if (await confirm(context, l.deleteProgram, ok: l.delete, danger: true)) {
-                    ref.read(repoProvider)!.deleteTemplate(widget.template!.id);
-                    if (context.mounted) Navigator.pop(context);
-                  }
+                  // Same path as the Train tab: the plan keeps this program's workouts and the
+                  // dialog names them (R7-1 / R2).
+                  if (await confirmDeleteProgram(context, ref, widget.template!) && context.mounted) Navigator.pop(context);
                 },
                 itemBuilder:
                     (_) => [
