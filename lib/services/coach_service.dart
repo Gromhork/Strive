@@ -128,7 +128,8 @@ class CoachService {
         .join('\n');
     final rec = RecoveryInfo.compute(sessions);
     final ready = baselineReady(sessions, now);
-    final prs = exerciseRecords(sessions).values.toList()..sort((a, b) => b.bestE1rm.compareTo(a.bestE1rm));
+    // Lifts with an e1RM only (holds and partial-bodyweight exercises have no strength estimate).
+    final prs = exerciseRecords(sessions).values.where((r) => r.bestE1rm > 0).toList()..sort((a, b) => b.bestE1rm.compareTo(a.bestE1rm));
     final upcoming = plans
         .where((x) => x.status == 'planned' && !x.date.isBefore(dayOnly(now)))
         .take(7)

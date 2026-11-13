@@ -2262,7 +2262,7 @@
   "termAmrapBody": "On the last set do as many clean reps as you can – but stop one rep before failure. The app uses the result to correct your weights.",
   "termAmrapTip": "Only appears when it helps: for new exercises and when you reach the top of the rep range.",
   "termVolumeTitle": "Volume",
-  "termVolumeBody": "Weight × reps of all working sets added up (warm-ups don't count). For bodyweight exercises the lifted share of your body weight counts.",
+  "termVolumeBody": "Weight × reps of all working sets added up (warm-ups don't count). For bodyweight exercises the moved share of your body weight counts (e.g. push-up ≈ 64 %, pull-up 100 %, squat ≈ 70 %) plus any added weight. Holds such as planks count as hold time, not as volume.",
   "termVolumeTip": "More volume is not automatically better – what matters is progress over weeks.",
   "termPhaseTitle": "Plan phases",
   "termPhaseBody": "Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Recovery week: a lighter week every 3–5 weeks so your body can adapt.",
@@ -4159,5 +4159,53 @@
   "swimTestOnly200": "The CSS test needs the 400 m time too – the 200 m alone is not enough.",
   "swimTestImplausible": "These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.",
   "calJumpCurrentWeek": "Back to the current week",
-  "calJumpTodayMonth": "Back to today's month"
+  "calJumpTodayMonth": "Back to today's month",
+  "progHoldLonger": "every set held – a little longer",
+  "progHoldAddLoad": "top of the time range – add weight, a shorter time again",
+  "progHoldTop": "top of the time range – keep it (harder with a variation)",
+  "progHoldMissed": "time missed – the same time once more",
+  "progHoldShorter": "time missed twice – a bit shorter",
+  "rxTodayText": "Today: {text}",
+  "@rxTodayText": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "holdTime": "Hold time",
+  "holdStartBtn": "Start {time}",
+  "@holdStartBtn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "holdStop": "Stop",
+  "holdRunning": "Hold",
+  "holdOvertime": "Target reached",
+  "holdAutoDone": "At the target time: check off and start the rest",
+  "holdLogWithout": "Log without timer",
+  "timedMode": "Timed (hold)",
+  "holdRange": "Hold-time range",
+  "holdRangeHint": "Every set held its target → next time 5–10 s longer, up to the top of the range; then with added weight and shorter again.",
+  "volumeInclBody": "incl. body weight",
+  "volumeInclBodyKg": "incl. body weight ({weight})",
+  "@volumeInclBodyKg": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "longestHold": "Longest hold",
+  "longestHoldN": "longest hold {time}",
+  "@longestHoldN": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  }
 }

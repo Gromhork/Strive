@@ -178,6 +178,7 @@ Map<String, dynamic> sessionDraftToJson(Session s) => {
   'templateId': s.templateId,
   'planId': s.planId,
   if (s.plannedSets != null) 'plannedSets': s.plannedSets,
+  if (s.bodyWeightKg != null) 'bwKg': s.bodyWeightKg,
 };
 
 Session sessionDraftFromJson(Map m) => Session(
@@ -199,6 +200,7 @@ Session sessionDraftFromJson(Map m) => Session(
   templateId: m['templateId'] as String?,
   planId: m['planId'] as String?,
   plannedSets: m['plannedSets'] as int?,
+  bodyWeightKg: m['bwKg'] is num ? (m['bwKg'] as num).toDouble() : null,
 );
 
 // ───────────────────────────── Store ─────────────────────────────

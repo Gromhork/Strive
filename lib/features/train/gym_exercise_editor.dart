@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
 import '../../core/theme.dart';
+import '../../data/exercise_measure.dart';
 import '../../data/exercise_names_de.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/exercise_class.dart';
 import '../../services/supersets.dart';
 import '../../widgets/common.dart';
+import '../../widgets/duration_picker.dart';
 import '../../widgets/exercise_media.dart';
 import '../session/gym_session_page.dart' show SetTypeBadge;
 import 'exercise_detail_page.dart';
@@ -90,8 +92,13 @@ class GymExerciseEditor extends ConsumerWidget {
                     final picked = await pickExercises(context, single: true);
                     if (picked.isEmpty) return;
                     touch(() {
-                      exercises[i].exId = picked.first.id;
-                      exercises[i].name = picked.first.name;
+                      final e = exercises[i];
+                      final wasTimed = e.isTimed;
+                      e.exId = picked.first.id;
+                      e.name = picked.first.name;
+                      e.timed = null;
+                      // Reps ↔ hold time: the sets switch their measure with the exercise.
+                      if (e.isTimed != wasTimed) _convertSets(e, ref.read(profileOrDefaultProvider).athlete.gymGoal);
                     });
                   },
                 ),
@@ -113,6 +120,12 @@ class GymExerciseEditor extends ConsumerWidget {
           final goal = ref.read(profileOrDefaultProvider).athlete.gymGoal;
           touch(() {
             for (final e in picked) {
+              // Timed holds (plank, wall sit, …): 3 sets at the bottom of the hold range.
+              if (isTimedExercise(e.id, e.name)) {
+                final lo = defaultHoldRange(e.name).$1;
+                exercises.add(GymExercise(exId: e.id, name: e.name, restSec: 60, sets: [for (var k = 0; k < 3; k++) GymSet(sec: lo)]));
+                continue;
+              }
               // Rep range from the exercise class and the gym goal (e.g. 5–8 for a squat,
               // 12–20 for lateral raises).
               final (lo, hi) = repRangeFor(classifyLift(e.id, e.name, info: e), goal);
@@ -124,6 +137,30 @@ class GymExerciseEditor extends ConsumerWidget {
         },
       ),
     ];
+  }
+}
+
+/// Switches the sets of [e] to its (new) measure: hold times at the bottom of the hold range for a
+/// timed exercise, reps at the bottom of the rep range otherwise.
+void _convertSets(GymExercise e, String goal) {
+  e.holdMin = null;
+  e.holdMax = null;
+  if (e.isTimed) {
+    final lo = e.holdRange.$1;
+    for (final s in e.sets) {
+      s
+        ..sec = lo
+        ..reps = 0
+        ..target = null;
+    }
+  } else {
+    final lo = repRangeOf(e, goal).$1;
+    for (final s in e.sets) {
+      s
+        ..reps = lo
+        ..sec = 0
+        ..targetSec = null;
+    }
   }
 }
 
@@ -232,26 +269,43 @@ class _ExerciseEditCard extends ConsumerWidget {
                     Wrap(
                       spacing: 6,
                       children: [
+                        if (e.isTimed)
+                          _MiniChip(
+                            key: const ValueKey('holdRangeChip'),
+                            icon: Icons.timer_outlined,
+                            text: '${e.holdRange.$1}–${e.holdRange.$2} s',
+                            onTap: () async {
+                              final r = await _askHoldRange(context, e.holdRange.$1, e.holdRange.$2);
+                              if (r == null) return;
+                              e.holdMin = r.$1;
+                              e.holdMax = r.$2;
+                              for (final s in e.sets.where((s) => !s.warmup && s.sec < r.$1)) {
+                                s.sec = r.$1;
+                              }
+                              onChanged();
+                            },
+                          )
+                        else
+                          _MiniChip(
+                            icon: Icons.repeat_rounded,
+                            text: () {
+                              final (lo, hi) = repRangeOf(e, ref.watch(profileOrDefaultProvider).athlete.gymGoal);
+                              return '$lo–$hi ${l.reps}';
+                            }(),
+                            onTap: () async {
+                              final auto = repRangeOf(e, ref.read(profileOrDefaultProvider).athlete.gymGoal);
+                              final r = await _askRange(context, e.repMin ?? auto.$1, e.repMax ?? auto.$2);
+                              if (r == null) return;
+                              e.repMin = r.$1;
+                              e.repMax = r.$2;
+                              for (final s in e.sets.where((s) => !s.warmup && s.reps < r.$1)) {
+                                s.reps = r.$1;
+                              }
+                              onChanged();
+                            },
+                          ),
                         _MiniChip(
-                          icon: Icons.repeat_rounded,
-                          text: () {
-                            final (lo, hi) = repRangeOf(e, ref.watch(profileOrDefaultProvider).athlete.gymGoal);
-                            return '$lo–$hi ${l.reps}';
-                          }(),
-                          onTap: () async {
-                            final auto = repRangeOf(e, ref.read(profileOrDefaultProvider).athlete.gymGoal);
-                            final r = await _askRange(context, e.repMin ?? auto.$1, e.repMax ?? auto.$2);
-                            if (r == null) return;
-                            e.repMin = r.$1;
-                            e.repMax = r.$2;
-                            for (final s in e.sets.where((s) => !s.warmup && s.reps < r.$1)) {
-                              s.reps = r.$1;
-                            }
-                            onChanged();
-                          },
-                        ),
-                        _MiniChip(
-                          icon: Icons.timer_outlined,
+                          icon: Icons.hourglass_bottom_rounded,
                           text: clock(e.restSec),
                           onTap: () async {
                             final v = await _askRest(context, e.restSec);
@@ -274,6 +328,10 @@ class _ExerciseEditCard extends ConsumerWidget {
                     case 'bodyweight':
                       e.bw = !_isBw(ref, e);
                       onChanged();
+                    case 'timed':
+                      e.timed = !e.isTimed;
+                      _convertSets(e, ref.read(profileOrDefaultProvider).athlete.gymGoal);
+                      onChanged();
                     case 'note':
                       final t = await askText(context, l.note, initial: e.note);
                       if (t != null) {
@@ -291,13 +349,20 @@ class _ExerciseEditCard extends ConsumerWidget {
                         child: ListTile(leading: const Icon(Icons.swap_horiz_rounded), title: Text(l.replaceExercise)),
                       ),
                       PopupMenuItem(value: 'note', child: ListTile(leading: const Icon(Icons.sticky_note_2_outlined), title: Text(l.note))),
-                      if (offersBodyweightMode(
-                        e.exId,
-                        e.name,
-                        info: ref.watch(exerciseDbProvider).value?.byId(e.exId),
-                        current: _isBw(ref, e),
-                      ))
+                      if (!e.isTimed &&
+                          offersBodyweightMode(
+                            e.exId,
+                            e.name,
+                            info: ref.watch(exerciseDbProvider).value?.byId(e.exId),
+                            current: _isBw(ref, e),
+                          ))
                         CheckedPopupMenuItem(value: 'bodyweight', checked: _isBw(ref, e), child: Text(l.bodyweight)),
+                      CheckedPopupMenuItem(
+                        key: const ValueKey('timedToggle'),
+                        value: 'timed',
+                        checked: e.isTimed,
+                        child: Text(l.timedMode),
+                      ),
                       PopupMenuItem(
                         value: 'remove',
                         child: ListTile(
@@ -328,13 +393,19 @@ class _ExerciseEditCard extends ConsumerWidget {
                 const SizedBox(width: 40),
                 Expanded(
                   child: Text(
-                    _isBw(ref, e) ? '${l.bodyweightShort} ± ${u.weightUnit}' : u.weightUnit,
+                    e.isTimed && _isBw(ref, e)
+                        ? '+ ${u.weightUnit}'
+                        : _isBw(ref, e)
+                        ? '${l.bodyweightShort} ± ${u.weightUnit}'
+                        : u.weightUnit,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.labelSmall,
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(child: Text(l.reps, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall)),
+                Expanded(
+                  child: Text(e.isTimed ? l.holdTime : l.reps, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall),
+                ),
                 const SizedBox(width: 40),
               ],
             ),
@@ -369,11 +440,22 @@ class _ExerciseEditCard extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _NumField(
-                      initial: e.sets[s].reps == 0 ? '' : '${e.sets[s].reps}',
-                      hint: e.repMin != null ? '${e.repMin}' : '–',
-                      onChanged: (v) => e.sets[s].reps = int.tryParse(v) ?? 0,
-                    ),
+                    child:
+                        e.isTimed
+                            ? _HoldField(
+                              key: ValueKey('holdField-$index-$s'),
+                              sec: e.sets[s].sec,
+                              hint: e.holdRange.$1,
+                              onChanged: (v) {
+                                e.sets[s].sec = v;
+                                onChanged();
+                              },
+                            )
+                            : _NumField(
+                              initial: e.sets[s].reps == 0 ? '' : '${e.sets[s].reps}',
+                              hint: e.repMin != null ? '${e.repMin}' : '–',
+                              onChanged: (v) => e.sets[s].reps = int.tryParse(v) ?? 0,
+                            ),
                   ),
                   SizedBox(
                     width: 40,
@@ -395,8 +477,8 @@ class _ExerciseEditCard extends ConsumerWidget {
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: () {
-                final last = e.sets.isNotEmpty ? e.sets.last : GymSet(reps: e.repMin ?? 10);
-                e.sets.add(GymSet(weight: last.weight, reps: last.reps));
+                final last = e.sets.isNotEmpty ? e.sets.last : (e.isTimed ? GymSet(sec: e.holdRange.$1) : GymSet(reps: e.repMin ?? 10));
+                e.sets.add(GymSet(weight: last.weight, reps: last.reps, sec: last.sec));
                 onChanged();
               },
               icon: const Icon(Icons.add, size: 18),
@@ -458,6 +540,60 @@ class _ExerciseEditCard extends ConsumerWidget {
     );
   }
 
+  /// Hold-time range of a timed exercise (5–300 s).
+  static Future<(int, int)?> _askHoldRange(BuildContext context, int lo, int hi) {
+    final l = context.l10n;
+    var a = lo.clamp(5, 300), b = hi.clamp(5, 300);
+    return showModalBottomSheet<(int, int)>(
+      context: context,
+      builder:
+          (c) => StatefulBuilder(
+            builder:
+                (c, setS) => SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(l.holdRange, style: Theme.of(c).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text(l.holdRangeHint, style: Theme.of(c).textTheme.bodySmall),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: Text(
+                            '${formatHold(a)} – ${formatHold(b)}',
+                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                        RangeSlider(
+                          values: RangeValues(a.toDouble(), b.toDouble()),
+                          min: 5,
+                          max: 300,
+                          divisions: 59,
+                          onChanged:
+                              (v) => setS(() {
+                                a = v.start.round();
+                                b = v.end.round();
+                              }),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            for (final p in const [(10, 30), (20, 45), (30, 60), (45, 90), (60, 120)])
+                              ActionChip(label: Text('${p.$1}–${p.$2} s'), onPressed: () => setS(() => (a, b) = p)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton(onPressed: () => Navigator.pop(c, (a, b)), child: Text(l.apply)),
+                      ],
+                    ),
+                  ),
+                ),
+          ),
+    );
+  }
+
   static Future<int?> _askRest(BuildContext context, int sec) {
     final l = context.l10n;
     return showModalBottomSheet<int>(
@@ -490,8 +626,46 @@ class _ExerciseEditCard extends ConsumerWidget {
   }
 }
 
+/// Hold time of one planned set: a tappable "0:45" that opens the scroll wheels.
+class _HoldField extends StatelessWidget {
+  const _HoldField({super.key, required this.sec, required this.hint, required this.onChanged});
+  final int sec, hint;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () async {
+        final pick = await showDurationPicker(
+          context,
+          title: l.holdTime,
+          value: sec > 0 ? sec : null,
+          initial: hint,
+          units: DurationUnits.ms,
+          maxMinutes: 15,
+          min: 1,
+          max: 15 * 60,
+          clearable: false,
+        );
+        final v = pick?.seconds;
+        if (v != null && v > 0) onChanged(v);
+      },
+      child: InputDecorator(
+        decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10)),
+        child: Text(
+          sec > 0 ? clock(sec) : clock(hint),
+          textAlign: TextAlign.center,
+          style: TextStyle(color: sec > 0 ? null : Theme.of(context).hintColor, fontFeatures: const [FontFeature.tabularFigures()]),
+        ),
+      ),
+    );
+  }
+}
+
 class _MiniChip extends StatelessWidget {
-  const _MiniChip({required this.icon, required this.text, required this.onTap});
+  const _MiniChip({super.key, required this.icon, required this.text, required this.onTap});
   final IconData icon;
   final String text;
   final VoidCallback onTap;

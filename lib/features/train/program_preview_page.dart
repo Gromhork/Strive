@@ -11,6 +11,7 @@ import '../../services/zones.dart' show estimateStepsSec;
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart' show bodyweightLoad;
+import '../session/gym_session_page.dart' show exerciseSummary;
 import '../session/start_helpers.dart';
 import '../session/step_list.dart';
 import 'template_editor_page.dart';
@@ -20,6 +21,8 @@ import 'template_editor_page.dart';
 String plannedSetsLine(AppLocalizations l, GymExercise e, Units u) {
   final work = e.sets.where((s) => !s.warmup && s.type != SetType.drop).toList();
   if (work.isEmpty) return l.programPreviewSets(e.sets.length);
+  // Timed holds: "3 × 45 s · +10 kg".
+  if (e.isTimed) return exerciseSummary(l, e, u, range: e.holdRange);
   final top = work.map((s) => s.weight).reduce((a, b) => a > b ? a : b);
   final load = e.bw == true ? bodyweightLoad(l.bodyweight, top, u) : (top > 0 ? u.weight(top) : l.bodyweight);
   // The same "4 × 5–8" as the planned workout and the editor (the rep range of the program),

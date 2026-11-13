@@ -21,6 +21,7 @@ import '../../services/insights.dart';
 import '../../services/workout_store.dart';
 import '../../widgets/common.dart';
 import '../../widgets/rpe_picker.dart';
+import '../stats/session_detail_page.dart' show volumeCaption;
 import 'route_map.dart';
 
 /// Shown after finishing a session: rate effort first (it adapts the plan), see XP / PRs, then save.
@@ -128,6 +129,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     templateId: widget.draft.templateId,
     planId: widget.draft.planId,
     plannedSets: widget.draft.plannedSets ?? widget.plannedSets,
+    bodyWeightKg: widget.draft.bodyWeightKg,
   );
 
   Future<void> _save() async {
@@ -228,7 +230,25 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                 children: [
                   _cell(StatTile(label: l.duration, value: clock(s.durationSec), icon: Icons.timer_outlined)),
                   if (s.sport == Sport.gym) ...[
-                    _cell(StatTile(label: l.volume, value: u.volume(s.volume), icon: Sport.gym.icon, color: AppColors.gym)),
+                    _cell(
+                      StatTile(
+                        key: const ValueKey('summaryVolume'),
+                        label: l.volume,
+                        value: u.volume(s.volume),
+                        icon: Sport.gym.icon,
+                        color: AppColors.gym,
+                        caption: volumeCaption(l, s, u),
+                      ),
+                    ),
+                    if (s.holdSec > 0)
+                      _cell(
+                        StatTile(
+                          key: const ValueKey('summaryHold'),
+                          label: l.holdTime,
+                          value: clock(s.holdSec),
+                          icon: Icons.timer_outlined,
+                        ),
+                      ),
                     _cell(StatTile(label: l.sets, value: '${s.setsDone}', icon: Icons.check_circle_outline)),
                     _cell(StatTile(label: l.exercises, value: '${s.exercises.length}', icon: Icons.list)),
                   ] else ...[

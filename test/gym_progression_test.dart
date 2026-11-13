@@ -74,7 +74,7 @@ void main() {
       expect(c('chin-up').loadableBodyweight, isTrue);
       expect(c('triceps dip').bodyFraction, 1);
       expect(c('bench dip (knees bent)').bodyFraction, 0.5);
-      expect(c('push-up').bodyFraction, closeTo(0.65, 1e-9));
+      expect(c('push-up').bodyFraction, closeTo(0.64, 1e-9)); // Ebben et al. 2011
       expect(c('push-up').loadableBodyweight, isFalse);
       expect(c('inverted row').bodyFraction, 0.6);
       expect(c('walking lunge').bodyweight, isTrue);
@@ -374,7 +374,7 @@ void main() {
       expect(out[0].bw, isTrue);
       expect(out[0].bodyKg, 80);
       expect(out[1].bw, isTrue);
-      expect(out[1].bodyKg, 52);
+      expect(out[1].bodyKg, 51.2); // 64 % of 80 kg
       expect(out[2].bw, isNull);
       // A user can switch it off (e.g. pull-ups on a machine) – then it is a loaded lift.
       final off = planned('0652', 'pull-up', lo: 6, hi: 10)..bw = false;
