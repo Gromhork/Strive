@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -181,11 +182,11 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      // Subtitles are capped at two lines.
-      final sub = tester.widget<Text>(
-        find.textContaining('Ein langer Untertitel, der mehrere Zeilen bräuchte, aber auf zwei Zeilen gekürzt wird, damit'),
-      );
-      expect(sub.maxLines, 2);
+      // Subtitles are never cut off (R7-11: at text ×1.3 the plan-settings warning "… danach neuer
+      // Plan" was lost to a two-line cap) – the row grows instead.
+      final sub = find.textContaining('Ein langer Untertitel, der mehrere Zeilen bräuchte, aber auf zwei Zeilen gekürzt wird, damit');
+      expect(tester.widget<Text>(sub).maxLines, isNull);
+      expect(tester.renderObject<RenderParagraph>(sub).didExceedMaxLines, isFalse);
     });
   });
 }
