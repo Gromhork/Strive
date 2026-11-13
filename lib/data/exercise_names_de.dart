@@ -1533,7 +1533,7 @@ SharedPreferences? exerciseNamePrefs;
 String exerciseName(String id, String en, String lang) {
   if (lang == 'de') {
     final de = exerciseNamesDe[id] ?? exerciseNamePrefs?.getString('trn_de_$id');
-    if (de != null && de.trim().isNotEmpty) return de.replaceFirst(RegExp(r'^[\s\-–·:]+'), '');
+    if (de != null && de.trim().isNotEmpty) return de.replaceFirst(_leadingSeparators, '');
     // A name the user typed (custom exercise) or an already German name stays as it is.
     if (en.isNotEmpty && !_looksGerman(en)) return germanExerciseName(en);
   }
@@ -1541,7 +1541,10 @@ String exerciseName(String id, String en, String lang) {
   return name.isEmpty ? name : name[0].toUpperCase() + name.substring(1);
 }
 
-bool _looksGerman(String s) => RegExp('[äöüß]|drücken|heben|beuge|rudern|ziehen', caseSensitive: false).hasMatch(s);
+final _leadingSeparators = RegExp(r'^[\s\-–·:]+');
+final _germanWords = RegExp('[äöüß]|drücken|heben|beuge|rudern|ziehen', caseSensitive: false);
+
+bool _looksGerman(String s) => _germanWords.hasMatch(s);
 
 /// Equipment of the database names → German (in brackets after the movement).
 const _equipmentDe = <(String, String)>[
@@ -1728,12 +1731,27 @@ const _fillerWords = {
 /// translated name: the movement first, then the variation, the equipment in brackets
 /// ("dumbbell seated shoulder press" → "Schulterdrücken sitzend (Kurzhantel)"). Words it
 /// does not know (proper names like "Zottman") are kept in front of the movement.
-String germanExerciseName(String en) {
-  var s = ' ${en.toLowerCase().replaceAll(RegExp(r'\(.*?\)|v\.\s*\d|\bv\d\b'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim()} ';
+///
+/// Memoised: the rules run ~100 regular expressions per name, and lists sort / filter the
+/// whole library (1300+ names) by it – recomputing them made the exercise library stall.
+String germanExerciseName(String en) => _germanNames[en] ??= _germanExerciseName(en);
+
+final _germanNames = <String, String>{};
+
+/// The compiled whole-word pattern of each table phrase (compiled once, not per name).
+final _phraseRes = <String, RegExp>{};
+final _brackets = RegExp(r'\(.*?\)|v\.\s*\d|\bv\d\b');
+final _spaces = RegExp(r'\s+');
+final _number = RegExp(r'^\d+$');
+final _letterOrDigit = RegExp('[a-z0-9äöüß]');
+
+String _germanExerciseName(String en) {
+  var s = ' ${en.toLowerCase().replaceAll(_brackets, ' ').replaceAll(_spaces, ' ').trim()} ';
   String? take(List<(String, String)> table) {
     for (final (k, v) in table) {
+      if (!s.contains(k)) continue; // cheap pre-check: the pattern needs the phrase itself
       // Hyphenated words only match as a whole ("reverse-grip" is no "reverse" + "-grip").
-      final re = RegExp('(?<![a-z-])${RegExp.escape(k)}s?(?![a-z-])');
+      final re = _phraseRes[k] ??= RegExp('(?<![a-z-])${RegExp.escape(k)}s?(?![a-z-])');
       if (re.hasMatch(s)) {
         s = s.replaceFirst(re, ' ');
         return v;
@@ -1749,10 +1767,10 @@ String germanExerciseName(String en) {
     if (!mods.contains(m)) mods.add(m);
   }
   final rest = [
-    for (final w in s.trim().split(RegExp(r'\s+')))
+    for (final w in s.trim().split(_spaces))
       // Separators of the database names ("calf raise - hammer grip") are no words: never a
       // leading "- Hammer Grip Wadenheben".
-      if (w.isNotEmpty && !_fillerWords.contains(w) && !RegExp(r'^\d+$').hasMatch(w) && RegExp('[a-z0-9äöüß]').hasMatch(w))
+      if (w.isNotEmpty && !_fillerWords.contains(w) && !_number.hasMatch(w) && _letterOrDigit.hasMatch(w))
         w[0].toUpperCase() + w.substring(1),
   ];
   // Nothing but equipment / variations understood: no German name ("(Langhantel)" alone).

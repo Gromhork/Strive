@@ -17,7 +17,8 @@ class ExerciseMedia extends StatelessWidget {
   final double radius;
   final bool done;
 
-  static bool hasMedia(String id) => RegExp(r'^\d{4}$').hasMatch(id);
+  static bool hasMedia(String id) => _mediaId.hasMatch(id);
+  static final _mediaId = RegExp(r'^\d{4}$');
 
   /// Background of the media tile in dark mode – the colour the white image
   /// background is mapped to (a dark grey slightly above the card colour).

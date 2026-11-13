@@ -48,14 +48,6 @@ class StriveApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
-    // App-level (always active) so reminder scheduling is never paused by offstage routes.
-    ref.watch(reminderSyncProvider);
-    ref.watch(healthSyncProvider);
-    ref.watch(gcalAutoSyncProvider);
-    ref.watch(relocalizeSyncProvider);
-    ref.watch(programUpgradeSyncProvider);
-    ref.watch(dstRepairSyncProvider);
-    ref.watch(linkCleanupSyncProvider);
     return MaterialApp(
       title: 'Strive',
       scaffoldMessengerKey: rootMessengerKey,
@@ -74,10 +66,30 @@ class StriveApp extends ConsumerWidget {
       builder: (context, child) {
         Units.decimalComma = Localizations.localeOf(context).languageCode == 'de';
         WriteErrorNotifier.text = context.l10n.writeFailed;
-        return child!;
+        return _SyncHost(child: child!);
       },
       home: const AuthGate(),
     );
+  }
+}
+
+/// Keeps the background syncs running: app-level (above the navigator, always active) so reminder
+/// scheduling is never paused by offstage routes. Their own widget: a sync's state change
+/// rebuilds only this – it used to rebuild the whole MaterialApp.
+class _SyncHost extends ConsumerWidget {
+  const _SyncHost({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(reminderSyncProvider);
+    ref.watch(healthSyncProvider);
+    ref.watch(gcalAutoSyncProvider);
+    ref.watch(relocalizeSyncProvider);
+    ref.watch(programUpgradeSyncProvider);
+    ref.watch(dstRepairSyncProvider);
+    ref.watch(linkCleanupSyncProvider);
+    return child;
   }
 }
 

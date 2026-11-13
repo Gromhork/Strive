@@ -1724,4 +1724,6 @@ const l10nPairs = <(String, String)>[
   ('Estimated from your 400 m – add the 200 m for an exact CSS.', 'Geschätzt aus deinen 400 m – mit der 200-m-Zeit wird die CSS genau.'),
   ('The CSS test needs the 400 m time too – the 200 m alone is not enough.', 'Für den CSS-Test brauchst du auch die 400-m-Zeit – die 200 m allein reichen nicht.'),
   ('These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.', 'Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.'),
+  ('Back to the current week', 'Zurück zur aktuellen Woche'),
+  ('Back to today\'s month', 'Zurück zum aktuellen Monat'),
 ];

@@ -27,8 +27,13 @@ class AppColors {
 }
 
 class AppTheme {
-  static ThemeData dark() => _build(Brightness.dark);
-  static ThemeData light() => _build(Brightness.light);
+  /// Built once: the theme holds closures (WidgetStateProperty.resolveWith), so a new instance is
+  /// never equal to the old one – every rebuild of the app root changed the Theme and rebuilt
+  /// every screen (all five tabs).
+  static ThemeData dark() => _dark;
+  static ThemeData light() => _light;
+  static final _dark = _build(Brightness.dark);
+  static final _light = _build(Brightness.light);
 
   static ThemeData _build(Brightness b) {
     final dark = b == Brightness.dark;

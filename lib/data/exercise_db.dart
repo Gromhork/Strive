@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show compute, kIsWeb;
 import 'package:flutter/services.dart';
 
 import 'exercise_names_de.dart';
@@ -77,7 +79,9 @@ class ExerciseDb {
 
   static Future<ExerciseDb> load() async {
     final raw = await rootBundle.loadString('assets/data/exercises.json');
-    final list = (jsonDecode(raw) as List).map((e) => Exercise.fromJson(e)).toList()..sort((a, b) => a.name.compareTo(b.name));
+    // ~0.8 MB of JSON: decoded off the UI thread (it stalled the frame opening the library).
+    // Not under `flutter test`: fake-async widget tests would never see the isolate finish.
+    final list = _underTest ? parseExercises(raw) : await compute(parseExercises, raw);
     return ExerciseDb(list);
   }
 
@@ -121,7 +125,9 @@ class ExerciseDb {
           final hay = _searchText(e);
           return terms.every(hay.contains);
         }).toList();
-    String shown(Exercise e) => exerciseName(e.id, e.name, lang);
+    // Each hit's shown name once – the comparators below asked for it O(n log n) times.
+    final names = {for (final e in res) e.id: exerciseName(e.id, e.name, lang)};
+    String shown(Exercise e) => names[e.id]!;
     if (terms.isNotEmpty) {
       final ranks = {for (final e in res) e.id: searchRank(e, q0)};
       int common(Exercise e) => commonExerciseIds.contains(e.id) ? 0 : 1;
@@ -137,11 +143,18 @@ class ExerciseDb {
         return q != 0 ? q : shown(a).compareTo(shown(b));
       });
     } else if (lang != 'en') {
-      res.sort((a, b) => shown(a).toLowerCase().compareTo(shown(b).toLowerCase()));
+      final keys = {for (final e in res) e.id: shown(e).toLowerCase()};
+      res.sort((a, b) => keys[a.id]!.compareTo(keys[b.id]!));
     }
     return res;
   }
 }
+
+bool get _underTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
+/// The exercises of the bundled JSON, sorted by database name (top-level for [compute]).
+List<Exercise> parseExercises(String raw) =>
+    (jsonDecode(raw) as List).map((e) => Exercise.fromJson(e)).toList()..sort((a, b) => a.name.compareTo(b.name));
 
 int _equipmentRank(Exercise e) => switch (e.equipment) {
   'barbell' => 0,
@@ -153,25 +166,23 @@ int _equipmentRank(Exercise e) => switch (e.equipment) {
 
 /// Folds [s] for searching: lower case, umlauts and their transcriptions to the base vowel
 /// (ä/ae → a, ö/oe → o, ü/ue → u, ß/ss → s), hyphens as word breaks, whitespace collapsed.
-String foldSearch(String s) => s
-    .toLowerCase()
-    .replaceAll(RegExp('ä|ae'), 'a')
-    .replaceAll(RegExp('ö|oe'), 'o')
-    .replaceAll(RegExp('ü|ue'), 'u')
-    .replaceAll(RegExp('ß|ss'), 's')
-    .replaceAll(RegExp(r'[\s\-]+'), ' ');
+String foldSearch(String s) =>
+    s.toLowerCase().replaceAll(_ae, 'a').replaceAll(_oe, 'o').replaceAll(_ue, 'u').replaceAll(_sz, 's').replaceAll(_gaps, ' ');
 
 /// Rank of [e] for the folded query [q] ([foldSearch]; lower = better): 0 exact name, 1/2
 /// name prefix, 3/4 word prefix, 5/6 anything else – popular exercises first in each group.
 int searchRank(Exercise e, String q) {
   final names = [foldSearch(e.name), if (exerciseNamesDe[e.id] case final de?) foldSearch(de)];
   final popular = popularExerciseIds.contains(e.id);
-  final bare = RegExp(r'\s*\(.*\)$');
-  if (names.any((n) => n == q || n.replaceAll(bare, '') == q)) return 0;
+  if (names.any((n) => n == q || n.replaceAll(_bracketSuffix, '') == q)) return 0;
   if (names.any((n) => n.startsWith(q))) return popular ? 1 : 2;
-  if (names.any((n) => n.split(RegExp(r'[\s/(),]+')).any((w) => w.startsWith(q)))) return popular ? 3 : 4;
+  if (names.any((n) => n.split(_wordBreaks).any((w) => w.startsWith(q)))) return popular ? 3 : 4;
   return popular ? 5 : 6;
 }
+
+final _bracketSuffix = RegExp(r'\s*\(.*\)$');
+final _wordBreaks = RegExp(r'[\s/(),]+');
+final _ae = RegExp('ä|ae'), _oe = RegExp('ö|oe'), _ue = RegExp('ü|ue'), _sz = RegExp('ß|ss'), _gaps = RegExp(r'[\s\-]+');
 
 /// German search aliases so "bankdrücken" or "kniebeuge" find the right lifts.
 String germanAlias(Exercise e) {

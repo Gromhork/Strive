@@ -20,6 +20,9 @@ import 'package:strive/features/session/gym_session_page.dart';
 import 'package:strive/features/session/manual_entry_page.dart';
 import 'package:strive/features/session/session_summary_page.dart';
 import 'package:strive/features/session/step_editor.dart';
+import 'package:strive/features/calendar/calendar_page.dart' show CalendarPage;
+import 'package:strive/features/home/home_page.dart' show HomePage;
+import 'package:strive/features/stats/stats_page.dart' show StatsPage;
 import 'package:strive/features/shell/home_shell.dart';
 import 'package:strive/features/shell/workout_restore.dart';
 import 'package:strive/features/stats/edit_session_page.dart';
@@ -320,6 +323,19 @@ void main() {
       expect(c.read(activeGymProvider), isNotNull);
       c.read(activeGymProvider.notifier).discard();
       await t.pump(const Duration(seconds: 3));
+    });
+
+    testWidgets('shell: hidden tabs sleep (tickers off – their provider watches pause), the shown one is awake', (t) async {
+      final c = await _pump(t, const HomeShell(), _overrides(await _prefs(), MemoryWorkoutStore()));
+      bool awake(Type page) => TickerMode.of(t.element(find.byType(page, skipOffstage: false)));
+      expect(awake(HomePage), isTrue);
+      expect(awake(CalendarPage), isFalse);
+      expect(awake(StatsPage), isFalse);
+      c.read(navIndexProvider.notifier).set(2);
+      await t.pump();
+      expect(awake(CalendarPage), isTrue);
+      expect(awake(HomePage), isFalse);
+      expect(identical(AppTheme.dark(), AppTheme.dark()), isTrue, reason: 'one theme instance: no app-wide rebuild per root rebuild');
     });
 
     testWidgets('gym session: back minimizes, the workout keeps running', (t) async {

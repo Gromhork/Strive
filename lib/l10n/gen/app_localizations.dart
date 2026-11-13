@@ -10732,6 +10732,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.'**
   String get swimTestImplausible;
+
+  /// No description provided for @calJumpCurrentWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to the current week'**
+  String get calJumpCurrentWeek;
+
+  /// No description provided for @calJumpTodayMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to today\'s month'**
+  String get calJumpTodayMonth;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

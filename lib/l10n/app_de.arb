@@ -1772,5 +1772,7 @@
   "yourSwimZones": "Deine Schwimmzonen",
   "swimCssEstimated": "Geschätzt aus deinen 400 m – mit der 200-m-Zeit wird die CSS genau.",
   "swimTestOnly200": "Für den CSS-Test brauchst du auch die 400-m-Zeit – die 200 m allein reichen nicht.",
-  "swimTestImplausible": "Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt."
+  "swimTestImplausible": "Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.",
+  "calJumpCurrentWeek": "Zurück zur aktuellen Woche",
+  "calJumpTodayMonth": "Zurück zum aktuellen Monat"
 }

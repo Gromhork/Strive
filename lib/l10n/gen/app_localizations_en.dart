@@ -5950,4 +5950,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swimTestImplausible => 'These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.';
+
+  @override
+  String get calJumpCurrentWeek => 'Back to the current week';
+
+  @override
+  String get calJumpTodayMonth => 'Back to today\'s month';
 }
