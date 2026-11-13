@@ -14,17 +14,17 @@ const exerciseNamesDe = <String, String>{
   '0006': 'Fersentippen abwechselnd', // alternate heel touchers
   '0007': 'Latziehen abwechselnd einarmig (Kabelzug)', // alternate lateral pulldown
   '0009': 'Brust-Dips kniend unterstützt (Maschine)', // assisted chest dip (kneeling)
-  '0010': 'Knieheben hängend mit Partnerwurf', // assisted hanging knee raise with throw down
+  '0010': 'Knieheben hängend mit Wegstoßen durch Partner', // assisted hanging knee raise with throw down
   '0011': 'Knieheben hängend mit Unterstützung', // assisted hanging knee raise
-  '0012': 'Beinheben liegend mit seitlichem Partnerwurf', // assisted lying leg raise with lateral throw down
-  '0013': 'Beinheben liegend mit Partnerwurf', // assisted lying leg raise with throw down
+  '0012': 'Beinheben liegend mit seitlichem Wegstoßen durch Partner', // assisted lying leg raise with lateral throw down
+  '0013': 'Beinheben liegend mit Wegstoßen durch Partner', // assisted lying leg raise with throw down
   '0014': 'Russian Twist geführt (Medizinball)', // assisted motion russian twist
   '0015': 'Klimmzug eng Neutralgriff unterstützt (Maschine)', // assisted parallel close grip pull-up
   '0016': 'Beinbeuger liegend mit Partner', // assisted prone hamstring
   '0017': 'Klimmzug unterstützt (Maschine)', // assisted pull-up
   '0018': 'Trizepsstrecken stehend mit Handtuch (Partner)', // assisted standing triceps extension (with towel)
   '0019': 'Trizeps-Dips kniend unterstützt (Maschine)', // assisted triceps dip (kneeling)
-  '0020': 'Balance Board Stand', // balance board stand
+  '0020': 'Stand auf dem Balance Board', // balance board stand
   '0022': 'Überzüge mit Drücken (Langhantel)', // barbell pullover to press
   '0023': 'Bizepscurl abwechselnd (Langhantel)', // barbell alternate biceps curl
   '0024': 'Frontkniebeuge zur Bank (Langhantel)', // barbell bench front squat
@@ -58,13 +58,13 @@ const exerciseNamesDe = <String, String>{
   '0052': 'JM Press (Langhantel)', // barbell jm bench press
   '0053': 'Sprungkniebeuge (Langhantel)', // barbell jump squat
   '0054': 'Ausfallschritt (Langhantel)', // barbell lunge
-  '0055': 'Bankdrücken eng am Boden (Langhantel)', // barbell lying close-grip press
+  '0055': 'Bankdrücken eng (Langhantel, Variante 2)', // barbell lying close-grip press
   '0056': 'French Press eng (Langhantel)', // barbell lying close-grip triceps extension
   '0057': 'Trizepsstrecken liegend (Langhantel)', // barbell lying extension
   '0058': 'Hüftheben liegend (Langhantel)', // barbell lying lifting (on hip)
   '0059': 'Scottcurl liegend (Langhantel)', // barbell lying preacher curl
   '0060': 'Stirndrücken / Skull Crusher (Langhantel)', // barbell lying triceps extension skull crusher
-  '0061': 'French Press / Stirndrücken (Langhantel)', // barbell lying triceps extension
+  '0061': 'French Press liegend (Langhantel)', // barbell lying triceps extension
   '0063': 'Kniebeuge enger Stand (Langhantel)', // barbell narrow stance squat
   '0064': 'Rudern vorgebeugt einarmig (Langhantel)', // barbell one arm bent over row
   '0065': 'Bodendrücken einarmig (Langhantel)', // barbell one arm floor press
@@ -94,7 +94,7 @@ const exerciseNamesDe = <String, String>{
   '0089': 'Konzentrationscurl eng sitzend (Langhantel)', // barbell seated close-grip concentration curl
   '0090': 'Good Morning sitzend (Langhantel)', // barbell seated good morning
   '0091': 'Schulterdrücken sitzend (Langhantel)', // barbell seated overhead press
-  '0092': 'Trizepsdrücken über Kopf sitzend (Langhantel)', // barbell seated overhead triceps extension
+  '0092': 'Trizepsstrecken über Kopf sitzend (Langhantel)', // barbell seated overhead triceps extension
   '0094': 'Rumpfdrehung sitzend (Langhantel)', // barbell seated twist
   '0095': 'Schulterheben (Langhantel)', // barbell shrug
   '0096': 'Seitbeuge (Langhantel)', // barbell side bend
@@ -110,14 +110,14 @@ const exerciseNamesDe = <String, String>{
   '0106': 'Bizepscurl eng stehend (Langhantel)', // barbell standing close grip curl
   '0107': 'Frontheben bis über Kopf (Langhantel)', // barbell standing front raise over head
   '0108': 'Wadenheben stehend (Langhantel)', // barbell standing leg calf raise
-  '0109': 'Trizepsdrücken über Kopf stehend (Langhantel)', // barbell standing overhead triceps extension
+  '0109': 'Trizepsstrecken über Kopf stehend (Langhantel)', // barbell standing overhead triceps extension
   '0110': 'Reverse Curl stehend (Langhantel)', // barbell standing reverse grip curl
   '0111': 'Wadenheben stehend wippend (Langhantel)', // barbell standing rocking leg calf raise
   '0112': 'Rumpfdrehung stehend (Langhantel)', // barbell standing twist
   '0113': 'Bizepscurl breit stehend (Langhantel)', // barbell standing wide-grip curl
   '0114': 'Step-up (Langhantel)', // barbell step-up
   '0115': 'Good Morning mit gestreckten Beinen (Langhantel)', // barbell stiff leg good morning
-  '0116': 'Kreuzheben mit gestreckten Beinen (Langhantel)', // barbell straight leg deadlift
+  '0116': 'Kreuzheben mit durchgestreckten Beinen (Langhantel)', // barbell straight leg deadlift
   '0117': 'Sumo-Kreuzheben (Langhantel)', // barbell sumo deadlift
   '0118': 'Rudern vorgebeugt Untergriff (Langhantel)', // barbell reverse grip bent over row
   '0119': 'Aufrechtes Rudern (Langhantel, Variante 2)', // barbell upright row v. 2
@@ -132,10 +132,10 @@ const exerciseNamesDe = <String, String>{
   '0128': 'Battle Ropes', // battling ropes
   '0129': 'Bankdips mit gebeugten Knien', // bench dip (knees bent)
   '0130': 'Hüftstrecken auf der Bank', // bench hip extension
-  '0137': 'Body-up (Trizeps)', // body-up
+  '0137': 'Body-up', // body-up
   '0138': 'Bottoms-up (Hüftheben rücklings)', // bottoms-up
-  '0139': 'Klimmzug eng im Untergriff (Bizeps)', // biceps narrow pull-ups
-  '0140': 'Klimmzug im Untergriff (Bizeps)', // biceps pull-up
+  '0139': 'Rudern am Körpergewicht eng im Untergriff', // inverted row (narrow underhand grip); was "biceps narrow pull-ups"
+  '0140': 'Klimmzug im Untergriff, Bizeps-Fokus', // biceps pull-up
   '0148': 'Schulterdrücken abwechselnd (Kabelzug)', // cable alternate shoulder press
   '0149': 'Trizepsstrecken abwechselnd (Kabelzug)', // cable alternate triceps extension
   '0150': 'Latziehen mit Stange (Kabelzug)', // cable bar lateral pulldown
@@ -148,9 +148,9 @@ const exerciseNamesDe = <String, String>{
   '0158': 'Fliegende von oben (Kabelzug)', // cable decline fly
   '0159': 'Rudern breit sitzend auf der Negativbank (Kabelzug)', // cable decline seated wide-grip row
   '0160': 'Rudern breit sitzend am Boden (Kabelzug)', // cable floor seated wide-grip row
-  '0161': 'Frontheben nach vorn (Kabelzug)', // cable forward raise
+  '0161': 'Frontheben (Kabelzug, Variante 2)', // cable forward raise
   '0162': 'Frontheben (Kabelzug)', // cable front raise
-  '0164': 'Frontheben für die vordere Schulter (Kabelzug)', // cable front shoulder raise
+  '0164': 'Frontheben (Kabelzug, Variante 3)', // cable front shoulder raise
   '0165': 'Hammercurl (Kabelzug, Seil)', // cable hammer curl (with rope)
   '0167': 'Rudern hoch kniend (Kabelzug)', // cable high row (kneeling)
   '0168': 'Adduktion (Kabelzug)', // cable hip adduction
@@ -176,11 +176,11 @@ const exerciseNamesDe = <String, String>{
   '0191': 'Fliegende vorgebeugt einarmig (Kabelzug)', // cable one arm bent-over fly
   '0192': 'Seitheben einarmig (Kabelzug)', // cable one arm lateral raise
   '0193': 'Rudern hoch einarmig kniend (Kabelzug)', // cable one arm straight back high row (kneeling)
-  '0194': 'Trizepsdrücken über Kopf (Kabelzug, Seil)', // cable overhead triceps extension (rope attachment)
+  '0194': 'Trizepsstrecken über Kopf (Kabelzug, Seil)', // cable overhead triceps extension (rope attachment)
   '0195': 'Scottcurl (Kabelzug)', // cable preacher curl
   '0196': 'Pull-Through (Kabelzug, Seil)', // cable pull through (with rope)
   '0197': 'Latziehen mit Pro-Lat-Griff (Kabelzug)', // cable pulldown (pro lat bar)
-  '0198': 'Latziehen (Kabelzug, Variante)', // cable pulldown
+  '0198': 'Latziehen (Kabelzug, Variante 2)', // cable pulldown
   '0199': 'Latziehen mit gestreckten Armen stehend (Kabelzug)', // cable straight arm pulldown (standing)
   '0200': 'Trizepsdrücken mit Seil (Kabelzug)', // cable pushdown (with rope attachment)
   '0201': 'Trizepsdrücken (Kabelzug)', // cable pushdown
@@ -210,8 +210,8 @@ const exerciseNamesDe = <String, String>{
   '0226': 'Crunch stehend (Kabelzug)', // cable standing crunch
   '0227': 'Fliegende stehend (Kabelzug)', // cable standing fly
   '0228': 'Hüftstrecken stehend (Kabelzug)', // cable standing hip extension
-  '0229': 'Bizepscurl nach innen stehend (Kabelzug)', // cable standing inner curl
-  '0230': 'Rumpfheben stehend (Kabelzug)', // cable standing lift
+  '0229': 'Bizepscurl stehend (Kabelzug)', // cable standing inner curl
+  '0230': 'Holzhacker von unten nach oben (Kabelzug)', // cable standing lift
   '0231': 'Trizepsstrecken einarmig stehend (Kabelzug)', // cable standing one arm triceps extension
   '0232': 'Latziehen stehend mit Seil (Kabelzug)', // cable standing pulldown (with rope)
   '0233': 'Face Pull stehend (Kabelzug, Seil)', // cable standing rear delt row (with rope)
@@ -230,10 +230,10 @@ const exerciseNamesDe = <String, String>{
   '0246': 'Aufrechtes Rudern (Kabelzug)', // cable upright row
   '0247': 'Handgelenkcurl (Kabelzug)', // cable wrist curl
   '0248': 'Rudern bauchliegend (Cambered Bar)', // cambered bar lying row
-  '0251': 'Dips (Brust)', // chest dip
+  '0251': 'Brust-Dips', // chest dip
   '0253': 'Klimmzug eng Neutralgriff', // chin-ups (narrow parallel grip)
   '0257': 'Kniekreisen', // circles knee stretch
-  '0258': 'Liegestütz im Uhrzeigerkreis', // clock push-up
+  '0258': 'Uhr-Liegestütz im Kreis', // clock push-up
   '0259': 'Liegestütz eng', // close-grip push-up
   '0260': 'Kokon-Crunch', // cocoons
   '0262': 'Crunch diagonal', // cross body crunch
@@ -277,16 +277,16 @@ const exerciseNamesDe = <String, String>{
   '0312': 'Hammercurl (Kurzhantel, Variante 2)', // dumbbell hammer curl v. 2
   '0313': 'Hammercurl (Kurzhantel)', // dumbbell hammer curl
   '0314': 'Schrägbankdrücken (Kurzhantel)', // dumbbell incline bench press
-  '0315': 'Bizepscurl auf der Schrägbank (Kurzhantel)', // dumbbell incline biceps curl
+  '0315': 'Bizepscurl auf der Schrägbank (Kurzhantel, Variante 2)', // dumbbell incline biceps curl
   '0316': 'Fliegende auf der Schrägbank mit Drehung (Kurzhantel)', // dumbbell incline twisting fly
   '0317': 'Schrägbank-Curl (Kurzhantel, Variante 2)', // dumbbell incline curl v. 2
-  '0318': 'Schrägbank-Curl (Kurzhantel)', // dumbbell incline curl
+  '0318': 'Bizepscurl auf der Schrägbank (Kurzhantel)', // dumbbell incline curl
   '0319': 'Fliegende auf der Schrägbank (Kurzhantel)', // dumbbell incline fly
   '0320': 'Hammercurl auf der Schrägbank (Kurzhantel)', // dumbbell incline hammer curl
   '0321': 'Schrägbankdrücken Neutralgriff (Kurzhantel)', // dumbbell incline hammer press
-  '0322': 'Bizepscurl nach außen auf der Schrägbank (Kurzhantel)', // dumbbell incline inner biceps curl
+  '0322': 'Bizepscurl auf der Schrägbank, Fokus innerer Kopf (Kurzhantel)', // dumbbell incline inner biceps curl
   '0323': 'Seitheben einarmig auf der Schrägbank (Kurzhantel)', // dumbbell incline one arm lateral raise
-  '0324': 'Schrägbankdrücken Hammergriff (Kurzhantel)', // dumbbell incline palm-in press
+  '0324': 'Schrägbankdrücken Neutralgriff (Kurzhantel, Variante 2)', // dumbbell incline palm-in press
   '0325': 'Frontheben auf der Schrägbank (Kurzhantel)', // dumbbell incline raise
   '0326': 'Reverse Flys bauchliegend auf der Schrägbank (Kurzhantel)', // dumbbell incline rear lateral raise
   '0327': 'Rudern bauchliegend auf der Schrägbank (Kurzhantel)', // dumbbell incline row
@@ -302,7 +302,7 @@ const exerciseNamesDe = <String, String>{
   '0337': 'Trizepsstrecken liegend über das Gesicht (Kurzhantel)', // dumbbell lying extension (across face)
   '0338': 'Trizepsstrecken liegend Neutralgriff (Kurzhantel)', // dumbbell lying elbow press
   '0339': 'Beinbeuger liegend (Kurzhantel)', // dumbbell lying leg curl
-  '0340': 'Bankdrücken Hammergriff (Kurzhantel)', // dumbbell lying hammer press
+  '0340': 'Bankdrücken Neutralgriff (Kurzhantel, Variante 2)', // dumbbell lying hammer press
   '0341': 'Reverse Flys einarmig seitlich liegend (Kurzhantel)', // dumbbell lying one arm deltoid rear
   '0342': 'Bankdrücken einarmig (Kurzhantel, Variante 2)', // dumbbell lying one arm press v. 2
   '0343': 'Bankdrücken einarmig (Kurzhantel)', // dumbbell lying one arm press
@@ -354,7 +354,7 @@ const exerciseNamesDe = <String, String>{
   '0390': 'Bizepscurl sitzend auf dem Gymnastikball (Kurzhantel)', // dumbbell seated biceps curl (on stability ball)
   '0391': 'Bizepscurl sitzend (Kurzhantel)', // dumbbell seated curl
   '0392': 'Frontheben sitzend (Kurzhantel)', // dumbbell seated front raise
-  '0393': 'Bizepscurl nach außen sitzend (Kurzhantel)', // dumbbell seated inner biceps curl
+  '0393': 'Bizepscurl sitzend, Fokus innerer Kopf (Kurzhantel)', // dumbbell seated inner biceps curl
   '0394': 'Trizeps-Kickback sitzend (Kurzhantel)', // dumbbell seated kickback
   '0395': 'Seitheben sitzend (Kurzhantel, Variante 2)', // dumbbell seated lateral raise v. 2
   '0396': 'Seitheben sitzend (Kurzhantel)', // dumbbell seated lateral raise
@@ -376,7 +376,7 @@ const exerciseNamesDe = <String, String>{
   '0413': 'Kniebeuge (Kurzhantel)', // dumbbell squat
   '0414': 'Schulterdrücken abwechselnd stehend (Kurzhantel)', // dumbbell standing alternate overhead press
   '0415': 'Frontheben abwechselnd stehend (Kurzhantel)', // dumbbell standing alternate raise
-  '0416': 'Bizepscurl stehend (Kurzhantel)', // dumbbell standing biceps curl
+  '0416': 'Bizepscurl (Kurzhantel, Variante 2)', // dumbbell standing biceps curl
   '0417': 'Wadenheben stehend (Kurzhantel)', // dumbbell standing calf raise
   '0418': 'Konzentrationscurl stehend (Kurzhantel)', // dumbbell standing concentration curl
   '0419': 'Frontheben bis über Kopf stehend (Kurzhantel)', // dumbbell standing front raise above head
@@ -400,7 +400,7 @@ const exerciseNamesDe = <String, String>{
   '0438': 'W-Press (Kurzhantel)', // dumbbell w-press
   '0439': 'Zottman Curl (Kurzhantel)', // dumbbell zottman curl
   '0443': 'Ellbogen-zum-Knie-Crunch', // elbow-to-knee
-  '0445': 'Schulterdrücken liegend auf der Schrägbank (SZ-Stange)', // ez barbell anti-gravity press
+  '0445': 'Schulterdrücken bauchliegend auf der Schrägbank (SZ-Stange)', // ez barbell anti-gravity press
   '0446': 'Bizepscurl eng (SZ-Stange)', // ez barbell close-grip curl
   '0447': 'Bizepscurl (SZ-Stange)', // ez barbell curl
   '0448': 'Negativbankdrücken eng zum Gesicht (SZ-Stange)', // ez barbell decline close grip face press
@@ -408,7 +408,7 @@ const exerciseNamesDe = <String, String>{
   '0450': 'JM Press (SZ-Stange)', // ez barbell jm bench press
   '0451': 'Reverse Curl (SZ-Stange)', // ez barbell reverse grip curl
   '0452': 'Scottcurl im Obergriff (SZ-Stange)', // ez barbell reverse grip preacher curl
-  '0453': 'Trizepsdrücken über Kopf sitzend (SZ-Stange)', // ez barbell seated triceps extension
+  '0453': 'Trizepsstrecken über Kopf sitzend (SZ-Stange)', // ez barbell seated triceps extension
   '0454': 'Spider Curl (SZ-Stange)', // ez barbell spider curl
   '0455': 'Fingercurl (Langhantel)', // finger curls
   '0456': 'Sit-up mit gebeugten Knien', // flexion leg sit up (bent knee)
@@ -434,7 +434,7 @@ const exerciseNamesDe = <String, String>{
   '0493': 'Liegestütz erhöht (Hände auf Bank)', // incline push-up
   '0494': 'Liegestütz erhöht im Untergriff', // incline reverse grip push-up
   '0495': 'Sit-up mit Drehung auf der Schrägbank', // incline twisting sit-up
-  '0496': 'Nordic Curl (an der Bank)', // nordic hamstring curl (bench support)
+  '0496': 'Nordic Curl an der Bank', // nordic hamstring curl (bench support)
   '0497': 'Rudern am Körpergewicht (Variante 2)', // inverted row v. 2
   '0498': 'Rudern am Körpergewicht mit Schlaufen', // inverted row with straps
   '0499': 'Rudern am Körpergewicht', // inverted row
@@ -496,7 +496,7 @@ const exerciseNamesDe = <String, String>{
   '0578': 'Kreuzheben (Maschine)', // lever deadlift
   '0579': 'Latziehen (Maschine)', // lever front pulldown
   '0580': 'Schulterheben ohne Griff (Maschine)', // lever gripless shrug
-  '0581': 'Hohes Rudern (Maschine)', // lever high row
+  '0581': 'Rudern hoch (Maschine)', // lever high row
   '0582': 'Beinbeuger kniend (Maschine)', // lever kneeling leg curl
   '0583': 'Rumpfdrehung kniend (Maschine)', // lever kneeling twist
   '0584': 'Seitheben (Maschine)', // lever lateral raise
@@ -561,7 +561,7 @@ const exerciseNamesDe = <String, String>{
   '0670': 'Klimmzug hinter dem Nacken', // rear pull-up
   '0672': 'Dips rücklings', // reverse dip
   '0673': 'Latziehen im Untergriff (Maschine)', // reverse grip machine lat pulldown
-  '0674': 'Klimmzug im Untergriff', // reverse grip pull-up
+  '0674': 'Klimmzug im Untergriff (Chin-up, Variante 2)', // reverse grip pull-up
   '0675': 'Reverse Hyperextension auf dem Gymnastikball', // reverse hyper extension (on stability ball)
   '0677': 'Ring-Dips', // ring dips
   '0678': 'Rocky-Klimmzug (vorn und hinter dem Nacken)', // rocky pull-up pulldown
@@ -580,7 +580,7 @@ const exerciseNamesDe = <String, String>{
   '0709': 'Seitliches Hüftheben am Barren', // side hip (on parallel bars)
   '0710': 'Seitliches Beinheben (Abduktion)', // side hip abduction
   '0716': 'Nackendehnung mit seitlichem Druck', // side push neck stretch
-  '0717': 'Liegestütz seitlich (Trizeps)', // side push-up
+  '0717': 'Trizeps-Liegestütz seitlich', // side push-up
   '0720': 'Klimmzug seitlich wechselnd', // side-to-side chin
   '0721': 'Handgelenk-Dehnung seitlich', // side wrist pull stretch
   '0725': 'Liegestütz einarmig', // single arm push-up
@@ -611,7 +611,7 @@ const exerciseNamesDe = <String, String>{
   '0760': 'Beinpresse (Multipresse)', // smith leg press
   '0761': 'Rudern eng (Multipresse)', // smith narrow row
   '0762': 'Rudern für die hintere Schulter (Multipresse)', // smith rear delt row
-  '0763': 'Wadenheben umgekehrt / Zehenheben (Multipresse)', // smith reverse calf raises
+  '0763': 'Tibialis-Heben (Multipresse)', // smith reverse calf raises
   '0764': 'Bankdrücken Untergriff (Multipresse)', // smith reverse-grip bench press
   '0765': 'Schulterdrücken sitzend (Multipresse)', // smith seated shoulder press
   '0766': 'Schulterdrücken (Multipresse)', // smith shoulder press
@@ -627,7 +627,7 @@ const exerciseNamesDe = <String, String>{
   '0776': 'Snatch Pull / Zug zum Reißen (Langhantel)', // snatch pull
   '0777': 'Spell Caster (Kurzhantel)', // spell caster
   '0778': 'Spiderman-Liegestütz', // spider crawl push up
-  '0786': 'Squat Jerk / Ausstoßen in die Hocke (Langhantel)', // squat jerk
+  '0786': 'Squat Jerk / Stoßen mit Hocke (Langhantel)', // squat jerk
   '0788': 'Nackendrücken stehend (Langhantel)', // standing behind neck press
   '0794': 'Seitliche Dehnung stehend', // standing lateral stretch
   '0795': 'Beinbeuger einbeinig stehend', // standing single leg curl
@@ -642,7 +642,7 @@ const exerciseNamesDe = <String, String>{
   '0811': 'Kreuzheben (Trap Bar)', // trap bar deadlift
   '0812': 'Bankdips mit Füßen auf der Bank', // triceps dip (bench leg)
   '0813': 'Dips zwischen zwei Bänken', // triceps dip (between benches)
-  '0814': 'Dips (Trizeps)', // triceps dip
+  '0814': 'Trizeps-Dips', // triceps dip
   '0815': 'Dips am Boden (rücklings)', // triceps dips floor
   '0816': 'Trizepsdrücken am Körpergewicht', // triceps press
   '0817': 'Trizeps-Dehnung', // triceps stretch
@@ -671,13 +671,13 @@ const exerciseNamesDe = <String, String>{
   '0859': 'Handgelenkroller', // wrist roller
   '0860': 'Trizeps-Kickback (Kabelzug)', // cable kickback
   '0861': 'Rudern sitzend (Kabelzug)', // cable seated row
-  '0862': 'Rumpfdrehung von unten nach oben (Kabelzug)', // cable twist (up-down)
+  '0862': 'Rumpfdrehung stehend (Kabelzug)', // cable twist (up-down)
   '0863': 'Außenrotation Schulter liegend (Kurzhantel)', // dumbbell lying external shoulder rotation
   '0864': 'Außenrotation Schulter aufrecht (Kurzhantel)', // dumbbell upright shoulder external rotation
   '0865': 'Hüftheben liegend mit Beinheben', // lying leg-hip raise
   '0866': 'Hüftheben hängend mit Gewicht', // weighted hanging leg-hip raise
   '0868': 'Bizepscurl (Kabelzug)', // cable curl
-  '0869': 'Schulterdrücken (Maschine, Variante 2)', // lever shoulder press (variation 2)
+  '0869': 'Schulterdrücken nach schräg oben (Maschine)', // lever incline shoulder press; was "lever shoulder press (variation 2)"
   '0870': 'Po-Heben im Unterarmstütz', // butt-ups
   '0871': 'Crunch gehockt', // tuck crunch
   '0872': 'Reverse Crunch', // reverse crunch
@@ -691,7 +691,7 @@ const exerciseNamesDe = <String, String>{
   '0974': 'Latziehen eng (Band)', // band close-grip pulldown
   '0975': 'Liegestütz eng (Band)', // band close-grip push-up
   '0976': 'Konzentrationscurl (Band)', // band concentration curl
-  '0977': 'Frontheben seitlich (Band)', // band front lateral raise
+  '0977': 'Front-Seitheben (Band)', // band front lateral raise
   '0978': 'Frontheben (Band)', // band front raise
   '0979': 'Pallof Press horizontal (Band)', // band horizontal pallof press
   '0980': 'Hüftstrecken vorgebeugt (Band)', // band bent-over hip extension
@@ -712,7 +712,7 @@ const exerciseNamesDe = <String, String>{
   '0997': 'Schulterdrücken (Band)', // band shoulder press
   '0998': 'Trizepsstrecken seitlich (Band)', // band side triceps extension
   '0999': 'Wadenheben einbeinig (Band)', // band single leg calf raise
-  '1000': 'Zehenheben einbeinig (Band)', // band single leg reverse calf raise
+  '1000': 'Tibialis-Heben einbeinig (Band)', // band single leg reverse calf raise
   '1001': 'Bulgarische Kniebeuge (Band)', // band single leg split squat
   '1002': 'Beinheben gestreckt liegend (Band)', // band lying straight leg raise
   '1003': 'Kniebeuge mit Rudern (Band)', // band squat row
@@ -828,14 +828,14 @@ const exerciseNamesDe = <String, String>{
   '1346': 'Latissimus-Dehnung kniend', // kneeling lat stretch
   '1347': 'Latziehen breit einarmig (Maschine)', // lever one arm lateral wide pulldown
   '1348': 'Rudern vertikal Untergriff (Maschine)', // lever reverse grip vertical row
-  '1349': 'T-Bar-Rudern umgekehrt (Maschine)', // lever reverse t-bar row
+  '1349': 'T-Bar-Rudern mit Brustauflage (Maschine)', // lever reverse t-bar row
   '1350': 'Rudern sitzend (Maschine)', // lever seated row
   '1351': 'T-Bar-Rudern Untergriff (Maschine)', // lever t-bar reverse grip row
   '1352': 'Rückenstrecken am Boden', // lower back curl
   '1353': 'Medizinball fangen und über Kopf werfen', // medicine ball catch and overhead throw
   '1354': 'Ball Slam (Medizinball)', // medicine ball overhead slam
   '1355': 'Latissimus-Dehnung einarmig an der Wand', // one arm lat stretch against wall
-  '1356': 'Hohes Rudern einarmig (Maschine)', // lever one arm lateral high row
+  '1356': 'Rudern hoch einarmig (Maschine)', // lever one arm lateral high row
   '1358': 'Dehnung seitlich liegend am Boden', // side lying floor stretch
   '1359': 'Rudern vorgebeugt (Multipresse)', // smith bent over row
   '1360': 'Rudern einarmig (Multipresse)', // smith one arm row
@@ -872,9 +872,9 @@ const exerciseNamesDe = <String, String>{
   '1391': 'Wadendrücken an der Beinpresse (Maschine)', // sled calf press on leg press
   '1392': 'Wadendrücken einbeinig an der Beinpresse (Maschine)', // sled one leg calf press on leg press
   '1393': 'Wadenheben einbeinig am Boden (Multipresse)', // smith one leg floor calf raise
-  '1394': 'Wadenheben umgekehrt / Zehenheben (Multipresse, Variante 2)', // smith reverse calf raises
+  '1394': 'Tibialis-Heben (Multipresse, Variante 2)', // smith reverse calf raises
   '1395': 'Wadenheben einbeinig sitzend (Multipresse)', // smith seated one leg calf raise
-  '1396': 'Zehenheben (Multipresse)', // smith toe raise
+  '1396': 'Wadenheben sitzend (Multipresse)', // smith toe raise
   '1397': 'Wadenheben stehend am Boden', // standing calf raise (floor)
   '1398': 'Wadendehnung stehend', // standing calf stretch
   '1399': 'Dips am Boden', // bench dip on floor
@@ -904,7 +904,7 @@ const exerciseNamesDe = <String, String>{
   '1427': 'Abduktion mit gestrecktem Bein', // straight leg outer hip abductor
   '1428': 'Handgelenkkreisen', // wrist circles
   '1429': 'Klimmzug breit', // wide grip pull-up
-  '1430': 'Dips (Brust, an der Dip-Station)', // chest dip (on dip-pull-up cage)
+  '1430': 'Brust-Dips an der Dip-Station', // chest dip (on dip-pull-up cage)
   '1431': 'Klimmzug im Untergriff stehend unterstützt (Maschine)', // assisted standing chin-up
   '1432': 'Klimmzug stehend unterstützt (Maschine)', // assisted standing pull-up
   '1433': 'Frontkniebeuge im Umsetzgriff (Multipresse)', // smith front squat (clean grip)
@@ -928,7 +928,7 @@ const exerciseNamesDe = <String, String>{
   '1464': 'Beinpresse 45° (Maschine, Ansicht von hinten)', // sled 45° leg press (back pov)
   '1466': 'Hüftheben mit Drehung', // twist hip lift
   '1467': 'Liegestütz auf den Unterarmen', // push-up on lower arms
-  '1468': 'Krebsgang mit Zehentippen', // crab twist toe touch
+  '1468': 'Zehentippen diagonal im Krebsstand', // crab twist toe touch
   '1471': 'Inchworm / Raupe', // inchworm
   '1472': 'Weitsprung vorwärts', // forward jump
   '1473': 'Sprung rückwärts', // backward jump
@@ -936,7 +936,7 @@ const exerciseNamesDe = <String, String>{
   '1479': 'Schrägbankdrücken (Maschine, Variante 2)', // lever incline chest press v. 2
   '1489': 'Sissy Squat', // sissy squat
   '1490': 'Wadenheben auf der Treppenstufe', // standing calf raise (on a staircase)
-  '1494': 'Schmetterlingssitz (Yoga)', // butterfly yoga pose
+  '1494': 'Schmetterlingssitz', // butterfly yoga pose
   '1495': 'Seitlicher Crunch', // oblique crunch
   '1496': 'Reifenschläge (Vorschlaghammer)', // sledgehammer strikes
   '1511': 'Beinbeuger-Dehnung', // hamstring stretch
@@ -949,7 +949,7 @@ const exerciseNamesDe = <String, String>{
   '1576': 'Beinbeuger-Dehnung mit erhöhtem Bein', // leg up hamstring stretch
   '1582': 'Liegende Großzehen-Haltung mit Seil (Yoga)', // reclining big toe pose with rope
   '1585': 'Läuferdehnung', // runner's stretch
-  '1587': 'Grätschsitz-Sequenz (Yoga)', // seated wide angle pose sequence
+  '1587': 'Grätschsitz-Sequenz', // seated wide angle pose sequence
   '1599': 'Beinbeuger- und Wadendehnung stehend (Gurt)', // standing hamstring and calf stretch with strap
   '1604': "World's Greatest Stretch", // world's greatest stretch
   '1614': 'Scottcurl (Maschine, Variante 2)', // lever preacher curl v. 2
@@ -961,7 +961,7 @@ const exerciseNamesDe = <String, String>{
   '1620': 'Schrägbankdrücken einarmig Neutralgriff auf dem Gymnastikball (Kurzhantel)',
   '1621': 'Bankdrücken einarmig Neutralgriff auf dem Gymnastikball (Kurzhantel)', // dumbbell one arm hammer press on exercise ball
   '1622': 'Bankdrücken einarmig Untergriff (Kurzhantel)', // dumbbell one arm reverse grip press
-  '1623': 'Schrägbankdrücken Hammergriff (Kurzhantel, Variante 2)', // dumbbell palms in incline bench press
+  '1623': 'Schrägbankdrücken Neutralgriff (Kurzhantel, Variante 3)', // dumbbell palms in incline bench press
   '1624': 'Bankdrücken Untergriff (Kurzhantel)', // dumbbell reverse bench press
   '1625': 'Negativbankdrücken eng (Multipresse)', // smith machine decline close grip bench press
   '1626': 'Negativbankdrücken eng Untergriff (Multipresse)', // smith machine reverse decline close grip bench press
@@ -992,7 +992,7 @@ const exerciseNamesDe = <String, String>{
   '1651': 'Bizepscurl mit Ausfallschritt und Bowling-Bewegung (Kurzhantel)', // dumbbell bicep curl lunge with bowling motion
   '1652': 'Bizepscurl mit Beinheben auf dem Gymnastikball (Kurzhantel)', // dumbbell bicep curl on exercise ball with leg raised
   '1653': 'Bizepscurl im Storchenstand (Kurzhantel)', // dumbbell bicep curl with stork stance
-  '1654': 'Reverse Curl (Kurzhantel)', // dumbbell biceps curl reverse
+  '1654': 'Reverse Curl / Curl im Obergriff (Kurzhantel, Variante 2)', // dumbbell biceps curl reverse
   '1655': 'Bizepscurl mit Kniebeuge (Kurzhantel)', // dumbbell biceps curl squat
   '1656': 'Bizepscurl im V-Sitz auf dem Bosu (Kurzhantel)', // dumbbell biceps curl v sit on bosu ball
   '1657': 'Hammercurl diagonal (Kurzhantel, Variante 2)', // dumbbell cross body hammer curl v. 2
@@ -1043,12 +1043,12 @@ const exerciseNamesDe = <String, String>{
   '1719': 'Schrägbankdrücken eng (Langhantel)', // barbell incline close grip bench press
   '1720': 'Trizepsstrecken liegend hinter den Kopf (Langhantel)', // barbell lying back of the head tricep extension
   '1721': 'Stirndrücken Untergriff (Langhantel)', // barbell reverse grip skullcrusher
-  '1722': 'Trizepsdrücken über Kopf vom oberen Zug (Kabelzug)', // cable high pulley overhead tricep extension
+  '1722': 'Trizepsstrecken über Kopf vom oberen Zug (Kabelzug)', // cable high pulley overhead tricep extension
   '1723': 'Trizepsdrücken einarmig (Kabelzug)', // cable one arm tricep pushdown
-  '1724': 'Trizepsdrücken über Kopf vom oberen Zug (Kabelzug, Seil)', // cable rope high pulley overhead tricep extension
+  '1724': 'Trizepsstrecken über Kopf vom oberen Zug (Kabelzug, Seil)', // cable rope high pulley overhead tricep extension
   '1725': 'Trizepsstrecken auf der Schrägbank (Kabelzug, Seil)', // cable rope incline tricep extension
   '1726': 'Trizepsstrecken liegend am Boden (Kabelzug, Seil)', // cable rope lying on floor tricep extension
-  '1727': 'Trizepsdrücken über Kopf einarmig Untergriff stehend (Kabelzug)',
+  '1727': 'Trizepsstrecken über Kopf einarmig Untergriff stehend (Kabelzug)',
   '1728': 'Trizeps-Kickback beidarmig (Kabelzug)', // cable two arm tricep kickback
   '1729': 'Trizepsstrecken abwechselnd liegend (Kurzhantel)', // dumbbell lying alternate extension
   '1730': 'Trizeps-Kickback abwechselnd vorgebeugt sitzend (Kurzhantel)', // dumbbell seated bent over alternate kickback
@@ -1059,7 +1059,7 @@ const exerciseNamesDe = <String, String>{
   '1735': 'Trizepsstrecken einarmig liegend (Kurzhantel)', // dumbbell lying single extension
   '1736': 'French Press einarmig auf dem Gymnastikball (Kurzhantel)', // dumbbell one arm french press on exercise ball
   '1737': 'Trizepsstrecken vorgebeugt sitzend (Kurzhantel)', // dumbbell seated bent over triceps extension
-  '1738': 'Trizepsdrücken über Kopf einarmig Untergriff sitzend (Kurzhantel)',
+  '1738': 'Trizepsstrecken über Kopf einarmig Untergriff sitzend (Kurzhantel)',
   '1739': 'Trizeps-Kickback abwechselnd stehend (Kurzhantel)', // dumbbell standing alternating tricep kickback
   '1740': 'Trizepsstrecken einarmig vorgebeugt stehend (Kurzhantel)', // dumbbell standing bent over one arm triceps extension
   '1741': 'Trizepsstrecken beidarmig vorgebeugt stehend (Kurzhantel)', // dumbbell standing bent over two arm triceps extension
@@ -1086,7 +1086,7 @@ const exerciseNamesDe = <String, String>{
   '1763': 'Klimmzug schulterbreit', // shoulder grip pull-up
   '1764': 'Hüftheben hängend', // hanging leg hip raise
   '1765': 'Aufrechtes Rudern (Kurzhantel, Ansicht von hinten)', // dumbbell upright row (back pov)
-  '1766': 'Nordic Curl (Variante 2)', // self assisted inverse leg curl
+  '1766': 'Nordic Curl mit Handunterstützung', // self assisted inverse leg curl
   '1767': 'Dips mit Zusatzgewicht am hohen Barren', // weighted triceps dip on high parallel bars
   '1769': 'Bizepscurl seitlich liegend am Körpergewicht', // bodyweight side lying biceps curl
   '1770': 'Konzentrationscurl am eigenen Bein', // biceps leg concentration curl
@@ -1107,9 +1107,9 @@ const exerciseNamesDe = <String, String>{
   '2144': 'Brustdrücken sitzend (Kabelzug)', // cable seated chest press
   '2186': 'Trizepsstrecken auf der Negativbank (SZ-Stange)', // ez barbell decline triceps extension
   '2187': 'Bankdrücken eng Untergriff (Langhantel)', // barbell reverse close-grip bench press
-  '2188': 'Trizepsdrücken über Kopf sitzend (Kurzhantel)', // dumbbell seated triceps extension
-  '2189': 'Trizepsdrücken über Kopf sitzend (Kurzhantel, Variante 2)', // dumbbells seated triceps extension
-  '2202': 'Hüftdehnung mit Faszienrolle', // roller hip stretch
+  '2188': 'Trizepsstrecken über Kopf sitzend (Kurzhantel)', // dumbbell seated triceps extension
+  '2189': 'Trizepsstrecken über Kopf sitzend (Kurzhantel, Variante 2)', // dumbbells seated triceps extension
+  '2202': 'Hüftdehnung (Faszienrolle)', // roller hip stretch
   '2203': 'Schultermobilisation sitzend (Faszienrolle)', // roller seated shoulder mobilization
   '2204': 'Body Saw (Faszienrolle)', // roller body saw
   '2205': 'Hüft- und Latissimus-Dehnung (Faszienrolle)', // roller hip lat stretch
@@ -1133,8 +1133,8 @@ const exerciseNamesDe = <String, String>{
   '2312': 'Ellbogen-zum-Knie-Crunch liegend', // lying elbow to knee
   '2315': 'Wadenheben rotierend (Maschine)', // lever rotary calf
   '2317': 'Seitheben mit gebeugten Armen sitzend (Kurzhantel)', // dumbbell seated bent arm lateral raise
-  '2318': 'Schulterdrücken (Maschine, Variante 3)', // lever shoulder press (variation 3)
-  '2321': 'Bizepscurl nach außen stehend (Kurzhantel)', // dumbbell standing inner biceps curl
+  '2318': 'Schulterdrücken konvergierend (Maschine)', // lever converging shoulder press; was "lever shoulder press (variation 3)"
+  '2321': 'Bizepscurl stehend, Fokus innerer Kopf (Kurzhantel)', // dumbbell standing inner biceps curl
   '2327': 'Rudern im Untergriff (Kurzhantel)', // dumbbell reverse grip row
   '2328': 'Liegestütz eng auf dem Gymnastikball', // narrow push-up on exercise ball
   '2329': 'Wirbelsäulen-Rotation', // spine twist
@@ -1144,7 +1144,7 @@ const exerciseNamesDe = <String, String>{
   '2334': 'Wadendrücken liegend (Maschine)', // sled lying calf press
   '2335': 'Wadendrücken sitzend (Maschine)', // lever seated calf press
   '2355': 'Pendelschwung hängend mit gebeugten Knien', // arm slingers hanging bent knee legs
-  '2363': 'Dips breit am hohen Barren (Brust)', // wide-grip chest dip on high parallel bars
+  '2363': 'Brust-Dips breit am hohen Barren', // wide-grip chest dip on high parallel bars
   '2364': 'Dips breit kniend unterstützt (Maschine)', // assisted wide-grip chest dip (kneeling)
   '2368': 'Split Squat', // split squats
   '2371': 'Russian Twist mit Gewicht (Variante 2)', // weighted russian twist v. 2
@@ -1174,7 +1174,7 @@ const exerciseNamesDe = <String, String>{
   '2616': 'Latziehen mit V-Griff (Kabelzug)', // cable lateral pulldown with v-bar
   '2705': 'Pronation liegend am Boden (Kurzhantel)', // dumbbell lying pronation on floor
   '2706': 'Supination liegend am Boden (Kurzhantel)', // dumbbell lying supination on floor
-  '2736': 'Latziehen im Untergriff (Maschine, Variante 2)', // lever reverse grip lateral pulldown
+  '2736': 'Latziehen im Untergriff mit Hebelarmen (Maschine)', // lever reverse grip lateral pulldown
   '2741': 'Bizepscurl breit stehend (SZ-Stange)', // ez-barbell standing wide grip biceps curl
   '2796': 'Step-up mit Ausfallschritt (Kurzhantel)', // dumbbell step-up lunge
   '2798': 'Sprungkniebeuge mit Ausfallschritt rückwärts (Langhantel)', // barbell squat jump step rear lunge
@@ -1195,7 +1195,7 @@ const exerciseNamesDe = <String, String>{
   '3011': 'Schulterblatt-Liegestütz erhöht', // incline scapula push up
   '3012': 'Schulterblatt-Dips', // scapula dips
   '3013': 'Glute Bridge / Hüftheben', // low glute bridge on floor
-  '3016': 'Curl-up (Bauch)', // curl-up
+  '3016': 'Curl-up', // curl-up
   '3017': 'Pendlay-Rudern (Langhantel)', // barbell pendlay row
   '3019': 'Rudern am Körpergewicht zwischen zwei Bänken', // bench inverted row
   '3021': 'Schulterblatt-Liegestütz', // scapula push-up
@@ -1222,9 +1222,9 @@ const exerciseNamesDe = <String, String>{
   '3194': 'Frankenstein-Kniebeuge (Langhantel)', // frankenstein squat
   '3195': 'Beinbeuger beidbeinig hoch, einbeinig ab (Maschine)', // lever lying two-up one-down leg curl
   '3200': 'Rudern vorgebeugt mit V-Griff (Maschine)', // lever bent-over row with v-bar
-  '3201': 'Sit-up Viertel', // quarter sit-up
-  '3202': 'Sit-up halb', // half sit-up
-  '3203': 'Sit-up halb mit Händen hinter dem Kopf', // prisoner half sit-up
+  '3201': 'Viertel-Sit-up', // quarter sit-up
+  '3202': 'Halber Sit-up', // half sit-up
+  '3203': 'Halber Sit-up mit Händen hinter dem Kopf', // prisoner half sit-up
   '3204': 'Sit-up mit Armen über Kopf', // arms overhead full sit-up
   '3211': 'Liegestütz auf den Knien', // kneeling push-up
   '3212': 'Zehen berühren', // toe touch
@@ -1242,10 +1242,10 @@ const exerciseNamesDe = <String, String>{
   '3224': 'Hampelmann', // jumping jack
   '3231': 'Zehen berühren beidhändig', // two toe touch
   '3234': 'Fliegende hoch (Kurzhantel)', // dumbbell high fly
-  '3235': 'Nordic Curl mit Kabelzug-Unterstützung (Kabelzug)', // cable assisted inverse leg curl
+  '3235': 'Nordic Curl mit Unterstützung (Kabelzug)', // cable assisted inverse leg curl
   '3236': 'Hip Thrust kniend (Band)', // band kneeling hip thrust
   '3237': 'Seitheben (Landmine)', // landmine lateral raise
-  '3239': 'Unterarmstütz kniend mit Schultertippen', // kneeling plank shoulder tap
+  '3239': 'Schultertippen im Stütz kniend', // kneeling plank shoulder tap
   '3240': 'Wadenheben an der Wand mit Ball zwischen den Knien (Kurzhantel)', // exercise ball wall calf raise (ball between knees)
   '3241': 'Wadenheben an der Wand mit Ball zwischen den Knöcheln (Kurzhantel)', // exercise ball wall calf raise (ball between ankles)
   '3281': 'Kniebeuge tief (Multipresse)', // smith full squat
@@ -1312,7 +1312,7 @@ const exerciseNamesDe = <String, String>{
   '3655': 'Ausfallschritt gehend mit Knieheben', // walking high knees lunge
   '3656': 'Laufen mit kurzen Schritten', // short stride run
   '3662': 'Pike-zu-Kobra-Liegestütz', // pike-to-cobra push-up
-  '3663': 'Unterarmstütz rücklings mit Beinheben', // reverse plank with leg lift
+  '3663': 'Umgekehrter Stütz mit Beinheben', // reverse plank with leg lift
   '3664': 'Seitstütz mit Reverse Fly (Kurzhantel)', // dumbbell side plank with rear fly
   '3665': 'Unterarmstütz Power Point', // power point plank
   '3666': 'Gehen auf dem Laufband (Steigung)', // walking on incline treadmill
@@ -1332,6 +1332,8 @@ const exerciseNamesDe = <String, String>{
   '3785': 'Liegestütz erhöht (Hände auf Box)', // incline push-up (on box)
   '3888': 'Reißen einarmig (Kurzhantel)', // dumbbell one arm snatch
   '5201': 'Kellner-Bizepscurl (Kurzhantel)', // dumbbell waiter biceps curl
+  // Curated entries that are not in the source database (no demo animation).
+  '9001': 'Unterarmstütz / Plank', // front plank
 };
 
 /// The classic, most searched exercises (all exercises of the built-in programs plus the
@@ -1340,7 +1342,7 @@ const popularExerciseIds = {
   // the curated names before the complete table
   '0025', '0289', '0748', '0151', '1254', '0122', '0030', '0047', '0314', '0757', '0169', '0033', '0753', '0577', '0308', '0319',
   '0302', '0227', '0179', '0188', '0171', '0596', '0662', '0493', '0279', '0283', '0259', '0659', '0251', '0375', '0073', '0652',
-  '1429', '0017', '0970', '0841', '0688', '1326', '1327', '0572', '2330', '0198', '0245', '0579', '0238', '0027', '3017', '0293',
+  '1429', '0017', '0970', '0841', '0688', '1326', '1327', '0572', '2330', '0245', '0579', '0238', '0027', '3017', '0293',
   '0861', '1350', '0606', '0581', '0499', '0808', '0032', '0300', '0811', '0117', '0085', '1459', '0432', '1757', '1756', '0489',
   '0573', '0044', '0095', '0406', '0604', '0203', '0426', '0405', '0091', '1457', '0603', '0997', '2137', '0334', '0178', '0978',
   '0162', '0041', '0378', '0993', '0120', '0246', '0471', '0031', '0447', '0294', '0285', '0313', '0318', '0297', '0070', '0372',
@@ -1348,7 +1350,7 @@ const popularExerciseIds = {
   '0043', '0042', '0413', '0770', '1760', '0534', '0743', '0046', '0514', '1004', '1489', '2368', '0410', '0739', '0760', '0585',
   '0586', '0599', '0336', '0054', '0381', '0078', '1460', '0431', '0114', '1409', '3013', '3561', '0597', '0598', '0860', '0605',
   '0594', '0409', '1373', '0284', '3193', '0274', '0872', '0277', '0212', '0832', '0262', '0003', '0472', '0689', '0687', '0846',
-  '0276', '2135', '0464', '3544', '0705', '0282', '0001', '0630', '0243', '1160', '0549', '3305', '0648', '2612',
+  '0276', '9001', '2135', '0464', '3544', '0705', '0282', '0001', '0630', '0243', '1160', '0549', '3305', '0648', '2612',
 };
 
 /// Corrected English names of database entries whose original name was broken (typos,
@@ -1362,7 +1364,9 @@ const exerciseNamesEn = <String, String>{
   '0084': 'barbell rollout',
   '0096': 'barbell side bend',
   '0103': 'barbell standing ab rollout',
+  '0139': 'inverted row (narrow underhand grip)',
   '0154': 'cable cross-over reverse fly',
+  '0155': 'cable cross-over',
   '0186': 'cable lying triceps extension',
   '0191': 'cable one arm bent-over fly',
   '0199': 'cable straight arm pulldown (standing)',
@@ -1382,14 +1386,14 @@ const exerciseNamesEn = <String, String>{
   '0624': 'wall sit march',
   '0696': 'nordic hamstring curl (on floor)',
   '0697': 'nordic hamstring curl',
-  '0705': 'side bridge',
+  '0705': 'side plank',
   '0754': 'smith decline reverse-grip bench press',
   '0758': 'smith incline reverse-grip bench press',
   '0764': 'smith reverse-grip bench press',
   '0796': 'standing ab wheel rollout',
   '0857': 'ab wheel rollout',
   '0859': 'wrist roller',
-  '0869': 'lever shoulder press (variation 2)',
+  '0869': 'lever incline shoulder press',
   '0971': 'band assisted ab wheel rollout',
   '1167': 'dynamic chest stretch',
   '1307': 'push-up on bosu ball (flat side up)',
@@ -1417,7 +1421,7 @@ const exerciseNamesEn = <String, String>{
   '2271': 'left hook (boxing)',
   '2286': 'lever hip extension',
   '2288': 'lever hand gripper',
-  '2318': 'lever shoulder press (variation 3)',
+  '2318': 'lever converging shoulder press',
   '2321': 'dumbbell standing inner biceps curl',
   '2327': 'dumbbell reverse grip row',
   '2799': 'barbell seated alternate leg raise',
