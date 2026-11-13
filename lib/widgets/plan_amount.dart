@@ -22,7 +22,7 @@ class PlanAmount {
 PlanAmount planAmount(PlannedWorkout p, UserProfile profile, {List<WorkoutTemplate> templates = const []}) {
   if (p.sport == Sport.gym) {
     if (p.exercises.isNotEmpty) return PlanAmount(estimateGymMinutes(p.exercises), null, estimated: true);
-    final t = templates.where((t) => t.id == p.templateId).firstOrNull;
+    final t = plannedProgramOf(p, templates);
     if (t != null && t.exercises.isNotEmpty) {
       // The plan's day adaptations (e.g. no legs before a race) change the exercises, not the sets.
       if (p.gymMods.isNotEmpty) return PlanAmount(estimateGymMinutes(applyGymMods(t.exercises, p.gymMods)), null, estimated: true);

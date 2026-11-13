@@ -1778,4 +1778,10 @@ const l10nPairs = <(String, String)>[
   ('Built-in', 'Vorlage'),
   ('{program} on two days in a row ({dayPair}) – the same muscles need about 48 h to recover.', '{program} an zwei Tagen hintereinander ({dayPair}) – dieselben Muskeln brauchen etwa 48 h Erholung.'),
   ('{program} on {day}, the day before your long session – heavy legs make it harder.', '{program} am {day}, dem Tag vor deiner langen Einheit – schwere Beine erschweren sie.'),
+  ('Assigned to {weekdays} in your plan settings – the plan chooses the program for these days again.', 'In deinen Planeinstellungen {weekdays} zugewiesen – der Plan wählt für diese Tage wieder selbst ein Programm.'),
+  ('Your plan settings keep your version on {weekdays}.', 'In deinen Planeinstellungen bleibt {weekdays} deine Version zugewiesen.'),
+  ('The program of this workout was deleted', 'Das Programm dieser Einheit wurde gelöscht'),
+  ('Choose a program or exercises for it – or start an empty workout.', 'Wähle ein Programm oder Übungen dafür – oder starte eine leere Einheit.'),
+  ('Choose program', 'Programm wählen'),
+  ('Start empty', 'Leer starten'),
 ];

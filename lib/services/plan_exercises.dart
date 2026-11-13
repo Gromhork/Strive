@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import '../core/sport.dart';
+import '../data/builtin_upgrade.dart' show builtinKeysNamed;
 import '../data/default_programs.dart';
 import '../data/models.dart';
 import 'exercise_class.dart';
@@ -36,6 +38,69 @@ List<GymExercise> plannedGymExercises(PlannedWorkout p, WorkoutTemplate? t, {Str
   return applyGymMods(t?.exercises ?? const [], p.gymMods, gymGoal: gymGoal);
 }
 
+/// The program of planned workout [p] among the athlete's [templates]: its program
+/// ([PlannedWorkout.templateId]). When that one no longer exists – deleted by an app version that
+/// did not keep the plan's exercises ([programDeletion]), or deleted and then restored as a new
+/// document – a gym workout falls back to the athlete's gym program carrying the workout's title,
+/// but only when that is unambiguous: the only program of that name, or the only one of them that
+/// is the built-in program of that name. A name several built-ins share ("Beine": PPL and bro
+/// split) is never guessed. Null for a workout without a program and when nothing matches
+/// ([plannedProgramMissing]).
+WorkoutTemplate? plannedProgramOf(PlannedWorkout p, List<WorkoutTemplate> templates) {
+  final id = p.templateId;
+  if (id == null) return null;
+  final own = templates.where((t) => t.id == id).firstOrNull;
+  if (own != null || p.sport != Sport.gym) return own;
+  return _namedProgram(p.title, templates);
+}
+
+/// The gym program among [templates] that the title of a workout whose program is gone stands for
+/// ([plannedProgramOf]).
+WorkoutTemplate? _namedProgram(String title, List<WorkoutTemplate> templates) {
+  final name = title.trim().toLowerCase();
+  if (name.isEmpty) return null;
+  final keys = builtinKeysNamed(name);
+  if (keys.length > 1) return null;
+  final named = [
+    for (final t in templates)
+      if (t.sport == Sport.gym && t.name.trim().toLowerCase() == name) t,
+  ];
+  if (named.length == 1) return named.single;
+  final builtin = named.where((t) => keys.contains(t.key)).toList();
+  return builtin.length == 1 ? builtin.single : null;
+}
+
+/// A planned gym workout whose program was deleted and that has no exercises of its own: it would
+/// show no exercises and start an empty session – the screens say so and offer to choose a program.
+bool plannedProgramMissing(PlannedWorkout p, List<WorkoutTemplate> templates) =>
+    p.sport == Sport.gym && p.exercises.isEmpty && p.templateId != null && plannedProgramOf(p, templates) == null;
+
+/// Planned gym workouts whose program no longer exists but is found again among the athlete's
+/// [templates] ([plannedProgramOf]) or is one of the originals just [restored] (by its shipped name in
+/// any language – also a name several built-ins share, as only one of them came back): plan id →
+/// the fields that link them to it.
+Map<String, Map<String, dynamic>> relinkedPlans(
+  List<PlannedWorkout> plans,
+  List<WorkoutTemplate> templates, {
+  List<WorkoutTemplate> restored = const [],
+}) {
+  final ids = {for (final t in templates) t.id};
+  WorkoutTemplate? restoredFor(PlannedWorkout p) {
+    final keys = builtinKeysNamed(p.title);
+    final hits = [
+      for (final t in restored)
+        if (t.sport == Sport.gym && (keys.contains(t.key) || t.name.trim().toLowerCase() == p.title.trim().toLowerCase())) t,
+    ];
+    return hits.length == 1 ? hits.single : null;
+  }
+
+  return {
+    for (final p in plans)
+      if (p.sport == Sport.gym && p.templateId != null && !ids.contains(p.templateId) && p.exercises.isEmpty)
+        if (plannedProgramOf(p, templates) ?? restoredFor(p) case final t?) p.id: {'templateId': t.id},
+  };
+}
+
 /// Copies of [exercises] with [mods] applied (see [plannedGymExercises]).
 List<GymExercise> applyGymMods(List<GymExercise> exercises, List<String> mods, {String gymGoal = 'general'}) {
   var out = [for (final e in exercises) e.copy()];
@@ -69,8 +134,15 @@ GymExercise regressedExercise(GymExercise e, String gymGoal) {
 
 /// Reference of program [t] for the gym days the athlete assigns in the plan setup
 /// ([AthleteData.gymPlanA]): `key:<key>` for a built-in program (also the athlete's edited copy –
-/// it keeps the key), else `id:<template id>`.
-String gymProgramRef(WorkoutTemplate t) => t.key != null ? 'key:${t.key}' : 'id:${t.id}';
+/// it keeps the key), else `id:<template id>`. Among the athlete's programs [among], a second
+/// program with the same key (older data) is referenced by its id – `key:` stands for the first
+/// ([gymProgramOf]).
+String gymProgramRef(WorkoutTemplate t, {List<WorkoutTemplate> among = const []}) {
+  final key = t.key;
+  if (key == null) return 'id:${t.id}';
+  final first = among.where((x) => x.key == key).firstOrNull;
+  return first == null || first.id == t.id ? 'key:$key' : 'id:${t.id}';
+}
 
 /// The built-in key of a program reference ([gymProgramRef]), null for the athlete's own programs.
 String? gymRefKey(String ref) => ref.startsWith('key:') ? ref.substring(4) : null;

@@ -53,7 +53,7 @@ class PlanFill {
       final pool = profile.athlete.poolLength > 0 ? profile.athlete.poolLength : 25;
       return PlanFill(minutes: amount.minutes, km: amount.km, poolLengthM: pool);
     }
-    final source = plannedGymExercises(p, templates.where((t) => t.id == p.templateId).firstOrNull, gymGoal: profile.athlete.gymGoal);
+    final source = plannedGymExercises(p, plannedProgramOf(p, templates), gymGoal: profile.athlete.gymGoal);
     final list = prescriber == null ? [for (final e in source) e.copy(resetDone: true)] : prescriber.apply(source, phase: p.phase);
     for (final e in list) {
       e

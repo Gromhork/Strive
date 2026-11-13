@@ -4312,5 +4312,41 @@
         "type": "String"
       }
     }
-  }
+  },
+  "programDeleteUsed": "{n, plural, =1{Your plan uses it in 1 upcoming workout – that workout keeps its exercises.} other{Your plan uses it in {n} upcoming workouts – they keep their exercises.}}",
+  "@programDeleteUsed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "folderDeleteUsed": "{n, plural, =1{Your plan uses programs of this folder in 1 upcoming workout – it keeps its exercises.} other{Your plan uses programs of this folder in {n} upcoming workouts – they keep their exercises.}}",
+  "@folderDeleteUsed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "programDeleteAssigned": "Assigned to {weekdays} in your plan settings – the plan chooses the program for these days again.",
+  "@programDeleteAssigned": {
+    "placeholders": {
+      "weekdays": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreKeepsAssigned": "Your plan settings keep your version on {weekdays}.",
+  "@restoreKeepsAssigned": {
+    "placeholders": {
+      "weekdays": {
+        "type": "String"
+      }
+    }
+  },
+  "planProgramMissing": "The program of this workout was deleted",
+  "planProgramMissingSub": "Choose a program or exercises for it – or start an empty workout.",
+  "planProgramChoose": "Choose program",
+  "startEmptyWorkout": "Start empty"
 }

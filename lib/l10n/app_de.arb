@@ -1827,5 +1827,13 @@
   "gymAssignSuggest": "Vorschlag übernehmen",
   "gymAssignBuiltin": "Vorlage",
   "gymAssignWarnRepeat": "{program} an zwei Tagen hintereinander ({dayPair}) – dieselben Muskeln brauchen etwa 48 h Erholung.",
-  "gymAssignWarnLegs": "{program} am {day}, dem Tag vor deiner langen Einheit – schwere Beine erschweren sie."
+  "gymAssignWarnLegs": "{program} am {day}, dem Tag vor deiner langen Einheit – schwere Beine erschweren sie.",
+  "programDeleteUsed": "{n, plural, =1{Dein Plan verwendet es in 1 anstehenden Einheit – sie behält ihre Übungen.} other{Dein Plan verwendet es in {n} anstehenden Einheiten – sie behalten ihre Übungen.}}",
+  "folderDeleteUsed": "{n, plural, =1{Dein Plan verwendet Programme dieses Ordners in 1 anstehenden Einheit – sie behält ihre Übungen.} other{Dein Plan verwendet Programme dieses Ordners in {n} anstehenden Einheiten – sie behalten ihre Übungen.}}",
+  "programDeleteAssigned": "In deinen Planeinstellungen {weekdays} zugewiesen – der Plan wählt für diese Tage wieder selbst ein Programm.",
+  "restoreKeepsAssigned": "In deinen Planeinstellungen bleibt {weekdays} deine Version zugewiesen.",
+  "planProgramMissing": "Das Programm dieser Einheit wurde gelöscht",
+  "planProgramMissingSub": "Wähle ein Programm oder Übungen dafür – oder starte eine leere Einheit.",
+  "planProgramChoose": "Programm wählen",
+  "startEmptyWorkout": "Leer starten"
 }

@@ -55,7 +55,10 @@ class PlannedWorkoutPage extends ConsumerWidget {
     // Deleted (e.g. from its editor) or replaced: say so instead of a blank page.
     if (p == null) return Scaffold(appBar: AppBar(), body: EmptyState(icon: Icons.event_busy_rounded, text: l.planGone));
     final u = ref.watch(profileOrDefaultProvider).units;
-    final template = ref.watch(templateListProvider).where((t) => t.id == p.templateId).firstOrNull;
+    final templates = ref.watch(templateListProvider);
+    final template = plannedProgramOf(p, templates);
+    // Its program was deleted (and the workout kept no exercises of its own): say so.
+    final missing = !p.isDone && plannedProgramMissing(p, templates);
     final t = Theme.of(context).textTheme;
     final phase = phaseLabel(l, p.phase);
     // Watched unconditionally at the top: a first subscription inside `isDone && …` happened in
@@ -256,6 +259,40 @@ class PlannedWorkoutPage extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
+            if (missing)
+              Material(
+                key: const ValueKey('programMissing'),
+                color: AppColors.warning.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(l.planProgramMissing, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                Text(l.planProgramMissingSub, style: t.bodySmall),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(onPressed: () => _edit(context, ref, p), child: Text(l.planProgramChoose)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             for (final e in exercises)
               ListTile(
                 contentPadding: EdgeInsets.zero,

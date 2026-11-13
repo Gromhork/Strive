@@ -361,8 +361,11 @@ class _ProgramPickerState extends State<_ProgramPicker> {
                                 key: ValueKey('pick_${t.key ?? t.id}'),
                                 title: Text(t.name),
                                 subtitle: ownIds.contains(t.id) ? null : Text(l.gymAssignBuiltin),
-                                trailing: widget.current == gymProgramRef(t) ? const Icon(Icons.check_rounded, color: AppColors.gym) : null,
-                                onTap: () => Navigator.pop(context, gymProgramRef(t)),
+                                trailing:
+                                    widget.current == gymProgramRef(t, among: widget.own)
+                                        ? const Icon(Icons.check_rounded, color: AppColors.gym)
+                                        : null,
+                                onTap: () => Navigator.pop(context, gymProgramRef(t, among: widget.own)),
                               ),
                           ],
                         ],

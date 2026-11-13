@@ -6141,4 +6141,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String gymAssignWarnLegs(String program, String day) {
     return '$program on $day, the day before your long session – heavy legs make it harder.';
   }
+
+  @override
+  String programDeleteUsed(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Your plan uses it in $n upcoming workouts – they keep their exercises.',
+      one: 'Your plan uses it in 1 upcoming workout – that workout keeps its exercises.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String folderDeleteUsed(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Your plan uses programs of this folder in $n upcoming workouts – they keep their exercises.',
+      one: 'Your plan uses programs of this folder in 1 upcoming workout – it keeps its exercises.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String programDeleteAssigned(String weekdays) {
+    return 'Assigned to $weekdays in your plan settings – the plan chooses the program for these days again.';
+  }
+
+  @override
+  String restoreKeepsAssigned(String weekdays) {
+    return 'Your plan settings keep your version on $weekdays.';
+  }
+
+  @override
+  String get planProgramMissing => 'The program of this workout was deleted';
+
+  @override
+  String get planProgramMissingSub => 'Choose a program or exercises for it – or start an empty workout.';
+
+  @override
+  String get planProgramChoose => 'Choose program';
+
+  @override
+  String get startEmptyWorkout => 'Start empty';
 }

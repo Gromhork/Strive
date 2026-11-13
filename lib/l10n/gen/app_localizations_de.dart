@@ -6141,4 +6141,48 @@ class AppLocalizationsDe extends AppLocalizations {
   String gymAssignWarnLegs(String program, String day) {
     return '$program am $day, dem Tag vor deiner langen Einheit – schwere Beine erschweren sie.';
   }
+
+  @override
+  String programDeleteUsed(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Dein Plan verwendet es in $n anstehenden Einheiten – sie behalten ihre Übungen.',
+      one: 'Dein Plan verwendet es in 1 anstehenden Einheit – sie behält ihre Übungen.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String folderDeleteUsed(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Dein Plan verwendet Programme dieses Ordners in $n anstehenden Einheiten – sie behalten ihre Übungen.',
+      one: 'Dein Plan verwendet Programme dieses Ordners in 1 anstehenden Einheit – sie behält ihre Übungen.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String programDeleteAssigned(String weekdays) {
+    return 'In deinen Planeinstellungen $weekdays zugewiesen – der Plan wählt für diese Tage wieder selbst ein Programm.';
+  }
+
+  @override
+  String restoreKeepsAssigned(String weekdays) {
+    return 'In deinen Planeinstellungen bleibt $weekdays deine Version zugewiesen.';
+  }
+
+  @override
+  String get planProgramMissing => 'Das Programm dieser Einheit wurde gelöscht';
+
+  @override
+  String get planProgramMissingSub => 'Wähle ein Programm oder Übungen dafür – oder starte eine leere Einheit.';
+
+  @override
+  String get planProgramChoose => 'Programm wählen';
+
+  @override
+  String get startEmptyWorkout => 'Leer starten';
 }

@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/format.dart';
 import '../../core/sport.dart';
@@ -11,7 +13,10 @@ import '../../core/theme.dart';
 import '../../data/builtin_upgrade.dart';
 import '../../data/default_programs.dart';
 import '../../data/models.dart';
+import '../../data/repository.dart';
 import '../../providers.dart';
+import '../../services/plan_exercises.dart';
+import '../../services/program_deletion.dart';
 import '../../widgets/common.dart';
 import '../session/manual_entry_page.dart';
 import '../session/start_helpers.dart';
@@ -47,6 +52,9 @@ class _TrainPageState extends ConsumerState<TrainPage> {
   /// A program is being dragged: pointer moves near the edges scroll the list.
   bool _dragging = false;
   EdgeDraggingAutoScroller? _autoScroller;
+
+  /// The last pointer move of the drag (the finger's position while it rests at an edge).
+  PointerMoveEvent? _lastMove;
 
   /// Optimistic order until Firestore's snapshot arrives (no snap-back after a drop): the new
   /// folder order and the moved programs, each with the data it was based on – any newer
@@ -148,18 +156,44 @@ class _TrainPageState extends ConsumerState<TrainPage> {
 
   void _startDrag(ScrollableState scrollable) {
     _autoScroller?.stopAutoScroll();
-    _autoScroller = EdgeDraggingAutoScroller(scrollable, velocityScalar: 50);
+    _autoScroller = EdgeDraggingAutoScroller(scrollable, velocityScalar: 50, onScrollViewScrolled: _autoScrolled);
     _dragging = true;
   }
 
   void _endDrag() {
+    _lastMove = null;
     if (!_dragging) return;
     _dragging = false;
     _autoScroller?.stopAutoScroll();
   }
 
-  void _dragMove(Offset global) {
-    if (_dragging) _autoScroller?.startAutoScrollIfNecessary(Rect.fromCenter(center: global, width: 1, height: 120));
+  static Rect _dragRect(Offset global) => Rect.fromCenter(center: global, width: 1, height: 120);
+
+  void _dragMove(PointerMoveEvent e) {
+    _lastMove = e;
+    if (_dragging) _autoScroller?.startAutoScrollIfNecessary(_dragRect(e.position));
+  }
+
+  /// One auto-scroll step is done while the finger rests at the edge. The scroller keeps the drag
+  /// rect in content coordinates, so it gets the finger's position again – else it stops once the
+  /// content moved past the old rect (review R7-3: only ~60 dp). The drag also re-checks what now
+  /// lies under the finger (drop targets update on pointer moves only), so a drop lands where the
+  /// finger is, not on the row that scrolled away.
+  void _autoScrolled() {
+    final e = _lastMove;
+    if (!_dragging || e == null || !mounted) return;
+    _autoScroller?.startAutoScrollIfNecessary(_dragRect(e.position));
+    GestureBinding.instance.handlePointerEvent(
+      PointerMoveEvent(
+        viewId: e.viewId,
+        timeStamp: e.timeStamp,
+        pointer: e.pointer,
+        kind: e.kind,
+        device: e.device,
+        position: e.position,
+        buttons: e.buttons,
+      ),
+    );
   }
 
   @override
@@ -167,6 +201,9 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     final l = context.l10n;
     final filter = ref.watch(sportFilterProvider);
     final profile = ref.watch(profileOrDefaultProvider);
+    // Keeps the plan loaded (no rebuilds): deleting a program keeps its planned workouts' exercises
+    // and restoring relinks them – both need the plan even when no other tab was opened yet.
+    ref.listen(plansProvider, (_, _) {});
     final all = _programs(ref.watch(templateListProvider));
     final folderOrder = _folderOrder(profile);
     final templates = all.where((t) => filter == null || t.sport == filter).toList();
@@ -185,7 +222,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
       ),
       // Sees every pointer move of a program drag (even after the dragged row scrolled away).
       body: Listener(
-        onPointerMove: (e) => _dragMove(e.position),
+        onPointerMove: _dragMove,
         onPointerUp: (_) => _endDrag(),
         onPointerCancel: (_) => _endDrag(),
         child: CustomScrollView(
@@ -425,12 +462,20 @@ class _TrainPageState extends ConsumerState<TrainPage> {
         setState(() {});
       case 'delete':
         if (!mounted) return;
+        final ids = {for (final t in inside) t.id};
+        final usage = await _deletionOf(ref, ids);
+        if (!mounted) return;
         final choice = await showDialog<String>(
           context: context,
           builder:
               (c) => AlertDialog(
                 title: Text(l.deleteFolderTitle(folder)),
-                content: Text(inside.isEmpty ? l.deleteFolderEmpty : l.deleteFolderBody(inside.length)),
+                content: Text(
+                  [
+                    inside.isEmpty ? l.deleteFolderEmpty : l.deleteFolderBody(inside.length),
+                    ..._deletionNotes(context, usage, folder: true),
+                  ].join('\n\n'),
+                ),
                 actions: [
                   TextButton(onPressed: () => Navigator.pop(c), child: Text(l.cancel)),
                   if (inside.isNotEmpty) TextButton(onPressed: () => Navigator.pop(c, 'keep'), child: Text(l.deleteFolderKeep)),
@@ -445,7 +490,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
         if (choice == 'keep') {
           repo.saveTemplates([for (final t in inside) t.copyWith(folder: '')]);
         } else {
-          repo.deleteTemplates(inside.map((t) => t.id));
+          _deletePrograms(repo, ref.read(profileOrDefaultProvider), ids, usage);
         }
         _saveFolderOrder(full.where((f) => f != folder).toList());
     }
@@ -476,12 +521,31 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     );
   }
 
-  void _applyRestore(BuiltinRestore plan) {
+  /// Writes [plan]. Planned workouts whose program was deleted find it again in the restored
+  /// original ([relinkedPlans]); days assigned to a changed version in the plan settings keep it
+  /// ([restoreAssignmentPatch]).
+  Future<void> _applyRestore(BuiltinRestore plan) async {
     if (plan.isEmpty) return;
-    ref.read(repoProvider)!.saveTemplates(plan.writes);
+    final repo = ref.read(repoProvider)!;
+    final existing = ref.read(templateListProvider);
+    final profile = ref.read(profileOrDefaultProvider);
+    final plans = await _plans(ref);
+    if (!mounted) return;
+    repo.saveTemplates(plan.writes);
+    final kept = {for (final t in plan.keep) t.id: t};
+    final relink = relinkedPlans(plans, [for (final t in existing) kept[t.id] ?? t, ...plan.add], restored: plan.add);
+    if (relink.isNotEmpty) repo.updateMany(plans: relink).ignore();
+    final patch = restoreAssignmentPatch(profile.athlete, plan, existing);
+    if (patch != null) repo.saveProfile(profile.copyWith(athlete: profile.athlete.merge(patch)));
     final opened = plan.add.map((t) => t.folder).where((f) => f.isNotEmpty);
     setState(() => _open.addAll(opened));
     toast(context, context.l10n.programsRestored(plan.add.length));
+  }
+
+  /// Weekdays whose assigned program stays the athlete's changed version when [plan] is applied.
+  List<int> _restoreKeptDays(BuiltinRestore plan) {
+    final a = ref.read(profileOrDefaultProvider).athlete;
+    return restoreKeptDays(a, restoreAssignmentPatch(a, plan, ref.read(templateListProvider)));
   }
 
   /// Folder menu "Standardprogramme wiederherstellen": confirms what is added and kept.
@@ -495,10 +559,11 @@ class _TrainPageState extends ConsumerState<TrainPage> {
       body: [
         l.restoreBuiltinsAdd(plan.add.map((t) => t.name).join(', ')),
         if (plan.keep.isNotEmpty) l.restoreBuiltinsKeep(plan.keep.map((t) => '„${t.name}“').join(', ')),
+        if (_restoreKeptDays(plan) case final days when days.isNotEmpty) l.restoreKeepsAssigned(weekdayNames(context, days)),
       ].join('\n\n'),
       ok: l.restoreAction,
     );
-    if (ok && mounted) _applyRestore(_restorePlan(folderKeys: builtinFolderKeysOf(folder, ref.read(templateListProvider))));
+    if (ok && mounted) await _applyRestore(_restorePlan(folderKeys: builtinFolderKeysOf(folder, ref.read(templateListProvider))));
   }
 
   /// Overflow / empty state: every built-in folder with missing or changed programs.
@@ -544,8 +609,10 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                                     [
                                       e.value.add.map((t) => t.name).join(', '),
                                       if (e.value.keep.isNotEmpty) l.builtinChangedLine(e.value.changedNames.join(', ')),
+                                      if (_restoreKeptDays(e.value) case final days when days.isNotEmpty)
+                                        l.restoreKeepsAssigned(weekdayNames(context, days)),
                                     ].join('\n'),
-                                    maxLines: 3,
+                                    maxLines: 5,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -565,7 +632,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
           ),
     );
     if (ok != true || !mounted) return;
-    _applyRestore(_restorePlan(folderKeys: chosen));
+    await _applyRestore(_restorePlan(folderKeys: chosen));
   }
 }
 
@@ -1044,7 +1111,13 @@ class _TemplateTile extends ConsumerWidget {
           Navigator.push(context, MaterialPageRoute(builder: (_) => TemplateEditorPage(template: t)));
         case 'dup':
           repo.saveTemplate(
-            WorkoutTemplate.fromMap(repo.newId(), {...t.toMap(), 'name': '${t.name} (${l.copy})', 'key': null, 'order': t.order + 1}),
+            WorkoutTemplate.fromMap(repo.newId(), {
+              ...t.toMap(),
+              'name': '${t.name} (${l.copy})',
+              'key': null,
+              'origKey': null,
+              'order': t.order + 1,
+            }),
           );
         case 'up':
           onMove(-1);
@@ -1053,7 +1126,14 @@ class _TemplateTile extends ConsumerWidget {
         case 'move':
           onMoveToFolder();
         case 'delete':
-          if (await confirm(context, l.deleteProgram, body: t.name, ok: l.delete, danger: true)) repo.deleteTemplate(t.id);
+          // The plan keeps the workouts of this program ([programDeletion]) – the dialog says so.
+          final usage = await _deletionOf(ref, {t.id});
+          if (!context.mounted) return;
+          final profile = ref.read(profileOrDefaultProvider);
+          final body = [t.name, ..._deletionNotes(context, usage, folder: false)].join('\n\n');
+          if (await confirm(context, l.deleteProgram, body: body, ok: l.delete, danger: true)) {
+            _deletePrograms(repo, profile, {t.id}, usage);
+          }
       }
     }
 
@@ -1127,4 +1207,48 @@ class _TemplateTile extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// What deleting the programs [ids] does to the plan ([programDeletion]).
+Future<ProgramDeletion> _deletionOf(WidgetRef ref, Set<String> ids) async {
+  final templates = ref.read(templateListProvider);
+  final athlete = ref.read(profileOrDefaultProvider).athlete;
+  return programDeletion(ids, templates: templates, plans: await _plans(ref), athlete: athlete, today: DateTime.now());
+}
+
+/// The planned workouts (the Train tab keeps them loaded, [TrainPage]) – awaited while they are
+/// still loading, so a delete or restore never misses the plan.
+Future<List<PlannedWorkout>> _plans(WidgetRef ref) async {
+  final now = ref.read(plansProvider);
+  if (now.hasValue) return now.requireValue;
+  try {
+    return await ref.read(plansProvider.future).timeout(const Duration(seconds: 5));
+  } catch (_) {
+    return ref.read(planListProvider);
+  }
+}
+
+/// The delete confirmation's lines about the plan: upcoming workouts using the programs and gym
+/// days assigned to them.
+List<String> _deletionNotes(BuildContext context, ProgramDeletion d, {required bool folder}) {
+  final l = context.l10n;
+  return [
+    if (d.upcoming > 0) folder ? l.folderDeleteUsed(d.upcoming) : l.programDeleteUsed(d.upcoming),
+    if (d.assignedDays.isNotEmpty) l.programDeleteAssigned(weekdayNames(context, d.assignedDays)),
+  ];
+}
+
+/// Deletes the programs [ids]; the planned workouts using them keep their exercises and their
+/// assignments in the plan settings go ([d]).
+void _deletePrograms(Repository repo, UserProfile profile, Set<String> ids, ProgramDeletion d) {
+  if (d.plans.isNotEmpty) repo.updateMany(plans: d.plans).ignore();
+  if (d.athlete case final patch?) repo.saveProfile(profile.copyWith(athlete: profile.athlete.merge(patch)));
+  repo.deleteTemplates(ids).ignore();
+}
+
+/// Short weekday names of [days] (1 = Monday): "Mo, Mi".
+String weekdayNames(BuildContext context, List<int> days) {
+  final f = DateFormat.E(context.localeName);
+  final monday = startOfWeek(DateTime.now());
+  return days.map((d) => f.format(addDays(monday, d - 1))).join(', ');
 }

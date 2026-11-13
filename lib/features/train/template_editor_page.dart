@@ -68,6 +68,7 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
     steps: _sport == Sport.gym || !_structured ? const [] : _steps,
     key: widget.template?.key,
     order: widget.template?.order ?? 999,
+    origKey: widget.template?.origKey,
   );
 
   void _save() {

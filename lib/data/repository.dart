@@ -320,7 +320,7 @@ class Repository {
     if (!d.exists) return null;
     // An imported copy is the user's own program: a shared built-in's key would make the plan
     // generator pick it instead of the user's original (first program with that key).
-    final t = WorkoutTemplate.fromMap(newId(), {...d.data()!, 'key': null, 'order': 999});
+    final t = WorkoutTemplate.fromMap(newId(), {...d.data()!, 'key': null, 'origKey': null, 'order': 999});
     saveTemplate(t);
     return t;
   }
