@@ -127,7 +127,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                     _FilterMenu(
                       label: _body == null ? l.bodyPart : term(_body!, lang),
                       active: _body != null,
-                      options: db.bodyParts,
+                      options: db.bodyPartsFor(lang),
                       lang: lang,
                       onSelected: (v) => setState(() => _body = v),
                     ),
@@ -135,7 +135,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                     _FilterMenu(
                       label: _equip == null ? l.equipment : term(_equip!, lang),
                       active: _equip != null,
-                      options: db.equipment,
+                      options: db.equipmentFor(lang),
                       lang: lang,
                       onSelected: (v) => setState(() => _equip = v),
                     ),
@@ -161,12 +161,9 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                       leading: ExerciseMedia(exId: e.id, animated: false, size: 52, radius: 14, done: sel),
                       title: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      // The English database name stays visible as an alias (videos, other apps).
-                      subtitle: Text(
-                        [term(e.target, lang), term(e.equipment, lang), if (name != e.displayName) e.displayName].join(' · '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      // Target muscle · equipment (the English name is only a search alias,
+                      // shown on the detail page).
+                      subtitle: Text(exerciseSubtitle(e, lang), maxLines: 1, overflow: TextOverflow.ellipsis),
                       trailing: records.contains(e.id) ? const Icon(Icons.history, size: 18) : null,
                       onTap: () {
                         if (widget.selectMode && widget.single) {

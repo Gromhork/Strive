@@ -42,7 +42,7 @@ void main() {
     final sw = Stopwatch()..start();
     final list = db.search('', lang: 'de');
     sw.stop();
-    expect(list.length, db.all.length);
+    expect(list.length, db.visible.length);
     final names = [for (final e in list) exerciseName(e.id, e.name, 'de').toLowerCase()];
     expect(names, [...names]..sort());
     // Was ~1.5 s on a desktop VM (the rule-based German names were recomputed inside the sort).
