@@ -1,4 +1,5 @@
 import '../data/exercise_db.dart';
+import '../data/exercise_measure.dart' show bodyShareOf;
 import '../data/models.dart';
 
 /// Training role of an exercise – drives rep ranges, superset pairing and load steps.
@@ -47,10 +48,12 @@ class LiftProfile {
   /// Bodyweight exercise (load = body weight [+ added weight]).
   final bool bodyweight;
 
-  /// Share of the body weight that is actually lifted (for volume / e1RM of bodyweight
-  /// exercises). 0 = not counted (core, jumps, bodyweight leg work – progressed by reps).
-  /// Pull-ups / chin-ups / dips ≈ 100 %; push-ups ≈ 64 % (Ebben et al. 2011);
-  /// inverted rows ≈ 55–60 %; bench dips ≈ 50 %.
+  /// Share of the body weight that is lifted by the upper-body bodyweight lifts (pull-ups /
+  /// chin-ups / dips ≈ 100 %, push-ups ≈ 64 % (Ebben et al. 2011), inverted rows ≈ 60 %,
+  /// bench dips ≈ 50 % – see [bodyShareOf]); it decides the rep range and whether added load
+  /// is the next step ([loadableBodyweight]). 0 for core, jumps and bodyweight leg work, which
+  /// progress by reps – their body load for volume comes from [bodyShareOf] directly
+  /// (LoadPrescriber.bodyLoad).
   final double bodyFraction;
 
   /// Bodyweight exercise that is commonly progressed with added load (belt / vest)
@@ -159,9 +162,7 @@ LiftProfile classifyLift(String exId, String name, {Exercise? info}) {
     );
   }
   if (_any(n, ['push-up', 'push up', 'pushup', 'press-up']) && bwEquip) {
-    final easy = _any(n, ['knee', 'incline', 'wall']);
-    final hard = n.contains('decline');
-    return LiftProfile(LiftClass.bodyweight, Movement.horizontalPush, bodyFraction: easy ? 0.5 : (hard ? 0.75 : 0.65), bodyweight: true);
+    return LiftProfile(LiftClass.bodyweight, Movement.horizontalPush, bodyFraction: bodyShareOf(exId, n), bodyweight: true);
   }
   if (n.contains('inverted row') || (n.contains('australian') && n.contains('pull'))) {
     return const LiftProfile(LiftClass.bodyweight, Movement.horizontalPull, bodyFraction: 0.6, bodyweight: true);

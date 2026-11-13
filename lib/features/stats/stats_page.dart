@@ -9,6 +9,7 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../data/exercise_measure.dart' show formatHold;
 import '../../data/exercise_names_de.dart';
 import '../../providers.dart';
 import '../../services/insights.dart';
@@ -111,7 +112,15 @@ class _PerformanceState extends ConsumerState<_Performance> {
                       ),
                     ),
                   if (filter == null || filter == Sport.gym)
-                    Expanded(child: StatTile(label: l.volume, value: u.volume(vol), icon: Sport.gym.icon, color: AppColors.gym)),
+                    Expanded(
+                      child: StatTile(
+                        label: l.volume,
+                        value: u.volume(vol),
+                        icon: Sport.gym.icon,
+                        color: AppColors.gym,
+                        caption: s.any((x) => x.volumeCountsBody) ? l.volumeInclBody : null,
+                      ),
+                    ),
                   if (filter == Sport.gym)
                     Expanded(
                       child: StatTile(
@@ -390,7 +399,14 @@ class _Records extends ConsumerWidget {
                             contentPadding: EdgeInsets.zero,
                             dense: true,
                             // No "e1RM 0 kg" trophy for core / bodyweight exercises: their best reps instead.
-                            leading: Icon(r.bestE1rm > 0 ? Icons.emoji_events_outlined : Icons.repeat_rounded, color: AppColors.gym),
+                            leading: Icon(
+                              r.bestE1rm > 0
+                                  ? Icons.emoji_events_outlined
+                                  : r.longestHold > 0
+                                  ? Icons.timer_outlined
+                                  : Icons.repeat_rounded,
+                              color: AppColors.gym,
+                            ),
                             title: Text(exName(context, r.exId, r.name), maxLines: 1, overflow: TextOverflow.ellipsis),
                             subtitle: Text(
                               [
@@ -399,7 +415,11 @@ class _Records extends ConsumerWidget {
                               ].join(' · '),
                             ),
                             trailing: Text(
-                              r.bestE1rm > 0 ? 'e1RM ${u.weight(r.bestE1rm, digits: 0)}' : l.maxRepsN(r.maxReps),
+                              r.bestE1rm > 0
+                                  ? 'e1RM ${u.weight(r.bestE1rm, digits: 0)}'
+                                  : r.longestHold > 0
+                                  ? l.longestHoldN(formatHold(r.longestHold))
+                                  : l.maxRepsN(r.maxReps),
                               style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
                             onTap: () {

@@ -66,11 +66,14 @@ class SportBadge extends StatelessWidget {
 }
 
 class StatTile extends StatelessWidget {
-  const StatTile({super.key, required this.label, required this.value, this.icon, this.color});
+  const StatTile({super.key, required this.label, required this.value, this.icon, this.color, this.caption});
   final String label;
   final String value;
   final IconData? icon;
   final Color? color;
+
+  /// Small line under the value (e.g. "incl. body weight (80 kg)").
+  final String? caption;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +95,7 @@ class StatTile extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: Text(value, style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700, color: color)),
         ),
+        if (caption != null) Text(caption!, style: t.labelSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
       ],
     );
   }

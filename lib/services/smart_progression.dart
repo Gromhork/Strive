@@ -71,6 +71,21 @@ enum ProgressReason {
   /// The reps are at the most the range allows (top + ~25 %) → hold; more load or a harder
   /// variation is the next step.
   repCap,
+
+  /// Timed hold: every set held its target → 5–10 s longer.
+  holdLonger,
+
+  /// Timed hold at the top of its time range → added weight, back to the bottom of the range.
+  holdAddLoad,
+
+  /// Timed hold at the top of its range without a load step (stretch, L-sit, …) → keep it.
+  holdTop,
+
+  /// Timed hold: a set fell clearly short of its target → the same time once more.
+  holdMissed,
+
+  /// Timed hold: targets missed twice in a row → one step shorter.
+  holdShorter,
 }
 
 /// Direction of the recent e1RM trend of an exercise.

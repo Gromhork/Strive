@@ -8,7 +8,9 @@ import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../data/exercise_measure.dart' show formatHold;
 import '../../data/exercise_names_de.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/insights.dart';
 import '../../widgets/common.dart';
@@ -16,7 +18,7 @@ import '../calendar/auto_adjust.dart' show undoAutoAdjust;
 import '../session/route_map.dart';
 import 'edit_session_page.dart';
 import 'plan_link_card.dart';
-import '../session/gym_session_page.dart' show setLabel;
+import '../session/gym_session_page.dart' show setLabelOf;
 import '../../widgets/rpe_picker.dart' show rpeLabel;
 
 class SessionDetailPage extends ConsumerWidget {
@@ -118,8 +120,19 @@ class SessionDetailPage extends ConsumerWidget {
               children: [
                 _half(context, StatTile(label: l.duration, value: clock(s.durationSec))),
                 if (s.sport == Sport.gym) ...[
-                  _half(context, StatTile(label: l.volume, value: u.volume(s.volume), color: AppColors.gym)),
+                  _half(
+                    context,
+                    StatTile(
+                      key: const ValueKey('detailVolume'),
+                      label: l.volume,
+                      value: u.volume(s.volume),
+                      color: AppColors.gym,
+                      caption: volumeCaption(l, s, u),
+                    ),
+                  ),
                   _half(context, StatTile(label: l.sets, value: '${s.setsDone}')),
+                  if (s.holdSec > 0)
+                    _half(context, StatTile(key: const ValueKey('detailHold'), label: l.holdTime, value: clock(s.holdSec))),
                   if (s.exercises.any((e) => e.exId != 'manual'))
                     _half(context, StatTile(label: l.exercises, value: '${s.exercises.length}')),
                 ] else ...[
@@ -254,6 +267,14 @@ class SessionDetailPage extends ConsumerWidget {
                       Builder(
                         builder: (_) {
                           final pe = prev.exercises.where((x) => x.exId == e.exId && !prev.exerciseFromPlan(x)).firstOrNull;
+                          // Timed holds: the longest hold, like with like.
+                          if (pe != null && e.isTimed && e.longestHold > 0 && pe.longestHold > 0) {
+                            return _CompareRow(
+                              exName(context, e.exId, e.name),
+                              formatHold(e.longestHold),
+                              delta(e.longestHold.toDouble(), pe.longestHold.toDouble(), fmt: (d) => '${d.round()} s'),
+                            );
+                          }
                           // Only like with like: a set logged before bodyweight mode existed (or
                           // in the other mode) has no comparable e1RM.
                           if (pe == null || e.bestE1rm <= 0 || pe.bestE1rm <= 0 || (e.bw == true) != (pe.bw == true)) {
@@ -277,19 +298,17 @@ class SessionDetailPage extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: SectionCard(
                   title: exName(context, e.exId, e.name),
-                  trailing: Text(u.volume(e.volume), style: Theme.of(context).textTheme.labelSmall),
+                  // Timed holds: the time held instead of a (meaningless) kg volume.
+                  trailing: Text(
+                    e.isTimed ? (e.holdSec > 0 ? clock(e.holdSec) : '') : u.volume(e.volumeAt(s.bodyWeightKg)),
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
                       for (final set in e.sets.where((x) => x.done))
-                        Chip(
-                          visualDensity: VisualDensity.compact,
-                          label: Text(
-                            '${set.warmup ? 'W · ' : ''}'
-                            '${e.bw == true ? setLabel(set, u, bw: l.bodyweightShort) : '${Units.num(u.weightOut(set.weight))} × ${set.reps}'}',
-                          ),
-                        ),
+                        Chip(visualDensity: VisualDensity.compact, label: Text('${set.warmup ? 'W · ' : ''}${setLabelOf(l, e, set, u)}')),
                     ],
                   ),
                 ),
@@ -309,11 +328,20 @@ class SessionDetailPage extends ConsumerWidget {
       if (s.distanceM > 0) s.sport == Sport.swim ? u.swimDist(s.distanceM) : u.dist(s.distanceM),
       if (s.sport == Sport.gym && s.setsDone > 0) l.setsN(s.setsDone),
       if (s.volume > 0) u.volume(s.volume),
+      if (s.holdSec > 0) '${l.holdTime} ${clock(s.holdSec)}',
     ];
     return '${parts.join(' · ')}\n${l.sharedFromStrive}';
   }
 
   Widget _half(BuildContext c, Widget w) => SizedBox(width: (MediaQuery.sizeOf(c).width - 64) / 2, child: w);
+}
+
+/// Caption of a gym volume ([Session.volume]) that contains body weight: "incl. body weight (80 kg)";
+/// null when no bodyweight exercise counts.
+String? volumeCaption(AppLocalizations l, Session s, Units u) {
+  if (!s.volumeCountsBody) return null;
+  final kg = s.bodyWeightKg;
+  return kg == null || kg <= 0 ? l.volumeInclBody : l.volumeInclBodyKg(u.weight(kg, digits: 0));
 }
 
 class _CompareRow extends StatelessWidget {

@@ -7142,7 +7142,7 @@ abstract class AppLocalizations {
   /// No description provided for @termVolumeBody.
   ///
   /// In en, this message translates to:
-  /// **'Weight × reps of all working sets added up (warm-ups don\'t count). For bodyweight exercises the lifted share of your body weight counts.'**
+  /// **'Weight × reps of all working sets added up (warm-ups don\'t count). For bodyweight exercises the moved share of your body weight counts (e.g. push-up ≈ 64 %, pull-up 100 %, squat ≈ 70 %) plus any added weight. Holds such as planks count as hold time, not as volume.'**
   String get termVolumeBody;
 
   /// No description provided for @termVolumeTip.
@@ -10732,6 +10732,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.'**
   String get swimTestImplausible;
+
+  /// No description provided for @progHoldLonger.
+  ///
+  /// In en, this message translates to:
+  /// **'every set held – a little longer'**
+  String get progHoldLonger;
+
+  /// No description provided for @progHoldAddLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'top of the time range – add weight, a shorter time again'**
+  String get progHoldAddLoad;
+
+  /// No description provided for @progHoldTop.
+  ///
+  /// In en, this message translates to:
+  /// **'top of the time range – keep it (harder with a variation)'**
+  String get progHoldTop;
+
+  /// No description provided for @progHoldMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'time missed – the same time once more'**
+  String get progHoldMissed;
+
+  /// No description provided for @progHoldShorter.
+  ///
+  /// In en, this message translates to:
+  /// **'time missed twice – a bit shorter'**
+  String get progHoldShorter;
+
+  /// No description provided for @rxTodayText.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: {text}'**
+  String rxTodayText(String text);
+
+  /// No description provided for @holdTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold time'**
+  String get holdTime;
+
+  /// No description provided for @holdStartBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Start {time}'**
+  String holdStartBtn(String time);
+
+  /// No description provided for @holdStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get holdStop;
+
+  /// No description provided for @holdRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold'**
+  String get holdRunning;
+
+  /// No description provided for @holdOvertime.
+  ///
+  /// In en, this message translates to:
+  /// **'Target reached'**
+  String get holdOvertime;
+
+  /// No description provided for @holdAutoDone.
+  ///
+  /// In en, this message translates to:
+  /// **'At the target time: check off and start the rest'**
+  String get holdAutoDone;
+
+  /// No description provided for @holdLogWithout.
+  ///
+  /// In en, this message translates to:
+  /// **'Log without timer'**
+  String get holdLogWithout;
+
+  /// No description provided for @timedMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Timed (hold)'**
+  String get timedMode;
+
+  /// No description provided for @holdRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold-time range'**
+  String get holdRange;
+
+  /// No description provided for @holdRangeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Every set held its target → next time 5–10 s longer, up to the top of the range; then with added weight and shorter again.'**
+  String get holdRangeHint;
+
+  /// No description provided for @volumeInclBody.
+  ///
+  /// In en, this message translates to:
+  /// **'incl. body weight'**
+  String get volumeInclBody;
+
+  /// No description provided for @volumeInclBodyKg.
+  ///
+  /// In en, this message translates to:
+  /// **'incl. body weight ({weight})'**
+  String volumeInclBodyKg(String weight);
+
+  /// No description provided for @longestHoldN.
+  ///
+  /// In en, this message translates to:
+  /// **'longest hold {time}'**
+  String longestHoldN(String time);
+
+  /// No description provided for @longestHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest hold'**
+  String get longestHold;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

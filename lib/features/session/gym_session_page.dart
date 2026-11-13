@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../data/exercise_measure.dart' show formatHold;
 import '../../data/exercise_names_de.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
@@ -14,6 +15,7 @@ import '../../services/insights.dart';
 import '../../services/load_prescription.dart' show LoadPrescriber;
 import '../../data/exercise_db.dart' show Exercise;
 import '../../widgets/common.dart';
+import '../../widgets/duration_picker.dart';
 import '../../widgets/effort_chips.dart';
 import '../../widgets/exercise_media.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -181,7 +183,12 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
           OutlinedButton.icon(icon: const Icon(Icons.add), label: Text(l.addExercise), onPressed: _addExercises),
         ],
       ),
-      bottomSheet: _table && w.restEnd != null ? RestBar(w: w) : null,
+      bottomSheet:
+          _table && w.holdStart != null
+              ? HoldBar(w: w)
+              : _table && w.restEnd != null
+              ? RestBar(w: w)
+              : null,
     );
   }
 
@@ -433,11 +440,7 @@ class _ExerciseTile extends ConsumerWidget {
     final n = ref.read(activeGymProvider.notifier);
     final total = e.sets.length;
     final done = e.sets.where((s) => s.done).length;
-    final work = e.workSets;
-    final (lo, hi) = ref.watch(loadPrescriberProvider).range(e);
-    final top = work.isEmpty ? 0.0 : work.map((s) => s.weight).reduce((a, b) => a > b ? a : b);
-    final load = e.bw == true ? bodyweightLoad(l.bodyweightShort, top, units) : (top > 0 ? units.weight(top) : null);
-    final summary = work.isEmpty ? '$total ${l.sets}' : '${work.length} × $lo–$hi${load == null ? '' : ' · $load'}';
+    final summary = exerciseSummary(l, e, units, range: ref.watch(loadPrescriberProvider).range(e));
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -522,6 +525,8 @@ class ExerciseMenu extends ConsumerWidget {
           case 'bodyweight':
             final on = e.bw != true;
             n.setBodyweight(index, on);
+          case 'timed':
+            n.setTimed(index, !e.isTimed);
           case 'replace':
             final picked = await pickExercises(context, single: true);
             if (picked.isNotEmpty) n.replaceExercise(index, picked.first.id, picked.first.name);
@@ -558,8 +563,10 @@ class ExerciseMenu extends ConsumerWidget {
                 title: Text(l.replaceExercise),
               ),
             ),
-            if (offersBodyweightMode(e.exId, e.name, info: ref.watch(exerciseDbProvider).value?.byId(e.exId), current: e.bw))
+            // A hold's weight is always added load – no bodyweight switch for timed exercises.
+            if (!e.isTimed && offersBodyweightMode(e.exId, e.name, info: ref.watch(exerciseDbProvider).value?.byId(e.exId), current: e.bw))
               CheckedPopupMenuItem(value: 'bodyweight', checked: e.bw == true, child: Text(l.bodyweight)),
+            CheckedPopupMenuItem(value: 'timed', checked: e.isTimed, child: Text(l.timedMode)),
             PopupMenuItem(
               value: 'rest',
               child: ListTile(
@@ -579,30 +586,55 @@ class ExerciseMenu extends ConsumerWidget {
 
 String capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
+/// One line for an exercise's planned work: "3 × 8–12 · 60 kg", "3 × 8–12 · BW +5 kg" or – timed
+/// holds – "3 × 45 s", "3 × 45 s · +10 kg" ([range] = rep range of rep exercises).
+String exerciseSummary(AppLocalizations l, GymExercise e, Units units, {required (int, int) range}) {
+  final work = e.workSets;
+  if (work.isEmpty) return '${e.sets.length} ${l.sets}';
+  final top = work.map((s) => s.weight).reduce((a, b) => a > b ? a : b);
+  if (e.isTimed) {
+    final secs = work.map((s) => s.sec > 0 ? s.sec : (s.targetSec ?? 0)).toList();
+    final hi = secs.reduce((a, b) => a > b ? a : b), lo = secs.reduce((a, b) => a < b ? a : b);
+    final time = hi <= 0 ? formatHold(e.holdRange.$1) : (lo == hi ? formatHold(hi) : '$lo–${formatHold(hi)}');
+    return '${work.length} × $time${top.abs() < 1e-6 ? '' : ' · ${holdWeight(top, units, bodyweight: e.bw == true)}'}';
+  }
+  final load = e.bw == true ? bodyweightLoad(l.bodyweightShort, top, units) : (top > 0 ? units.weight(top) : null);
+  return '${work.length} × ${range.$1}–${range.$2}${load == null ? '' : ' · $load'}';
+}
+
 /// "60 kg × 8", "8 ×" (no weight) or, with [bw] (short bodyweight label), "BW × 8",
 /// "BW +5 kg × 8" / "BW −10 kg × 8".
 /// A library exercise added to a workout (running or already finished): the same number of
 /// work sets as last time (else 3 × 10), weights and reps from the [prescriber].
 GymExercise exerciseFromLibrary(Exercise e, {required List<Session> history, required LoadPrescriber prescriber, String? phase}) {
   final prev = lastSetsFor(history, e.id)?.where((s) => !s.warmup && s.type != SetType.drop).toList();
+  final n = prev == null || prev.isEmpty ? 3 : prev.length.clamp(1, 6);
+  final probe = GymExercise(exId: e.id, name: e.name, sets: const []);
   final raw = GymExercise(
     exId: e.id,
     name: e.name,
     sets: [
-      for (var k = 0; k < (prev == null || prev.isEmpty ? 3 : prev.length.clamp(1, 6)); k++)
-        GymSet(reps: prev == null || prev.isEmpty ? 10 : prev[k].reps),
+      for (var k = 0; k < n; k++)
+        probe.isTimed
+            ? GymSet(sec: prev == null || prev.isEmpty || prev[k].sec <= 0 ? probe.holdRange.$1 : prev[k].sec)
+            : GymSet(reps: prev == null || prev.isEmpty ? 10 : prev[k].reps),
     ],
   );
   return prescriber.apply([raw], phase: phase).single;
 }
 
-String setLabel(GymSet s, Units u, {String? bw}) {
+/// Timed holds ([timed]): "45 s", "+10 kg · 45 s" – sets stored as reps before hold times
+/// existed keep their reps label.
+String setLabel(GymSet s, Units u, {String? bw, bool timed = false}) {
+  if (timed && !s.legacyReps) return holdLoadLabel(s.weight, s.sec > 0 ? s.sec : (s.targetSec ?? 0), u, bodyweight: bw != null);
   if (bw != null) return '${bodyweightLoad(bw, s.weight, u)} × ${s.reps}';
   return s.weight > 0 ? '${u.weight(s.weight)} × ${s.reps}' : '${s.reps} ×';
 }
 
-/// [setLabel] for a set of [e] (bodyweight exercises show "BW + added load").
-String setLabelOf(AppLocalizations l, GymExercise e, GymSet s, Units u) => setLabel(s, u, bw: e.bw == true ? l.bodyweightShort : null);
+/// [setLabel] for a set of [e] (bodyweight exercises show "BW + added load", timed holds the
+/// hold time).
+String setLabelOf(AppLocalizations l, GymExercise e, GymSet s, Units u) =>
+    setLabel(s, u, bw: e.bw == true ? l.bodyweightShort : null, timed: e.isTimed);
 
 // ───────────────────────────── Table view (compact, power users) ─────────────────────────────
 
@@ -675,26 +707,42 @@ class _ExerciseCard extends ConsumerWidget {
                       flex: 3,
                       child: Center(
                         child: Text(
-                          exercise.bw == true ? '${l.bodyweightShort} ± ${units.weightUnit}' : units.weightUnit,
+                          exercise.isTimed && exercise.bw == true
+                              ? '+ ${units.weightUnit}'
+                              : exercise.bw == true
+                              ? '${l.bodyweightShort} ± ${units.weightUnit}'
+                              : units.weightUnit,
                           style: Theme.of(context).textTheme.labelSmall,
                         ),
                       ),
                     ),
-                    Expanded(flex: 3, child: Center(child: Text(l.reps, style: Theme.of(context).textTheme.labelSmall))),
-                    const SizedBox(width: 44),
+                    Expanded(
+                      flex: 3,
+                      child: Center(child: Text(exercise.isTimed ? l.holdTime : l.reps, style: Theme.of(context).textTheme.labelSmall)),
+                    ),
+                    SizedBox(width: exercise.isTimed ? 80 : 44),
                   ],
                 ),
               ),
               for (var s = 0; s < exercise.sets.length; s++)
-                _SetRow(
-                  key: ValueKey('${exercise.exId}-$index-$s-${exercise.sets.length}-${exercise.bw == true}'),
-                  ex: index,
-                  set: s,
-                  data: exercise.sets[s],
-                  previous: _prevFor(exercise, s, work),
-                  units: units,
-                  bodyweight: exercise.bw == true,
-                ),
+                exercise.isTimed
+                    ? _HoldSetRow(
+                      key: ValueKey('hold-${exercise.exId}-$index-$s-${exercise.sets.length}'),
+                      ex: index,
+                      set: s,
+                      exercise: exercise,
+                      previous: _prevFor(exercise, s, work),
+                      units: units,
+                    )
+                    : _SetRow(
+                      key: ValueKey('${exercise.exId}-$index-$s-${exercise.sets.length}-${exercise.bw == true}'),
+                      ex: index,
+                      set: s,
+                      data: exercise.sets[s],
+                      previous: _prevFor(exercise, s, work),
+                      units: units,
+                      bodyweight: exercise.bw == true,
+                    ),
               if (exercise.workSets.isNotEmpty && exercise.workSets.every((s) => s.done))
                 Padding(
                   padding: const EdgeInsets.fromLTRB(0, 4, 8, 4),
@@ -882,6 +930,236 @@ class _SetRowState extends ConsumerState<_SetRow> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Table-view row of a timed hold: added weight, hold time (scroll wheels), start / stop of the
+/// hold timer and the check button.
+class _HoldSetRow extends ConsumerWidget {
+  const _HoldSetRow({super.key, required this.ex, required this.set, required this.exercise, required this.previous, required this.units});
+  final int ex, set;
+  final GymExercise exercise;
+  final GymSet? previous;
+  final Units units;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final w = ref.watch(activeGymProvider)!;
+    final n = ref.read(activeGymProvider.notifier);
+    final d = exercise.sets[set];
+    final p = previous;
+    final scheme = Theme.of(context).colorScheme;
+    final holding = w.holding(ex, set);
+    final bw = exercise.bw == true;
+    return Dismissible(
+      key: ValueKey('dismiss-hold-$ex-$set'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        color: AppColors.danger.withValues(alpha: 0.3),
+        child: const Icon(Icons.delete_outline),
+      ),
+      onDismissed: (_) => n.removeSet(ex, set),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 8, bottom: 6),
+        child: Row(
+          children: [
+            SizedBox(width: 32, child: SetTypeBadge(set: d, index: set, onChanged: (t) => n.updateSet(ex, set, type: t), compact: true)),
+            Expanded(
+              flex: 3,
+              child: Text(
+                p == null ? '–' : setLabel(p, units, bw: bw ? l.bodyweightShort : null, timed: true),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () async {
+                    final v = await askNumber(
+                      context,
+                      bw ? l.addedWeight : l.weight,
+                      initial: units.weightOut(d.weight),
+                      suffix: units.weightUnit,
+                      signed: bw,
+                    );
+                    if (v != null) n.updateSet(ex, set, weight: units.weightIn(v));
+                  },
+                  child: _Cell(text: d.weight == 0 ? '–' : Units.num(units.weightOut(d.weight), 2), done: d.done),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: InkWell(
+                  key: ValueKey('holdTime-$ex-$set'),
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () => pickHoldTime(context, l, d, (v) => n.updateSet(ex, set, sec: v)),
+                  child:
+                      holding
+                          ? StreamBuilder(
+                            stream: Stream.periodic(const Duration(milliseconds: 250)),
+                            builder: (_, __) => _Cell(text: holdClock(w), done: false, highlight: true),
+                          )
+                          : _Cell(text: d.legacyReps ? '${d.reps} ×' : clock(d.sec > 0 ? d.sec : (d.targetSec ?? 0)), done: d.done),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 36,
+              child:
+                  d.done
+                      ? null
+                      : IconButton(
+                        key: ValueKey('holdPlay-$ex-$set'),
+                        tooltip: holding ? l.holdStop : l.holdRunning,
+                        padding: EdgeInsets.zero,
+                        onPressed: () => holding ? n.stopHold() : n.startHold(ex, set),
+                        icon: Icon(holding ? Icons.stop_rounded : Icons.play_arrow_rounded, color: AppColors.gym),
+                      ),
+            ),
+            SizedBox(
+              width: 44,
+              child: IconButton(
+                onPressed: () {
+                  FocusScope.of(context).unfocus();
+                  n.toggleDone(ex, set);
+                },
+                style: IconButton.styleFrom(
+                  backgroundColor: d.done ? AppColors.success : scheme.surfaceContainerHigh,
+                  foregroundColor: d.done ? Colors.black : scheme.outline,
+                ),
+                icon: const Icon(Icons.check_rounded, size: 20),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Cell extends StatelessWidget {
+  const _Cell({required this.text, required this.done, this.highlight = false});
+  final String text;
+  final bool done, highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color:
+            highlight
+                ? AppColors.gym.withValues(alpha: 0.2)
+                : done
+                ? AppColors.success.withValues(alpha: 0.12)
+                : scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        style: TextStyle(fontWeight: highlight ? FontWeight.w700 : FontWeight.w500, fontFeatures: const [FontFeature.tabularFigures()]),
+      ),
+    );
+  }
+}
+
+/// Opens the scroll wheels for the hold time of set [s] (minutes + seconds).
+Future<void> pickHoldTime(BuildContext context, AppLocalizations l, GymSet s, ValueChanged<int> onPicked) async {
+  final pick = await showDurationPicker(
+    context,
+    title: l.holdTime,
+    value: s.sec > 0 ? s.sec : null,
+    initial: s.targetSec ?? 30,
+    units: DurationUnits.ms,
+    maxMinutes: 15,
+    min: 1,
+    max: 15 * 60,
+    clearable: false,
+  );
+  final v = pick?.seconds;
+  if (v != null && v > 0) onPicked(v);
+}
+
+/// The running hold as a clock: the time left of the target ("0:32"), then the overtime ("+0:05").
+String holdClock(ActiveGym w) {
+  final left = w.holdTarget - w.holdElapsed();
+  return left >= 0 ? clock(left) : '+${clock(-left)}';
+}
+
+/// Compact bar of the running hold timer (table view; the focus view shows it in its editor).
+class HoldBar extends ConsumerWidget {
+  const HoldBar({super.key, required this.w});
+  final ActiveGym w;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final n = ref.read(activeGymProvider.notifier);
+    return Material(
+      key: const ValueKey('holdBar'),
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      child: SafeArea(
+        top: false,
+        child: StreamBuilder(
+          stream: Stream.periodic(const Duration(milliseconds: 250)),
+          builder: (context, _) {
+            final elapsed = w.holdElapsed();
+            final over = elapsed >= w.holdTarget;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(
+                  value: w.holdTarget <= 0 ? 1 : (elapsed / w.holdTarget).clamp(0.0, 1.0),
+                  minHeight: 4,
+                  color: over ? AppColors.success : AppColors.gym,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.timer_outlined),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          over ? l.holdOvertime : l.holdRunning,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        holdClock(w),
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()]),
+                      ),
+                      const Spacer(),
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(minimumSize: const Size(0, 38)),
+                        onPressed: n.stopHold,
+                        icon: const Icon(Icons.stop_rounded),
+                        label: Text(l.holdStop),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
