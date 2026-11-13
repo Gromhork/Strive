@@ -9,6 +9,7 @@ import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../widgets/plan_amount.dart';
 import 'plan_adjuster.dart' show isHardPlan;
+import 'plan_exercises.dart';
 
 /// The one plan-compliance scale of the app (TrainingPeaks-style traffic light). Every place
 /// that judges "how much of the plan was done" – calendar markers and legend, the session's
@@ -126,16 +127,36 @@ ComplianceLevel complianceLevelOf(double ratio) {
 }
 
 /// Work sets a gym session is compared with: [Session.plannedSets] – the program's sets of the
-/// planned workout it was started from, or the sets it had at the finish when more were added
-/// (exercises removed in the tracker still count as planned, ActiveGym.plannedWorkSets) – else
-/// the work sets of the planned workout's own exercises. 0 when
-/// unknown or when the session has no set data (imported / summary-only entry) – then the
-/// duration is compared.
+/// planned workout it was started from or of the program started from the Train tab, the
+/// planned workout's sets when it was linked to it on saving ([linkedPlannedSets]), or the sets
+/// it had at the finish when more were added (exercises removed in the tracker still count as
+/// planned, ActiveGym.plannedWorkSets) – else the work sets of the planned workout's own
+/// exercises, else the session's own work sets (sessions saved before the reference was stored;
+/// sets say more about a gym workout than its duration, which is mostly rest). 0 when the
+/// session has no set data (imported / summary-only entry) – then the duration is compared.
 int plannedGymSets(PlannedWorkout p, Session s) {
   if (!s.exercises.any((e) => e.exId != 'manual')) return 0;
   final own = s.plannedSets ?? 0;
   if (own > 0) return own;
-  return p.exercises.fold<int>(0, (a, e) => a + e.workSets.length);
+  final plan = _workSets(p.exercises);
+  return plan > 0 ? plan : _workSets(s.exercises);
+}
+
+int _workSets(List<GymExercise> exercises) => exercises.fold<int>(0, (a, e) => a + e.workSets.length);
+
+/// [Session.plannedSets] of gym session [s] once it fulfils planned gym workout [p] without
+/// having been started from it (the program started from the Train tab on the plan's day, a free
+/// workout – linked by matchPlan on saving): the planned workout's work sets
+/// ([plannedGymExercises] of its program [t] with the day's adaptations, e.g. no legs before a
+/// race), at least the work sets the session has. Exercises removed in the tracker thus still
+/// count as planned, and a full program done on a "no legs" day is not judged against the
+/// full program. Unchanged ([Session.plannedSets]) when [s] was started from [p], was taken over
+/// from the plan, or the plan's sets are unknown (program deleted).
+int? linkedPlannedSets(Session s, PlannedWorkout p, WorkoutTemplate? t, {String gymGoal = 'general'}) {
+  if (s.sport != Sport.gym || p.sport != Sport.gym || s.fromPlan || s.planId == p.id) return s.plannedSets;
+  final plan = _workSets(plannedGymExercises(p, t, gymGoal: gymGoal));
+  if (plan <= 0) return s.plannedSets;
+  return max(plan, _workSets(s.exercises));
 }
 
 /// Planned distance (km) of [p]: its distance, or for a swim the sum of its steps' metres.

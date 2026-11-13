@@ -19,6 +19,7 @@ import 'package:strive/services/active_workout.dart';
 import 'package:strive/services/compliance.dart';
 import 'package:strive/services/insights.dart';
 import 'package:strive/services/load_prescription.dart';
+import 'package:strive/services/plan_exercises.dart';
 import 'package:strive/services/workout_alerts.dart';
 import 'package:strive/services/workout_store.dart';
 import 'package:strive/widgets/prescription.dart';
@@ -123,6 +124,132 @@ void main() {
       n.removeExercise(0);
       expect(c.read(activeGymProvider)!.plannedWorkSets, 15);
       n.discard();
+    });
+
+    test('a program started from the Train tab keeps its sets as the reference', () async {
+      final c = container();
+      c.listen(profileOrDefaultProvider, (_, __) {});
+      await c.read(profileProvider.future);
+      final n = c.read(activeGymProvider.notifier);
+      n.start(title: 'Push', templateId: 't', exercises: program());
+      expect(c.read(activeGymProvider)!.programSets, 18);
+      n.removeExercise(5);
+      n.removeExercise(4);
+      n.removeExercise(3);
+      for (var e = 0; e < 3; e++) {
+        for (var k = 0; k < 3; k++) {
+          c.read(activeGymProvider)!.exercises[e].sets[k].done = true;
+        }
+      }
+      final s = n.finish('s');
+      expect(s.plannedSets, 18);
+      // Auto-linked to the day's planned workout of the same program on saving (matchPlan).
+      final p = PlannedWorkout(id: 'p', date: now, sport: Sport.gym, title: 'Push', durationMin: 60, templateId: 't');
+      final t = WorkoutTemplate(id: 't', name: 'Push', sport: Sport.gym, exercises: program());
+      final linked = Session.fromMap(s.id, {...s.toMap(), 'plannedSets': linkedPlannedSets(s, p, t)});
+      expect(linked.plannedSets, 18);
+      expect(complianceRatio(p, linked), closeTo(0.5, 1e-9));
+      expect(complianceLevelOf(complianceRatio(p, linked)!), isNot(ComplianceLevel.green));
+    });
+
+    test('linked on saving: the planned workout sets are the reference', () {
+      final p = PlannedWorkout(id: 'p', date: now, sport: Sport.gym, title: 'Push', durationMin: 60, templateId: 't');
+      final t = WorkoutTemplate(id: 't', name: 'Push', sport: Sport.gym, exercises: program());
+      Session done(int exercises, {int? plannedSets, String? planId, String? templateId, bool fromPlan = false}) => Session(
+        id: 's',
+        sport: Sport.gym,
+        title: 'Gym',
+        start: now,
+        durationSec: 3600,
+        exercises: [
+          for (var i = 0; i < exercises; i++)
+            GymExercise(exId: 'x$i', name: 'exercise $i', sets: [for (var k = 0; k < 3; k++) GymSet(weight: 20, reps: 10, done: true)]),
+        ],
+        plannedSets: plannedSets,
+        planId: planId,
+        templateId: templateId,
+        fromPlan: fromPlan,
+      );
+      // A free workout of 9 sets on the plan's day: 9 of the plan's 18 sets.
+      expect(linkedPlannedSets(done(3, plannedSets: 9), p, t), 18);
+      // More sets than planned: the session's own sets.
+      expect(linkedPlannedSets(done(7, plannedSets: 21), p, t), 21);
+      // Started from this planned workout: its stored reference already is the plan's.
+      expect(linkedPlannedSets(done(3, plannedSets: 20, planId: 'p'), p, t), 20);
+      // Taken over from the plan / program unknown: unchanged.
+      expect(linkedPlannedSets(done(3, plannedSets: 9, fromPlan: true), p, t), 9);
+      expect(linkedPlannedSets(done(3, plannedSets: 9), p, null), 9);
+      // The planned workout's own (day-adjusted) exercises beat the program.
+      final own = PlannedWorkout(
+        id: 'q',
+        date: now,
+        sport: Sport.gym,
+        title: 'Push',
+        durationMin: 45,
+        templateId: 't',
+        exercises: program().take(4).toList(),
+      );
+      expect(linkedPlannedSets(done(4, plannedSets: 18, templateId: 't'), own, t), 12);
+    });
+
+    test('"no legs" day: the full program started from the Train tab is not judged against the full program', () {
+      GymExercise ex(String id, String name) =>
+          GymExercise(exId: id, name: name, sets: [for (var k = 0; k < 3; k++) GymSet(weight: 40, reps: 8)]);
+      final full = [
+        ex('a', 'barbell bench press'),
+        ex('b', 'barbell bent over row'),
+        ex('c', 'barbell full squat'),
+        ex('d', 'lever leg extension'),
+      ];
+      final t = WorkoutTemplate(id: 't', name: 'Full', sport: Sport.gym, exercises: full);
+      final p = PlannedWorkout(
+        id: 'p',
+        date: now,
+        sport: Sport.gym,
+        title: 'Full',
+        durationMin: 60,
+        templateId: 't',
+        gymMods: const [gymModNoLegs],
+      );
+      expect(gymModApplies(gymModNoLegs, full), isTrue);
+      // Leg exercises deleted, upper body done: as planned (6 of the day's 6 sets).
+      final upper = [
+        for (final e in full.take(2))
+          GymExercise(exId: e.exId, name: e.name, sets: [for (final x in e.sets) GymSet(weight: x.weight, reps: x.reps, done: true)]),
+      ];
+      final s = Session(
+        id: 's',
+        sport: Sport.gym,
+        title: 'Full',
+        start: now,
+        durationSec: 3600,
+        exercises: upper,
+        templateId: 't',
+        plannedSets: 12,
+      );
+      final sets = linkedPlannedSets(s, p, t);
+      expect(sets, 6);
+      expect(complianceRatio(p, Session.fromMap('s', {...s.toMap(), 'plannedSets': sets})), closeTo(1, 1e-9));
+    });
+
+    test('no stored reference: the session own sets, not the duration (mostly rest)', () {
+      final p = PlannedWorkout(id: 'p', date: now, sport: Sport.gym, title: 'Push', durationMin: 60, templateId: 't');
+      final s = Session(
+        id: 's',
+        sport: Sport.gym,
+        title: 'Gym',
+        start: now,
+        durationSec: 3600,
+        exercises: [
+          GymExercise(exId: 'x0', name: 'exercise 0', sets: [for (var k = 0; k < 6; k++) GymSet(weight: 20, reps: 10, done: k < 2)]),
+        ],
+      );
+      expect(plannedGymSets(p, s), 6);
+      expect(complianceRatio(p, s), closeTo(2 / 6, 1e-9));
+      // Without set data (imported / summary-only): the duration.
+      final imported = Session(id: 'i', sport: Sport.gym, title: 'Gym', start: now, durationSec: 3600);
+      expect(plannedGymSets(p, imported), 0);
+      expect(complianceRatio(p, imported), closeTo(1, 1e-9));
     });
 
     test('the program set count survives the app being killed (restore)', () {

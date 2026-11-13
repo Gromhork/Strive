@@ -45,9 +45,9 @@ class ActiveGym {
   final int holdTarget;
 
   /// Work sets of the planned workout when it was started from the plan (the program's sets for
-  /// that day); null for free workouts. Exercises or sets removed in the tracker still count as
-  /// planned – the compliance compares against the program, not against what is left
-  /// ([plannedWorkSets]).
+  /// that day) or of the program started from the Train tab; null for free workouts. Exercises
+  /// or sets removed in the tracker still count as planned – the compliance compares against
+  /// the program, not against what is left ([plannedWorkSets]).
   final int? programSets;
 
   const ActiveGym({
@@ -89,7 +89,7 @@ class ActiveGym {
   int get workSets => exercises.fold<int>(0, (a, e) => a + e.workSets.length);
 
   /// Work sets the done sets are compared with ([Session.plannedSets]): the program's sets of a
-  /// planned workout ([programSets]) or, when more were added in the tracker, those.
+  /// planned workout or program ([programSets]) or, when more were added in the tracker, those.
   int get plannedWorkSets => max(programSets ?? 0, workSets);
 
   /// Members of the superset that exercise [i] belongs to (adjacent, in order).
@@ -215,8 +215,9 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
       planId: planId,
       start: DateTime.now(),
       exercises: list,
-      // Started from the plan: its sets are the reference, whatever is removed in the tracker.
-      programSets: planId == null ? null : list.fold<int>(0, (a, e) => a + e.workSets.length),
+      // Started from the plan or a program (Train tab – linked to the day's planned workout on
+      // saving): its sets are the reference, whatever is removed in the tracker.
+      programSets: planId == null && templateId == null ? null : list.fold<int>(0, (a, e) => a + e.workSets.length),
     );
     WakelockPlus.enable();
   }
