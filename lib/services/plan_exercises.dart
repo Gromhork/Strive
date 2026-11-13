@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../core/sport.dart';
 import '../data/default_programs.dart';
 import '../data/models.dart';
 import 'exercise_class.dart';
@@ -12,6 +13,31 @@ const gymModRegress = 'regress';
 /// [PlannedWorkout.gymMods]: the program without its leg exercises (an endurance race in the
 /// next days – upper body and core only).
 const gymModNoLegs = 'noLegs';
+
+/// [PlannedWorkout.gymMods]: a key endurance session follows – the leg exercises keep all their
+/// sets but go ~12 % lighter, no AMRAP, no step up ([gymLoadPhase] 'legsEasy', LoadPrescriber).
+const gymModLegsEasy = 'legsEasy';
+
+/// [PlannedWorkout.gymMods]: an endurance race in the next days – the whole workout is
+/// maintenance at taper load (~10 % lighter, no AMRAP, no step up; [gymLoadPhase] 'race'), also
+/// when the plan week itself is still a loading week.
+const gymModRaceWeek = 'raceWeek';
+
+/// Mods that change the load only (not the exercises): they stay when the athlete adjusts the
+/// workout's exercises for the day.
+const gymLoadMods = {gymModLegsEasy, gymModRaceWeek};
+
+/// Load phase of planned workout [p] for LoadPrescriber (`phase:`): its plan phase ('recovery' /
+/// 'taper' lighten the whole workout), else 'race' ([gymModRaceWeek]) or 'legsEasy'
+/// ([gymModLegsEasy]), else the plan phase. Tracker prefill, "mark as done", the planned page
+/// and the plan editor all read it, so the numbers match the workout's notes.
+String? gymLoadPhase(PlannedWorkout? p) {
+  if (p == null) return null;
+  if (p.sport != Sport.gym || p.phase == 'recovery' || p.phase == 'taper') return p.phase;
+  if (p.gymMods.contains(gymModRaceWeek)) return 'race';
+  if (p.gymMods.contains(gymModLegsEasy)) return 'legsEasy';
+  return p.phase;
+}
 
 /// Exercise id → (id, name) of its beginner regression (assets/data/exercises.json).
 const gymRegressions = {

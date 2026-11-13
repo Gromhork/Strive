@@ -200,6 +200,35 @@ void main() {
     expect(find.text(l.gymAssignWarnLegs('Legs', 'Fri')), findsOneWidget);
   });
 
+  testWidgets('4 PPL days (review r7 R7-5): week A / B preselected, warnings for back-to-back sessions and legs 1× a week', (tester) async {
+    final four = ppl.copyWith(trainingDays: const [1, 2, 4, 6]);
+    await pumpHost(tester, four);
+    await tester.tap(find.byKey(const ValueKey('gymAssign')));
+    await tester.pumpAndSettle();
+    var a = hostProfile(tester).athlete;
+    // The rotation does not fit into one week: week B continues it.
+    expect(a.gymAB, isTrue);
+    expect(a.gymPlanA, {1: 'key:ppl_push', 2: 'key:ppl_pull', 4: 'key:ppl_legs', 6: 'key:ppl_push'});
+    expect(a.gymPlanB, {1: 'key:ppl_pull', 2: 'key:ppl_legs', 4: 'key:ppl_push', 6: 'key:ppl_pull'});
+    expect(find.text(l.gymAssignWarnBackToBack('Push', 'Sat–Mon')), findsNothing);
+    // Still Legs only once a week on average (Push / Pull 1.5×).
+    expect(find.text(l.gymAssignWarnFrequency(l.gymGroupLegs, '1', l.gymGroupPush, '1.5')), findsOneWidget);
+    // Without week B: Saturday Push → Monday Push, Push 2× / Pull and Legs 1× a week.
+    await tester.tap(find.byKey(const ValueKey('gymAB')));
+    await tester.pumpAndSettle();
+    a = hostProfile(tester).athlete;
+    expect(a.gymAB, isFalse);
+    expect(find.text(l.gymAssignWarnBackToBack('Push', 'Sat–Mon')), findsOneWidget);
+    expect(find.text(l.gymAssignWarnFrequency(l.gymGroupLegs, '1', l.gymGroupPush, '2')), findsOneWidget);
+    expect(find.text(l.gymAssignWarnFrequency(l.gymGroupPull, '1', l.gymGroupPush, '2')), findsOneWidget);
+    // Three PPL days: each program once a week – no warning.
+    await pumpHost(tester, ppl);
+    await tester.tap(find.byKey(const ValueKey('gymAssign')));
+    await tester.pumpAndSettle();
+    expect(hostProfile(tester).athlete.gymAB, isFalse);
+    expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+  });
+
   testWidgets('plan settings: the assignment is saved and the new plan uses exactly these programs', (tester) async {
     tester.view.physicalSize = const Size(1200, 2800);
     tester.view.devicePixelRatio = 2;

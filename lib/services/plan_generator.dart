@@ -1300,23 +1300,9 @@ class PlanGenerator {
   );
 
   /// [w] with [note] as an extra line of its description.
-  PlannedWorkout _withNote(PlannedWorkout w, String note) => PlannedWorkout(
-    id: w.id,
-    date: w.date,
-    sport: w.sport,
-    title: w.title,
-    description: [if (w.description.isNotEmpty) w.description, note].join('\n'),
-    durationMin: w.durationMin,
-    distanceKm: w.distanceKm,
-    intensity: w.intensity,
-    templateId: w.templateId,
-    status: w.status,
-    sessionId: w.sessionId,
-    steps: w.steps,
-    phase: w.phase,
-    isKey: w.isKey,
-    exercises: w.exercises,
-  );
+  /// (A copy that keeps every other field – also the gym day adaptations [PlannedWorkout.gymMods].)
+  PlannedWorkout _withNote(PlannedWorkout w, String note) =>
+      w.copyWith(description: [if (w.description.isNotEmpty) w.description, note].join('\n'));
 
   /// Adds the notes of the athlete's health limitations to [w]'s description (one line
   /// each, so they translate with the rest of the plan).
@@ -1332,23 +1318,9 @@ class PlanGenerator {
       if (w.sport == Sport.gym && hf.noStraining) l.healthGymHeartNote,
     ];
     if (notes.isEmpty) return w;
-    return PlannedWorkout(
-      id: w.id,
-      date: w.date,
-      sport: w.sport,
-      title: w.title,
-      description: [if (w.description.isNotEmpty) w.description, ...notes].join('\n'),
-      durationMin: w.durationMin,
-      distanceKm: w.distanceKm,
-      intensity: w.intensity,
-      templateId: w.templateId,
-      status: w.status,
-      sessionId: w.sessionId,
-      steps: w.steps,
-      phase: w.phase,
-      isKey: w.isKey,
-      exercises: w.exercises,
-    );
+    // (copyWith keeps the gym day adaptations – review r7 R1: a back-pain beginner got the barbell
+    // deadlift and a knee athlete race-week squats while the notes promised otherwise.)
+    return w.copyWith(description: [if (w.description.isNotEmpty) w.description, ...notes].join('\n'));
   }
 
   // ───────────────────────────── Time available ─────────────────────────────
@@ -3611,14 +3583,19 @@ class PlanGenerator {
     // Beginners (§2.3/2.4, review 2026-11 IMPORTANT 19): the first [_regressionWeeks] weeks use the
     // regression of the technically demanding lifts ([gymRegressions]); the full lifts follow afterwards.
     // Before the race: the program without its leg exercises (upper body, core).
-    final mods = [
-      if (beginner && week < _regressionWeeks && gymModApplies(gymModRegress, program)) gymModRegress,
-      if (noLegs && gymModApplies(gymModNoLegs, program)) gymModNoLegs,
-    ];
-    final exercises = applyGymMods(program, mods, gymGoal: a.gymGoal);
     // C3/C4: a program with leg work the day before a key endurance session keeps all its sets –
     // the legs go lighter (load / reps in reserve), the session start uses these muscles.
     final legsBeforeKey = endurance && role == 'nolegs' && info.hasLegs && !noLegs;
+    // The load adaptations the notes promise are stored too (review r7 R3/S2/S3: "legs 10–15 % lighter"
+    // and the race window's "about 10 % lighter" were text only – the prescriber gave full loads and
+    // AMRAP sets): [gymLoadPhase] passes them to LoadPrescriber everywhere the workout is used.
+    final mods = [
+      if (beginner && week < _regressionWeeks && gymModApplies(gymModRegress, program)) gymModRegress,
+      if (noLegs && gymModApplies(gymModNoLegs, program)) gymModNoLegs,
+      if (noLegs) gymModRaceWeek,
+      if (legsBeforeKey) gymModLegsEasy,
+    ];
+    final exercises = applyGymMods(program, mods, gymGoal: a.gymGoal);
     final minutes = exercises.isNotEmpty ? estimateGymMinutes(exercises) : (t?.estimatedMinutes ?? 60);
     // Sets, rep ranges and loads are per exercise (program + exercise_class.dart + LoadPrescriber,
     // which also applies the deload: ~10 % lighter, same sets) – the note only states what is true
@@ -3627,7 +3604,7 @@ class PlanGenerator {
       if (phase == 'taper' || noLegs)
         l.wGymTaperNote
       else if (deload)
-        l.wGymDeloadNote4
+        l.wGymDeloadNote5
       else ...[
         deloadAhead ? l.wGymLoadDesc(rir) : l.wGymLoadDescNoDeload(rir),
         l.wGymProgressNote,
@@ -4850,17 +4827,34 @@ class _GymSlot {
 /// * never the same program twice in a row (and preferably not again before the others had their turn);
 /// * no program that trains the same muscle groups as yesterday's ([_GymInfo.overlaps]) – unless
 ///   every program does (full body);
-/// * a leg-heavy program waits when a key endurance session follows ([_GymSlot.noLegs]) – at most
-///   twice, then it is due anyway (legs are trained, just not before every key day); before a race
-///   ([_GymSlot.race]) it always waits.
+/// * a leg-heavy program waits when a key endurance session follows ([_GymSlot.noLegs]) – one
+///   session at most (strength for endurance athletes is mainly leg strength – Rønnestad & Mujika
+///   2014, Blagrove 2018: the legs move to a later day, they are not trained less often); before a
+///   race ([_GymSlot.race]) it always waits;
+/// * no program is starved: one that already waited a whole rotation plus one session ([_wait] ≥
+///   rotation length) is next – the most overdue first – before any of the preferences above but
+///   the race rule (review r7 S1: a 5-day bro split dropped Back for ten weeks while Legs ran twice a
+///   week). So every program comes back within rotation length + 1 sessions.
+///
+/// The last session of a week looks ahead into the next week (the same weekly pattern), so a
+/// leg day passed over on Friday is not simply forced onto Tuesday's key-run eve.
 class _GymQueue {
-  _GymQueue(this.rotation, this.info) : _due = [...rotation];
+  _GymQueue(this.rotation, this.info) : _due = [...rotation] {
+    // Before any history: the first due program is on time (waited rotation − 1 sessions), the
+    // others less.
+    for (var k = 0; k < rotation.length; k++) {
+      _wait[rotation[k]] = rotation.length - 1 - k;
+    }
+  }
 
   _GymQueue._copy(_GymQueue o) : rotation = o.rotation, info = o.info, _due = [...o._due], _recent = [...o._recent] {
     last = o.last;
     _lastDay = o._lastDay;
-    _skips = o._skips;
+    _wait.addAll(o._wait);
   }
+
+  /// Sessions since each rotation program was last trained (rotation − 1 = on time).
+  final _wait = <String, int>{};
 
   final List<String> rotation;
   final _GymInfo Function(String ref) info;
@@ -4875,13 +4869,11 @@ class _GymQueue {
   String? last;
   DateTime? _lastDay;
 
-  /// Sessions the first due program was passed over.
-  var _skips = 0;
-
-  /// [ref] was trained on [day] (a pick, an assigned program, the history before the plan);
-  /// [skipped]: the first due program was passed over for it.
-  void record(String ref, DateTime day, {bool skipped = false}) {
-    _skips = skipped ? _skips + 1 : 0;
+  /// [ref] was trained on [day] (a pick, an assigned program, the history before the plan).
+  void record(String ref, DateTime day) {
+    for (final k in _wait.keys.toList()) {
+      _wait[k] = k == ref ? 0 : _wait[k]! + 1;
+    }
     if (_due.remove(ref)) _due.add(ref);
     _recent = [..._recent, ref];
     if (_recent.length > rotation.length) _recent = _recent.sublist(_recent.length - rotation.length);
@@ -4899,6 +4891,10 @@ class _GymQueue {
       _due
         ..clear()
         ..addAll([for (var k = 1; k <= rotation.length; k++) rotation[(i + k) % rotation.length]]);
+      // (Recording [first] below makes the program after it on time: rotation − 1.)
+      for (var k = 0; k < _due.length; k++) {
+        _wait[_due[k]] = max(0, _due.length - 2 - k);
+      }
     }
     for (final (day, ref) in history) {
       record(ref, day);
@@ -4911,16 +4907,28 @@ class _GymQueue {
     final yesterday = prev != null && _lastDay != null && daysBetween(_lastDay!, dayOnly(slot.day)) == 1 ? info(prev) : null;
     // Done in the last (rotation − 1) sessions: the others did not all have their turn yet.
     final recent = _recent.length < rotation.length ? _recent : _recent.sublist(_recent.length - rotation.length + 1);
+    // The most overdue program (waited a whole rotation and more) is next.
+    var overdue = rotation.length - 1;
+    for (final ref in _due) {
+      overdue = max(overdue, _wait[ref] ?? 0);
+    }
     final out = <int>[];
     for (var i = 0; i < _due.length; i++) {
       final ref = _due[i];
       final g = info(ref);
+      final wait = _wait[ref] ?? 0;
       var cost = i * 10;
       if (ref == prev && _due.length > 1) cost += 1000;
-      if (recent.contains(ref) && _due.length > 2) cost += 15;
+      // Again before the others had their turn: weighs more than a muscle-group overlap with yesterday or a
+      // leg day on a key session's eve (review r7 S1 / S4: Legs twice a week in a bro split, Upper twice as
+      // often as Lower for hybrid athletes) – every program about equally often.
+      if (recent.contains(ref) && _due.length > 2) cost += 100;
       if (yesterday != null && yesterday.overlaps(g)) cost += 60;
       if (g.legHeavy && slot.race) cost += 500;
-      if (g.legHeavy && slot.noLegs && !slot.race && !(i == 0 && _skips >= 2)) cost += 40;
+      // (Also when it is overdue – then the others cost more anyway, but the lookahead must see that passing it
+      // over only moves it onto the next key session's eve.)
+      if (g.legHeavy && slot.noLegs && !slot.race) cost += 40;
+      if (overdue >= rotation.length && wait < overdue) cost += 400;
       out.add(cost);
     }
     return out;
@@ -4935,7 +4943,7 @@ class _GymQueue {
     var best = 1 << 30;
     for (var k = 0; k < costs.length; k++) {
       if (costs[k] >= best) continue;
-      final q = _GymQueue._copy(this)..record(_due[k], slot.day, skipped: k != 0);
+      final q = _GymQueue._copy(this)..record(_due[k], slot.day);
       best = min(best, costs[k] + q._future(slots, i + 1, depth - 1));
     }
     return best;
@@ -4943,6 +4951,8 @@ class _GymQueue {
 
   /// The programs of a week's gym [slots] (in date order).
   List<String> planWeek(List<_GymSlot> slots) {
+    // Lookahead into the next week: the same weekly pattern (week B's assignment aside).
+    final ahead = [...slots, for (final s in slots) _GymSlot(addDays(s.day, 7), noLegs: s.noLegs, race: s.race, fixed: s.fixed)];
     final out = <String>[];
     for (var i = 0; i < slots.length; i++) {
       final slot = slots[i];
@@ -4955,15 +4965,15 @@ class _GymQueue {
       var pick = 0, best = 1 << 30;
       for (var k = 0; k < costs.length; k++) {
         if (costs[k] >= best) continue;
-        final q = _GymQueue._copy(this)..record(_due[k], slot.day, skipped: k != 0);
-        final total = costs[k] + q._future(slots, i + 1, 2);
+        final q = _GymQueue._copy(this)..record(_due[k], slot.day);
+        final total = costs[k] + q._future(ahead, i + 1, 2);
         if (total < best) {
           best = total;
           pick = k;
         }
       }
       final ref = _due[pick];
-      record(ref, slot.day, skipped: pick != 0);
+      record(ref, slot.day);
       out.add(ref);
     }
     return out;

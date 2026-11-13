@@ -408,6 +408,64 @@ void main() {
       fromPlan: true,
     );
 
+    testWidgets('bodyweight switch: open sets get the plan\'s load phase like in the tracker (deload week)', (t) async {
+      Session pullUps(String id, int daysAgo) => Session(
+        id: id,
+        sport: Sport.gym,
+        title: 'Pull',
+        start: _now.subtract(Duration(days: daysAgo)),
+        durationSec: 3600,
+        exercises: [
+          GymExercise(
+            exId: '0652',
+            name: 'pull-up',
+            bw: true,
+            bodyKg: 80,
+            sets: [for (var i = 0; i < 3; i++) GymSet(weight: 10, reps: 6, done: true, target: 6)],
+          ),
+        ],
+      );
+      final s = Session(
+        id: 'g',
+        sport: Sport.gym,
+        title: 'Pull',
+        start: DateTime(2026, 11, 10, 18),
+        durationSec: 3600,
+        planId: 'p1',
+        exercises: [
+          // Logged without its sets yet: the open set is re-prescribed by the switch.
+          GymExercise(exId: '0652', name: 'pull-up', bw: false, sets: [GymSet(reps: 6)]),
+        ],
+      );
+      final plan = PlannedWorkout(
+        id: 'p1',
+        date: DateTime(2026, 11, 10),
+        sport: Sport.gym,
+        title: 'Pull',
+        durationMin: 50,
+        phase: 'recovery',
+        status: 'done',
+        sessionId: 'g',
+      );
+      final history = [pullUps('h1', 5), pullUps('h2', 9)];
+      final rx = LoadPrescriber(history: history, profile: _profile, now: _now);
+      final probe = GymExercise(exId: '0652', name: 'pull-up', bw: true, sets: [GymSet(reps: 6)])
+        ..bodyKg = rx.bodyLoad(GymExercise(exId: '0652', name: 'pull-up'));
+      final deload = rx.forExercise(probe, phase: 'recovery')!.weight, loading = rx.forExercise(probe)!.weight;
+      expect(deload, lessThan(loading));
+      final repo = _FakeRepo();
+      final o = await _overrides(repo, sessions: [s, ...history], plans: [plan]);
+      await _open(t, () => EditSessionPage(session: s), o);
+      await t.tap(find.byKey(const ValueKey('edit-bw')));
+      await t.pumpAndSettle();
+      await t.tap(find.text(de.save).last);
+      await t.pumpAndSettle();
+      final ex = GymExercise.fromMap((repo.sessionUpdates['g']!['exercises'] as List).single as Map);
+      expect(ex.bw, isTrue);
+      expect(ex.sets.last.done, isFalse);
+      expect(ex.sets.last.weight, deload);
+    });
+
     testWidgets('exercises can be removed (with undo), moved and added', (t) async {
       final repo = _FakeRepo();
       final s = gym();

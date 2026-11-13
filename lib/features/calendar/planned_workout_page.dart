@@ -272,7 +272,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
                 title: Text('${supersetOf(exercises, i).length > 1 ? '${e.group} · ' : ''}${exName(context, e.exId, e.name)}'),
                 subtitle: Builder(
                   builder: (_) {
-                    final rx = p.isDone ? null : prescriber.forExercise(e, phase: p.phase);
+                    final rx = p.isDone ? null : prescriber.forExercise(e, phase: gymLoadPhase(p));
                     final reps =
                         e.repMin != null && e.repMax != null
                             ? '${e.repMin}–${e.repMax}'
