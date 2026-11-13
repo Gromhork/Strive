@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show compute, kIsWeb;
 import 'package:flutter/services.dart';
 
+import '../core/collation.dart';
 import 'exercise_names_de.dart';
 
 class Exercise {
@@ -49,6 +50,7 @@ const hiddenExerciseIds = {
   '2141', '2331', // elliptical / cycle cross trainer
   '2311', // stepmill
   '3666', // incline treadmill walk
+  '2139', '2142', // arm ergometer, ski ergometer (steady-state machines, not sets of a muscle)
   // Not a meaningful exercise on its own.
   '2271', // "left hook. boxing"
   '3637', // "wheel run" (unclear; the ab wheel rollouts cover it)
@@ -57,10 +59,26 @@ const hiddenExerciseIds = {
   // identical second entry of an exercise that stays in the library.
   '0077', '0079', '0097', '0119', '0121', '0125', '0287', '0304', '0309', '0312', '0317', '0342', '0360', '0376', '0395',
   '0497', '0513', '0576', '0656', '0658', '0735', '1371', '1394', '1439', '1461', '1462', '1463', '1464', '1479', '1614',
-  '1628', '1657', '1680', '1731', '1765', '1766', '2136', '2189', '2371', '2800', '2801', '3698', '3760',
+  '1628', '1657', '1680', '1731', '1765', '2136', '2189', '2371', '2800', '2801', '3698', '3760',
+  // Same movement as the entry in brackets (same instructions, same or reworded name).
+  '0055', // close-grip bench press (0030)
+  '0161', '0164', // cable front raise (0162)
+  '0198', // cable lat pulldown (2330)
+  '0315', // dumbbell incline curl (0318)
+  '0324', '1623', // dumbbell incline neutral-grip press (0321)
+  '0340', // dumbbell neutral-grip bench press (0352)
+  '0416', // dumbbell biceps curl (0294)
+  '0674', // chin-up (1326)
+  '1257', // barbell incline reverse-grip bench press (0048)
+  '1289', // dumbbell one arm incline press (1281)
+  '1629', // barbell standing wide-grip curl (0113)
+  '1654', // dumbbell reverse curl (0382)
+  '1661', // dumbbell lying supine curl (0350)
+  '2292', // dumbbell rear lateral raise (0380)
+  '3546', // dumbbell seated alternate shoulder press (0388)
 };
 
-/// Offline exercise database (~1270 visible exercises, bundled as an asset).
+/// Offline exercise database (~1250 visible exercises, bundled as an asset).
 class ExerciseDb {
   ExerciseDb(this.all)
     : _byId = {for (final e in all) e.id: e},
@@ -95,8 +113,7 @@ class ExerciseDb {
   /// menus).
   List<String> bodyPartsFor(String lang) => _byLabel(bodyParts, lang);
   List<String> equipmentFor(String lang) => _byLabel(equipment, lang);
-  static List<String> _byLabel(List<String> keys, String lang) =>
-      [...keys]..sort((a, b) => foldSearch(term(a, lang)).compareTo(foldSearch(term(b, lang))));
+  static List<String> _byLabel(List<String> keys, String lang) => [...keys]..sort((a, b) => compareNames(term(a, lang), term(b, lang)));
 
   /// Search text of [e]: English and German name, muscles, body part and equipment in both
   /// languages plus German keywords – folded ([foldSearch]) and built once per exercise. The
@@ -140,11 +157,15 @@ class ExerciseDb {
         if (l != 0) return l;
         // Deterministic ties (List.sort is not stable): the classic free weights first.
         final q = _equipmentRank(a).compareTo(_equipmentRank(b));
-        return q != 0 ? q : shown(a).compareTo(shown(b));
+        return q != 0 ? q : compareNames(shown(a), shown(b));
       });
     } else if (lang != 'en') {
-      final keys = {for (final e in res) e.id: shown(e).toLowerCase()};
-      res.sort((a, b) => keys[a.id]!.compareTo(keys[b.id]!));
+      // German alphabetical order: "Überzüge" under U, not after Z.
+      final keys = {for (final e in res) e.id: collationKey(shown(e))};
+      res.sort((a, b) {
+        final c = keys[a.id]!.compareTo(keys[b.id]!);
+        return c != 0 ? c : shown(a).compareTo(shown(b));
+      });
     }
     return res;
   }
@@ -174,7 +195,9 @@ String foldSearch(String s) =>
 int searchRank(Exercise e, String q) {
   final names = [foldSearch(e.name), if (exerciseNamesDe[e.id] case final de?) foldSearch(de)];
   final popular = popularExerciseIds.contains(e.id);
-  if (names.any((n) => n == q || n.replaceAll(_bracketSuffix, '') == q)) return 0;
+  // "Unterarmstütz / Plank": each of the alternative names counts as the name.
+  final alternatives = [for (final n in names) ...n.replaceAll(_bracketSuffix, '').split(' / ')];
+  if (names.contains(q) || alternatives.any((n) => n.trim() == q)) return 0;
   if (names.any((n) => n.startsWith(q))) return popular ? 1 : 2;
   if (names.any((n) => n.split(_wordBreaks).any((w) => w.startsWith(q)))) return popular ? 3 : 4;
   return popular ? 5 : 6;
@@ -184,30 +207,52 @@ final _bracketSuffix = RegExp(r'\s*\(.*\)$');
 final _wordBreaks = RegExp(r'[\s/(),]+');
 final _ae = RegExp('ä|ae'), _oe = RegExp('ö|oe'), _ue = RegExp('ü|ue'), _sz = RegExp('ß|ss'), _gaps = RegExp(r'[\s\-]+');
 
-/// German search aliases so "bankdrücken" or "kniebeuge" find the right lifts.
+/// German search aliases so "bankdrücken" or "kniebeuge" find the right lifts. Matched on
+/// whole words of the English database name – a substring would tag "th-row" and "nar-row" as
+/// rows or a leg curl as a biceps exercise.
 String germanAlias(Exercise e) {
   final n = e.name;
-  final out = <String>[];
-  if (n.contains('bench press')) out.add('bankdrücken');
-  if (n.contains('squat')) out.add('kniebeuge');
-  if (n.contains('deadlift')) out.add('kreuzheben');
-  if (n.contains('row')) out.add('rudern');
-  if (n.contains('pull-up') || n.contains('chin-up')) out.add('klimmzug');
-  if (n.contains('push-up')) out.add('liegestütz');
-  if (n.contains('curl')) out.add('bizeps');
-  if (n.contains('pushdown') || n.contains('triceps')) out.add('trizeps');
-  if (n.contains('shoulder press') || n.contains('military') || n.contains('overhead press')) out.add('schulterdrücken');
-  if (n.contains('lateral raise')) out.add('seitheben');
-  if (n.contains('lunge')) out.add('ausfallschritt');
-  if (n.contains('calf')) out.add('waden');
-  if (n.contains('leg press')) out.add('beinpresse');
-  if (n.contains('pulldown')) out.add('latzug');
-  if (n.contains('fly')) out.add('fliegende butterfly');
-  if (n.contains('crunch') || n.contains('sit-up')) out.add('bauch');
-  if (n.contains('plank')) out.add('unterarmstütz');
-  if (n.contains('dip')) out.add('dips');
+  final out = [
+    for (final (re, alias) in _aliases)
+      if (re.hasMatch(n)) alias,
+  ];
+  // "Curl" names the biceps curl, the leg curl and the wrist curl: tagged by what it trains.
+  if (_curl.hasMatch(n)) {
+    if (_legCurl.hasMatch(n) || e.target == 'hamstrings') {
+      out.add('beinbeuger');
+    } else if (_wristCurl.hasMatch(n) || e.target == 'forearms') {
+      out.add('unterarm handgelenk');
+    } else if (e.target == 'biceps') {
+      out.add('bizeps');
+    }
+  }
   return out.join(' ');
 }
+
+final _aliases = <(RegExp, String)>[
+  (RegExp(r'\bbench press'), 'bankdrücken'),
+  (RegExp(r'\bsquats?\b'), 'kniebeuge'),
+  (RegExp(r'\bdeadlifts?\b'), 'kreuzheben'),
+  (RegExp(r'\brows?\b'), 'rudern'),
+  (RegExp(r'\b(pull|chin)-?ups?\b'), 'klimmzug'),
+  (RegExp(r'\bpush-?ups?\b'), 'liegestütz'),
+  (RegExp(r'\bpushdown|\btriceps?\b'), 'trizeps'),
+  (RegExp(r'\bshoulder press|\bmilitary press|\boverhead press'), 'schulterdrücken'),
+  (RegExp(r'\blateral raises?\b'), 'seitheben'),
+  (RegExp(r'\blunges?\b'), 'ausfallschritt'),
+  (RegExp(r'\bcalf\b|\bcalves\b'), 'waden'),
+  (RegExp(r'\bleg press'), 'beinpresse'),
+  (RegExp(r'\bpulldowns?\b'), 'latzug'),
+  (RegExp(r'\b(fly|flys|flyes|flies)\b'), 'fliegende butterfly'),
+  (RegExp(r'\bcrunch(es)?\b|\bsit-?ups?\b'), 'bauch'),
+  (RegExp(r'\bplank\b'), 'unterarmstütz'),
+  (RegExp(r'\bside (plank|bridge)\b'), 'seitstütz side plank side bridge'),
+  (RegExp(r'\bdips?\b'), 'dips'),
+  (RegExp(r'\b(wood ?chop|chop)\b|\bcable standing lift\b'), 'holzhacker woodchop'),
+];
+final _curl = RegExp(r'\bcurls?\b');
+final _legCurl = RegExp(r'\b(leg|hamstring|nordic)\b');
+final _wristCurl = RegExp(r'\b(wrist|finger)\b');
 
 const _deTerms = {
   'back': 'Rücken',
@@ -255,7 +300,7 @@ const _deTerms = {
   'bosu ball': 'Bosu',
   'trap bar': 'Trap Bar',
   'weighted': 'Zusatzgewicht',
-  'assisted': 'Unterstützung',
+  'assisted': 'Partner',
   'sled machine': 'Beinpresse & Hackenschmidt',
   'roller': 'Faszienrolle',
   'wheel roller': 'Bauchroller',

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/collation.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
@@ -85,7 +86,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
       for (final f in folderOrder)
         if (f.isNotEmpty && (names.contains(f) || !filtered)) f,
     ];
-    final rest = names.where((f) => !order.contains(f)).toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final rest = names.where((f) => !order.contains(f)).toList()..sort(compareNames);
     return [...order, ...rest, if (all.any((t) => t.folder.isEmpty)) ''];
   }
 
@@ -107,7 +108,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     }
     return [for (final t in stored) local[t.id] ?? t]..sort((a, b) {
       final o = a.order.compareTo(b.order);
-      return o != 0 ? o : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      return o != 0 ? o : compareNames(a.name, b.name);
     });
   }
 

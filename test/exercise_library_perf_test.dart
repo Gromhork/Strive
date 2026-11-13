@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:strive/core/collation.dart';
 import 'package:strive/core/sport.dart';
 import 'package:strive/core/theme.dart';
 import 'package:strive/data/exercise_db.dart';
@@ -43,8 +44,8 @@ void main() {
     final list = db.search('', lang: 'de');
     sw.stop();
     expect(list.length, db.visible.length);
-    final names = [for (final e in list) exerciseName(e.id, e.name, 'de').toLowerCase()];
-    expect(names, [...names]..sort());
+    final names = [for (final e in list) exerciseName(e.id, e.name, 'de')];
+    expect(names, [...names]..sort(compareNames)); // German order: umlauts as their base vowel
     // Was ~1.5 s on a desktop VM (the rule-based German names were recomputed inside the sort).
     expect(sw.elapsedMilliseconds, lessThan(400));
   });

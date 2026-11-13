@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:strive/core/collation.dart';
 import 'package:strive/data/exercise_db.dart';
 import 'package:strive/data/exercise_names_de.dart';
 import 'package:strive/features/train/exercise_picker.dart';
@@ -139,7 +140,6 @@ void main() {
         'Box Jump',
         'Arm Blaster',
         "Captain's Chair",
-        'Balance Board Stand',
         'Push and Pull',
       ];
       final bad = <String>[];
@@ -283,8 +283,8 @@ void main() {
       expect(db.equipment, isNot(contains('olympic barbell')));
       expect(db.equipment, isNot(contains('stationary bike')));
       // Menus are sorted by their label.
-      final labels = db.equipmentFor('de').map((k) => foldSearch(term(k, 'de'))).toList();
-      expect(labels, [...labels]..sort());
+      final labels = db.equipmentFor('de').map((k) => term(k, 'de')).toList();
+      expect(labels, [...labels]..sort(compareNames));
     });
 
     test('subtitle: target muscle · equipment, no English alias', () {
