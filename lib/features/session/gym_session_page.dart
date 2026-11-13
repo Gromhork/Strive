@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
-import '../../data/exercise_measure.dart' show formatHold;
+import '../../data/exercise_measure.dart' show formatHold, holdPerSide;
 import '../../data/exercise_names_de.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
@@ -66,7 +66,7 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
       final ok = await confirm(context, l.finishWorkout, body: l.finishOpenSets(open, w.totalSets), ok: l.finish, cancel: l.keepTraining);
       if (!ok || !mounted) return;
     }
-    final total = w.exercises.fold<int>(0, (a, e) => a + e.workSets.length); // work sets, like setsDone
+    final total = w.plannedWorkSets; // work sets, like setsDone – at least the program's
     final session = n.finish(ref.read(repoProvider)!.newId());
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SessionSummaryPage(draft: session, plannedSets: total)));
   }
@@ -596,7 +596,9 @@ String exerciseSummary(AppLocalizations l, GymExercise e, Units units, {required
     final secs = work.map((s) => s.sec > 0 ? s.sec : (s.targetSec ?? 0)).toList();
     final hi = secs.reduce((a, b) => a > b ? a : b), lo = secs.reduce((a, b) => a < b ? a : b);
     final time = hi <= 0 ? formatHold(e.holdRange.$1) : (lo == hi ? formatHold(hi) : '$lo–${formatHold(hi)}');
-    return '${work.length} × $time${top.abs() < 1e-6 ? '' : ' · ${holdWeight(top, units, bodyweight: e.bw == true)}'}';
+    // Side plank & co.: the time is per side ("3 × 20 s pro Seite"), like "pro Hand" of dumbbells.
+    final side = holdPerSide(e.name) ? ' ${l.perSide}' : '';
+    return '${work.length} × $time$side${top.abs() < 1e-6 ? '' : ' · ${holdWeight(top, units, bodyweight: e.bw == true)}'}';
   }
   final load = e.bw == true ? bodyweightLoad(l.bodyweightShort, top, units) : (top > 0 ? units.weight(top) : null);
   return '${work.length} × ${range.$1}–${range.$2}${load == null ? '' : ' · $load'}';
@@ -695,6 +697,7 @@ class _ExerciseCard extends ConsumerWidget {
                     units: units,
                     dense: true,
                     sets: exercise.sets.where((s) => !s.warmup && s.type != SetType.drop).length,
+                    perSide: exercise.isTimed && holdPerSide(exercise.name),
                   ),
                 ),
               Padding(
@@ -1095,10 +1098,19 @@ Future<void> pickHoldTime(BuildContext context, AppLocalizations l, GymSet s, Va
   if (v != null && v > 0) onPicked(v);
 }
 
-/// The running hold as a clock: the time left of the target ("0:32"), then the overtime ("+0:05").
+/// The running hold as a clock: the lead-in ("3"), the time left of the target ("0:32"), then
+/// the overtime ("+0:05").
 String holdClock(ActiveGym w) {
+  final lead = w.holdLeadInLeft();
+  if (lead > 0) return '$lead';
   final left = w.holdTarget - w.holdElapsed();
   return left >= 0 ? clock(left) : '+${clock(-left)}';
+}
+
+/// Status of the running hold: "get into position" (lead-in), "hold" or "overtime".
+String holdStatus(AppLocalizations l, ActiveGym w) {
+  if (w.holdLeadInLeft() > 0) return l.holdGetReady;
+  return w.holdElapsed() >= w.holdTarget ? l.holdOvertime : l.holdRunning;
 }
 
 /// Compact bar of the running hold timer (table view; the focus view shows it in its editor).
@@ -1136,7 +1148,7 @@ class HoldBar extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          over ? l.holdOvertime : l.holdRunning,
+                          holdStatus(l, w),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w600),

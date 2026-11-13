@@ -160,6 +160,9 @@ class AppSettings {
   final int reminderMinute;
   final bool vibrate;
 
+  /// Beeps of the gym timers: countdown and end of a hold, end of the rest.
+  final bool timerSound;
+
   /// Gym: log the reserve (reps in the tank) of every set – off by default; the per-exercise
   /// effort chips stay.
   final bool logRir;
@@ -171,6 +174,7 @@ class AppSettings {
     this.reminderHour = 8,
     this.reminderMinute = 0,
     this.vibrate = true,
+    this.timerSound = true,
     this.logRir = false,
   });
 
@@ -182,6 +186,7 @@ class AppSettings {
     int? reminderHour,
     int? reminderMinute,
     bool? vibrate,
+    bool? timerSound,
     bool? logRir,
   }) => AppSettings(
     locale: clearLocale ? null : (locale ?? this.locale),
@@ -190,6 +195,7 @@ class AppSettings {
     reminderHour: reminderHour ?? this.reminderHour,
     reminderMinute: reminderMinute ?? this.reminderMinute,
     vibrate: vibrate ?? this.vibrate,
+    timerSound: timerSound ?? this.timerSound,
     logRir: logRir ?? this.logRir,
   );
 }
@@ -207,6 +213,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       reminderHour: p.getInt('reminderHour') ?? 8,
       reminderMinute: p.getInt('reminderMinute') ?? 0,
       vibrate: p.getBool('vibrate') ?? true,
+      timerSound: p.getBool('timerSound') ?? true,
       logRir: p.getBool('logRir') ?? false,
     );
   }
@@ -219,6 +226,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _p.setInt('reminderHour', s.reminderHour);
     _p.setInt('reminderMinute', s.reminderMinute);
     _p.setBool('vibrate', s.vibrate);
+    _p.setBool('timerSound', s.timerSound);
     _p.setBool('logRir', s.logRir);
   }
 }

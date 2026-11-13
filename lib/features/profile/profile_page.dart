@@ -227,6 +227,14 @@ class ProfilePage extends ConsumerWidget {
                 onChanged: (v) => setN.update(settings.copyWith(vibrate: v)),
               ),
               SettingsSwitchTile(
+                key: const ValueKey('timerSoundSetting'),
+                icon: Icons.volume_up_outlined,
+                title: l.timerSound,
+                subtitle: l.timerSoundSub,
+                value: settings.timerSound,
+                onChanged: (v) => setN.update(settings.copyWith(timerSound: v)),
+              ),
+              SettingsSwitchTile(
                 key: const ValueKey('logRirSetting'),
                 icon: Icons.battery_5_bar_rounded,
                 title: l.logRirSetting,

@@ -407,7 +407,9 @@ class _Records extends ConsumerWidget {
                                   : Icons.repeat_rounded,
                               color: AppColors.gym,
                             ),
-                            title: Text(exName(context, r.exId, r.name), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            // Long names ("Unterarmstütz / Plank mit Gewicht") wrap instead of being cut
+                            // next to "längstes Halten 40 s".
+                            title: Text(exName(context, r.exId, r.name), maxLines: 3, overflow: TextOverflow.ellipsis),
                             subtitle: Text(
                               [
                                 if (r.maxWeight > 0) '${l.maxWeight} ${u.weight(r.maxWeight)}',

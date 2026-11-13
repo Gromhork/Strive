@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../data/exercise_db.dart';
+import '../../data/exercise_measure.dart' show holdPerSide;
 import '../../data/exercise_names_de.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
@@ -248,6 +249,7 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                   prescription: rx,
                   units: u,
                   sets: e.sets.where((s) => !s.warmup && s.type != SetType.drop).length,
+                  perSide: e.isTimed && holdPerSide(e.name),
                   onApply:
                       e.doneSets > 0 || _matches(e, rx)
                           ? null
@@ -724,7 +726,7 @@ class _HoldEditor extends ConsumerWidget {
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
-              Text(over ? l.holdOvertime : l.holdRunning, style: Theme.of(context).textTheme.bodySmall),
+              Text(holdStatus(l, w), style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
@@ -866,6 +868,13 @@ class _HoldEditor extends ConsumerWidget {
                       Switch(key: const ValueKey('holdAutoDone'), value: n.holdAutoDone, onChanged: n.setHoldAutoDone),
                     ],
                   ),
+                ),
+              if (!holding && !s.done)
+                Row(
+                  children: [
+                    Expanded(child: Text(l.holdLeadInSetting, style: Theme.of(context).textTheme.bodySmall)),
+                    Switch(key: const ValueKey('holdLeadIn'), value: n.holdLeadIn, onChanged: n.setHoldLeadIn),
+                  ],
                 ),
               const SizedBox(height: 6),
               action,

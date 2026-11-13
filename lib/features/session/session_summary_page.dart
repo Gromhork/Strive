@@ -15,7 +15,7 @@ import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
 import '../stats/plan_link_card.dart' show askReplacement;
 import '../../services/plan_match.dart';
-import '../../services/compliance.dart' show ComplianceScale, plannedKm;
+import '../../services/compliance.dart' show ComplianceScale, linkedPlannedSets, plannedKm;
 import '../../services/gym_tools.dart' show sessionRpeFromEfforts;
 import '../../services/insights.dart';
 import '../../services/workout_store.dart';
@@ -110,6 +110,20 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
   bool _saved = false;
   bool _discarded = false;
 
+  /// Work sets of the planned workout this session fulfils without having been started from it
+  /// (program started from the Train tab on the plan's day) – its compliance reference.
+  int? _linkedSets;
+
+  /// The planned workout [s] fulfils ([matchPlan]) and the work sets it is compared with then
+  /// ([linkedPlannedSets]; null when there is no plan or it changes nothing).
+  (PlannedWorkout?, int?) _linkPlan(Session s, List<PlannedWorkout> plans, List<WorkoutTemplate> templates, String gymGoal) {
+    final plan = matchPlan(s, plans);
+    if (plan == null) return (null, null);
+    final t = templates.where((t) => t.id == plan.templateId).firstOrNull;
+    final sets = linkedPlannedSets(s, plan, t, gymGoal: gymGoal);
+    return (plan, sets == s.plannedSets ? null : sets);
+  }
+
   Session get _session => Session(
     id: widget.draft.id,
     sport: widget.draft.sport,
@@ -128,7 +142,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     indoor: widget.draft.indoor,
     templateId: widget.draft.templateId,
     planId: widget.draft.planId,
-    plannedSets: widget.draft.plannedSets ?? widget.plannedSets,
+    plannedSets: _linkedSets ?? widget.draft.plannedSets ?? widget.plannedSets,
     bodyWeightKg: widget.draft.bodyWeightKg,
   );
 
@@ -136,14 +150,21 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     if (_saved) return;
     _saved = true;
     final repo = ref.read(repoProvider)!;
+    // The matching planned workout (marked as done below) – its sets are the reference of a
+    // program started from the Train tab on the plan's day.
+    final plans = ref.read(planListProvider);
+    final (plan, linkedSets) = _linkPlan(
+      _session,
+      plans,
+      ref.read(templateListProvider),
+      ref.read(profileOrDefaultProvider).athlete.gymGoal,
+    );
+    _linkedSets = linkedSets;
     final s = _session;
     repo.saveSession(s);
     // Firestore keeps the write offline – the local draft is no longer needed.
     _store.clearSummary();
     ref.read(healthServiceProvider).writeSession(s);
-    // Mark the matching planned workout as done.
-    final plans = ref.read(planListProvider);
-    final plan = matchPlan(s, plans);
     if (plan != null) {
       repo.updatePlan(plan.id, {'status': 'done', 'sessionId': s.id});
       // Endurance: small automatic adjustments of the next sessions (with undo).
@@ -190,7 +211,14 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
     final after = GameStats.compute([s, ...history.where((h) => h.id != s.id)], target, plans: plans);
     final newBadges = after.badges.where((b) => b.earned && !before.badges.firstWhere((x) => x.def.id == b.def.id).earned).toList();
     final levelUp = after.level.level > before.level.level;
-    final outcome = summaryOutcome(s, plan: plans.where((p) => p.id == s.planId).firstOrNull, plannedSets: widget.plannedSets);
+    // Against the planned workout it will fulfil on saving (same reference as the calendar).
+    final linkedSets =
+        _saved ? null : _linkPlan(s, plans, ref.watch(templateListProvider), ref.watch(profileOrDefaultProvider).athlete.gymGoal).$2;
+    final outcome = summaryOutcome(
+      s,
+      plan: plans.where((p) => p.id == s.planId).firstOrNull,
+      plannedSets: linkedSets ?? _linkedSets ?? widget.plannedSets,
+    );
     final headline = switch (outcome) {
       SummaryOutcome.planDone => l.summaryPlanDone,
       SummaryOutcome.partial => l.summaryPartial,
