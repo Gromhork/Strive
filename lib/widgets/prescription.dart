@@ -79,6 +79,8 @@ String? prescriptionReason(AppLocalizations l, Prescription p) {
   final phase = switch (p.phase) {
     'recovery' => l.loadPhaseLighter,
     'taper' => l.loadTaperLighter,
+    'race' => l.loadRaceLighter,
+    'legsEasy' => l.loadLegsEasyLighter,
     _ => null,
   };
   if (base == null) return phase;
@@ -116,11 +118,13 @@ String progressReasonText(AppLocalizations l, ProgressReason r) => switch (r) {
 
 /// Today's target in one line: "Today: 3 × 6 @ 72.5 kg", or with differing rep targets
 /// "Today: 9 · 9 · 8 reps @ 72.5 kg" ([sets] = number of work sets; 0 = unknown).
-String prescriptionToday(AppLocalizations l, Prescription p, Units u, {int sets = 0}) {
+String prescriptionToday(AppLocalizations l, Prescription p, Units u, {int sets = 0, bool perSide = false}) {
   if (p.timed) {
     final secs = [for (var i = 0; i < (sets > 0 ? sets : max(1, p.setReps.length)); i++) p.repsForSet(i)];
     final load = prescriptionLoad(l, p, u);
-    final time = secs.toSet().length == 1 ? '${secs.length} × ${formatHold(secs.first)}' : '${secs.join(' · ')} s';
+    final time =
+        (secs.toSet().length == 1 ? '${secs.length} × ${formatHold(secs.first)}' : '${secs.join(' · ')} s') +
+        (perSide ? ' ${l.perSide}' : '');
     return l.rxTodayText(load.isEmpty ? time : '$time @ $load');
   }
   final load = prescriptionLoad(l, p, u).replaceFirst('≈ ', '');
@@ -134,7 +138,15 @@ String prescriptionToday(AppLocalizations l, Prescription p, Units u, {int sets 
 /// with an optional apply button (shown when the current sets differ from the suggestion).
 /// The AMRAP note is not repeated here – it belongs to the last set only.
 class PrescriptionHint extends StatelessWidget {
-  const PrescriptionHint({super.key, required this.prescription, required this.units, this.onApply, this.dense = false, this.sets = 0});
+  const PrescriptionHint({
+    super.key,
+    required this.prescription,
+    required this.units,
+    this.onApply,
+    this.dense = false,
+    this.sets = 0,
+    this.perSide = false,
+  });
   final Prescription prescription;
   final Units units;
   final VoidCallback? onApply;
@@ -142,6 +154,9 @@ class PrescriptionHint extends StatelessWidget {
 
   /// Number of work sets of the exercise (0 = unknown – the prescription's own targets).
   final int sets;
+
+  /// A hold done once per side ([holdPerSide]): "3 × 20 s per side".
+  final bool perSide;
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +173,7 @@ class PrescriptionHint extends StatelessWidget {
       LoadSource.estimate => Icons.tune_rounded,
       _ => Icons.auto_awesome_outlined,
     };
-    final head = prescriptionToday(l, p, units, sets: sets);
+    final head = prescriptionToday(l, p, units, sets: sets, perSide: perSide);
     final text = Text.rich(
       TextSpan(
         children: [

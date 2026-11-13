@@ -108,28 +108,37 @@ class ProfilePage extends ConsumerWidget {
                 const SizedBox(height: 8),
                 ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(value: g.level.progress, minHeight: 8)),
                 const SizedBox(height: 16),
-                for (final s in Sport.values)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Icon(s.icon, color: s.color, size: 20),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 110,
-                          child: Text('${s.label(l)} ${g.sportLevels[s]!.level}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ),
-                        Expanded(
-                          child: LinearProgressIndicator(
-                            value: g.sportLevels[s]!.progress,
-                            color: s.color,
-                            minHeight: 6,
-                            borderRadius: BorderRadius.circular(4),
+                // The label column is as wide as the longest label ("Schwimmen 12" at a large text
+                // scale was cut to "Schwimm…" in a fixed 110 dp column); the bars take the rest.
+                Table(
+                  key: const ValueKey('sportLevels'),
+                  columnWidths: const {0: FixedColumnWidth(28), 1: IntrinsicColumnWidth(), 2: FlexColumnWidth()},
+                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                  children: [
+                    for (final s in Sport.values)
+                      TableRow(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Align(alignment: AlignmentDirectional.centerStart, child: Icon(s.icon, color: s.color, size: 20)),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12, bottom: 8),
+                            child: Text('${s.label(l)} ${g.sportLevels[s]!.level}'),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: LinearProgressIndicator(
+                              value: g.sportLevels[s]!.progress,
+                              color: s.color,
+                              minHeight: 6,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -216,6 +225,14 @@ class ProfilePage extends ConsumerWidget {
                 info: l.vibrationInfo,
                 value: settings.vibrate,
                 onChanged: (v) => setN.update(settings.copyWith(vibrate: v)),
+              ),
+              SettingsSwitchTile(
+                key: const ValueKey('timerSoundSetting'),
+                icon: Icons.volume_up_outlined,
+                title: l.timerSound,
+                subtitle: l.timerSoundSub,
+                value: settings.timerSound,
+                onChanged: (v) => setN.update(settings.copyWith(timerSound: v)),
               ),
               SettingsSwitchTile(
                 key: const ValueKey('logRirSetting'),

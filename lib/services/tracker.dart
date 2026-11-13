@@ -19,6 +19,7 @@ import '../providers.dart';
 import 'notification_service.dart' show notificationIcon;
 import 'step_progress.dart';
 import 'voice_coach.dart';
+import 'workout_alerts.dart';
 
 /// Step state before a pool length was counted – lets "undo" revert an auto-advance.
 class StepMark {
@@ -606,13 +607,16 @@ class TrackerNotifier extends Notifier<CardioState?> {
     _announceStep(s, next);
   }
 
-  /// Haptics + voice when the step changed between [before] and [after].
+  /// Vibration ([WorkoutAlerts] – a real pattern, not a touch haptic that "touch vibration off"
+  /// silences) when the vibration setting is on.
+  void _pulse() {
+    if (ref.read(settingsProvider).vibrate) ref.read(workoutAlertsProvider).play(AlertSignal.pulse, sound: false, vibrate: true);
+  }
+
+  /// Vibration + voice when the step changed between [before] and [after].
   void _announceStep(CardioState before, CardioState after) {
     if (after.stepIndex == before.stepIndex && after.stepsDone == before.stepsDone) return;
-    if (ref.read(settingsProvider).vibrate) {
-      HapticFeedback.heavyImpact();
-      Future.delayed(const Duration(milliseconds: 250), HapticFeedback.heavyImpact);
-    }
+    _pulse();
     final l = _l;
     if (l == null) return;
     if (after.stepsDone) {
@@ -679,7 +683,7 @@ class TrackerNotifier extends Notifier<CardioState?> {
       final split = now - _splitStartSec;
       splits = [...splits, split];
       _splitStartSec = now;
-      if (ref.read(settingsProvider).vibrate) HapticFeedback.heavyImpact();
+      _pulse();
       if (_l != null && !(s.step?.isWork ?? false)) {
         final speech = splitSpeech(_l!, s.sport, splits, now, _lang);
         if (speech != null) _voice?.say(speech);

@@ -170,6 +170,13 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
     });
   }
 
+  /// Switches the bodyweight mode of exercise [i]; its open sets are prescribed in the plan's load
+  /// phase (deload, lighter legs, …) like in the tracker.
+  void _setBodyweight(int i, bool on) {
+    final phase = planPhaseOf(ref.read(planListProvider), s.planId);
+    setState(() => ref.read(loadPrescriberProvider).switchBodyweight(_exercises[i], on, phase: phase));
+  }
+
   void _removeExercise(int i) {
     final l = context.l10n;
     final removed = _exercises[i];
@@ -338,7 +345,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
                     exercise: _exercises[i],
                     units: u,
                     onChanged: () => setState(() {}),
-                    onBodyweight: (on) => setState(() => ref.read(loadPrescriberProvider).switchBodyweight(_exercises[i], on)),
+                    onBodyweight: (on) => _setBodyweight(i, on),
                     onMoveUp: i > 0 ? () => _move(i, -1) : null,
                     onMoveDown: i < _exercises.length - 1 ? () => _move(i, 1) : null,
                     onRemove: () => _removeExercise(i),

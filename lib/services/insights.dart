@@ -30,7 +30,8 @@ int xpForSession(Session s) {
   var xp = s.minutes * intensity;
   switch (s.sport) {
     case Sport.gym:
-      xp += s.volume / 400 + s.setsDone * 1.5;
+      // The stored volume: a later change of the derived body load must not move past XP.
+      xp += s.xpVolume / 400 + s.setsDone * 1.5;
     case Sport.run:
       xp += s.distanceM / 1000 * 8;
     case Sport.ride:
@@ -190,7 +191,7 @@ class GameStats {
 
   static List<Achievement> _badges(List<Session> s, int streak) {
     double best(Sport sp) => s.where((e) => e.sport == sp).fold(0.0, (a, e) => max(a, e.distanceM));
-    final maxVol = s.fold(0.0, (a, e) => max(a, e.volume));
+    final maxVol = s.fold(0.0, (a, e) => max(a, e.xpVolume));
     final sports = s.map((e) => e.sport).toSet().length;
     final early = s.any((e) => isEarlySession(e) && earnsXp(e));
     Achievement b(String id, double value, double target) {
@@ -272,12 +273,45 @@ class ExerciseRecord {
   final double bestE1rm;
   final double maxWeight;
   final int maxReps;
+
+  /// When the record was last improved ([ExercisePerformance.beats]).
   final DateTime date;
   final int sessions;
 
   /// Timed holds (plank, wall sit, …): the longest single hold in seconds (0 for rep exercises).
   final int longestHold;
-  const ExerciseRecord(this.exId, this.name, this.bestE1rm, this.maxWeight, this.maxReps, this.date, this.sessions, {this.longestHold = 0});
+
+  /// Most reps of one work set without added load where those reps are the record (bodyweight
+  /// exercises that move part of the body – push-ups, squats, sit-ups – and exercises logged
+  /// without a load); 0 when none.
+  final int bodyReps;
+
+  /// Timed holds: the heaviest added load held ([holdAtKg] the longest hold at that load) – a
+  /// plank at +2.5 kg for 30 s is progress over 60 s without a plate (load is added once the time
+  /// reaches the top of the range, and the time starts low again).
+  final double holdKg;
+  final int holdAtKg;
+
+  const ExerciseRecord(
+    this.exId,
+    this.name,
+    this.bestE1rm,
+    this.maxWeight,
+    this.maxReps,
+    this.date,
+    this.sessions, {
+    this.longestHold = 0,
+    this.bodyReps = 0,
+    this.holdKg = 0,
+    this.holdAtKg = 0,
+  });
+}
+
+/// Whether [e] is a bodyweight exercise that moves only part of the body (push-ups, squats,
+/// sit-ups, …: share < 0.9) – their record without added load is the most reps, not an e1RM.
+bool _partialBody(GymExercise e) {
+  final share = e.bodyShare;
+  return (e.bw == true || (e.bw == null && share > 0)) && share > 0 && share < 0.9;
 }
 
 /// e1RM that counts as a strength record of [e]: none for timed holds (their record is the
@@ -287,44 +321,110 @@ class ExerciseRecord {
 /// or weighted set keep their e1RM incl. the body load.
 double recordE1rm(GymExercise e) {
   if (e.isTimed) return 0;
-  final share = e.bodyShare;
-  final partialBody = (e.bw == true || (e.bw == null && share > 0)) && share > 0 && share < 0.9;
-  if (partialBody && !e.sets.any((s) => s.done && !s.warmup && s.weight > 0)) return 0;
+  if (_partialBody(e) && !e.sets.any((s) => s.done && !s.warmup && s.weight > 0)) return 0;
   return e.bestE1rm;
+}
+
+/// What one exercise of one session achieved, in the measures of [ExerciseRecord] – the one
+/// definition of "a record" for the records list ([exerciseRecords]) and the session summary
+/// ([newPrs]).
+class ExercisePerformance {
+  final double e1rm;
+  final double maxWeight;
+  final int maxReps;
+  final int bodyReps;
+  final int longestHold;
+  final double holdKg;
+  final int holdAtKg;
+
+  const ExercisePerformance._(this.e1rm, this.maxWeight, this.maxReps, this.bodyReps, this.longestHold, this.holdKg, this.holdAtKg);
+
+  factory ExercisePerformance.of(GymExercise e) {
+    final work = e.sets.where((x) => x.done && !x.warmup).toList();
+    if (e.isTimed) {
+      // Heaviest load held, then the longest hold at it.
+      var kg = 0.0, atKg = 0;
+      var first = true;
+      for (final x in work.where((x) => x.sec > 0)) {
+        if (first || x.weight > kg + 1e-6) {
+          kg = x.weight;
+          atKg = x.sec;
+          first = false;
+        } else if ((x.weight - kg).abs() < 1e-6) {
+          atKg = max(atKg, x.sec);
+        }
+      }
+      return ExercisePerformance._(0, e.maxWeight, 0, 0, e.longestHold, kg, atKg);
+    }
+    final maxR = work.fold(0, (a, x) => max(a, x.reps));
+    // Reps without added load are the record where they make no e1RM: partial-body exercises
+    // (push-ups, squats) and exercises logged without any load.
+    final partial = _partialBody(e);
+    final bodyR = work.where((x) => x.weight <= 0 && (partial || e.loadOf(x) <= 0)).fold(0, (a, x) => max(a, x.reps));
+    return ExercisePerformance._(recordE1rm(e), e.maxWeight, maxR, bodyR, 0, 0, 0);
+  }
+
+  /// Nothing measurable (no done set with reps / time).
+  bool get isEmpty => e1rm <= 0 && maxReps <= 0 && longestHold <= 0;
+
+  /// Whether this beats the record [p] (null = first time: any measure counts): a higher e1RM,
+  /// more reps without added load ([ExerciseRecord.bodyReps]), a longer hold, or a hold at a
+  /// heavier load (or longer at the same top load).
+  bool beats(ExerciseRecord? p) {
+    if (p == null) return !isEmpty;
+    if (e1rm > 0 && e1rm > p.bestE1rm + 0.01) return true;
+    if (bodyReps > p.bodyReps) return true;
+    if (longestHold > p.longestHold) return true;
+    if (holdAtKg > 0 && holdKg > p.holdKg + 1e-6) return true;
+    return holdAtKg > 0 && (holdKg - p.holdKg).abs() < 1e-6 && holdAtKg > p.holdAtKg;
+  }
 }
 
 /// Records come from measured exercises only: an exercise logged as done with the plan's
 /// prescribed weights ([Session.exerciseFromPlan]) is no proof of a lift – also when the athlete
 /// corrected other exercises or the duration of the session. Rep exercises: best e1RM
 /// ([recordE1rm]) and most reps; timed holds: the longest hold (sets stored as reps before hold
-/// times existed are no hold record).
+/// times existed are no hold record). The date is the last session that beat the record
+/// ([ExercisePerformance.beats] – the same rule as the session summary's [newPrs]).
 Map<String, ExerciseRecord> exerciseRecords(List<Session> sessions) {
   final out = <String, ExerciseRecord>{};
   for (final s in sessions.reversed) {
     for (final e in s.exercises) {
       if (s.exerciseFromPlan(e)) continue;
+      final c = ExercisePerformance.of(e);
+      if (c.isEmpty) continue;
       final prev = out[e.exId];
-      final best = recordE1rm(e);
-      final maxW = e.maxWeight;
-      final timed = e.isTimed;
-      final maxR = timed ? 0 : e.sets.where((x) => x.done && !x.warmup).fold(0, (a, x) => max(a, x.reps));
-      final hold = e.longestHold;
-      if (best <= 0 && maxR <= 0 && hold <= 0) continue;
       if (prev == null) {
-        out[e.exId] = ExerciseRecord(e.exId, e.name, best, maxW, maxR, s.start, 1, longestHold: hold);
-      } else {
-        final better = best > prev.bestE1rm || (prev.bestE1rm <= 0 && (maxR > prev.maxReps || hold > prev.longestHold));
         out[e.exId] = ExerciseRecord(
           e.exId,
           e.name,
-          max(prev.bestE1rm, best),
-          max(prev.maxWeight, maxW),
-          max(prev.maxReps, maxR),
-          better ? s.start : prev.date,
-          prev.sessions + 1,
-          longestHold: max(prev.longestHold, hold),
+          c.e1rm,
+          c.maxWeight,
+          c.maxReps,
+          s.start,
+          1,
+          longestHold: c.longestHold,
+          bodyReps: c.bodyReps,
+          holdKg: c.holdKg,
+          holdAtKg: c.holdAtKg,
         );
+        continue;
       }
+      final heavier = c.holdAtKg > 0 && c.holdKg > prev.holdKg + 1e-6;
+      final sameTop = c.holdAtKg > 0 && (c.holdKg - prev.holdKg).abs() < 1e-6;
+      out[e.exId] = ExerciseRecord(
+        e.exId,
+        e.name,
+        max(prev.bestE1rm, c.e1rm),
+        max(prev.maxWeight, c.maxWeight),
+        max(prev.maxReps, c.maxReps),
+        c.beats(prev) ? s.start : prev.date,
+        prev.sessions + 1,
+        longestHold: max(prev.longestHold, c.longestHold),
+        bodyReps: max(prev.bodyReps, c.bodyReps),
+        holdKg: heavier ? c.holdKg : prev.holdKg,
+        holdAtKg: heavier ? c.holdAtKg : (sameTop ? max(prev.holdAtKg, c.holdAtKg) : prev.holdAtKg),
+      );
     }
   }
   return out;
@@ -343,19 +443,16 @@ List<(DateTime, double)> e1rmHistory(List<Session> sessions, String exId) {
   return out;
 }
 
-/// Exercises in [current] that beat all previous sessions (new e1RM record).
+/// Exercises in [current] that beat all previous sessions – the records list's own rule
+/// ([ExercisePerformance.beats]): a higher e1RM, more reps of a bodyweight exercise (push-ups,
+/// squats, sit-ups), a longer hold or a hold at a heavier load.
 List<String> newPrs(Session current, List<Session> history) {
   if (current.fromPlan) return const [];
   final prev = exerciseRecords(history.where((s) => s.id != current.id && s.start.isBefore(current.start)).toList());
-  bool record(GymExercise e) {
-    final p = prev[e.exId];
-    // Timed holds: a longer hold than ever before.
-    if (e.isTimed) return e.longestHold > 0 && (p == null || e.longestHold > p.longestHold);
-    final best = recordE1rm(e);
-    return best > 0 && (p == null || best > p.bestE1rm + 0.01);
-  }
-
-  return current.exercises.where((e) => !current.exerciseFromPlan(e) && record(e)).map((e) => e.name).toList();
+  return current.exercises
+      .where((e) => !current.exerciseFromPlan(e) && ExercisePerformance.of(e).beats(prev[e.exId]))
+      .map((e) => e.name)
+      .toList();
 }
 
 /// Last set values of an exercise from history, used as "previous" hints.

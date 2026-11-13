@@ -236,7 +236,9 @@ LiftProfile classifyLift(String exId, String name, {Exercise? info}) {
     move = Movement.horizontalPull;
   }
   final lower =
-      lowerPart ?? const {Movement.squat, Movement.hinge, Movement.lunge, Movement.hipExtension}.contains(move) || n.contains('leg');
+      lowerPart ??
+      const {Movement.squat, Movement.hinge, Movement.lunge, Movement.hipExtension}.contains(move) ||
+          _any(n, const ['leg', 'wall sit', 'wandsitz']);
   if (move == null) {
     return LiftProfile(loaded ? LiftClass.compound : LiftClass.bodyweight, Movement.other, lower: lower, bodyweight: !loaded);
   }

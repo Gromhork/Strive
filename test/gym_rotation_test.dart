@@ -227,7 +227,7 @@ void main() {
           expect(fill.plannedSets, program.fold<int>(0, (a, e) => a + e.workSets.length), reason: '${g.date} ${g.phase}');
           expect(g.description, isNot(contains(l.wGymLegsHalvedNote)));
           expect(g.description, isNot(contains(l.wGymDeloadNote3)));
-          if (g.phase == 'recovery' && !g.description.contains(l.wGymTaperNote)) expect(g.description, contains(l.wGymDeloadNote4));
+          if (g.phase == 'recovery' && !g.description.contains(l.wGymTaperNote)) expect(g.description, contains(l.wGymDeloadNote5));
         }
       }
     });
@@ -332,7 +332,7 @@ void main() {
         expect(g.title, want.name);
       }
       // Load / RIR periodisation still applies.
-      expect(gym.where((g) => g.phase == 'recovery').every((g) => g.description.contains(l.wGymDeloadNote4)), isTrue);
+      expect(gym.where((g) => g.phase == 'recovery').every((g) => g.description.contains(l.wGymDeloadNote5)), isTrue);
     });
 
     test('without A/B week A every week; unassigned or deleted programs fall back to the rotation', () {

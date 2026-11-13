@@ -55,7 +55,8 @@ Future<void> startPlanned(BuildContext context, WidgetRef ref, PlannedWorkout p)
       title: p.title,
       template: template,
       planId: p.id,
-      phase: p.phase,
+      // (The day's lighter load too: legs before a key session, the race window.)
+      phase: gymLoadPhase(p),
       // The workout's own exercises, or its program's with the plan's day adaptations (regressions,
       // no legs before a race) – the program's sets either way.
       exercises:

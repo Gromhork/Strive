@@ -13,6 +13,8 @@ import 'package:strive/data/repository.dart';
 import 'package:strive/features/calendar/planned_workout_page.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
+import 'package:strive/services/exercise_class.dart';
+import 'package:strive/services/gym_plan_upgrade.dart';
 import 'package:strive/services/plan_exercises.dart';
 import 'package:strive/services/plan_fill.dart';
 import 'package:strive/services/plan_generator.dart';
@@ -118,6 +120,43 @@ void main() {
         expect(planAmount(kept, profile, templates: after).minutes, estimateGymMinutes(shown));
         expect(PlanFill.of(kept, profile: profile, templates: after).exercises, isNotEmpty);
       }
+    });
+
+    test('the copied workouts keep the lighter load (legsEasy / raceWeek) and never apply noLegs twice', () {
+      final mixed = templates.firstWhere((t) => t.sport == Sport.gym && gymModApplies(gymModNoLegs, t.exercises));
+      final plans =
+          [
+            gym('easy', mixed, 1, mods: [gymModLegsEasy]),
+            gym('noLegs', mixed, 2, mods: [gymModNoLegs]),
+            gym('race', mixed, 3, mods: [gymModNoLegs, gymModRaceWeek]),
+          ].map((p) => PlannedWorkout.fromMap(p.id, {...p.toMap(), 'phase': 'build'})).toList();
+      final before = {for (final p in plans) p.id: plannedGymExercises(p, mixed)};
+      final d = programDeletion({mixed.id}, templates: templates, plans: plans, athlete: const AthleteData(), today: today);
+      final after = [...templates.where((t) => t.id != mixed.id)];
+      final kept = {
+        for (final p in plans) p.id: PlannedWorkout.fromMap(p.id, {...p.toMap(), ...d.plans[p.id]!}),
+      };
+      for (final p in plans) {
+        final k = kept[p.id]!;
+        // The same exercises as before the delete – the copy is shown as it is, no mod applied again.
+        expect(plannedProgramMissing(k, after), isFalse, reason: p.id);
+        expect(plannedGymExercises(k, plannedProgramOf(k, after)).map((e) => e.exId), before[p.id]!.map((e) => e.exId), reason: p.id);
+        expect(
+          PlanFill.of(k, profile: const UserProfile(), templates: after).exercises.map((e) => e.exId),
+          before[p.id]!.map((e) => e.exId),
+        );
+        // The lighter load stays: the same load phase as before.
+        expect(gymLoadPhase(k), gymLoadPhase(p), reason: p.id);
+      }
+      expect(kept['easy']!.gymMods, [gymModLegsEasy]);
+      expect(gymLoadPhase(kept['easy']), 'legsEasy');
+      expect(kept['noLegs']!.gymMods, isEmpty);
+      expect(kept['noLegs']!.exercises.any((e) => classifyLift(e.exId, e.name).lower), isFalse);
+      expect(kept['noLegs']!.exercises, isNotEmpty);
+      expect(kept['race']!.gymMods, [gymModRaceWeek]);
+      expect(gymLoadPhase(kept['race']), 'race');
+      // The plan upgrade leaves the copies alone (their program is gone).
+      expect(GymPlanUpgrade.updates(kept.values.toList(), after, today: today), isEmpty);
     });
 
     test('a folder: every program in it; the plan settings lose the deleted assignments', () {

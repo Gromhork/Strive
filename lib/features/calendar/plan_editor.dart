@@ -147,8 +147,13 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
       phase: widget.existing?.phase,
       isKey: _isKey,
       exercises: _sport == Sport.gym && _customEx ? _gymEx : const [],
-      // The plan's day adaptations stay while the workout keeps following the same program.
-      gymMods: _sport == Sport.gym && !_customEx && _templateId == _initialTemplateId ? widget.existing?.gymMods ?? const [] : const [],
+      // The plan's day adaptations stay while the workout keeps following the same program; the load
+      // ones ([gymLoadMods]: lighter legs, race window) also with exercises adjusted here.
+      gymMods: [
+        if (_sport == Sport.gym && widget.existing != null && _templateId == _initialTemplateId)
+          for (final m in widget.existing!.gymMods)
+            if (!_customEx || gymLoadMods.contains(m)) m,
+      ],
     );
     repo.savePlan(plan);
     _initial = _snapshot();
@@ -182,7 +187,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
       const SizedBox(height: 20),
       GymExerciseEditor(
         exercises: _gymEx,
-        phase: widget.existing?.phase,
+        phase: gymLoadPhase(widget.existing),
         subtitle: template == null ? null : (_customEx ? l.planExercisesCustom(template.name) : l.planExercisesHint),
         onChanged: () => setState(() => _customEx = true),
       ),

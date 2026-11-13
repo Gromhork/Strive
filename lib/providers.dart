@@ -15,6 +15,7 @@ import 'data/repository.dart';
 import 'services/compliance.dart';
 import 'services/insights.dart';
 import 'services/load_prescription.dart';
+import 'services/plan_exercises.dart';
 import 'services/weather_service.dart';
 
 // ───────────────────────────── Auth & repository ─────────────────────────────
@@ -99,9 +100,11 @@ final loadPrescriberProvider = Provider<LoadPrescriber>(
   ),
 );
 
-/// Plan phase ('base' | 'build' | 'peak' | 'taper' | 'recovery') of a planned workout id.
+/// Load phase of a planned workout id for the load prescription ([gymLoadPhase]): its plan phase
+/// ('base' | 'build' | 'peak' | 'taper' | 'recovery'), or the gym day's lighter load ('race' /
+/// 'legsEasy').
 String? planPhaseOf(List<PlannedWorkout> plans, String? planId) =>
-    planId == null ? null : plans.where((p) => p.id == planId).firstOrNull?.phase;
+    planId == null ? null : gymLoadPhase(plans.where((p) => p.id == planId).firstOrNull);
 
 final weatherProvider = FutureProvider<Weather>((ref) async {
   final lang = ref.watch(settingsProvider).locale ?? 'de';
@@ -160,6 +163,9 @@ class AppSettings {
   final int reminderMinute;
   final bool vibrate;
 
+  /// Beeps of the gym timers: countdown and end of a hold, end of the rest.
+  final bool timerSound;
+
   /// Gym: log the reserve (reps in the tank) of every set – off by default; the per-exercise
   /// effort chips stay.
   final bool logRir;
@@ -171,6 +177,7 @@ class AppSettings {
     this.reminderHour = 8,
     this.reminderMinute = 0,
     this.vibrate = true,
+    this.timerSound = true,
     this.logRir = false,
   });
 
@@ -182,6 +189,7 @@ class AppSettings {
     int? reminderHour,
     int? reminderMinute,
     bool? vibrate,
+    bool? timerSound,
     bool? logRir,
   }) => AppSettings(
     locale: clearLocale ? null : (locale ?? this.locale),
@@ -190,6 +198,7 @@ class AppSettings {
     reminderHour: reminderHour ?? this.reminderHour,
     reminderMinute: reminderMinute ?? this.reminderMinute,
     vibrate: vibrate ?? this.vibrate,
+    timerSound: timerSound ?? this.timerSound,
     logRir: logRir ?? this.logRir,
   );
 }
@@ -207,6 +216,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       reminderHour: p.getInt('reminderHour') ?? 8,
       reminderMinute: p.getInt('reminderMinute') ?? 0,
       vibrate: p.getBool('vibrate') ?? true,
+      timerSound: p.getBool('timerSound') ?? true,
       logRir: p.getBool('logRir') ?? false,
     );
   }
@@ -219,6 +229,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _p.setInt('reminderHour', s.reminderHour);
     _p.setInt('reminderMinute', s.reminderMinute);
     _p.setBool('vibrate', s.vibrate);
+    _p.setBool('timerSound', s.timerSound);
     _p.setBool('logRir', s.logRir);
   }
 }

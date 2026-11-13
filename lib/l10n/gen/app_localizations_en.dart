@@ -1124,7 +1124,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vibration => 'Vibration';
 
   @override
-  String get vibrationSub => 'After rest timers and each km';
+  String get vibrationSub => 'After rest and hold timers and each km';
 
   @override
   String get reminders => 'Reminders';
@@ -3817,7 +3817,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termVolumeTitle => 'Volume';
 
   @override
-  String get termVolumeBody => 'Weight × reps of all working sets added up (warm-ups don\'t count). For bodyweight exercises the moved share of your body weight counts (e.g. push-up ≈ 64 %, pull-up 100 %, squat ≈ 70 %) plus any added weight. Holds such as planks count as hold time, not as volume.';
+  String get termVolumeBody => 'Weight × reps of all working sets added up (warm-ups don\'t count). Where your body takes the place of a weight – push-ups (≈ 64 % of your body weight, like a bench press), pull-ups and dips (100 %), inverted rows – that share of your body weight counts plus any added weight. Squats, lunges, calf raises, bridges and core exercises count only the added weight, as their loaded versions count only the bar or dumbbells – so the volume doesn\'t drop when you move on from bodyweight to loaded squats. Holds such as planks count as hold time, not as volume.';
 
   @override
   String get termVolumeTip => 'More volume is not automatically better – what matters is progress over weeks.';
@@ -6040,7 +6040,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainingReminderShort => 'On planned training days';
 
   @override
-  String get vibrationInfo => 'Vibrates when a rest timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity.';
+  String get vibrationInfo => 'Vibrates when a rest or hold timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity – also with touch vibration switched off in the system settings.';
 
   @override
   String get reorderHint => 'Long-press folders and programs to move them.';
@@ -6140,6 +6140,46 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String gymAssignWarnLegs(String program, String day) {
     return '$program on $day, the day before your long session – heavy legs make it harder.';
+  }
+
+  @override
+  String get holdGetReady => 'Get into position';
+
+  @override
+  String get holdLeadInSetting => '3-s countdown before the hold';
+
+  @override
+  String get timerSound => 'Timer sounds';
+
+  @override
+  String get timerSoundSub => 'Countdown and end of holds, end of rests';
+
+  @override
+  String get wGymDeloadNote5 => 'Recovery week: same sets as in the program, the weights are entered about 10 % lighter (bodyweight exercises: a few reps fewer). Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+
+  @override
+  String get loadRaceLighter => 'race coming up';
+
+  @override
+  String get loadLegsEasyLighter => 'legs lighter before the key session';
+
+  @override
+  String get gymGroupPush => 'Push';
+
+  @override
+  String get gymGroupPull => 'Pull';
+
+  @override
+  String get gymGroupLegs => 'Legs';
+
+  @override
+  String gymAssignWarnBackToBack(String program, String dayPair) {
+    return '$program in two sessions in a row ($dayPair) – the other programs wait a whole extra session.';
+  }
+
+  @override
+  String gymAssignWarnFrequency(String group, String freq, String other, String otherFreq) {
+    return '$group only $freq× a week, $other $otherFreq× – ideally every muscle about 2× a week. Without your own assignment the plan rotates the programs evenly over the weeks.';
   }
 
   @override

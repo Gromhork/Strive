@@ -6,9 +6,9 @@ import 'plan_exercises.dart';
 /// What deleting programs does to the plan. Planned gym workouts reference their program
 /// ([PlannedWorkout.templateId]) instead of copying its exercises, so a deleted program would
 /// leave them empty: they keep a copy of its exercises as they show them now (with the plan's
-/// day adaptations, [PlannedWorkout.gymMods]); gym days assigned to it in the plan settings
-/// ([AthleteData.gymPlanA] / [AthleteData.gymPlanB]) lose the assignment (the plan picks their
-/// program again). The confirmation names both ([upcoming], [assignedDays]).
+/// day adaptations, [PlannedWorkout.gymMods] – the load ones stay as mods); gym days assigned to
+/// it in the plan settings ([AthleteData.gymPlanA] / [AthleteData.gymPlanB]) lose the assignment
+/// (the plan picks their program again). The confirmation names both ([upcoming], [assignedDays]).
 class ProgramDeletion {
   const ProgramDeletion({this.plans = const {}, this.upcoming = 0, this.assignedDays = const [], this.athlete});
 
@@ -46,7 +46,12 @@ ProgramDeletion programDeletion(
     if (snapshot.isEmpty) continue;
     updates[p.id] = {
       'exercises': [for (final e in snapshot) e.copy(resetDone: true).toMap()],
-      'gymMods': const <String>[],
+      // The exercise mods (regressions, no legs) are in the copy now – applying them again would drop
+      // or regress more; the load ones (lighter legs, race window: [gymLoadPhase]) stay.
+      'gymMods': [
+        for (final m in p.gymMods)
+          if (gymLoadMods.contains(m)) m,
+      ],
     };
   }
   final remaining = [

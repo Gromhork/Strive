@@ -463,7 +463,7 @@
   "dark": "Dark",
   "light": "Light",
   "vibration": "Vibration",
-  "vibrationSub": "After rest timers and each km",
+  "vibrationSub": "After rest and hold timers and each km",
   "reminders": "Reminders",
   "trainingReminder": "Training reminder",
   "trainingReminderSub": "On training days at {time}",
@@ -2262,7 +2262,7 @@
   "termAmrapBody": "On the last set do as many clean reps as you can – but stop one rep before failure. The app uses the result to correct your weights.",
   "termAmrapTip": "Only appears when it helps: for new exercises and when you reach the top of the rep range.",
   "termVolumeTitle": "Volume",
-  "termVolumeBody": "Weight × reps of all working sets added up (warm-ups don't count). For bodyweight exercises the moved share of your body weight counts (e.g. push-up ≈ 64 %, pull-up 100 %, squat ≈ 70 %) plus any added weight. Holds such as planks count as hold time, not as volume.",
+  "termVolumeBody": "Weight × reps of all working sets added up (warm-ups don't count). Where your body takes the place of a weight – push-ups (≈ 64 % of your body weight, like a bench press), pull-ups and dips (100 %), inverted rows – that share of your body weight counts plus any added weight. Squats, lunges, calf raises, bridges and core exercises count only the added weight, as their loaded versions count only the bar or dumbbells – so the volume doesn't drop when you move on from bodyweight to loaded squats. Holds such as planks count as hold time, not as volume.",
   "termVolumeTip": "More volume is not automatically better – what matters is progress over weeks.",
   "termPhaseTitle": "Plan phases",
   "termPhaseBody": "Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Recovery week: a lighter week every 3–5 weeks so your body can adapt.",
@@ -4219,7 +4219,7 @@
   "logRirSettingShort": "Reps in the tank (RIR) after each set",
   "logRirSettingInfo": "After every set you note how many more reps you could have done (reps in reserve, RIR). When an exercise has no quick rating, Strive uses these values for your next progression. The quick rating per exercise stays either way.",
   "trainingReminderShort": "On planned training days",
-  "vibrationInfo": "Vibrates when a rest timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity.",
+  "vibrationInfo": "Vibrates when a rest or hold timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity – also with touch vibration switched off in the system settings.",
   "reorderHint": "Long-press folders and programs to move them.",
   "restoreBuiltins": "Restore standard programs",
   "restoreBuiltinsAdd": "Added in their original state: {names}.",
@@ -4309,6 +4309,44 @@
         "type": "String"
       },
       "day": {
+        "type": "String"
+      }
+    }
+  },
+  "holdGetReady": "Get into position",
+  "holdLeadInSetting": "3-s countdown before the hold",
+  "timerSound": "Timer sounds",
+  "timerSoundSub": "Countdown and end of holds, end of rests",
+  "wGymDeloadNote5": "Recovery week: same sets as in the program, the weights are entered about 10 % lighter (bodyweight exercises: a few reps fewer). Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.",
+  "loadRaceLighter": "race coming up",
+  "loadLegsEasyLighter": "legs lighter before the key session",
+  "gymGroupPush": "Push",
+  "gymGroupPull": "Pull",
+  "gymGroupLegs": "Legs",
+  "gymAssignWarnBackToBack": "{program} in two sessions in a row ({dayPair}) – the other programs wait a whole extra session.",
+  "@gymAssignWarnBackToBack": {
+    "placeholders": {
+      "program": {
+        "type": "String"
+      },
+      "dayPair": {
+        "type": "String"
+      }
+    }
+  },
+  "gymAssignWarnFrequency": "{group} only {freq}× a week, {other} {otherFreq}× – ideally every muscle about 2× a week. Without your own assignment the plan rotates the programs evenly over the weeks.",
+  "@gymAssignWarnFrequency": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      },
+      "freq": {
+        "type": "String"
+      },
+      "other": {
+        "type": "String"
+      },
+      "otherFreq": {
         "type": "String"
       }
     }

@@ -54,7 +54,7 @@ class PlanFill {
       return PlanFill(minutes: amount.minutes, km: amount.km, poolLengthM: pool);
     }
     final source = plannedGymExercises(p, plannedProgramOf(p, templates), gymGoal: profile.athlete.gymGoal);
-    final list = prescriber == null ? [for (final e in source) e.copy(resetDone: true)] : prescriber.apply(source, phase: p.phase);
+    final list = prescriber == null ? [for (final e in source) e.copy(resetDone: true)] : prescriber.apply(source, phase: gymLoadPhase(p));
     for (final e in list) {
       e
         ..effort = null

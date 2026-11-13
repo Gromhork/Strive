@@ -80,6 +80,9 @@ class _GymAssignSectionState extends State<GymAssignSection> {
     final days = _gymDays;
     widget.onChanged({
       'gymAssign': true,
+      // The rotation does not fit into one week (4 PPL days): week A / B keeps it going – one fixed week
+      // would train Push twice and Legs once every week (review r7 R7-5).
+      if (!a.gymAB && _differs(s.a, s.b)) 'gymAB': true,
       'gymPlanA': {
         for (final d in days)
           if (a.gymPlanA[d] ?? s.a[d] case final r?) d: r,
@@ -94,10 +97,14 @@ class _GymAssignSectionState extends State<GymAssignSection> {
   void _suggest() {
     final s = PlanGenerator.suggestedGymWeeks(widget.profile, widget.templates);
     widget.onChanged({
+      if (!a.gymAB && _differs(s.a, s.b)) 'gymAB': true,
       'gymPlanA': s.a,
       'gymPlanB': {...s.a, ...s.b},
     });
   }
+
+  /// Whether the suggested weeks A and B assign different programs.
+  static bool _differs(Map<int, String> a, Map<int, String> b) => b.entries.any((e) => a[e.key] != e.value);
 
   void _set(int day, String ref) {
     final key = _week == 'B' && a.gymAB ? 'gymPlanB' : 'gymPlanA';
@@ -132,6 +139,50 @@ class _GymAssignSectionState extends State<GymAssignSection> {
         final name = _program(x)?.name;
         final pair = '${_dayName(d)}–${_dayName(nextD)}';
         if (name != null && seen.add('$name$pair')) out.add(l.gymAssignWarnRepeat(name, pair));
+      }
+    }
+    // The same program in two sessions in a row on days further apart (Sat Push → Mon Push), also from
+    // week A to week B and back (review r7 R7-5) – consecutive days are warned above.
+    final sessions = [
+      for (var w = 0; w < weeks.length; w++)
+        for (final d in _gymDays) (w, d),
+    ];
+    if (sessions.length > 1) {
+      for (var i = 0; i < sessions.length; i++) {
+        final (w, d) = sessions[i];
+        final (nw, nd) = sessions[(i + 1) % sessions.length];
+        final x = at(w, d);
+        if (x == null || x != at(nw, nd) || nd == d % 7 + 1) continue;
+        final name = _program(x)?.name;
+        final msg = name == null ? null : l.gymAssignWarnBackToBack(name, '${_dayName(d)}–${_dayName(nd)}');
+        if (msg != null && !out.contains(msg)) out.add(msg);
+      }
+    }
+    // A muscle group trained clearly less often than another, below ~2× a week (4 PPL days: Push 2×,
+    // Legs 1×; with week A / B 1.5× / 1×).
+    final freq = {'push': 0.0, 'pull': 0.0, 'legs': 0.0};
+    for (var w = 0; w < weeks.length; w++) {
+      for (final d in _gymDays) {
+        final t = _program(at(w, d));
+        if (t == null) continue;
+        for (final e in gymGroupSets(t.exercises).entries) {
+          if (e.value >= 3) freq[e.key] = freq[e.key]! + 1 / weeks.length;
+        }
+      }
+    }
+    final trained = freq.entries.where((e) => e.value > 0).toList()..sort((x, y) => y.value.compareTo(x.value));
+    if (trained.length > 1) {
+      final most = trained.first;
+      final nf = NumberFormat('0.#', Localizations.localeOf(context).toLanguageTag());
+      String group(String g) => switch (g) {
+        'push' => l.gymGroupPush,
+        'pull' => l.gymGroupPull,
+        _ => l.gymGroupLegs,
+      };
+      for (final e in trained.skip(1)) {
+        if (e.value < 2 - 1e-9 && e.value <= most.value - 0.5 + 1e-9) {
+          out.add(l.gymAssignWarnFrequency(group(e.key), nf.format(e.value), group(most.key), nf.format(most.value)));
+        }
       }
     }
     // A leg-heavy program the day before the long session.
@@ -303,6 +354,13 @@ class _ProgramPicker extends StatefulWidget {
 
 class _ProgramPickerState extends State<_ProgramPicker> {
   String _query = '';
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -340,7 +398,11 @@ class _ProgramPickerState extends State<_ProgramPicker> {
               child: TextField(
                 key: const ValueKey('gymProgramSearch'),
                 decoration: InputDecoration(prefixIcon: const Icon(Icons.search_rounded), hintText: l.gymAssignSearch, isDense: true),
-                onChanged: (v) => setState(() => _query = v),
+                onChanged: (v) {
+                  setState(() => _query = v);
+                  // The new hits from their top, not at the scroll position of the old list.
+                  if (_scroll.hasClients) _scroll.jumpTo(0);
+                },
               ),
             ),
             const SizedBox(height: 8),
@@ -349,6 +411,7 @@ class _ProgramPickerState extends State<_ProgramPicker> {
                   hits.isEmpty
                       ? Center(child: Text(l.gymAssignNone))
                       : ListView(
+                        controller: _scroll,
                         children: [
                           for (final e in folders.entries) ...[
                             if (e.key.isNotEmpty)
