@@ -155,13 +155,14 @@ class _Info {
 }
 
 class _Entry {
-  _Entry(this.date, this.sets, this.top, {this.effort, this.bodyKg = 0, this.rxKg});
+  _Entry(this.date, this.sets, this.top, {this.effort, this.bodyKg = 0, this.rxKg, this.phase});
   final DateTime date;
   final List<GymSet> sets;
   final double top; // top-set e1RM of the session
   final Effort? effort;
   final double bodyKg;
   final double? rxKg; // prescribed work weight (null = unknown)
+  final String? phase; // lighter load phase it was done in ([LoadPrescriber.lighterPhase]), null = loading
 
   ProgressEntry get progress => ProgressEntry(date, sets, effort: effort, bodyKg: bodyKg, rxKg: rxKg);
 }
@@ -248,7 +249,14 @@ class LoadPrescriber {
     }
     p = _capReps(p?.withRange(lo, hi), hi);
     if (p == null) return null;
-    if (!lighterFor(e, phase)) {
+    final light = lighterFor(e, phase);
+    // Only lighter sessions to go by: they are at their phase's level, not at the loading level.
+    final from = planned == null ? hist.firstOrNull?.phase : null;
+    if (from != null) {
+      if (light) return _fromLighter(p, e, info, from, phase, hist.first);
+      p = _toLoading(p, e, info, from, hi);
+    }
+    if (!light) {
       // AMRAP on the last set while calibrating (first sessions of an exercise) and when
       // the targets are at the top of the range (how much reserve is left decides the
       // next jump). Loaded exercises only.
@@ -267,13 +275,17 @@ class LoadPrescriber {
   /// (body + added) – more assistance, less added weight – and when the added load cannot carry
   /// that, reps instead ([lighterRepFactor]; review r7 S5: push-ups went 12 → 13 in a deload
   /// week). Lighter sessions are skipped in the history, so a second deload session is again
-  /// relative to the loading level, not to the first deload session.
-  Prescription _lighter(Prescription p, GymExercise e, _Info info, String? phase) {
+  /// relative to the loading level, not to the first deload session (only lighter sessions to go
+  /// by: [_fromLighter]).
+  /// [factor]: the load relative to [p] (default [lighterLoadFactor]); [cutReps]: false when [p]
+  /// is already at a lighter level (its reps were cut then – [_fromLighter]).
+  Prescription _lighter(Prescription p, GymExercise e, _Info info, String? phase, {double? factor, bool cutReps = true}) {
     final increase = p.progression == ProgressionKind.increase;
     final step = increase || p.progression == ProgressionKind.addReps;
     // The loading level the step started from: one rep less after an "add reps" step.
     final baseReps = p.progression == ProgressionKind.addReps ? max(1, p.reps - 1) : p.reps;
-    final factor = lighterLoadFactor(phase);
+    final cut = cutReps ? max(1, (baseReps * lighterRepFactor).floor()) : baseReps;
+    factor ??= lighterLoadFactor(phase);
     var weight = p.weight, reps = p.reps;
     if (p.bodyweight) {
       final body = e.bodyKg > 0 ? e.bodyKg : bodyLoad(e);
@@ -284,12 +296,12 @@ class LoadPrescriber {
       final removed = p.weight - added;
       weight = added;
       // Less than half of the intended reduction came off the load: fewer reps.
-      reps = body <= 0 || removed < total * (1 - factor) / 2 ? max(1, (baseReps * lighterRepFactor).floor()) : baseReps;
+      reps = body <= 0 || removed < total * (1 - factor) / 2 ? cut : baseReps;
     } else if (p.weight > 0) {
       weight = _floorStep(p.weight * factor, info);
       reps = step ? baseReps : p.reps;
     } else {
-      reps = max(1, (baseReps * lighterRepFactor).floor());
+      reps = cut;
     }
     return p._copy(
       weight: weight,
@@ -301,6 +313,35 @@ class LoadPrescriber {
       amrap: false,
       clearReason: step,
     );
+  }
+
+  /// [p], prescribed from lighter sessions only (phase [from], [_history]'s last resort), for the
+  /// lighter phase [to]. Those sessions are already at a lighter level – lightening them again
+  /// compounds (review r7: a squat done only on 'legsEasy' days, as prescribed, went 65 → 22.5 kg in
+  /// ten weeks). 'legsEasy' after 'legsEasy' is a recurring weekly condition, not a temporary
+  /// one: the lower-body lift progresses at that level (no AMRAP – the effort stays easy). Any
+  /// other pair (a deload / taper / race week): the last lighter load ([last]) at [to]'s share of
+  /// [from]'s level, no step up, never a second cut of the reps.
+  Prescription _fromLighter(Prescription p, GymExercise e, _Info info, String from, String? to, _Entry last) {
+    if (from == 'legsEasy' && to == 'legsEasy') return p._copy(amrap: false, phaseAdjusted: true, phase: to);
+    // The level the step started from (a load step is undone here, a rep step by [_lighter]).
+    final base = p.progression == ProgressionKind.increase ? p._copy(weight: min(p.weight, last.sets.map((s) => s.weight).reduce(max))) : p;
+    return _lighter(base, e, info, to, factor: lighterLoadFactor(to) / lighterLoadFactor(from), cutReps: false);
+  }
+
+  /// [p], prescribed from lighter sessions only (phase [from]), back at the loading level: the
+  /// load divided by [lighterLoadFactor] (bodyweight: of the total load), reps cut in that phase
+  /// ([lighterRepFactor]: no load to scale) restored – capped at [repCap] of the range top [top].
+  Prescription _toLoading(Prescription p, GymExercise e, _Info info, String from, int top) {
+    final factor = lighterLoadFactor(from);
+    if (p.bodyweight && p.weight != 0) {
+      final body = e.bodyKg > 0 ? e.bodyKg : bodyLoad(e);
+      final added = (((body + p.weight) / factor - body) / 2.5 + 1e-6).floorToDouble() * 2.5;
+      return p._copy(weight: max(p.weight, added));
+    }
+    if (!p.bodyweight && p.weight > 0) return p._copy(weight: max(p.weight, _floorStep(p.weight / factor, info)));
+    final reps = min(repCap(top), (p.reps / lighterRepFactor - 1e-9).ceil());
+    return p._copy(reps: max(p.reps, reps), setReps: const []);
   }
 
   /// Rep range (double-progression window) of [e]: its own range, otherwise derived
@@ -474,22 +515,41 @@ class LoadPrescriber {
   /// levers, handstand) stay at the top. A set more than 10 % short of its target repeats the
   /// time; short twice in a row → one step shorter. A last session taken over from the plan
   /// holds its targets. Deload / taper weeks: ~80 % of the time, no step up. Without history:
-  /// the bottom of the range.
+  /// the bottom of the range. Lighter sessions are skipped like in [_history] and only used when
+  /// there is nothing else – at their own level ('legsEasy' after 'legsEasy' progresses, the wall
+  /// sit on a legs-easy day only never did).
   Prescription _timed(GymExercise e, String? phase) {
     final (lo, hi) = e.holdRange;
     final bw = isBodyweight(e);
     final src = bw ? LoadSource.bodyweight : LoadSource.history;
     final hist = <({DateTime date, List<GymSet> sets, bool fromPlan, Effort? effort})>[];
+    final lighter = <({DateTime date, List<GymSet> sets, bool fromPlan, Effort? effort})>[];
+    String? from; // phase of the newest lighter session
     for (final s in _sessions) {
       if (now.difference(s.start).inDays > 42) break; // time span
+      ({DateTime date, List<GymSet> sets, bool fromPlan, Effort? effort})? lit;
+      String? litPhase;
+      var found = false;
       for (final x in s.exercises) {
-        if (x.exId != e.exId || lighterPhase(x.phase)) continue;
+        if (x.exId != e.exId) continue;
         final sets = x.sets.where((st) => st.done && !st.warmup && st.type != SetType.drop && st.sec > 0).toList();
         if (sets.isEmpty) continue;
-        hist.add((date: s.start, sets: sets, fromPlan: s.exerciseFromPlan(x), effort: x.effort));
+        final h = (date: s.start, sets: sets, fromPlan: s.exerciseFromPlan(x), effort: x.effort);
+        if (lighterPhase(x.phase)) {
+          if (lit == null) (lit, litPhase) = (h, x.phase);
+          continue;
+        }
+        hist.add(h);
+        found = true;
         break;
       }
+      if (!found && lit != null) {
+        from ??= litPhase;
+        lighter.add(lit);
+      }
     }
+    final fromLighter = hist.isEmpty && lighter.isNotEmpty;
+    if (fromLighter) hist.addAll(lighter);
     int round5(num v) => max(5, (v / 5).round() * 5);
     final light = lighterFor(e, phase);
     Prescription out(
@@ -536,7 +596,13 @@ class LoadPrescriber {
     final targets = [for (final s in last.sets) s.targetSec ?? s.sec];
     final held = [for (final s in last.sets) s.sec];
     List<int> listOf(List<int> v) => v.toSet().length > 1 ? v : const [];
-    if (light) {
+    if (fromLighter && !(light && from == 'legsEasy' && phase == 'legsEasy')) {
+      // Only lighter sessions (already ~80 % of the loading time): the same time again in a
+      // lighter phase, back to the loading time otherwise – no second cut, no step up.
+      final base = min(held.reduce(min), targets.reduce(min));
+      return out(light ? base : min(hi, max(base, round5(base / 0.8))), kg, kind: ProgressionKind.hold);
+    }
+    if (light && !fromLighter) {
       // Deload / taper: the last loading level at ~80 % of its time, no step up.
       final base = min(held.reduce(min), targets.reduce(min));
       return out(max(min(lo, base), round5(base * 0.8)), kg, kind: ProgressionKind.hold);
@@ -609,7 +675,8 @@ class LoadPrescriber {
       // signal; they only anchor a hold ([_planAnchor]).
       final all = s.exercises.where((x) => x.exId == exId && !s.exerciseFromPlan(x)).toList();
       // Deload / taper sessions are temporary and not a performance signal: skipped
-      // (kept only as a last resort when there is nothing else).
+      // (kept only as a last resort when there is nothing else – tagged with their phase,
+      // [forExercise] prescribes from them at their level).
       final inst = all.where((x) => !lighterPhase(x.phase)).toList();
       final deload = inst.isEmpty;
       final use = deload ? all : inst;
@@ -652,6 +719,7 @@ class LoadPrescriber {
         effort: effort,
         bodyKg: kg > 0 ? kg : bl,
         rxKg: rx == null ? null : convert(use.first, rx),
+        phase: deload ? use.map((x) => x.phase).firstWhere(lighterPhase) : null,
       );
       (deload ? lighter : (age <= recentWindow ? recent : old)).add(entry);
     }

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import '../core/format.dart';
@@ -18,9 +19,12 @@ import 'plan_exercises.dart';
 ///
 /// A future, not done generated workout whose copies are the program's exercises in the program's
 /// order – possibly regressed ([gymRegressions]) or without the lower-body exercises – is turned
-/// into a reference again: `exercises` cleared, the adaptations stored as [PlannedWorkout.gymMods]
-/// (set counts are ignored – they are what changed). Anything else (other exercises, another order:
-/// the athlete's own edits) stays as it is.
+/// into a reference again: `exercises` cleared, the adaptations stored as [PlannedWorkout.gymMods].
+/// Each copy must be the program's exercise as the old generator left it ([_sameContent]): the
+/// same rep range, rest, note and set values, only work sets dropped from the end (halved leg
+/// sets) or copies of the last one added (time fill), a regression with its own rep range. Anything
+/// else (other exercises, another order, other reps / weights / rest / notes: the athlete's own
+/// edits of the day – or of the program since) stays as it is: nothing the athlete typed is lost.
 ///
 /// The load adaptations its notes promise are added as mods too – also to workouts already in the
 /// new format (plans generated before the load followed them): "legs lighter / half the leg sets
@@ -92,13 +96,15 @@ class GymPlanUpgrade {
       }
       if (j >= program.length || !_same(s, program[j])) return null;
       final r = gymRegressions[program[j].exId];
+      final isRegression = r != null && s.exId == r.$1;
       if (r != null) {
-        if (s.exId == r.$1) {
+        if (isRegression) {
           regressed = true;
         } else {
           unregressed = true;
         }
       }
+      if (!_sameContent(s, program[j], regressed: isRegression)) return null;
       j++;
     }
     for (; j < program.length; j++) {
@@ -114,6 +120,46 @@ class GymPlanUpgrade {
 
   /// [s] is [p] or its beginner regression.
   static bool _same(GymExercise s, GymExercise p) => s.exId == p.exId || gymRegressions[p.exId]?.$1 == s.exId;
+
+  /// Stored copy [s] is program exercise [p] with only the old generator's changes (review r7 R4:
+  /// a day whose rep range and note the athlete had changed was reset to the program): the same
+  /// note, superset group, mode and hold range; the same rep range and rest – for a regression
+  /// ([regressed], [regressedExercise]) the rest capped at 120 s and every work set at the bottom
+  /// of its own range; the same warm-ups; the work sets a prefix of the program's (half the leg
+  /// sets) or the program's plus copies of its last one (time fill), with the same values.
+  static bool _sameContent(GymExercise s, GymExercise p, {required bool regressed}) {
+    if (s.note != p.note || s.group != p.group || s.timed != p.timed || s.holdMin != p.holdMin || s.holdMax != p.holdMax) return false;
+    if (regressed) {
+      if (s.restSec != min(p.restSec, 120) || s.bw != null) return false;
+    } else if (s.repMin != p.repMin || s.repMax != p.repMax || s.restSec != p.restSec || s.bw != p.bw) {
+      return false;
+    }
+    final sw = s.workSets, pw = p.workSets, su = s.sets.where((x) => x.warmup).toList(), pu = p.sets.where((x) => x.warmup).toList();
+    if (!_setsEqual(su, pu) || sw.isEmpty != pw.isEmpty) return false;
+    for (var i = 0; i < sw.length; i++) {
+      final q = pw[min(i, pw.length - 1)];
+      if (!_setEqual(sw[i], q, reps: !regressed)) return false;
+      if (regressed && sw[i].reps != (s.repMin ?? sw[i].reps)) return false;
+    }
+    return true;
+  }
+
+  static bool _setsEqual(List<GymSet> a, List<GymSet> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!_setEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  static bool _setEqual(GymSet a, GymSet b, {bool reps = true}) =>
+      (a.weight - b.weight).abs() < 1e-6 &&
+      (!reps || a.reps == b.reps) &&
+      a.sec == b.sec &&
+      a.type == b.type &&
+      a.rpe == b.rpe &&
+      a.target == b.target &&
+      a.targetSec == b.targetSec;
 
   static final _halvedNotes = _texts((l) => l.wGymLegsHalvedNote);
   static final _easyNotes = _texts((l) => l.wGymLegsEasyNote);

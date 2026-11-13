@@ -563,6 +563,40 @@ void main() {
       final future = old(pull, [for (final e in pull.exercises) plusSet(e)], days: 0);
       expect(GymPlanUpgrade.updates([future], templates, today: today).keys, [future.id]);
     });
+
+    test('day edits of reps, weights, rest, notes or set values keep the copy (re-check of R4)', () {
+      List<GymExercise> edited(void Function(GymExercise e) f) {
+        final list = [for (final e in pull.exercises) e.copy()];
+        f(list.first);
+        return list;
+      }
+
+      final edits = {
+        'rep range': edited(
+          (e) =>
+              e
+                ..repMin = 3
+                ..repMax = 4,
+        ),
+        'note': edited((e) => e.note = 'grip wide'),
+        'rest': edited((e) => e.restSec = e.restSec + 30),
+        'set reps': edited((e) => e.workSets.first.reps += 2),
+        'set weight': edited((e) => e.workSets.first.weight += 5),
+        'extra set with other reps': edited((e) => e.sets.add(GymSet(reps: e.workSets.last.reps + 3))),
+        'warm-up added': edited((e) => e.sets.insert(0, GymSet(type: SetType.warmup, reps: 10))),
+      };
+      for (final MapEntry(key: what, value: ex) in edits.entries) {
+        expect(GymPlanUpgrade.upgrade(old(pull, ex), pull), isEmpty, reason: what);
+      }
+      // A regressed copy whose reps the athlete changed stays too.
+      final t = pull.exercises.any((e) => gymRegressions.containsKey(e.exId)) ? pull : fb;
+      final reg = [for (final e in t.exercises) regressedExercise(e, 'strength')];
+      final r = reg.firstWhere((e) => gymRegressions.values.any((v) => v.$1 == e.exId));
+      r.workSets.first.reps += 3;
+      expect(GymPlanUpgrade.upgrade(old(t, reg, desc: de.wGymRegressionNote), t).containsKey('exercises'), isFalse);
+      // The unedited copies (exact, +1 set, halved) are still upgraded.
+      expect(GymPlanUpgrade.upgrade(old(pull, [for (final e in pull.exercises) e.copy()]), pull)['exercises'], isEmpty);
+    });
   });
 
   group('R7-5: the suggested assignment for 4 PPL days', () {
