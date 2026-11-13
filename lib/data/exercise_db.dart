@@ -36,11 +36,44 @@ class Exercise {
   );
 }
 
-/// Offline exercise database (1300+ exercises, bundled as an asset).
+/// Library entries that are hidden from the library, the picker and the search but stay
+/// loadable by id ([ExerciseDb.byId]), so stored sessions, programs, plans and goals that
+/// reference them keep working (name, media, classification).
+const hiddenExerciseIds = {
+  // Endurance cardio – logged as run / ride workouts, not as gym sets.
+  '0684', '0685', // run (jogging on the spot)
+  '0798', '2138', // stationary bike
+  '0858', '3656', // wind sprints, short stride run
+  '2141', '2331', // elliptical / cycle cross trainer
+  '2311', // stepmill
+  '3666', // incline treadmill walk
+  // Not a meaningful exercise on its own.
+  '2271', // "left hook. boxing"
+  '3637', // "wheel run" (unclear; the ab wheel rollouts cover it)
+  '3638', // "push to run" (push-up + sprint start)
+  // Duplicates: a second animation ("v. 2/v. 3", camera angle, female/male model) or an
+  // identical second entry of an exercise that stays in the library.
+  '0077', '0079', '0097', '0119', '0121', '0125', '0287', '0304', '0309', '0312', '0317', '0342', '0360', '0376', '0395',
+  '0497', '0513', '0576', '0656', '0658', '0735', '1371', '1394', '1439', '1461', '1462', '1463', '1464', '1479', '1614',
+  '1628', '1657', '1680', '1731', '1765', '1766', '2136', '2189', '2371', '2800', '2801', '3698', '3760',
+};
+
+/// Offline exercise database (~1270 visible exercises, bundled as an asset).
 class ExerciseDb {
-  ExerciseDb(this.all) : _byId = {for (final e in all) e.id: e};
+  ExerciseDb(this.all)
+    : _byId = {for (final e in all) e.id: e},
+      visible = [
+        for (final e in all)
+          if (!hiddenExerciseIds.contains(e.id)) e,
+      ];
+
+  /// Every entry, also the hidden ones (for lookups by id).
   final List<Exercise> all;
+
+  /// The entries shown in the library, the picker and the search.
+  final List<Exercise> visible;
   final Map<String, Exercise> _byId;
+  final _hay = <String, String>{};
 
   static Future<ExerciseDb> load() async {
     final raw = await rootBundle.loadString('assets/data/exercises.json');
@@ -48,26 +81,44 @@ class ExerciseDb {
     return ExerciseDb(list);
   }
 
+  /// Any exercise by id – also one hidden from the library (stored sessions keep working).
   Exercise? byId(String id) => _byId[id];
 
-  List<String> get bodyParts => all.map((e) => e.bodyPart).toSet().toList()..sort();
-  List<String> get equipment => all.map((e) => e.equipment).toSet().toList()..sort();
+  late final List<String> bodyParts = visible.map((e) => e.bodyPart).toSet().toList()..sort();
+  late final List<String> equipment = visible.map((e) => e.equipment).toSet().toList()..sort();
 
-  /// Search by German and English name, muscles and equipment. Ranking: exact name,
-  /// name prefix, word prefix, then common exercises (curated / built-in programs)
-  /// before the rest, shorter names first.
+  /// [bodyParts] / [equipment] in the alphabetical order of their labels in [lang] (filter
+  /// menus).
+  List<String> bodyPartsFor(String lang) => _byLabel(bodyParts, lang);
+  List<String> equipmentFor(String lang) => _byLabel(equipment, lang);
+  static List<String> _byLabel(List<String> keys, String lang) =>
+      [...keys]..sort((a, b) => foldSearch(term(a, lang)).compareTo(foldSearch(term(b, lang))));
+
+  /// Search text of [e]: English and German name, muscles, body part and equipment in both
+  /// languages plus German keywords – folded ([foldSearch]) and built once per exercise. The
+  /// names are added a second time without hyphens, so "pushup" finds "push-up" too.
+  String _searchText(Exercise e) =>
+      _hay[e.id] ??= () {
+        final names = '${e.name} ${exerciseNamesDe[e.id] ?? ''}';
+        return foldSearch(
+          '$names ${e.target} ${e.bodyPart} ${e.equipment} ${term(e.target, 'de')} ${term(e.bodyPart, 'de')} '
+          '${term(e.equipment, 'de')} ${germanAlias(e)} ${names.replaceAll('-', '')}',
+        );
+      }();
+
+  /// Search by German and English name, muscles and equipment – case-, umlaut- and
+  /// hyphen-insensitive ("bankdrucken", "Bankdrücken", "bankdruecken"; "pushup", "push-up").
+  /// Ranking: exact name, name prefix, word prefix, then common exercises (built-in programs
+  /// and classic lifts) before the rest, shorter names first. Hidden entries never show up.
   List<Exercise> search(String q, {String? bodyPart, String? equipment, String lang = 'en'}) {
-    final q0 = q.toLowerCase().trim();
-    final terms = q0.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final q0 = foldSearch(q).trim();
+    final terms = q0.split(' ').where((t) => t.isNotEmpty).toList();
     final res =
-        all.where((e) {
+        visible.where((e) {
           if (bodyPart != null && e.bodyPart != bodyPart) return false;
           if (equipment != null && e.equipment != equipment) return false;
           if (terms.isEmpty) return true;
-          final hay =
-              '${e.name} ${exerciseNamesDe[e.id] ?? ''} ${e.target} ${e.bodyPart} ${e.equipment} '
-                      '${term(e.target, 'de')} ${term(e.bodyPart, 'de')} ${term(e.equipment, 'de')} ${germanAlias(e)}'
-                  .toLowerCase();
+          final hay = _searchText(e);
           return terms.every(hay.contains);
         }).toList();
     String shown(Exercise e) => exerciseName(e.id, e.name, lang);
@@ -78,7 +129,12 @@ class ExerciseDb {
         final c = ranks[a.id]!.compareTo(ranks[b.id]!);
         if (c != 0) return c;
         final k = common(a).compareTo(common(b));
-        return k != 0 ? k : shown(a).length.compareTo(shown(b).length);
+        if (k != 0) return k;
+        final l = shown(a).length.compareTo(shown(b).length);
+        if (l != 0) return l;
+        // Deterministic ties (List.sort is not stable): the classic free weights first.
+        final q = _equipmentRank(a).compareTo(_equipmentRank(b));
+        return q != 0 ? q : shown(a).compareTo(shown(b));
       });
     } else if (lang != 'en') {
       res.sort((a, b) => shown(a).toLowerCase().compareTo(shown(b).toLowerCase()));
@@ -87,15 +143,33 @@ class ExerciseDb {
   }
 }
 
-/// Rank of [e] for the lower-case query [q] (lower = better): 0 exact name, 1/2 name
-/// prefix, 3/4 word prefix, 5/6 anything else – common exercises first in each group.
+int _equipmentRank(Exercise e) => switch (e.equipment) {
+  'barbell' => 0,
+  'dumbbell' => 1,
+  'body weight' => 2,
+  'cable' || 'leverage machine' || 'smith machine' || 'sled machine' => 3,
+  _ => 4,
+};
+
+/// Folds [s] for searching: lower case, umlauts and their transcriptions to the base vowel
+/// (ä/ae → a, ö/oe → o, ü/ue → u, ß/ss → s), hyphens as word breaks, whitespace collapsed.
+String foldSearch(String s) => s
+    .toLowerCase()
+    .replaceAll(RegExp('ä|ae'), 'a')
+    .replaceAll(RegExp('ö|oe'), 'o')
+    .replaceAll(RegExp('ü|ue'), 'u')
+    .replaceAll(RegExp('ß|ss'), 's')
+    .replaceAll(RegExp(r'[\s\-]+'), ' ');
+
+/// Rank of [e] for the folded query [q] ([foldSearch]; lower = better): 0 exact name, 1/2
+/// name prefix, 3/4 word prefix, 5/6 anything else – popular exercises first in each group.
 int searchRank(Exercise e, String q) {
-  final names = [e.name, if (exerciseNamesDe[e.id] case final de?) de.toLowerCase()];
-  final popular = exerciseNamesDe.containsKey(e.id);
+  final names = [foldSearch(e.name), if (exerciseNamesDe[e.id] case final de?) foldSearch(de)];
+  final popular = popularExerciseIds.contains(e.id);
   final bare = RegExp(r'\s*\(.*\)$');
   if (names.any((n) => n == q || n.replaceAll(bare, '') == q)) return 0;
   if (names.any((n) => n.startsWith(q))) return popular ? 1 : 2;
-  if (names.any((n) => n.split(RegExp(r'[\s\-/(]+')).any((w) => w.startsWith(q)))) return popular ? 3 : 4;
+  if (names.any((n) => n.split(RegExp(r'[\s/(),]+')).any((w) => w.startsWith(q)))) return popular ? 3 : 4;
   return popular ? 5 : 6;
 }
 
@@ -158,27 +232,52 @@ const _deTerms = {
   'barbell': 'Langhantel',
   'dumbbell': 'Kurzhantel',
   'cable': 'Kabelzug',
-  'leverage machine': 'Hebelmaschine',
+  'leverage machine': 'Maschine',
   'kettlebell': 'Kettlebell',
   'band': 'Band',
-  'resistance band': 'Widerstandsband',
+  'resistance band': 'Band',
   'smith machine': 'Multipresse',
   'ez barbell': 'SZ-Stange',
-  'olympic barbell': 'Olympiastange',
+  'olympic barbell': 'Langhantel',
   'medicine ball': 'Medizinball',
   'stability ball': 'Gymnastikball',
+  'bosu ball': 'Bosu',
   'trap bar': 'Trap Bar',
-  'weighted': 'Mit Gewicht',
-  'assisted': 'Unterstützt',
-  'sled machine': 'Schlittenmaschine',
-  'roller': 'Rolle',
+  'weighted': 'Zusatzgewicht',
+  'assisted': 'Unterstützung',
+  'sled machine': 'Beinpresse & Hackenschmidt',
+  'roller': 'Faszienrolle',
   'wheel roller': 'Bauchroller',
   'rope': 'Seil',
+  'hammer': 'Vorschlaghammer',
+  'tire': 'Reifen',
+  'upper body ergometer': 'Armergometer',
+  'skierg machine': 'Ski-Ergometer',
+  'stationary bike': 'Fahrradergometer',
+  'elliptical machine': 'Crosstrainer',
+  'stepmill machine': 'Stepper',
 };
 
-/// Translates body parts / muscles / equipment for the German UI.
+/// List subtitle of [e]: target muscle · equipment ("Brustmuskel · Multipresse").
+String exerciseSubtitle(Exercise e, String lang) => '${term(e.target, lang)} · ${term(e.equipment, lang)}';
+
+/// English labels where the database term is unclear.
+const _enTerms = {
+  'leverage machine': 'Machine',
+  'sled machine': 'Leg press & hack sled',
+  'weighted': 'Added weight',
+  'skierg machine': 'Ski ergometer',
+  'upper body ergometer': 'Arm ergometer',
+  'cardiovascular system': 'Cardiovascular system',
+  'delts': 'Shoulders',
+  'pectorals': 'Chest',
+  'spine': 'Lower back',
+};
+
+/// Translates body parts / muscles / equipment for the UI (German, else a cleaned-up
+/// English label).
 String term(String en, String lang) {
   if (en.isEmpty) return en;
-  if (lang != 'de') return en[0].toUpperCase() + en.substring(1);
+  if (lang != 'de') return _enTerms[en] ?? en[0].toUpperCase() + en.substring(1);
   return _deTerms[en] ?? muscleNamesDe[en] ?? (en[0].toUpperCase() + en.substring(1));
 }
