@@ -4,8 +4,9 @@ import '../core/format.dart';
 import '../core/theme.dart';
 
 /// One settings style for the profile and every settings-like list: a section header and a
-/// card of equal rows (tinted icon, title, a short subtitle of at most two lines, an optional
-/// ⓘ for the long explanation and a trailing value / switch / chevron in one size).
+/// card of equal rows (tinted icon, title, a short subtitle – about two lines at the normal text
+/// size, never cut off: at a large text scale the row grows instead –, an optional ⓘ for the
+/// long explanation and a trailing value / switch / chevron in one size).
 
 /// Section header + card holding [children] (usually [SettingsTile]s), with inset dividers.
 class SettingsSection extends StatelessWidget {
@@ -121,18 +122,11 @@ class SettingsTile extends StatelessWidget {
                         ],
                       ),
                       style: titleStyle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     if (subtitle != null && subtitle!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          subtitle!,
-                          style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: Text(subtitle!, style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
                       ),
                   ],
                 ),

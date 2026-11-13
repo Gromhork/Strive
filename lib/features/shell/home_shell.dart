@@ -91,6 +91,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             // Hidden tabs stay alive but asleep: IndexedStack keeps their tickers running, so their
             // providers stayed subscribed and every data change rebuilt all five tabs in one frame.
             // With tickers off, Riverpod pauses their watches; a tab catches up when shown again.
+            // (Resuming during this build needs the riverpod backport in third_party/riverpod –
+            // test/riverpod_resume_test.dart.)
             children: [
               for (final (i, p) in pages.indexed)
                 TickerMode(enabled: i == index, child: PrimaryScrollController(controller: _scroll[i], child: p)),
