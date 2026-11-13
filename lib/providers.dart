@@ -67,7 +67,18 @@ final exerciseDbProvider = FutureProvider<ExerciseDb>((ref) => ExerciseDb.load()
 
 // ───────────────────────────── Derived ─────────────────────────────
 
-final sessionListProvider = Provider<List<Session>>((ref) => ref.watch(sessionsProvider).value ?? const []);
+/// All sessions, newest first. Gym sessions stored before the body weight was saved with them get
+/// the body weight of their day (body entries, else the profile) – derived, not written back – so
+/// the body load of bodyweight exercises counts in every volume ([Session.volume]).
+final sessionListProvider = Provider<List<Session>>((ref) {
+  final list = ref.watch(sessionsProvider).value ?? const <Session>[];
+  if (!list.any((s) => s.bodyWeightKg == null && s.exercises.isNotEmpty)) return list;
+  final body = ref.watch(bodyProvider).value ?? const <BodyEntry>[];
+  final fallback = ref.watch(profileOrDefaultProvider.select((p) => p.weightKg));
+  return [
+    for (final s in list) s.bodyWeightKg != null || s.exercises.isEmpty ? s : s.withBodyWeight(bodyWeightOn(s.start, body, fallback)),
+  ];
+});
 final planListProvider = Provider<List<PlannedWorkout>>((ref) => ref.watch(plansProvider).value ?? const []);
 final templateListProvider = Provider<List<WorkoutTemplate>>((ref) => ref.watch(templatesProvider).value ?? const []);
 

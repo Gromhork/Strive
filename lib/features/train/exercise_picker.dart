@@ -18,6 +18,29 @@ Future<List<Exercise>> pickExercises(BuildContext context, {bool single = false}
   return r ?? const [];
 }
 
+/// Ids of the exercises the athlete has logged (recomputed only when the sessions change).
+final doneExerciseIdsProvider = Provider<Set<String>>(
+  (ref) => {
+    for (final s in ref.watch(sessionListProvider))
+      for (final e in s.exercises) e.exId,
+  },
+);
+
+/// The library's list for a query and filters: done exercises first when not searching. Pure,
+/// so the page recomputes it only when one of its inputs changes (not on every selection tap).
+List<Exercise> libraryList(
+  ExerciseDb db,
+  String q, {
+  String? bodyPart,
+  String? equipment,
+  required String lang,
+  required Set<String> done,
+}) {
+  final list = db.search(q, bodyPart: bodyPart, equipment: equipment, lang: lang);
+  if (q.trim().isNotEmpty || done.isEmpty) return list;
+  return [...list.where((e) => done.contains(e.id)), ...list.where((e) => !done.contains(e.id))];
+}
+
 class ExerciseLibraryPage extends ConsumerStatefulWidget {
   const ExerciseLibraryPage({super.key, this.selectMode = false, this.single = false});
   final bool selectMode;
@@ -33,12 +56,25 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
   String? _equip;
   final _selected = <Exercise>[];
 
+  // Memo of the shown list and the inputs it was computed from.
+  List<Exercise> _list = const [];
+  Object? _listKey;
+
+  List<Exercise> _listFor(ExerciseDb db, String lang, Set<String> done) {
+    final key = (db, _q, _body, _equip, lang, done);
+    if (key != _listKey) {
+      _listKey = key;
+      _list = libraryList(db, _q, bodyPart: _body, equipment: _equip, lang: lang, done: done);
+    }
+    return _list;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final lang = Localizations.localeOf(context).languageCode;
     final dbAsync = ref.watch(exerciseDbProvider);
-    final records = ref.watch(sessionListProvider).expand((s) => s.exercises.map((e) => e.exId)).toSet();
+    final records = ref.watch(doneExerciseIdsProvider);
     return Scaffold(
       appBar: AppBar(title: Text(widget.selectMode ? l.addExercise : l.exerciseLibrary)),
       floatingActionButton:
@@ -70,11 +106,8 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
               ),
             ),
         data: (db) {
-          var list = db.search(_q, bodyPart: _body, equipment: _equip, lang: lang);
           // Exercises the user already did come first when not searching.
-          if (_q.isEmpty) {
-            list = [...list.where((e) => records.contains(e.id)), ...list.where((e) => !records.contains(e.id))];
-          }
+          final list = _listFor(db, lang, records);
           return Column(
             children: [
               Padding(
@@ -94,7 +127,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                     _FilterMenu(
                       label: _body == null ? l.bodyPart : term(_body!, lang),
                       active: _body != null,
-                      options: db.bodyParts,
+                      options: db.bodyPartsFor(lang),
                       lang: lang,
                       onSelected: (v) => setState(() => _body = v),
                     ),
@@ -102,7 +135,7 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                     _FilterMenu(
                       label: _equip == null ? l.equipment : term(_equip!, lang),
                       active: _equip != null,
-                      options: db.equipment,
+                      options: db.equipmentFor(lang),
                       lang: lang,
                       onSelected: (v) => setState(() => _equip = v),
                     ),
@@ -128,12 +161,9 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                       leading: ExerciseMedia(exId: e.id, animated: false, size: 52, radius: 14, done: sel),
                       title: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      // The English database name stays visible as an alias (videos, other apps).
-                      subtitle: Text(
-                        [term(e.target, lang), term(e.equipment, lang), if (name != e.displayName) e.displayName].join(' · '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      // Target muscle · equipment (the English name is only a search alias,
+                      // shown on the detail page).
+                      subtitle: Text(exerciseSubtitle(e, lang), maxLines: 1, overflow: TextOverflow.ellipsis),
                       trailing: records.contains(e.id) ? const Icon(Icons.history, size: 18) : null,
                       onTap: () {
                         if (widget.selectMode && widget.single) {

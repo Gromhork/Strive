@@ -129,6 +129,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
         distanceM: _distance.text == _planDistance ? null : (_distanceM() ?? 0),
         rpe: _rpe,
         notes: _notes.text.trim(),
+        bodyWeightKg: ref.read(profileOrDefaultProvider).weightKg,
       );
     } else {
       s = Session(

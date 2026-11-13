@@ -3817,7 +3817,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get termVolumeTitle => 'Volumen';
 
   @override
-  String get termVolumeBody => 'Gewicht × Wiederholungen aller Arbeitssätze zusammengezählt (Aufwärmsätze zählen nicht). Bei Körpergewichtsübungen zählt der bewegte Anteil deines Körpergewichts.';
+  String get termVolumeBody => 'Gewicht × Wiederholungen aller Arbeitssätze zusammengezählt (Aufwärmsätze zählen nicht). Bei Körpergewichtsübungen zählt der bewegte Anteil deines Körpergewichts (z. B. Liegestütz ≈ 64 %, Klimmzug 100 %, Kniebeuge ≈ 70 %) plus Zusatzgewicht. Halteübungen wie Unterarmstütz zählen als Haltezeit, nicht als Volumen.';
 
   @override
   String get termVolumeTip => 'Mehr Volumen ist nicht automatisch besser – entscheidend ist der Fortschritt über Wochen.';
@@ -5950,6 +5950,80 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get swimTestImplausible => 'Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.';
+
+  @override
+  String get calJumpCurrentWeek => 'Zurück zur aktuellen Woche';
+
+  @override
+  String get calJumpTodayMonth => 'Zurück zum aktuellen Monat';
+
+  @override
+  String get progHoldLonger => 'alle Sätze gehalten – etwas länger';
+
+  @override
+  String get progHoldAddLoad => 'oberes Ende der Haltezeit – mit Zusatzgewicht, wieder kürzer';
+
+  @override
+  String get progHoldTop => 'oberes Ende der Haltezeit – halten (schwerer über eine Variante)';
+
+  @override
+  String get progHoldMissed => 'Haltezeit verfehlt – gleiche Zeit noch einmal';
+
+  @override
+  String get progHoldShorter => 'Haltezeit zweimal verfehlt – etwas kürzer';
+
+  @override
+  String rxTodayText(String text) {
+    return 'Heute: $text';
+  }
+
+  @override
+  String get holdTime => 'Haltezeit';
+
+  @override
+  String holdStartBtn(String time) {
+    return 'Start $time';
+  }
+
+  @override
+  String get holdStop => 'Stopp';
+
+  @override
+  String get holdRunning => 'Halten';
+
+  @override
+  String get holdOvertime => 'Ziel erreicht';
+
+  @override
+  String get holdAutoDone => 'Bei Zielzeit abhaken und Pause starten';
+
+  @override
+  String get holdLogWithout => 'Ohne Timer eintragen';
+
+  @override
+  String get timedMode => 'Auf Zeit (halten)';
+
+  @override
+  String get holdRange => 'Haltezeit-Bereich';
+
+  @override
+  String get holdRangeHint => 'Jeder Satz hat seine Zielzeit gehalten → nächstes Mal 5–10 s länger, bis zum oberen Ende; dann mit Zusatzgewicht und wieder kürzer.';
+
+  @override
+  String get volumeInclBody => 'inkl. Körpergewicht';
+
+  @override
+  String volumeInclBodyKg(String weight) {
+    return 'inkl. Körpergewicht ($weight)';
+  }
+
+  @override
+  String get longestHold => 'Längstes Halten';
+
+  @override
+  String longestHoldN(String time) {
+    return 'längstes Halten $time';
+  }
 
   @override
   String infoAbout(String title) {

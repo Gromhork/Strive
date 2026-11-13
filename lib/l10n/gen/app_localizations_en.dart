@@ -3817,7 +3817,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termVolumeTitle => 'Volume';
 
   @override
-  String get termVolumeBody => 'Weight × reps of all working sets added up (warm-ups don\'t count). For bodyweight exercises the lifted share of your body weight counts.';
+  String get termVolumeBody => 'Weight × reps of all working sets added up (warm-ups don\'t count). For bodyweight exercises the moved share of your body weight counts (e.g. push-up ≈ 64 %, pull-up 100 %, squat ≈ 70 %) plus any added weight. Holds such as planks count as hold time, not as volume.';
 
   @override
   String get termVolumeTip => 'More volume is not automatically better – what matters is progress over weeks.';
@@ -5950,6 +5950,80 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swimTestImplausible => 'These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.';
+
+  @override
+  String get calJumpCurrentWeek => 'Back to the current week';
+
+  @override
+  String get calJumpTodayMonth => 'Back to today\'s month';
+
+  @override
+  String get progHoldLonger => 'every set held – a little longer';
+
+  @override
+  String get progHoldAddLoad => 'top of the time range – add weight, a shorter time again';
+
+  @override
+  String get progHoldTop => 'top of the time range – keep it (harder with a variation)';
+
+  @override
+  String get progHoldMissed => 'time missed – the same time once more';
+
+  @override
+  String get progHoldShorter => 'time missed twice – a bit shorter';
+
+  @override
+  String rxTodayText(String text) {
+    return 'Today: $text';
+  }
+
+  @override
+  String get holdTime => 'Hold time';
+
+  @override
+  String holdStartBtn(String time) {
+    return 'Start $time';
+  }
+
+  @override
+  String get holdStop => 'Stop';
+
+  @override
+  String get holdRunning => 'Hold';
+
+  @override
+  String get holdOvertime => 'Target reached';
+
+  @override
+  String get holdAutoDone => 'At the target time: check off and start the rest';
+
+  @override
+  String get holdLogWithout => 'Log without timer';
+
+  @override
+  String get timedMode => 'Timed (hold)';
+
+  @override
+  String get holdRange => 'Hold-time range';
+
+  @override
+  String get holdRangeHint => 'Every set held its target → next time 5–10 s longer, up to the top of the range; then with added weight and shorter again.';
+
+  @override
+  String get volumeInclBody => 'incl. body weight';
+
+  @override
+  String volumeInclBodyKg(String weight) {
+    return 'incl. body weight ($weight)';
+  }
+
+  @override
+  String get longestHold => 'Longest hold';
+
+  @override
+  String longestHoldN(String time) {
+    return 'longest hold $time';
+  }
 
   @override
   String infoAbout(String title) {

@@ -130,7 +130,10 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
         e.fromPlan = _fromPlanKeys[e] == _setsKey(e);
       }
       update['exercises'] = ex.map((e) => e.toMap()).toList();
-      update['volume'] = ex.fold<double>(0, (a, e) => a + e.volume);
+      // Volume incl. the body load of bodyweight exercises at the session's body weight (kept with
+      // the session from now on, so later scale entries don't change its history).
+      update['volume'] = ex.fold<double>(0, (a, e) => a + e.volumeAt(s.bodyWeightKg));
+      if (s.bodyWeightKg != null) update['bwKg'] = s.bodyWeightKg;
       // The compliance compares the done sets with the planned ones: an added exercise raises the
       // reference (a fully done workout plus one exercise is no "> 150 %"), a removed one keeps it.
       final work = ex.fold<int>(0, (a, e) => a + e.workSets.length);
@@ -382,12 +385,14 @@ class _ExerciseEditor extends StatelessWidget {
     final l = context.l10n;
     final e = exercise;
     final bw = e.bw == true;
+    final timed = e.isTimed;
     return SectionCard(
       title: exName(context, e.exId, e.name),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (e.exId != 'manual')
+          // A hold's weight is always added load – no bodyweight switch for timed exercises.
+          if (e.exId != 'manual' && !timed)
             FilterChip(
               key: const ValueKey('edit-bw'),
               avatar: const Icon(Icons.accessibility_new_rounded, size: 16),
@@ -447,9 +452,14 @@ class _ExerciseEditor extends StatelessWidget {
                       decoration: InputDecoration(
                         isDense: true,
                         // Short label so it fits next to the reps on phones ("BW ± kg").
-                        labelText: bw ? '${l.bodyweightShort} ± ${units.weightUnit}' : l.weight,
-                        hintText: bw ? '0' : null,
-                        suffixText: bw ? null : units.weightUnit,
+                        labelText:
+                            timed
+                                ? '+ ${units.weightUnit}'
+                                : bw
+                                ? '${l.bodyweightShort} ± ${units.weightUnit}'
+                                : l.weight,
+                        hintText: bw || timed ? '0' : null,
+                        suffixText: bw || timed ? null : units.weightUnit,
                         floatingLabelBehavior: FloatingLabelBehavior.always,
                       ),
                       onChanged: (v) {
@@ -460,15 +470,40 @@ class _ExerciseEditor extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextFormField(
-                      initialValue: e.sets[i].reps == 0 ? '' : '${e.sets[i].reps}',
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(isDense: true, labelText: l.reps, floatingLabelBehavior: FloatingLabelBehavior.always),
-                      onChanged: (v) {
-                        e.sets[i].reps = int.tryParse(v.trim()) ?? 0;
-                        onChanged();
-                      },
-                    ),
+                    child:
+                        timed
+                            // Hold time on scroll wheels (a set stored as reps before hold times
+                            // existed shows its reps as the hint until a time is set).
+                            ? DurationField(
+                              key: ValueKey('edit-hold-$i'),
+                              value: e.sets[i].sec > 0 ? e.sets[i].sec : null,
+                              label: l.holdTime,
+                              emptyText: e.sets[i].legacyReps ? '${e.sets[i].reps} ×' : null,
+                              units: DurationUnits.ms,
+                              maxMinutes: 15,
+                              min: 1,
+                              max: 15 * 60,
+                              initial: e.sets[i].targetSec ?? e.holdRange.$1,
+                              clearable: false,
+                              onChanged: (v) {
+                                if (v == null) return;
+                                e.sets[i].sec = v;
+                                onChanged();
+                              },
+                            )
+                            : TextFormField(
+                              initialValue: e.sets[i].reps == 0 ? '' : '${e.sets[i].reps}',
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                isDense: true,
+                                labelText: l.reps,
+                                floatingLabelBehavior: FloatingLabelBehavior.always,
+                              ),
+                              onChanged: (v) {
+                                e.sets[i].reps = int.tryParse(v.trim()) ?? 0;
+                                onChanged();
+                              },
+                            ),
                   ),
                   Checkbox(
                     value: e.sets[i].done,
@@ -495,7 +530,14 @@ class _ExerciseEditor extends StatelessWidget {
               label: Text(l.addSet),
               onPressed: () {
                 final last = e.sets.isEmpty ? null : e.sets.last;
-                e.sets.add(GymSet(weight: last?.weight ?? 0, reps: last?.reps ?? 0, done: true));
+                e.sets.add(
+                  GymSet(
+                    weight: last?.weight ?? 0,
+                    reps: timed ? 0 : last?.reps ?? 0,
+                    sec: timed ? (last != null && last.sec > 0 ? last.sec : e.holdRange.$1) : 0,
+                    done: true,
+                  ),
+                );
                 onChanged();
               },
             ),

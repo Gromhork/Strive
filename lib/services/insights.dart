@@ -274,33 +274,55 @@ class ExerciseRecord {
   final int maxReps;
   final DateTime date;
   final int sessions;
-  const ExerciseRecord(this.exId, this.name, this.bestE1rm, this.maxWeight, this.maxReps, this.date, this.sessions);
+
+  /// Timed holds (plank, wall sit, …): the longest single hold in seconds (0 for rep exercises).
+  final int longestHold;
+  const ExerciseRecord(this.exId, this.name, this.bestE1rm, this.maxWeight, this.maxReps, this.date, this.sessions, {this.longestHold = 0});
+}
+
+/// e1RM that counts as a strength record of [e]: none for timed holds (their record is the
+/// longest hold) and for bodyweight exercises that move only part of the body without added load
+/// (push-ups, squats, sit-ups, … – their record is the most reps; an "e1RM" of 64 % of the body
+/// weight would read like a lift). Pull-ups, chin-ups and dips (the whole body) and every loaded
+/// or weighted set keep their e1RM incl. the body load.
+double recordE1rm(GymExercise e) {
+  if (e.isTimed) return 0;
+  final share = e.bodyShare;
+  final partialBody = (e.bw == true || (e.bw == null && share > 0)) && share > 0 && share < 0.9;
+  if (partialBody && !e.sets.any((s) => s.done && !s.warmup && s.weight > 0)) return 0;
+  return e.bestE1rm;
 }
 
 /// Records come from measured exercises only: an exercise logged as done with the plan's
 /// prescribed weights ([Session.exerciseFromPlan]) is no proof of a lift – also when the athlete
-/// corrected other exercises or the duration of the session.
+/// corrected other exercises or the duration of the session. Rep exercises: best e1RM
+/// ([recordE1rm]) and most reps; timed holds: the longest hold (sets stored as reps before hold
+/// times existed are no hold record).
 Map<String, ExerciseRecord> exerciseRecords(List<Session> sessions) {
   final out = <String, ExerciseRecord>{};
   for (final s in sessions.reversed) {
     for (final e in s.exercises) {
       if (s.exerciseFromPlan(e)) continue;
       final prev = out[e.exId];
-      final best = e.bestE1rm;
+      final best = recordE1rm(e);
       final maxW = e.maxWeight;
-      final maxR = e.sets.where((x) => x.done).fold(0, (a, x) => max(a, x.reps));
-      if (best <= 0 && maxR <= 0) continue;
+      final timed = e.isTimed;
+      final maxR = timed ? 0 : e.sets.where((x) => x.done && !x.warmup).fold(0, (a, x) => max(a, x.reps));
+      final hold = e.longestHold;
+      if (best <= 0 && maxR <= 0 && hold <= 0) continue;
       if (prev == null) {
-        out[e.exId] = ExerciseRecord(e.exId, e.name, best, maxW, maxR, s.start, 1);
+        out[e.exId] = ExerciseRecord(e.exId, e.name, best, maxW, maxR, s.start, 1, longestHold: hold);
       } else {
+        final better = best > prev.bestE1rm || (prev.bestE1rm <= 0 && (maxR > prev.maxReps || hold > prev.longestHold));
         out[e.exId] = ExerciseRecord(
           e.exId,
           e.name,
           max(prev.bestE1rm, best),
           max(prev.maxWeight, maxW),
           max(prev.maxReps, maxR),
-          best > prev.bestE1rm ? s.start : prev.date,
+          better ? s.start : prev.date,
           prev.sessions + 1,
+          longestHold: max(prev.longestHold, hold),
         );
       }
     }
@@ -314,7 +336,8 @@ List<(DateTime, double)> e1rmHistory(List<Session> sessions, String exId) {
   for (final s in sessions.reversed) {
     // The plan's weights are not a measured lift.
     for (final e in s.exercises.where((e) => e.exId == exId && !s.exerciseFromPlan(e))) {
-      if (e.bestE1rm > 0) out.add((s.start, e.bestE1rm));
+      final best = recordE1rm(e);
+      if (best > 0) out.add((s.start, best));
     }
   }
   return out;
@@ -324,10 +347,15 @@ List<(DateTime, double)> e1rmHistory(List<Session> sessions, String exId) {
 List<String> newPrs(Session current, List<Session> history) {
   if (current.fromPlan) return const [];
   final prev = exerciseRecords(history.where((s) => s.id != current.id && s.start.isBefore(current.start)).toList());
-  return current.exercises
-      .where((e) => !current.exerciseFromPlan(e) && e.bestE1rm > 0 && (prev[e.exId] == null || e.bestE1rm > prev[e.exId]!.bestE1rm + 0.01))
-      .map((e) => e.name)
-      .toList();
+  bool record(GymExercise e) {
+    final p = prev[e.exId];
+    // Timed holds: a longer hold than ever before.
+    if (e.isTimed) return e.longestHold > 0 && (p == null || e.longestHold > p.longestHold);
+    final best = recordE1rm(e);
+    return best > 0 && (p == null || best > p.bestE1rm + 0.01);
+  }
+
+  return current.exercises.where((e) => !current.exerciseFromPlan(e) && record(e)).map((e) => e.name).toList();
 }
 
 /// Last set values of an exercise from history, used as "previous" hints.

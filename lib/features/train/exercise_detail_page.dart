@@ -8,6 +8,7 @@ import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/sport.dart';
 import '../../data/exercise_db.dart';
+import '../../data/exercise_measure.dart' show formatHold;
 import '../../data/exercise_names_de.dart';
 import '../../providers.dart';
 import '../../services/insights.dart';
@@ -72,9 +73,13 @@ class ExerciseDetailPage extends ConsumerWidget {
               trailing: const TermInfoButton(Term.e1rm),
               child: Row(
                 children: [
-                  if (rec.maxWeight > 0) ...[
+                  // Timed holds: the longest hold (and the most added weight).
+                  if (rec.longestHold > 0) ...[
+                    Expanded(child: StatTile(label: l.longestHold, value: formatHold(rec.longestHold), color: AppColors.gym)),
+                    if (rec.maxWeight > 0) Expanded(child: StatTile(label: l.maxWeight, value: u.weight(rec.maxWeight))),
+                  ] else if (rec.bestE1rm > 0) ...[
                     Expanded(child: StatTile(label: 'e1RM', value: u.weight(rec.bestE1rm), color: AppColors.gym)),
-                    Expanded(child: StatTile(label: l.maxWeight, value: u.weight(rec.maxWeight))),
+                    if (rec.maxWeight > 0) Expanded(child: StatTile(label: l.maxWeight, value: u.weight(rec.maxWeight))),
                   ] else
                     Expanded(child: StatTile(label: l.maxReps, value: '${rec.maxReps}', color: AppColors.gym)),
                   Expanded(child: StatTile(label: l.sessions, value: '${rec.sessions}')),

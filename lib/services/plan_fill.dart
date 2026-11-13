@@ -34,6 +34,8 @@ class PlanFill {
   final int poolLengthM;
 
   int get sets => exercises.fold(0, (a, e) => a + e.doneSets);
+
+  /// Volume incl. the body load of bodyweight exercises (stored when the prescriber filled them).
   double get volume => exercises.fold(0.0, (a, e) => a + e.volume);
 
   /// Laps of a swim of [distanceM] in the athlete's pool.
@@ -56,15 +58,28 @@ class PlanFill {
       e
         ..effort = null
         ..fromPlan = true;
+      final timed = e.isTimed;
       for (final s in e.sets) {
-        if (s.reps <= 0) s.reps = s.target ?? e.repMin ?? 10;
+        if (timed) {
+          // Timed holds: the planned hold time was held.
+          if (s.sec <= 0) s.sec = s.targetSec ?? e.holdRange.$1;
+          s.reps = 0;
+        } else if (s.reps <= 0) {
+          s.reps = s.target ?? e.repMin ?? 10;
+        }
         s
           ..done = true
           ..amrap = false
           ..rpe = null;
-        // The plan's reps and weight are what was asked for (also for a program's own weights the
-        // prescriber kept): a later correction on the edit page is judged against them.
-        if (!s.warmup && s.type != SetType.drop) s.target ??= s.reps;
+        // The plan's reps / hold times and weight are what was asked for (also for a program's own
+        // weights the prescriber kept): a later correction on the edit page is judged against them.
+        if (!s.warmup && s.type != SetType.drop) {
+          if (timed) {
+            s.targetSec ??= s.sec;
+          } else {
+            s.target ??= s.reps;
+          }
+        }
       }
       final work = e.workSets.where((s) => s.type != SetType.drop).map((s) => s.weight);
       if (e.rxKg == null && work.isNotEmpty) e.rxKg = work.reduce(max);
@@ -88,6 +103,7 @@ Session sessionFromPlan(
   double? distanceM,
   int? rpe,
   String notes = '',
+  double? bodyWeightKg,
 }) {
   // A plan without a duration (0 min) never stores a 0-s session: the caller's value, else 1 min.
   final min = max(1, minutes ?? fill.minutes);
@@ -113,5 +129,6 @@ Session sessionFromPlan(
     planId: p.id,
     fromPlan: asPlanned,
     plannedSets: p.sport == Sport.gym ? fill.plannedSets : null,
+    bodyWeightKg: p.sport == Sport.gym && bodyWeightKg != null && bodyWeightKg > 0 ? bodyWeightKg : null,
   );
 }

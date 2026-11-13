@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../core/event_distances.dart';
 import '../core/format.dart';
 import '../core/sport.dart';
+import 'exercise_measure.dart';
 
 DateTime _date(dynamic v) {
   if (v is DateTime) return v;
@@ -490,11 +491,32 @@ class GymSet {
   /// asks for on the last work set; see LoadPrescriber).
   bool amrap;
 
-  GymSet({this.weight = 0, this.reps = 0, this.done = false, this.type = SetType.normal, this.rpe, this.target, this.amrap = false});
+  /// Timed exercises ([GymExercise.isTimed] – plank, wall sit, dead hang, …): the hold time in
+  /// seconds – planned while the set is open, held once it is done. [reps] stays 0 then. Sets
+  /// of a timed exercise logged before hold times existed carry reps only ([legacyReps]).
+  int sec;
+
+  /// Hold time (s) the app prescribed for this set (timed exercises; null = none).
+  int? targetSec;
+
+  GymSet({
+    this.weight = 0,
+    this.reps = 0,
+    this.done = false,
+    this.type = SetType.normal,
+    this.rpe,
+    this.target,
+    this.amrap = false,
+    this.sec = 0,
+    this.targetSec,
+  });
 
   bool get warmup => type == SetType.warmup;
   set warmup(bool v) => type = v ? SetType.warmup : SetType.normal;
   double get volume => done && !warmup ? weight * reps : 0;
+
+  /// A set of a timed exercise stored as reps (before hold times existed): shown as reps.
+  bool get legacyReps => sec <= 0 && reps > 0;
 
   factory GymSet.fromMap(Map m) => GymSet(
     weight: _d(m['w']),
@@ -507,6 +529,8 @@ class GymSet {
     rpe: _dn(m['rpe']),
     target: _in(m['tg']),
     amrap: m['am'] == true,
+    sec: _i(m['s']),
+    targetSec: _in(m['ts']),
   );
   Map<String, dynamic> toMap() => {
     'w': weight,
@@ -516,8 +540,11 @@ class GymSet {
     if (rpe != null) 'rpe': rpe,
     if (target != null) 'tg': target,
     if (amrap) 'am': true,
+    if (sec > 0) 's': sec,
+    if (targetSec != null) 'ts': targetSec,
   };
-  GymSet copy() => GymSet(weight: weight, reps: reps, done: done, type: type, rpe: rpe, target: target, amrap: amrap);
+  GymSet copy() =>
+      GymSet(weight: weight, reps: reps, done: done, type: type, rpe: rpe, target: target, amrap: amrap, sec: sec, targetSec: targetSec);
 }
 
 class GymExercise {
@@ -562,6 +589,15 @@ class GymExercise {
   /// corrects its sets on the edit page. See [Session.exerciseFromPlan].
   bool fromPlan;
 
+  /// Measured in hold time instead of reps (plank, wall sit, dead hang, …): the user's choice,
+  /// `null` = automatic ([isTimedExercise] from the exercise id / name). See [isTimed].
+  bool? timed;
+
+  /// Hold-time range in seconds of a timed exercise (the progression window, like
+  /// [repMin] / [repMax] for reps); null = the exercise's default ([defaultHoldRange]).
+  int? holdMin;
+  int? holdMax;
+
   GymExercise({
     required this.exId,
     required this.name,
@@ -577,20 +613,92 @@ class GymExercise {
     this.rxKg,
     this.phase,
     this.fromPlan = false,
+    this.timed,
+    this.holdMin,
+    this.holdMax,
   }) : sets = sets ?? [GymSet(), GymSet(), GymSet()];
 
   List<GymSet> get workSets => sets.where((s) => !s.warmup).toList();
 
+  /// Held for time (seconds per set) instead of counted in reps – see [timed].
+  bool get isTimed => timed ?? isTimedExercise(exId, name);
+
+  /// Hold-time range (s) of a timed exercise: its own, else the exercise's default.
+  (int, int) get holdRange {
+    final lo = holdMin, hi = holdMax;
+    if (lo != null && lo > 0 && hi != null && hi >= lo) return (lo, hi);
+    return defaultHoldRange(name);
+  }
+
+  /// Share of the body weight the exercise moves per rep when done with body weight
+  /// ([bodyShareOf]; 0 for loaded and timed exercises).
+  double get bodyShare => bodyShareOf(exId, name);
+
+  /// Body load per rep (kg) for volume: in bodyweight mode the body load stored when the
+  /// workout started ([bodyKg]); a bodyweight exercise logged without it (older sessions, mode
+  /// automatic) gets [bodyWeight] × [bodyShare] – derived, so older history counts the body
+  /// like new workouts. 0 for loaded exercises, timed holds and when switched off.
+  double bodyLoadAt(double? bodyWeight) {
+    if (bw == false || isTimed) return 0;
+    if (bw == true && bodyKg > 0) return bodyKg;
+    final share = bodyShare;
+    if (share <= 0 || bodyWeight == null || bodyWeight <= 0) return 0;
+    return (bodyWeight * share * 10).roundToDouble() / 10;
+  }
+
+  /// Load per rep of set [s] for volume: added weight + body load ([bodyLoadAt]); assistance
+  /// (negative weight) is subtracted. Sets from before bodyweight mode existed (mode automatic,
+  /// no body load stored) that carry roughly the body weight were logged as the total load and
+  /// count as such; a positive weight logged that way on an assisted machine is the assistance.
+  double loadAt(GymSet s, double? bodyWeight) {
+    final body = bodyLoadAt(bodyWeight);
+    if (body <= 0) return s.weight;
+    if (bw == null && bodyKg <= 0) {
+      if (s.weight > 0 && name.toLowerCase().contains('assisted')) return body - s.weight;
+      if (s.weight >= body * 0.5) return s.weight;
+    }
+    return s.weight + body;
+  }
+
+  /// Volume load (kg × reps of the done work sets) incl. the body load of bodyweight exercises
+  /// ([loadAt] at the session's [bodyWeight]). Timed holds count 0 – kg × seconds is no volume;
+  /// their measure is the hold time ([holdSec]).
+  double volumeAt(double? bodyWeight) {
+    if (isTimed) return 0;
+    var v = 0.0;
+    for (final s in sets) {
+      if (!s.done || s.warmup) continue;
+      final load = loadAt(s, bodyWeight);
+      if (load > 0) v += load * s.reps;
+    }
+    return v;
+  }
+
+  /// Whether [volumeAt] contains body weight (a bodyweight exercise with done reps).
+  bool countsBodyAt(double? bodyWeight) => !isTimed && bodyLoadAt(bodyWeight) > 0 && sets.any((s) => s.done && !s.warmup && s.reps > 0);
+
   /// Load per rep of a set: the weight, plus the body load in bodyweight mode.
   double loadOf(GymSet s) => bw == true ? s.weight + bodyKg : s.weight;
 
-  double get volume => sets.fold(0, (a, s) => a + (s.done && !s.warmup ? (loadOf(s) > 0 ? loadOf(s) * s.reps : 0) : 0));
+  /// Volume with the stored body load only (running workout, programs) – see [volumeAt].
+  double get volume => volumeAt(null);
   int get doneSets => sets.where((s) => s.done && !s.warmup).length;
   bool get allDone => sets.isNotEmpty && sets.every((s) => s.done);
-  double get bestE1rm => sets.where((s) => s.done && !s.warmup).fold(0.0, (a, s) {
-    final v = e1rm(loadOf(s), s.reps);
-    return a > v ? a : v;
-  });
+
+  /// Time under tension of a timed exercise: the held seconds of its done work sets.
+  int get holdSec => isTimed ? sets.where((s) => s.done && !s.warmup).fold(0, (a, s) => a + s.sec) : 0;
+
+  /// Longest single hold (s) of a timed exercise's done work sets – its record.
+  int get longestHold => isTimed ? sets.where((s) => s.done && !s.warmup).fold(0, (a, s) => a > s.sec ? a : s.sec) : 0;
+
+  /// Best estimated 1RM of the done work sets (none for timed holds).
+  double get bestE1rm =>
+      isTimed
+          ? 0
+          : sets.where((s) => s.done && !s.warmup).fold(0.0, (a, s) {
+            final v = e1rm(loadOf(s), s.reps);
+            return a > v ? a : v;
+          });
   double get maxWeight => sets.where((s) => s.done && !s.warmup).fold(0.0, (a, s) => a > s.weight ? a : s.weight);
 
   factory GymExercise.fromMap(Map m) => GymExercise(
@@ -608,6 +716,9 @@ class GymExercise {
     rxKg: _dn(m['rx']),
     phase: m['ph'] is String ? m['ph'] : null,
     fromPlan: m['fp'] == true,
+    timed: m['tm'] is bool ? m['tm'] : null,
+    holdMin: _in(m['hMin']),
+    holdMax: _in(m['hMax']),
   );
   Map<String, dynamic> toMap() => {
     'exId': exId,
@@ -624,6 +735,9 @@ class GymExercise {
     if (rxKg != null) 'rx': rxKg,
     if (phase != null) 'ph': phase,
     if (fromPlan) 'fp': true,
+    if (timed != null) 'tm': timed,
+    if (holdMin != null) 'hMin': holdMin,
+    if (holdMax != null) 'hMax': holdMax,
   };
   GymExercise copy({bool resetDone = false}) => GymExercise(
     exId: exId,
@@ -640,6 +754,9 @@ class GymExercise {
     rxKg: rxKg,
     phase: phase,
     fromPlan: resetDone ? false : fromPlan,
+    timed: timed,
+    holdMin: holdMin,
+    holdMax: holdMax,
   );
 }
 
@@ -690,6 +807,11 @@ class Session {
   /// duration or the effort afterwards. Null for sessions never edited.
   final int? xpCap;
 
+  /// Body weight (kg) at the time of the workout – the body load of bodyweight exercises in
+  /// the volume ([GymExercise.volumeAt]). Stored with new gym sessions; older ones get the body
+  /// weight of that day filled in for display by the session list ([withBodyWeight]).
+  final double? bodyWeightKg;
+
   Session({
     required this.id,
     required this.sport,
@@ -718,6 +840,7 @@ class Session {
     this.fromPlan = false,
     this.plannedSets,
     this.xpCap,
+    this.bodyWeightKg,
   });
 
   /// Real measurement (recorded, imported or entered by hand) – not taken over from the plan.
@@ -729,7 +852,23 @@ class Session {
   /// it; the load progression only holds on it.
   bool exerciseFromPlan(GymExercise e) => fromPlan || e.fromPlan;
 
-  double get volume => exercises.fold(0, (a, e) => a + e.volume);
+  /// Volume load (kg) incl. the body load of bodyweight exercises at [bodyWeightKg]; timed holds
+  /// are not part of it ([holdSec]).
+  double get volume => exercises.fold(0, (a, e) => a + e.volumeAt(bodyWeightKg));
+
+  /// Whether [volume] contains body weight (bodyweight exercises) – "incl. body weight".
+  bool get volumeCountsBody => exercises.any((e) => e.countsBodyAt(bodyWeightKg));
+
+  /// Time under tension of the timed holds (planks, wall sits, …), seconds.
+  int get holdSec => exercises.fold(0, (a, e) => a + e.holdSec);
+
+  /// This session with [kg] as its body weight when it has none stored (older gym sessions:
+  /// derived for display, see sessionListProvider); otherwise itself.
+  Session withBodyWeight(double? kg) {
+    if (bodyWeightKg != null || kg == null || kg <= 0 || exercises.isEmpty) return this;
+    return Session.fromMap(id, {...toMap(), 'bwKg': kg});
+  }
+
   int get setsDone => exercises.fold(0, (a, e) => a + e.doneSets);
   int get minutes => (durationSec / 60).round();
 
@@ -773,6 +912,7 @@ class Session {
       fromPlan: _b(m['fromPlan']),
       plannedSets: _in(m['plannedSets']),
       xpCap: _in(m['xpCap']),
+      bodyWeightKg: _dn(m['bwKg']),
     );
   }
 
@@ -805,6 +945,7 @@ class Session {
     if (fromPlan) 'fromPlan': true,
     if (plannedSets != null) 'plannedSets': plannedSets,
     if (xpCap != null) 'xpCap': xpCap,
+    if (bodyWeightKg != null) 'bwKg': bodyWeightKg,
   };
 }
 
@@ -914,8 +1055,10 @@ int estimateGymMinutes(List<GymExercise> exercises) {
     final e = exercises[i];
     final next = i + 1 < exercises.length ? exercises[i + 1] : null;
     final inSupersetBeforeLast = e.group != null && next?.group == e.group;
+    final timed = e.isTimed;
     for (final st in e.sets) {
-      sec += 40 + (inSupersetBeforeLast ? 20 : (st.warmup ? 60 : e.restSec));
+      // A hold takes its time plus ~15 s to get into position; a rep set ~40 s.
+      sec += (timed && st.sec > 0 ? st.sec + 15 : 40) + (inSupersetBeforeLast ? 20 : (st.warmup ? 60 : e.restSec));
     }
   }
   return (sec / 60).round().clamp(10, 180);
@@ -1121,6 +1264,21 @@ class WorkoutStep {
 }
 
 // ───────────────────────────── Body & goals ─────────────────────────────
+
+/// Body weight (kg) on [day]: the latest body entry on or before it, else the earliest one after
+/// it, else [fallback] (the profile weight).
+double bodyWeightOn(DateTime day, List<BodyEntry> entries, double fallback) {
+  BodyEntry? before, after;
+  for (final b in entries) {
+    if (b.weightKg <= 0) continue;
+    if (!b.date.isAfter(day)) {
+      if (before == null || b.date.isAfter(before.date)) before = b;
+    } else if (after == null || b.date.isBefore(after.date)) {
+      after = b;
+    }
+  }
+  return (before ?? after)?.weightKg ?? fallback;
+}
 
 class BodyEntry {
   final String id;
