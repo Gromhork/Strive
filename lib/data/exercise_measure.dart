@@ -162,6 +162,29 @@ bool holdTakesLoad(String name) {
   return (30, 60); // planks and other holds
 }
 
+/// Whether a timed hold is done once per side – the prescribed time is "per side" (side plank,
+/// Copenhagen plank, single-arm hang or carry, single-leg holds), like dumbbell lifts "per hand".
+bool holdPerSide(String name) {
+  final n = name.toLowerCase();
+  return _any(n, const [
+    'side plank',
+    'side bridge',
+    'seitstütz',
+    'copenhagen',
+    'single arm',
+    'single-arm',
+    'one arm',
+    'one-arm',
+    'single leg',
+    'single-leg',
+    'one leg',
+    'one-leg',
+    'einarmig',
+    'einbeinig',
+    'suitcase',
+  ]);
+}
+
 /// "45 s", "1:30 min", "2 min" – one set's hold time.
 String formatHold(int sec) {
   if (sec < 60) return '$sec s';
@@ -233,6 +256,31 @@ String equipmentOfName(String name) {
 ///   Ab wheel rollout ≈ 50 %.
 double bodyShareOf(String exId, String name, {String? equipment}) =>
     _shareCache.putIfAbsent('$exId|$name|${equipment ?? ''}', () => _bodyShare(exId, name, equipment));
+
+/// Share of the body weight a bodyweight exercise counts in the volume load (kg × reps): its
+/// [bodyShareOf] where the loaded counterpart's volume has no body weight in it either – the
+/// body takes the place of the external load: push-ups (≈ bench press), pull-ups / chin-ups /
+/// muscle-ups (≈ pulldown), dips, inverted rows (≈ rows) and the Nordic curl (≈ leg curl).
+/// 0 for squats, lunges, step-ups, calf raises, bridges / hip thrusts, back extensions and trunk
+/// work: their loaded variants move the body too but count only the bar or dumbbells, so
+/// counting it in the bodyweight variant would make the volume collapse when the athlete
+/// progresses from bodyweight to loaded squats (80 kg: 3 × 20 bodyweight squats ≈ 3 360 kg,
+/// 3 × 8 back squats at 60 kg = 1 440 kg). Their added load still counts.
+double volumeBodyShareOf(String exId, String name) => _volumeShareCache.putIfAbsent('$exId|$name', () {
+  final share = bodyShareOf(exId, name);
+  if (share <= 0) return 0;
+  final n = name.toLowerCase();
+  final replacesLoad =
+      _any(n, const ['pull-up', 'pull up', 'pullup', 'chin-up', 'chin up', 'chinup', 'muscle up', 'muscle-up']) ||
+      (n.contains('dip') && !n.contains('hip')) ||
+      _any(n, const ['push-up', 'push up', 'pushup', 'press-up']) ||
+      n.contains('inverted row') ||
+      (n.contains('australian') && n.contains('pull')) ||
+      n.contains('nordic');
+  return replacesLoad ? share : 0.0;
+});
+
+final _volumeShareCache = <String, double>{};
 
 double _bodyShare(String exId, String name, String? equipment) {
   if (exId == 'manual' || isTimedExercise(exId, name)) return 0;

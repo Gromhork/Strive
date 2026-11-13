@@ -294,7 +294,9 @@ void main() {
       for (final s in out[0].sets) {
         s.done = true;
       }
-      expect(out[0].volume, 56 * out[0].sets.fold<int>(0, (a, s) => a + s.reps));
+      // The body load drives the load progression; the volume counts only added load for squats
+      // (their loaded variants count only the bar – S8, volumeBodyShareOf).
+      expect(out[0].volume, 0);
     });
   });
 
@@ -606,7 +608,8 @@ void main() {
       await t.pump();
       expect(find.byKey(const ValueKey('holdRunning')), findsOneWidget);
       expect(c.read(activeGymProvider)!.holding(0, 0), isTrue);
-      await t.pump(const Duration(seconds: 46));
+      // 3-s lead-in ("3, 2, 1"), then the 45-s hold.
+      await t.pump(const Duration(seconds: holdLeadInSec + 46));
       expect(e.sets.first.done, isTrue);
       expect(e.sets.first.sec, 45);
       expect(c.read(activeGymProvider)!.restEnd, isNotNull);
@@ -641,6 +644,7 @@ void main() {
       await t.tap(find.byKey(const ValueKey('holdPlay-0-0')));
       await t.pump();
       expect(find.byKey(const ValueKey('holdBar')), findsOneWidget);
+      await t.pump(const Duration(seconds: holdLeadInSec + 1)); // stopped during the lead-in it would just cancel
       await t.tap(find.text(de.holdStop).last);
       await t.pump();
       expect(e.sets.first.done, isTrue);

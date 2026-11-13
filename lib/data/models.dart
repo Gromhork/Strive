@@ -658,12 +658,19 @@ class GymExercise {
   /// ([bodyShareOf]; 0 for loaded and timed exercises).
   double get bodyShare => bodyShareOf(exId, name);
 
+  /// Share of the body weight counted in the volume ([volumeBodyShareOf]): only where the loaded
+  /// counterpart's volume has no body in it either (push-ups ↔ bench press, pull-ups ↔
+  /// pulldown, dips, rows); 0 for squats, lunges, calf raises, bridges and trunk work.
+  double get volumeBodyShare => volumeBodyShareOf(exId, name);
+
   /// Body load per rep (kg) for volume: in bodyweight mode the body load stored when the
   /// workout started ([bodyKg]); a bodyweight exercise logged without it (older sessions, mode
   /// automatic) gets [bodyWeight] × [bodyShare] – derived, so older history counts the body
-  /// like new workouts. 0 for loaded exercises, timed holds and when switched off.
+  /// like new workouts. 0 for loaded exercises, timed holds, when switched off and for exercises
+  /// whose body load the volume does not count ([volumeBodyShare] – the bodyweight squat counts
+  /// its added load only, like the barbell squat its bar).
   double bodyLoadAt(double? bodyWeight) {
-    if (bw == false || isTimed) return 0;
+    if (bw == false || isTimed || volumeBodyShare <= 0) return 0;
     if (bw == true && bodyKg > 0) return bodyKg;
     final share = bodyShare;
     if (share <= 0 || bodyWeight == null || bodyWeight <= 0) return 0;
@@ -836,6 +843,12 @@ class Session {
   /// weight of that day filled in for display by the session list ([withBodyWeight]).
   final double? bodyWeightKg;
 
+  /// Volume as stored with the session when it was saved (the `volume` field; null for a session
+  /// not saved yet). XP and the volume badge use it ([xpVolume]): a later change of how the
+  /// volume is derived (the body load of bodyweight exercises, a body weight filled in for older
+  /// sessions, a corrected profile weight) must not move past XP, levels or badges.
+  final double? storedVolume;
+
   Session({
     required this.id,
     required this.sport,
@@ -865,6 +878,7 @@ class Session {
     this.plannedSets,
     this.xpCap,
     this.bodyWeightKg,
+    this.storedVolume,
   });
 
   /// Real measurement (recorded, imported or entered by hand) – not taken over from the plan.
@@ -880,6 +894,10 @@ class Session {
   /// are not part of it ([holdSec]).
   double get volume => exercises.fold(0, (a, e) => a + e.volumeAt(bodyWeightKg));
 
+  /// Volume for XP and badges: the one stored when the session was saved ([storedVolume]), else
+  /// (not saved yet – the summary of the workout just finished) [volume].
+  double get xpVolume => storedVolume ?? volume;
+
   /// Whether [volume] contains body weight (bodyweight exercises) – "incl. body weight".
   bool get volumeCountsBody => exercises.any((e) => e.countsBodyAt(bodyWeightKg));
 
@@ -890,7 +908,10 @@ class Session {
   /// derived for display, see sessionListProvider); otherwise itself.
   Session withBodyWeight(double? kg) {
     if (bodyWeightKg != null || kg == null || kg <= 0 || exercises.isEmpty) return this;
-    return Session.fromMap(id, {...toMap(), 'bwKg': kg});
+    // The stored volume stays what it was (toMap would write the volume derived now).
+    final m = {...toMap(), 'bwKg': kg}..remove('volume');
+    if (storedVolume != null) m['volume'] = storedVolume;
+    return Session.fromMap(id, m);
   }
 
   int get setsDone => exercises.fold(0, (a, e) => a + e.doneSets);
@@ -937,6 +958,7 @@ class Session {
       plannedSets: _in(m['plannedSets']),
       xpCap: _in(m['xpCap']),
       bodyWeightKg: _dn(m['bwKg']),
+      storedVolume: _dn(m['volume']),
     );
   }
 

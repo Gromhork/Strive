@@ -354,6 +354,13 @@ class _ProgramPicker extends StatefulWidget {
 
 class _ProgramPickerState extends State<_ProgramPicker> {
   String _query = '';
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -391,7 +398,11 @@ class _ProgramPickerState extends State<_ProgramPicker> {
               child: TextField(
                 key: const ValueKey('gymProgramSearch'),
                 decoration: InputDecoration(prefixIcon: const Icon(Icons.search_rounded), hintText: l.gymAssignSearch, isDense: true),
-                onChanged: (v) => setState(() => _query = v),
+                onChanged: (v) {
+                  setState(() => _query = v);
+                  // The new hits from their top, not at the scroll position of the old list.
+                  if (_scroll.hasClients) _scroll.jumpTo(0);
+                },
               ),
             ),
             const SizedBox(height: 8),
@@ -400,6 +411,7 @@ class _ProgramPickerState extends State<_ProgramPicker> {
                   hits.isEmpty
                       ? Center(child: Text(l.gymAssignNone))
                       : ListView(
+                        controller: _scroll,
                         children: [
                           for (final e in folders.entries) ...[
                             if (e.key.isNotEmpty)

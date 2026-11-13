@@ -17,8 +17,10 @@ class ExerciseMedia extends StatelessWidget {
   final double radius;
   final bool done;
 
+  /// Whether [id] has a bundled demo: library ids 0000–8999. Custom exercises have other ids
+  /// and the 9xxx entries are added by the app without an animation (9001 front plank).
   static bool hasMedia(String id) => _mediaId.hasMatch(id);
-  static final _mediaId = RegExp(r'^\d{4}$');
+  static final _mediaId = RegExp(r'^[0-8]\d{3}$');
 
   /// Background of the media tile in dark mode – the colour the white image
   /// background is mapped to (a dark grey slightly above the card colour).

@@ -2276,7 +2276,7 @@ abstract class AppLocalizations {
   /// No description provided for @vibrationSub.
   ///
   /// In en, this message translates to:
-  /// **'After rest timers and each km'**
+  /// **'After rest and hold timers and each km'**
   String get vibrationSub;
 
   /// No description provided for @reminders.
@@ -7142,7 +7142,7 @@ abstract class AppLocalizations {
   /// No description provided for @termVolumeBody.
   ///
   /// In en, this message translates to:
-  /// **'Weight × reps of all working sets added up (warm-ups don\'t count). For bodyweight exercises the moved share of your body weight counts (e.g. push-up ≈ 64 %, pull-up 100 %, squat ≈ 70 %) plus any added weight. Holds such as planks count as hold time, not as volume.'**
+  /// **'Weight × reps of all working sets added up (warm-ups don\'t count). Where your body takes the place of a weight – push-ups (≈ 64 % of your body weight, like a bench press), pull-ups and dips (100 %), inverted rows – that share of your body weight counts plus any added weight. Squats, lunges, calf raises, bridges and core exercises count only the added weight, as their loaded versions count only the bar or dumbbells – so the volume doesn\'t drop when you move on from bodyweight to loaded squats. Holds such as planks count as hold time, not as volume.'**
   String get termVolumeBody;
 
   /// No description provided for @termVolumeTip.
@@ -10892,7 +10892,7 @@ abstract class AppLocalizations {
   /// No description provided for @vibrationInfo.
   ///
   /// In en, this message translates to:
-  /// **'Vibrates when a rest timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity.'**
+  /// **'Vibrates when a rest or hold timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity – also with touch vibration switched off in the system settings.'**
   String get vibrationInfo;
 
   /// No description provided for @reorderHint.
@@ -11062,6 +11062,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{program} on {day}, the day before your long session – heavy legs make it harder.'**
   String gymAssignWarnLegs(String program, String day);
+
+  /// No description provided for @holdGetReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Get into position'**
+  String get holdGetReady;
+
+  /// No description provided for @holdLeadInSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'3-s countdown before the hold'**
+  String get holdLeadInSetting;
+
+  /// No description provided for @timerSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Timer sounds'**
+  String get timerSound;
+
+  /// No description provided for @timerSoundSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Countdown and end of holds, end of rests'**
+  String get timerSoundSub;
 
   /// No description provided for @wGymDeloadNote5.
   ///

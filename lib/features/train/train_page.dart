@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/collation.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
 import '../../data/builtin_upgrade.dart';
 import '../../data/default_programs.dart';
 import '../../data/models.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../session/manual_entry_page.dart';
@@ -85,7 +87,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
       for (final f in folderOrder)
         if (f.isNotEmpty && (names.contains(f) || !filtered)) f,
     ];
-    final rest = names.where((f) => !order.contains(f)).toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final rest = names.where((f) => !order.contains(f)).toList()..sort(compareNames);
     return [...order, ...rest, if (all.any((t) => t.folder.isEmpty)) ''];
   }
 
@@ -107,7 +109,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     }
     return [for (final t in stored) local[t.id] ?? t]..sort((a, b) {
       final o = a.order.compareTo(b.order);
-      return o != 0 ? o : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      return o != 0 ? o : compareNames(a.name, b.name);
     });
   }
 
@@ -197,40 +199,49 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                 children: [
                   Text(l.quickStart, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 10),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 2.2,
-                    children: [
-                      for (final s in Sport.values.where((s) => filter == null || s == filter))
-                        _QuickTile(sport: s, onTap: () => quickStart(context, ref, s)),
-                    ],
+                  // Two tiles per row; when a label would not fit a half-width tile in two lines (large text,
+                  // narrow phone), one per row – labels stay whole and in the normal size (no ellipsis, no
+                  // scaleDown: "Radfahr…", "Leere Einh…" at text ×1.3).
+                  LayoutBuilder(
+                    builder: (context, box) {
+                      final sports = [
+                        for (final s in Sport.values)
+                          if (filter == null || s == filter) s,
+                      ];
+                      final half = (box.maxWidth - _tileGap) / 2;
+                      return _TileRows(
+                        key: const ValueKey('quickStartTiles'),
+                        columns: sports.every((s) => _QuickTile.fits(context, s, half)) ? 2 : 1,
+                        minHeight: half / 2.2,
+                        children: [for (final s in sports) _QuickTile(sport: s, onTap: () => quickStart(context, ref, s))],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 10),
-                  // Same style as the quick-start tiles; one line each (no wrapping label).
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ActionTile(
-                          key: const ValueKey('logManuallyTile'),
-                          icon: Icons.edit_note_rounded,
-                          label: l.logManually,
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManualEntryPage())),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _ActionTile(
-                          icon: Icons.menu_book_rounded,
-                          label: l.exercises,
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryPage())),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: _tileGap),
+                  // Same style and rule as the quick-start tiles.
+                  LayoutBuilder(
+                    builder: (context, box) {
+                      final half = (box.maxWidth - _tileGap) / 2;
+                      return _TileRows(
+                        key: const ValueKey('actionTiles'),
+                        columns: [l.logManually, l.exercises].every((t) => _ActionTile.fits(context, t, half)) ? 2 : 1,
+                        minHeight: _ActionTile.minHeight,
+                        children: [
+                          _ActionTile(
+                            key: const ValueKey('logManuallyTile'),
+                            icon: Icons.edit_note_rounded,
+                            label: l.logManually,
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManualEntryPage())),
+                          ),
+                          _ActionTile(
+                            key: const ValueKey('exercisesTile'),
+                            icon: Icons.menu_book_rounded,
+                            label: l.exercises,
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryPage())),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 22),
                   Row(
@@ -924,11 +935,78 @@ class _DragFeedback extends StatelessWidget {
   );
 }
 
+const _tileGap = 10.0;
+
+/// Whether [text] fits in [maxLines] lines of [maxWidth] at the current text scale (ambient text
+/// style merged with [style]) without breaking a word – a word wider than the line would be split
+/// mid-word ("Radfahr-en").
+bool _fitsLines(BuildContext context, String text, TextStyle? style, double maxWidth, {int maxLines = 2}) {
+  bool fits(String s, int lines) {
+    final painter = TextPainter(
+      text: TextSpan(text: s, style: DefaultTextStyle.of(context).style.merge(style)),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      locale: Localizations.maybeLocaleOf(context),
+      maxLines: lines,
+    )..layout(maxWidth: maxWidth);
+    final ok = !painter.didExceedMaxLines;
+    painter.dispose();
+    return ok;
+  }
+
+  return maxWidth > 0 && text.split(RegExp(r'\s+')).every((w) => fits(w, 1)) && fits(text, maxLines);
+}
+
+/// [children] in rows of [columns] equally wide tiles; the tiles of a row share its height,
+/// at least [minHeight], and grow with their text (large font) instead of clipping it.
+class _TileRows extends StatelessWidget {
+  const _TileRows({super.key, required this.columns, required this.minHeight, required this.children});
+  final int columns;
+  final double minHeight;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < children.length; i += columns) ...[
+          if (i > 0) const SizedBox(height: _tileGap),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var c = 0; c < columns; c++) ...[
+                  if (c > 0) const SizedBox(width: _tileGap),
+                  Expanded(
+                    child:
+                        i + c < children.length
+                            ? ConstrainedBox(constraints: BoxConstraints(minHeight: minHeight), child: children[i + c])
+                            : const SizedBox.shrink(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class _ActionTile extends StatelessWidget {
   const _ActionTile({super.key, required this.icon, required this.label, required this.onTap});
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+
+  static const minHeight = 48.0;
+  static const _hPad = 12.0, _icon = 22.0, _gap = 8.0;
+  static const _style = TextStyle(fontWeight: FontWeight.w600);
+
+  /// Whether [label] fits a tile of [width] (at most two lines, no word broken).
+  static bool fits(BuildContext context, String label, double width) =>
+      _fitsLines(context, label, _style, width - 2 * _hPad - _icon - _gap);
 
   @override
   Widget build(BuildContext context) {
@@ -939,21 +1017,17 @@ class _ActionTile extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
-        child: SizedBox(
-          height: 48,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: minHeight),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: _hPad, vertical: 6),
             child: Row(
               children: [
-                Icon(icon, color: scheme.primary, size: 22),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(label, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  ),
-                ),
+                Icon(icon, color: scheme.primary, size: _icon),
+                const SizedBox(width: _gap),
+                // Full size, never scaled down (it was shrunk visibly smaller than its neighbour); the
+                // layout gives the tile a whole row when the label doesn't fit half of one.
+                Expanded(child: Text(label, style: _style)),
               ],
             ),
           ),
@@ -968,6 +1042,20 @@ class _QuickTile extends StatelessWidget {
   final Sport sport;
   final VoidCallback onTap;
 
+  static const _hPad = 14.0, _icon = 28.0, _gap = 10.0, _play = 24.0;
+  static const _titleStyle = TextStyle(fontWeight: FontWeight.w700);
+
+  static String _subtitle(AppLocalizations l, Sport sport) => sport == Sport.gym ? l.emptyWorkout : l.quickRecord;
+
+  /// Whether the tile's title and subtitle each fit a tile of [width] (at most two lines, no
+  /// word broken).
+  static bool fits(BuildContext context, Sport sport, double width) {
+    final l = context.l10n;
+    final text = width - 2 * _hPad - _icon - _gap - _play;
+    return _fitsLines(context, sport.label(l), _titleStyle, text) &&
+        _fitsLines(context, _subtitle(l, sport), Theme.of(context).textTheme.bodySmall, text);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -978,28 +1066,24 @@ class _QuickTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.symmetric(horizontal: _hPad, vertical: 8),
           child: Row(
             children: [
-              Icon(sport.icon, color: sport.color, size: 28),
-              const SizedBox(width: 10),
+              Icon(sport.icon, color: sport.color, size: _icon),
+              const SizedBox(width: _gap),
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(sport.label(l), style: const TextStyle(fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    // One short line: "Aktivität aufzeichnen" wrapped in the half-width tile.
-                    Text(
-                      sport == Sport.gym ? l.emptyWorkout : l.quickRecord,
-                      style: Theme.of(context).textTheme.bodySmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    // Whole words in the normal size; the layout gives the tile a whole row when a
+                    // label doesn't fit half of one.
+                    Text(sport.label(l), style: _titleStyle),
+                    Text(_subtitle(l, sport), style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ),
               ),
-              Icon(Icons.play_arrow_rounded, color: sport.color),
+              Icon(Icons.play_arrow_rounded, color: sport.color, size: _play),
             ],
           ),
         ),
@@ -1077,7 +1161,7 @@ class _TemplateTile extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(t.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
-                      Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+                      Text(sub, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),
                 ),

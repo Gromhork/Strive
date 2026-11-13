@@ -60,6 +60,16 @@ dependencies:
   health: ^13.1.3
   flutter_tts: ^4.2.5
 
+# riverpod 3.3.2 + three upstream fixes (02b11c3fb1 #4816 / 3.4.0, 05534890a2 #4837 / 3.4.2,
+# e067e80a16 #4884 / 3.5.0): resuming a paused (TickerMode-off) consumer with a diamond-shaped
+# provider graph threw "setState() or markNeedsBuild() called during build" - on a tab switch
+# and on a route pop after a data change. riverpod >= 3.4 needs Dart 3.12, so the fixes are
+# backported in third_party/riverpod (search "STRIVE BACKPORT"). Remove this override and the
+# folder once the app can use flutter_riverpod >= 3.5.0; test/riverpod_resume_test.dart guards it.
+dependency_overrides:
+  riverpod:
+    path: third_party/riverpod
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
