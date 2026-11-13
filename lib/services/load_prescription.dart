@@ -406,13 +406,7 @@ class LoadPrescriber {
       if (s.sec <= 0) s.sec = max(10, ((work.firstOrNull?.sec ?? 30) / 2 / 5).round() * 5);
       s.reps = 0;
     }
-    if (dropsSet(phase)) {
-      e.sets.removeWhere((s) => s.type == SetType.drop);
-      final w = e.sets.where((s) => !s.warmup).toList();
-      for (final s in w.skip(deloadSets(w.length))) {
-        e.sets.remove(s);
-      }
-    }
+    // Set counts always follow the program – deloads only lighten the hold (see above).
     return e;
   }
 
