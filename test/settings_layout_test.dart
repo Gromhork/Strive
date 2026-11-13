@@ -68,6 +68,9 @@ void main() {
             expect(tester.takeException(), isNull);
             expect(find.byKey(const ValueKey('logRirSetting')), findsOneWidget);
             expect(find.byKey(const ValueKey('reminderTimeSetting')), findsOneWidget);
+            // Lazily built list: the last row may sit below the fold at large text sizes.
+            await tester.scrollUntilVisible(find.byKey(const ValueKey('deleteAccount')), 300, scrollable: find.byType(Scrollable).first);
+            expect(tester.takeException(), isNull);
             expect(find.byKey(const ValueKey('deleteAccount')), findsOneWidget);
           });
         }
