@@ -59,3 +59,159 @@ List<GymExercise>? upgradedBuiltinExercises(WorkoutTemplate t, String goal) {
   if (!known.contains(sig) || t.exercises.any((e) => e.sets.any((s) => s.weight != 0))) return null;
   return [for (final e in target) e.copy(resetDone: true)];
 }
+
+// ───────────────────────────── Restoring the originals ─────────────────────────────
+
+/// Signature of a structured endurance workout as a user would edit it: per step its kind,
+/// duration, distance and own targets. Zone codes and notes are left out – the shipped
+/// programs' zone codes and drill notes were revised (Nov 2026) and are relocalised, so an
+/// old, untouched program still counts as the original.
+String stepsSignature(List<WorkoutStep> steps) => steps
+    .map(
+      (s) =>
+          '${s.kind}:${s.durationSec ?? ''}:${s.distanceM ?? ''}:${s.paceMin ?? ''}-${s.paceMax ?? ''}:'
+          '${s.powerMin ?? ''}-${s.powerMax ?? ''}:${s.hrMin ?? ''}-${s.hrMax ?? ''}',
+    )
+    .join(',');
+
+/// Shipped names (English and German) per built-in key.
+final Map<String, Set<String>> _builtinNames = () {
+  final out = <String, Set<String>>{};
+  for (final de in [false, true]) {
+    for (final t in defaultTemplates(() => '', de: de)) {
+      out.putIfAbsent(t.key!, () => {}).add(t.name);
+    }
+  }
+  return out;
+}();
+
+/// The built-in programs (English, general goal) by key.
+final Map<String, WorkoutTemplate> _builtinByKey = {for (final t in defaultTemplates(() => '')) t.key!: t};
+
+/// Every shipped exercise signature per gym key (v1 and the current version for each goal).
+final Map<String, Set<String>> _knownGym = () {
+  final out = <String, Set<String>>{};
+  for (final e in _v1.entries) {
+    out.putIfAbsent(e.key, () => {}).add(e.value);
+  }
+  for (final g in gymGoals) {
+    for (final e in _current(g).entries) {
+      out.putIfAbsent(e.key, () => {}).add(gymSignature(e.value));
+    }
+  }
+  return out;
+}();
+
+/// Whether [t] is a built-in program exactly as shipped (any shipped version, any language):
+/// its name, exercises / steps and no own weights. A renamed, edited or weighted program is
+/// the user's own version.
+bool isUntouchedBuiltin(WorkoutTemplate t) {
+  final key = t.key;
+  final original = key == null ? null : _builtinByKey[key];
+  if (original == null || t.sport != original.sport || !_builtinNames[key]!.contains(t.name.trim())) return false;
+  if (t.sport == Sport.gym) {
+    if (t.exercises.any((e) => e.sets.any((s) => s.weight != 0))) return false;
+    return _knownGym[key]?.contains(gymSignature(t.exercises)) ?? false;
+  }
+  return stepsSignature(t.steps) == stepsSignature(original.steps);
+}
+
+/// What restoring built-in programs changes.
+class BuiltinRestore {
+  const BuiltinRestore({this.add = const [], this.keep = const [], this.changed = const {}});
+
+  /// The originals that are added (with their key: the plan generator uses them again).
+  final List<WorkoutTemplate> add;
+
+  /// The user's changed versions they replace: kept as the user's own programs – without the
+  /// built-in key, renamed ("Pull (eigene)") when the name would clash with the original.
+  final List<WorkoutTemplate> keep;
+
+  /// Keys of the originals that replace a changed version (the rest were missing).
+  final Set<String> changed;
+
+  /// Names of the originals that replace a changed version.
+  List<String> get changedNames => [
+    for (final t in add)
+      if (changed.contains(t.key)) t.name,
+  ];
+
+  bool get isEmpty => add.isEmpty;
+
+  /// Every document to write (one batch).
+  List<WorkoutTemplate> get writes => [...keep, ...add];
+}
+
+/// Folder a restored original of [folderKey] goes into: the standard folder as the user has
+/// it (current-language name first), else the folder holding most of that split's programs
+/// (a renamed standard folder), else the shipped name.
+String builtinTargetFolder(List<WorkoutTemplate> existing, String folderKey, {required bool de}) {
+  final own = folderName(folderKey, de), other = folderName(folderKey, !de);
+  final folders = existing.map((t) => t.folder).toSet();
+  if (folders.contains(own)) return own;
+  if (folders.contains(other)) return other;
+  final count = <String, int>{};
+  for (final t in existing) {
+    if (t.folder.isNotEmpty && t.key != null && builtinFolderOf[t.key] == folderKey) count[t.folder] = (count[t.folder] ?? 0) + 1;
+  }
+  if (count.isEmpty) return own;
+  return (count.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).first.key;
+}
+
+/// Built-in folder keys a user folder stands for: the folders of the built-in programs in it
+/// and a folder carrying a standard folder's name.
+Set<String> builtinFolderKeysOf(String folder, List<WorkoutTemplate> existing) => {
+  for (final t in existing)
+    if (t.folder == folder && t.key != null)
+      if (builtinFolderOf[t.key] case final fk?) fk,
+  for (final fk in builtinFolderKeys)
+    if (builtinFolderNames(fk).contains(folder)) fk,
+};
+
+/// Restores the built-in programs of [folderKeys] (null = all) in their original state: every
+/// built-in without an untouched copy is added again (missing or changed by the user); the
+/// changed versions stay as the user's own programs ([BuiltinRestore.keep]). Untouched
+/// originals are never duplicated. [ownSuffix] marks a kept version whose name equals the
+/// original's ("eigene" → "Pull (eigene)").
+BuiltinRestore planBuiltinRestore(
+  List<WorkoutTemplate> existing,
+  String Function() id, {
+  required bool de,
+  required String ownSuffix,
+  String goal = 'general',
+  Set<String>? folderKeys,
+}) {
+  final add = <WorkoutTemplate>[];
+  final keep = <WorkoutTemplate>[];
+  final changed = <String>{};
+  final taken = {for (final t in existing) '${t.folder}\n${t.name.trim().toLowerCase()}'};
+  String unique(String folder, String name) {
+    var n = name;
+    for (var i = 2; taken.contains('$folder\n${n.toLowerCase()}'); i++) {
+      n = '$name $i';
+    }
+    taken.add('$folder\n${n.toLowerCase()}');
+    return n;
+  }
+
+  for (final b in defaultTemplates(id, de: de, goal: goal)) {
+    final fk = builtinFolderOf[b.key]!;
+    if (folderKeys != null && !folderKeys.contains(fk)) continue;
+    final same = existing.where((t) => t.key == b.key).toList();
+    if (same.any(isUntouchedBuiltin)) continue;
+    final folder = builtinTargetFolder(existing, fk, de: de);
+    if (same.isNotEmpty) changed.add(b.key!);
+    for (final t in same) {
+      final names = {for (final n in _builtinNames[b.key]!) n.toLowerCase()};
+      final clash = names.contains(t.name.trim().toLowerCase());
+      keep.add(
+        WorkoutTemplate.fromMap(t.id, {...t.toMap(), 'key': null, if (clash) 'name': unique(t.folder, '${t.name.trim()} ($ownSuffix)')}),
+      );
+    }
+    // The original keeps its shipped name; an unrelated own program of that name in the
+    // folder does not block it (the user's changed versions were renamed above).
+    taken.add('$folder\n${b.name.toLowerCase()}');
+    add.add(WorkoutTemplate.fromMap(b.id, {...b.toMap(), 'folder': folder}));
+  }
+  return BuiltinRestore(add: add, keep: keep, changed: changed);
+}

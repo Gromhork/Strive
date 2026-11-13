@@ -70,10 +70,11 @@ class NotificationService {
     await android?.deleteNotificationChannel('hydration');
   }
 
-  /// One reminder at [hour] on the day of each upcoming planned workout (next 14 days).
+  /// One reminder at [hour]:[minute] on the day of each upcoming planned workout (next 14 days).
   Future<void> scheduleTraining({
     required bool enabled,
     required int hour,
+    int minute = 0,
     required List<PlannedWorkout> plans,
     required String Function(PlannedWorkout) title,
     required String Function(PlannedWorkout) body,
@@ -92,7 +93,7 @@ class NotificationService {
             .toList();
     var idx = 0;
     for (final p in upcoming) {
-      final t = tz.TZDateTime(tz.local, p.date.year, p.date.month, p.date.day, hour);
+      final t = tz.TZDateTime(tz.local, p.date.year, p.date.month, p.date.day, hour, minute);
       if (t.isBefore(now)) continue;
       await _plugin.zonedSchedule(
         _trainingBase + idx++,

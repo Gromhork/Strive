@@ -4388,7 +4388,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get reserveHint => 'Wdh. im Tank';
 
   @override
-  String get logRirSetting => 'Reserve pro Satz erfassen';
+  String get logRirSetting => 'Reserve je Satz';
 
   @override
   String get logRirSettingSub => 'Wiederholungen im Tank nach jedem Satz (RIR). Die Bewertung pro Übung bleibt.';
@@ -6023,6 +6023,66 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String longestHoldN(String time) {
     return 'längstes Halten $time';
+  }
+
+  @override
+  String infoAbout(String title) {
+    return 'Info zu $title';
+  }
+
+  @override
+  String get logRirSettingShort => 'Wiederholungen im Tank (RIR) je Satz';
+
+  @override
+  String get logRirSettingInfo => 'Nach jedem Satz gibst du an, wie viele Wiederholungen du noch geschafft hättest (Reps in Reserve, RIR). Hat eine Übung keine Schnellbewertung, nutzt Strive diese Werte für die nächste Steigerung. Die Bewertung pro Übung bleibt in jedem Fall.';
+
+  @override
+  String get trainingReminderShort => 'An geplanten Trainingstagen';
+
+  @override
+  String get vibrationInfo => 'Vibriert, wenn ein Pausentimer abläuft, bei jedem neuen Abschnitt eines strukturierten Trainings und bei jedem Kilometer einer aufgezeichneten Aktivität.';
+
+  @override
+  String get reorderHint => 'Ordner und Programme lang drücken, um sie zu verschieben.';
+
+  @override
+  String get restoreBuiltins => 'Standardprogramme wiederherstellen';
+
+  @override
+  String restoreBuiltinsAdd(String names) {
+    return 'Im Originalzustand hinzugefügt werden: $names.';
+  }
+
+  @override
+  String restoreBuiltinsKeep(String names) {
+    return 'Deine geänderten Versionen bleiben als eigene Programme erhalten ($names). Neue Pläne verwenden wieder die Originale.';
+  }
+
+  @override
+  String get restoreAction => 'Wiederherstellen';
+
+  @override
+  String programsRestored(int count) {
+    return '$count Programme wiederhergestellt';
+  }
+
+  @override
+  String get ownVersionSuffix => 'eigene';
+
+  @override
+  String builtinChangedLine(String names) {
+    return 'Geändert: $names';
+  }
+
+  @override
+  String get builtinsAllOriginal => 'Alle Standardprogramme sind im Originalzustand vorhanden.';
+
+  @override
+  String get restoreBuiltinsSub => 'Fügt fehlende oder geänderte Standardprogramme im Originalzustand hinzu. Deine geänderten Versionen bleiben erhalten.';
+
+  @override
+  String movedToFolder(String folder) {
+    return 'Nach $folder verschoben';
   }
 
   @override

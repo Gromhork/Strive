@@ -4388,7 +4388,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reserveHint => 'reps in the tank';
 
   @override
-  String get logRirSetting => 'Log reserve per set';
+  String get logRirSetting => 'Reserve per set';
 
   @override
   String get logRirSettingSub => 'Reps left in the tank after each set (RIR). The rating per exercise stays.';
@@ -6023,6 +6023,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String longestHoldN(String time) {
     return 'longest hold $time';
+  }
+
+  @override
+  String infoAbout(String title) {
+    return 'About $title';
+  }
+
+  @override
+  String get logRirSettingShort => 'Reps in the tank (RIR) after each set';
+
+  @override
+  String get logRirSettingInfo => 'After every set you note how many more reps you could have done (reps in reserve, RIR). When an exercise has no quick rating, Strive uses these values for your next progression. The quick rating per exercise stays either way.';
+
+  @override
+  String get trainingReminderShort => 'On planned training days';
+
+  @override
+  String get vibrationInfo => 'Vibrates when a rest timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity.';
+
+  @override
+  String get reorderHint => 'Long-press folders and programs to move them.';
+
+  @override
+  String get restoreBuiltins => 'Restore standard programs';
+
+  @override
+  String restoreBuiltinsAdd(String names) {
+    return 'Added in their original state: $names.';
+  }
+
+  @override
+  String restoreBuiltinsKeep(String names) {
+    return 'Your changed versions stay as your own programs ($names). New plans use the originals again.';
+  }
+
+  @override
+  String get restoreAction => 'Restore';
+
+  @override
+  String programsRestored(int count) {
+    return '$count programs restored';
+  }
+
+  @override
+  String get ownVersionSuffix => 'custom';
+
+  @override
+  String builtinChangedLine(String names) {
+    return 'Changed: $names';
+  }
+
+  @override
+  String get builtinsAllOriginal => 'All standard programs are in their original state.';
+
+  @override
+  String get restoreBuiltinsSub => 'Adds missing or changed standard programs in their original state. Your changed versions are kept.';
+
+  @override
+  String movedToFolder(String folder) {
+    return 'Moved to $folder';
   }
 
   @override

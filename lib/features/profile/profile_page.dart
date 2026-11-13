@@ -15,6 +15,7 @@ import 'health_connect_page.dart';
 import '../../services/google_auth.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/common.dart';
+import '../../widgets/settings.dart';
 import '../goals/goals_page.dart';
 import '../onboarding/onboarding_page.dart';
 import '../stats/body_page.dart';
@@ -31,7 +32,8 @@ class ProfilePage extends ConsumerWidget {
     final g = ref.watch(gameStatsProvider);
     final settings = ref.watch(settingsProvider);
     final setN = ref.read(settingsProvider.notifier);
-    final user = FirebaseAuth.instance.currentUser;
+    // Signed in (auth stream) → the current user object, which also reflects a just-linked guest.
+    final user = ref.watch(authProvider).value == null ? null : FirebaseAuth.instance.currentUser;
     final repo = ref.read(repoProvider);
     final gcal = ref.watch(gcalProvider);
 
@@ -67,6 +69,8 @@ class ProfilePage extends ConsumerWidget {
                     Text(
                       p.name.isEmpty ? l.athlete : p.name,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(user?.isAnonymous == true ? l.guestAccount : (user?.email ?? ''), style: Theme.of(context).textTheme.bodySmall),
                     const SizedBox(height: 4),
@@ -89,8 +93,15 @@ class ProfilePage extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Text(l.levelN(g.level.level), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
-                    const Spacer(),
+                    Expanded(
+                      child: Text(
+                        l.levelN(g.level.level),
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Text('${g.totalXp} XP'),
                   ],
                 ),
@@ -104,7 +115,10 @@ class ProfilePage extends ConsumerWidget {
                       children: [
                         Icon(s.icon, color: s.color, size: 20),
                         const SizedBox(width: 8),
-                        SizedBox(width: 110, child: Text('${s.label(l)} ${g.sportLevels[s]!.level}')),
+                        SizedBox(
+                          width: 110,
+                          child: Text('${s.label(l)} ${g.sportLevels[s]!.level}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
                         Expanded(
                           child: LinearProgressIndicator(
                             value: g.sportLevels[s]!.progress,
@@ -136,174 +150,160 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.person_outline_rounded),
-                  title: Text(l.editProfile),
-                  subtitle: Text(l.editProfileSub),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.profile))),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.tune_rounded),
-                  title: Text(l.planSettings),
-                  subtitle: Text(l.editPlanSettingsSub),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.flag_outlined),
-                  title: Text(l.goals),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.menu_book_outlined),
-                  title: Text(l.glossary),
-                  subtitle: Text(l.glossaryHint),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GlossaryPage())),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.monitor_weight_outlined),
-                  title: Text(l.bodyComposition),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BodyPage())),
-                ),
-              ],
-            ),
+          SettingsSection(
+            children: [
+              SettingsTile(
+                icon: Icons.person_outline_rounded,
+                title: l.editProfile,
+                subtitle: l.editProfileSub,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.profile))),
+              ),
+              SettingsTile(
+                icon: Icons.tune_rounded,
+                title: l.planSettings,
+                subtitle: l.editPlanSettingsSub,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
+              ),
+              SettingsTile(
+                icon: Icons.flag_outlined,
+                title: l.goals,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())),
+              ),
+              SettingsTile(
+                icon: Icons.monitor_weight_outlined,
+                title: l.bodyComposition,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BodyPage())),
+              ),
+              SettingsTile(
+                icon: Icons.menu_book_outlined,
+                title: l.glossary,
+                subtitle: l.glossaryHint,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GlossaryPage())),
+              ),
+            ],
           ),
-          _header(context, l.settings),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.language),
-                  title: Text(l.language),
-                  trailing: DropdownButton<String?>(
-                    value: settings.locale,
-                    underline: const SizedBox.shrink(),
-                    items: [
-                      DropdownMenuItem(value: null, child: Text(l.system)),
-                      const DropdownMenuItem(value: 'de', child: Text('Deutsch')),
-                      const DropdownMenuItem(value: 'en', child: Text('English')),
-                    ],
-                    onChanged: (v) => setN.update(settings.copyWith(locale: v, clearLocale: v == null)),
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.dark_mode_outlined),
-                  title: Text(l.theme),
-                  trailing: DropdownButton<ThemeMode>(
-                    value: settings.themeMode,
-                    underline: const SizedBox.shrink(),
-                    items: [
-                      DropdownMenuItem(value: ThemeMode.system, child: Text(l.system)),
-                      DropdownMenuItem(value: ThemeMode.dark, child: Text(l.dark)),
-                      DropdownMenuItem(value: ThemeMode.light, child: Text(l.light)),
-                    ],
-                    onChanged: (v) => setN.update(settings.copyWith(themeMode: v)),
-                  ),
-                ),
-                SwitchListTile(
-                  secondary: const Icon(Icons.straighten),
-                  title: Text(l.imperial),
-                  value: p.imperial,
-                  onChanged: (v) => repo?.saveProfile(p.copyWith(imperial: v)),
-                ),
-                SwitchListTile(
-                  secondary: const Icon(Icons.vibration),
-                  title: Text(l.vibration),
-                  subtitle: Text(l.vibrationSub),
-                  value: settings.vibrate,
-                  onChanged: (v) => setN.update(settings.copyWith(vibrate: v)),
-                ),
-                SwitchListTile(
-                  key: const ValueKey('logRirSetting'),
-                  secondary: const Icon(Icons.battery_5_bar_rounded),
-                  title: Text(l.logRirSetting),
-                  subtitle: Text(l.logRirSettingSub),
-                  value: settings.logRir,
-                  onChanged: (v) => setN.update(settings.copyWith(logRir: v)),
-                ),
-              ],
-            ),
+          SettingsSection(
+            title: l.settings,
+            children: [
+              SettingsChoiceTile<String?>(
+                key: const ValueKey('languageSetting'),
+                icon: Icons.language_rounded,
+                title: l.language,
+                options: {null: l.system, 'de': 'Deutsch', 'en': 'English'},
+                selected: settings.locale,
+                onChanged: (v) => setN.update(settings.copyWith(locale: v, clearLocale: v == null)),
+              ),
+              SettingsChoiceTile<ThemeMode>(
+                key: const ValueKey('themeSetting'),
+                icon: Icons.dark_mode_outlined,
+                title: l.theme,
+                options: {ThemeMode.system: l.system, ThemeMode.dark: l.dark, ThemeMode.light: l.light},
+                selected: settings.themeMode,
+                onChanged: (v) => setN.update(settings.copyWith(themeMode: v)),
+              ),
+              SettingsSwitchTile(
+                key: const ValueKey('imperialSetting'),
+                icon: Icons.straighten_rounded,
+                title: l.imperial,
+                value: p.imperial,
+                onChanged: (v) => repo?.saveProfile(p.copyWith(imperial: v)),
+              ),
+              SettingsSwitchTile(
+                key: const ValueKey('vibrationSetting'),
+                icon: Icons.vibration_rounded,
+                title: l.vibration,
+                subtitle: l.vibrationSub,
+                info: l.vibrationInfo,
+                value: settings.vibrate,
+                onChanged: (v) => setN.update(settings.copyWith(vibrate: v)),
+              ),
+              SettingsSwitchTile(
+                key: const ValueKey('logRirSetting'),
+                icon: Icons.battery_5_bar_rounded,
+                title: l.logRirSetting,
+                subtitle: l.logRirSettingShort,
+                info: l.logRirSettingInfo,
+                value: settings.logRir,
+                onChanged: (v) => setN.update(settings.copyWith(logRir: v)),
+              ),
+            ],
           ),
-          _header(context, l.reminders),
-          Card(
-            child: Column(
-              children: [
-                SwitchListTile(
-                  secondary: const Icon(Icons.notifications_active_outlined, color: AppColors.brand),
-                  title: Text(l.trainingReminder),
-                  subtitle: Text(l.trainingReminderSub('${settings.reminderHour}:00')),
-                  value: settings.trainingReminder,
-                  onChanged:
-                      (v) =>
-                          v
-                              ? enableReminder(() async => setN.update(settings.copyWith(trainingReminder: true)))
-                              : setN.update(settings.copyWith(trainingReminder: false)),
-                ),
-                if (settings.trainingReminder)
-                  ListTile(
-                    leading: const SizedBox(width: 24),
-                    title: Text(l.reminderTime),
-                    trailing: Text('${settings.reminderHour}:00'),
-                    onTap: () async {
-                      final t = await showTimePicker(context: context, initialTime: TimeOfDay(hour: settings.reminderHour, minute: 0));
-                      if (t != null) setN.update(settings.copyWith(reminderHour: t.hour));
-                    },
-                  ),
-              ],
-            ),
-          ),
-          _header(context, l.integrations),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.watch_rounded, color: AppColors.danger),
-                  title: const Text('Health Connect · Samsung Health'),
-                  subtitle: Text(ref.watch(healthServiceProvider).connected ? l.hcConnectedShort : l.hcTileSub),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthConnectPage())),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.calendar_month_outlined),
-                  title: Text(l.googleCalendar),
-                  subtitle: Text(gcal.enabled && gcal.account != null ? l.gcalConnectedSub(gcal.account!) : l.googleCalendarSub),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoogleCalendarPage())),
-                ),
-              ],
-            ),
-          ),
-          _header(context, l.account),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.logout, color: AppColors.danger),
-                  title: Text(l.logout, style: const TextStyle(color: AppColors.danger)),
+          SettingsSection(
+            title: l.reminders,
+            children: [
+              SettingsSwitchTile(
+                key: const ValueKey('trainingReminderSetting'),
+                icon: Icons.notifications_active_outlined,
+                title: l.trainingReminder,
+                subtitle: settings.trainingReminder ? l.trainingReminderShort : l.trainingReminderSub(reminderTimeLabel(context, settings)),
+                value: settings.trainingReminder,
+                onChanged:
+                    (v) =>
+                        v
+                            ? enableReminder(() async => setN.update(settings.copyWith(trainingReminder: true)))
+                            : setN.update(settings.copyWith(trainingReminder: false)),
+              ),
+              if (settings.trainingReminder)
+                SettingsTile(
+                  key: const ValueKey('reminderTimeSetting'),
+                  icon: Icons.schedule_rounded,
+                  title: l.reminderTime,
+                  value: reminderTimeLabel(context, settings),
                   onTap: () async {
-                    if (user?.isAnonymous == true && !await confirmGuestLogout(context)) return;
-                    if (!context.mounted) return;
-                    final out = signOutAndClear(context);
-                    Navigator.popUntil(context, (r) => r.isFirst);
-                    await out;
+                    final t = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay(hour: settings.reminderHour, minute: settings.reminderMinute),
+                    );
+                    if (t != null) setN.update(settings.copyWith(reminderHour: t.hour, reminderMinute: t.minute));
                   },
                 ),
-                ListTile(
-                  key: const ValueKey('deleteAccount'),
-                  leading: const Icon(Icons.delete_forever_outlined, color: AppColors.danger),
-                  title: Text(l.deleteAccount, style: const TextStyle(color: AppColors.danger)),
-                  subtitle: Text(l.deleteAccountSub),
-                  onTap: () => deleteAccountFlow(context, ref),
-                ),
-              ],
-            ),
+            ],
+          ),
+          SettingsSection(
+            title: l.integrations,
+            children: [
+              SettingsTile(
+                icon: Icons.watch_rounded,
+                iconColor: AppColors.danger,
+                title: 'Health Connect',
+                subtitle: ref.watch(healthServiceProvider).connected ? l.hcConnectedShort : l.hcTileSub,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthConnectPage())),
+              ),
+              SettingsTile(
+                icon: Icons.calendar_month_outlined,
+                iconColor: AppColors.swim,
+                title: l.googleCalendar,
+                subtitle: gcal.enabled && gcal.account != null ? l.gcalConnectedSub(gcal.account!) : l.googleCalendarSub,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoogleCalendarPage())),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: l.account,
+            children: [
+              SettingsTile(
+                icon: Icons.logout_rounded,
+                title: l.logout,
+                danger: true,
+                chevron: false,
+                onTap: () async {
+                  if (user?.isAnonymous == true && !await confirmGuestLogout(context)) return;
+                  if (!context.mounted) return;
+                  final out = signOutAndClear(context);
+                  Navigator.popUntil(context, (r) => r.isFirst);
+                  await out;
+                },
+              ),
+              SettingsTile(
+                key: const ValueKey('deleteAccount'),
+                icon: Icons.delete_forever_outlined,
+                title: l.deleteAccount,
+                subtitle: l.deleteAccountSub,
+                danger: true,
+                chevron: false,
+                onTap: () => deleteAccountFlow(context, ref),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           Center(child: Text('Strive 1.0 · ${l.offlineReady}', style: Theme.of(context).textTheme.bodySmall)),
@@ -313,17 +313,18 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _header(BuildContext c, String t) => Padding(
-    padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
-    child: Text(t, style: Theme.of(c).textTheme.labelLarge?.copyWith(color: AppColors.brand, fontWeight: FontWeight.w700)),
-  );
-
   String _level(AppLocalizations l, String level) => switch (level) {
     'advanced' => l.advanced,
     'intermediate' => l.intermediate,
     _ => l.beginner,
   };
 }
+
+/// The reminder time in the device's format ("08:00", "8:00 AM").
+String reminderTimeLabel(BuildContext context, AppSettings s) => MaterialLocalizations.of(context).formatTimeOfDay(
+  TimeOfDay(hour: s.reminderHour, minute: s.reminderMinute),
+  alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+);
 
 /// Links the guest account with e-mail + password.
 Future<void> linkGuestWithEmail(BuildContext context) async {
