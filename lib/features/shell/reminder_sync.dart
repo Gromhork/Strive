@@ -20,6 +20,7 @@ final reminderSyncProvider = Provider<void>((ref) {
     await ns.scheduleTraining(
       enabled: settings.trainingReminder,
       hour: settings.reminderHour,
+      minute: settings.reminderMinute,
       plans: plans,
       title: (p) => l.trainingReminderTitle(p.sport.label(l)),
       body: (p) => '${p.title} · ${p.durationMin} min',

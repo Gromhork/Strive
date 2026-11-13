@@ -2700,7 +2700,7 @@
     }
   },
   "reserveHint": "reps in the tank",
-  "logRirSetting": "Log reserve per set",
+  "logRirSetting": "Reserve per set",
   "logRirSettingSub": "Reps left in the tank after each set (RIR). The rating per exercise stays.",
   "wRaceGoalStart": "Goal {goal} – start at {pace}",
   "@wRaceGoalStart": {
@@ -4204,6 +4204,64 @@
   "@longestHoldN": {
     "placeholders": {
       "time": {
+        "type": "String"
+      }
+    }
+  },
+  "infoAbout": "About {title}",
+  "@infoAbout": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "logRirSettingShort": "Reps in the tank (RIR) after each set",
+  "logRirSettingInfo": "After every set you note how many more reps you could have done (reps in reserve, RIR). When an exercise has no quick rating, Strive uses these values for your next progression. The quick rating per exercise stays either way.",
+  "trainingReminderShort": "On planned training days",
+  "vibrationInfo": "Vibrates when a rest timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity.",
+  "reorderHint": "Long-press folders and programs to move them.",
+  "restoreBuiltins": "Restore standard programs",
+  "restoreBuiltinsAdd": "Added in their original state: {names}.",
+  "@restoreBuiltinsAdd": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreBuiltinsKeep": "Your changed versions stay as your own programs ({names}). New plans use the originals again.",
+  "@restoreBuiltinsKeep": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreAction": "Restore",
+  "programsRestored": "{count} programs restored",
+  "@programsRestored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ownVersionSuffix": "custom",
+  "builtinChangedLine": "Changed: {names}",
+  "@builtinChangedLine": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "builtinsAllOriginal": "All standard programs are in their original state.",
+  "restoreBuiltinsSub": "Adds missing or changed standard programs in their original state. Your changed versions are kept.",
+  "movedToFolder": "Moved to {folder}",
+  "@movedToFolder": {
+    "placeholders": {
+      "folder": {
         "type": "String"
       }
     }

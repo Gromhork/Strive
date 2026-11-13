@@ -318,7 +318,9 @@ class Repository {
   Future<WorkoutTemplate?> importTemplate(String code) async {
     final d = await _db.collection('shared').doc(code.trim().toUpperCase()).get();
     if (!d.exists) return null;
-    final t = WorkoutTemplate.fromMap(newId(), d.data()!);
+    // An imported copy is the user's own program: a shared built-in's key would make the plan
+    // generator pick it instead of the user's original (first program with that key).
+    final t = WorkoutTemplate.fromMap(newId(), {...d.data()!, 'key': null, 'order': 999});
     saveTemplate(t);
     return t;
   }

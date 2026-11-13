@@ -1,9 +1,14 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../data/builtin_upgrade.dart';
 import '../../data/default_programs.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
@@ -12,13 +17,17 @@ import '../session/manual_entry_page.dart';
 import '../session/start_helpers.dart';
 import '../session/step_text.dart';
 import 'exercise_picker.dart';
+import 'program_order.dart';
 import 'program_preview_page.dart';
 import 'template_editor_page.dart';
 
 /// Train tab: quick start, exercise library and the program library (folders).
 ///
-/// Folders start collapsed. Folders and programs can be renamed, deleted, moved and
-/// reordered (drag & drop in "sort" mode); the order is synced via Firestore.
+/// Folders start collapsed. Long-press a folder header to reorder the folders, long-press a
+/// program to move it – inside its folder, into another (open) folder or onto a folder header
+/// (a closed folder opens while a program hovers over it). The lists auto-scroll at the edges.
+/// Menus offer the same without dragging ("Nach oben / unten", "In Ordner verschieben"). The
+/// order is synced via Firestore (profile `folderOrder`, program `order`).
 class TrainPage extends ConsumerStatefulWidget {
   const TrainPage({super.key});
 
@@ -28,13 +37,24 @@ class TrainPage extends ConsumerStatefulWidget {
 
 class _TrainPageState extends ConsumerState<TrainPage> {
   final _open = <String>{};
-  bool _sorting = false;
 
   /// The "New program" button shrinks to an icon once the list scrolls, so it does not
   /// cover the menus of the folders and programs below it.
   /// The tab's primary scroll controller (the shell scrolls it to the top on a second tap).
   ScrollController? _scroll;
   bool _fabExtended = true;
+
+  /// A program is being dragged: pointer moves near the edges scroll the list.
+  bool _dragging = false;
+  EdgeDraggingAutoScroller? _autoScroller;
+
+  /// Optimistic order until Firestore's snapshot arrives (no snap-back after a drop): the new
+  /// folder order and the moved programs, each with the data it was based on – any newer
+  /// snapshot replaces them.
+  List<String>? _localFolders;
+  List<String>? _localFoldersBase;
+  Map<String, WorkoutTemplate>? _localPrograms;
+  List<WorkoutTemplate>? _localProgramsBase;
 
   @override
   void didChangeDependencies() {
@@ -54,18 +74,92 @@ class _TrainPageState extends ConsumerState<TrainPage> {
   @override
   void dispose() {
     _scroll?.removeListener(_onScroll);
+    _autoScroller?.stopAutoScroll();
     super.dispose();
   }
 
   /// Folder names in display order ('' = programs without folder, always last).
-  List<String> _folders(List<WorkoutTemplate> all, UserProfile p, bool filtered) {
+  List<String> _folders(List<WorkoutTemplate> all, List<String> folderOrder, bool filtered) {
     final names = all.map((t) => t.folder).where((f) => f.isNotEmpty).toSet();
     final order = [
-      for (final f in p.folderOrder)
-        if (names.contains(f) || !filtered) f,
+      for (final f in folderOrder)
+        if (f.isNotEmpty && (names.contains(f) || !filtered)) f,
     ];
     final rest = names.where((f) => !order.contains(f)).toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return [...order, ...rest, if (all.any((t) => t.folder.isEmpty)) ''];
+  }
+
+  /// The stored folder order, or the one just dropped while its write is on the way.
+  List<String> _folderOrder(UserProfile p) {
+    if (_localFolders != null && !identical(_localFoldersBase, p.folderOrder) && !listEquals(_localFoldersBase, p.folderOrder)) {
+      _localFolders = _localFoldersBase = null;
+    }
+    return _localFolders ?? p.folderOrder;
+  }
+
+  /// The programs (display order) with the optimistic changes of the last drop.
+  List<WorkoutTemplate> _programs(List<WorkoutTemplate> stored) {
+    final local = _localPrograms;
+    if (local == null) return stored;
+    if (!identical(_localProgramsBase, stored)) {
+      _localPrograms = _localProgramsBase = null;
+      return stored;
+    }
+    return [for (final t in stored) local[t.id] ?? t]..sort((a, b) {
+      final o = a.order.compareTo(b.order);
+      return o != 0 ? o : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+  }
+
+  void _saveFolderOrder(List<String> order) {
+    final base = ref.read(profileOrDefaultProvider).folderOrder;
+    setState(() {
+      _localFolders = order;
+      _localFoldersBase = base;
+    });
+    ref.read(repoProvider)!.saveFolderOrder(order);
+  }
+
+  void _savePrograms(List<WorkoutTemplate> changed) {
+    if (changed.isEmpty) return;
+    setState(() {
+      _localPrograms = {...?_localPrograms, for (final t in changed) t.id: t};
+      _localProgramsBase = ref.read(templateListProvider);
+    });
+    ref.read(repoProvider)!.saveTemplates(changed);
+  }
+
+  bool _visible(WorkoutTemplate t) {
+    final filter = ref.read(sportFilterProvider);
+    return filter == null || t.sport == filter;
+  }
+
+  /// Moves [t] into [folder] at [index] among the programs shown there.
+  void _place(WorkoutTemplate t, String folder, int index) {
+    final all = _programs(ref.read(templateListProvider));
+    final current = all.firstWhere((x) => x.id == t.id, orElse: () => t);
+    _savePrograms(placeProgram(all, current, folder, index, isVisible: _visible));
+    if (folder.isNotEmpty && !ref.read(profileOrDefaultProvider).folderOrder.contains(folder)) {
+      // A folder only known from its programs joins the stored order (keeps its place).
+      final named = _folders(all, _folderOrder(ref.read(profileOrDefaultProvider)), false).where((f) => f.isNotEmpty).toList();
+      _saveFolderOrder(named.contains(folder) ? named : [...named, folder]);
+    }
+  }
+
+  void _startDrag(ScrollableState scrollable) {
+    _autoScroller?.stopAutoScroll();
+    _autoScroller = EdgeDraggingAutoScroller(scrollable, velocityScalar: 50);
+    _dragging = true;
+  }
+
+  void _endDrag() {
+    if (!_dragging) return;
+    _dragging = false;
+    _autoScroller?.stopAutoScroll();
+  }
+
+  void _dragMove(Offset global) {
+    if (_dragging) _autoScroller?.startAutoScrollIfNecessary(Rect.fromCenter(center: global, width: 1, height: 120));
   }
 
   @override
@@ -73,9 +167,11 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     final l = context.l10n;
     final filter = ref.watch(sportFilterProvider);
     final profile = ref.watch(profileOrDefaultProvider);
-    final all = ref.watch(templateListProvider);
+    final all = _programs(ref.watch(templateListProvider));
+    final folderOrder = _folderOrder(profile);
     final templates = all.where((t) => filter == null || t.sport == filter).toList();
-    final folders = _folders(templates, profile, filter != null);
+    final folders = _folders(templates, folderOrder, filter != null);
+    final named = folders.where((f) => f.isNotEmpty).toList();
     List<WorkoutTemplate> inFolder(String f) => templates.where((t) => t.folder == f).toList();
 
     return Scaffold(
@@ -87,150 +183,233 @@ class _TrainPageState extends ConsumerState<TrainPage> {
         icon: const Icon(Icons.add),
         label: Text(l.newProgram),
       ),
-      body: ListView(
-        primary: true,
-        // Room below the last folder so its menu can be scrolled clear of the button.
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 140),
-        children: [
-          Text(l.quickStart, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 10),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 2.2,
-            children: [
-              for (final s in Sport.values.where((s) => filter == null || s == filter))
-                _QuickTile(sport: s, onTap: () => quickStart(context, ref, s)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Same style as the quick-start tiles; one line each (no wrapping label).
-          Row(
-            children: [
-              Expanded(
-                child: _ActionTile(
-                  key: const ValueKey('logManuallyTile'),
-                  icon: Icons.edit_note_rounded,
-                  label: l.logManually,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManualEntryPage())),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _ActionTile(
-                  icon: Icons.menu_book_rounded,
-                  label: l.exercises,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryPage())),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          Row(
-            children: [
-              Expanded(child: Text(l.programs, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
-              if (_sorting)
-                FilledButton.tonal(onPressed: () => setState(() => _sorting = false), child: Text(l.finish))
-              else ...[
-                IconButton(
-                  tooltip: l.newFolder,
-                  icon: const Icon(Icons.create_new_folder_outlined),
-                  onPressed: () => _newFolder(profile, folders),
-                ),
-                IconButton(
-                  tooltip: l.sortPrograms,
-                  icon: const Icon(Icons.swap_vert_rounded),
-                  onPressed: templates.isEmpty ? null : () => setState(() => _sorting = true),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (v) => v == 'import' ? _import() : _addBuiltins(all),
-                  itemBuilder:
-                      (_) => [
-                        PopupMenuItem(
-                          value: 'import',
-                          child: ListTile(leading: const Icon(Icons.download_rounded), title: Text(l.importCode)),
-                        ),
-                        PopupMenuItem(
-                          value: 'builtins',
-                          child: ListTile(leading: const Icon(Icons.library_add_outlined), title: Text(l.addBuiltinPrograms)),
-                        ),
-                      ],
-                ),
-              ],
-            ],
-          ),
-          if (_sorting)
-            Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.sortHint, style: Theme.of(context).textTheme.bodySmall)),
-          const SizedBox(height: 4),
-          if (templates.isEmpty && folders.isEmpty)
-            EmptyState(icon: Icons.folder_open_rounded, text: l.noPrograms)
-          else if (_sorting)
-            ReorderableListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              onReorder: (a, b) {
-                final named = folders.where((f) => f.isNotEmpty).toList();
-                if (a >= named.length) return;
-                final f = named.removeAt(a);
-                named.insert((b > a ? b - 1 : b).clamp(0, named.length), f);
-                ref.read(repoProvider)!.saveFolderOrder(named);
-              },
-              children: [
-                for (var i = 0; i < folders.length; i++)
-                  _FolderCard(
-                    key: ValueKey('f-${folders[i]}'),
-                    name: folders[i].isEmpty ? l.noFolder : folders[i],
-                    programs: inFolder(folders[i]),
-                    open: true,
-                    sorting: true,
-                    dragIndex: folders[i].isEmpty ? null : i,
-                    onToggle: () {},
-                    onMenu: null,
-                    onReorderPrograms: (list) => _saveOrder(list),
+      // Sees every pointer move of a program drag (even after the dragged row scrolled away).
+      body: Listener(
+        onPointerMove: (e) => _dragMove(e.position),
+        onPointerUp: (_) => _endDrag(),
+        onPointerCancel: (_) => _endDrag(),
+        child: CustomScrollView(
+          primary: true,
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              sliver: SliverList.list(
+                children: [
+                  Text(l.quickStart, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 10),
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 2.2,
+                    children: [
+                      for (final s in Sport.values.where((s) => filter == null || s == filter))
+                        _QuickTile(sport: s, onTap: () => quickStart(context, ref, s)),
+                    ],
                   ),
-              ],
-            )
-          else
-            for (final f in folders)
-              _FolderCard(
-                key: ValueKey('f-$f'),
-                name: f.isEmpty ? l.noFolder : f,
-                programs: inFolder(f),
-                open: _open.contains(f),
-                sorting: false,
-                onToggle: () => setState(() => _open.contains(f) ? _open.remove(f) : _open.add(f)),
-                onMenu: f.isEmpty ? null : (v) => _folderAction(v, f, all, profile, folders),
-                onReorderPrograms: (_) {},
+                  const SizedBox(height: 10),
+                  // Same style as the quick-start tiles; one line each (no wrapping label).
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ActionTile(
+                          key: const ValueKey('logManuallyTile'),
+                          icon: Icons.edit_note_rounded,
+                          label: l.logManually,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManualEntryPage())),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _ActionTile(
+                          icon: Icons.menu_book_rounded,
+                          label: l.exercises,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryPage())),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(l.programs, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      ),
+                      IconButton(
+                        tooltip: l.newFolder,
+                        icon: const Icon(Icons.create_new_folder_outlined),
+                        onPressed: () => _newFolder(all, folderOrder),
+                      ),
+                      PopupMenuButton<String>(
+                        key: const ValueKey('programsMenu'),
+                        onSelected: (v) => v == 'import' ? _import() : _restoreBuiltins(),
+                        itemBuilder:
+                            (_) => [
+                              PopupMenuItem(
+                                value: 'import',
+                                child: ListTile(leading: const Icon(Icons.download_rounded), title: Text(l.importCode)),
+                              ),
+                              PopupMenuItem(
+                                value: 'builtins',
+                                child: ListTile(leading: const Icon(Icons.settings_backup_restore_rounded), title: Text(l.restoreBuiltins)),
+                              ),
+                            ],
+                      ),
+                    ],
+                  ),
+                  if (templates.length + named.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(l.reorderHint, style: Theme.of(context).textTheme.bodySmall),
+                    ),
+                  const SizedBox(height: 4),
+                ],
               ),
-        ],
+            ),
+            if (templates.isEmpty && folders.isEmpty)
+              SliverToBoxAdapter(
+                child: EmptyState(
+                  icon: Icons.folder_open_rounded,
+                  text: l.noPrograms,
+                  action: FilledButton.tonalIcon(
+                    key: const ValueKey('emptyAddBuiltins'),
+                    onPressed: _restoreBuiltins,
+                    icon: const Icon(Icons.library_add_outlined),
+                    label: Text(l.addBuiltinPrograms),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverReorderableList(
+                  itemCount: folders.length,
+                  onReorderStart: (_) => HapticFeedback.mediumImpact(),
+                  onReorder: (from, to) {
+                    // Folders only: "no folder" stays last.
+                    if (from >= named.length) return;
+                    final target = (to > from ? to - 1 : to).clamp(0, named.length - 1);
+                    if (target == from) return;
+                    final full = _folders(all, folderOrder, false).where((f) => f.isNotEmpty).toList();
+                    _saveFolderOrder(reorderFolders(full, named, from, target));
+                  },
+                  proxyDecorator: _proxy,
+                  itemBuilder: (c, i) {
+                    final f = folders[i];
+                    final programs = inFolder(f);
+                    return _FolderCard(
+                      key: ValueKey('f-$f'),
+                      index: i,
+                      folder: f,
+                      name: f.isEmpty ? l.noFolder : f,
+                      programs: programs,
+                      open: _open.contains(f),
+                      onToggle: () => setState(() => _open.contains(f) ? _open.remove(f) : _open.add(f)),
+                      onOpen: () => setState(() => _open.add(f)),
+                      onMenu: f.isEmpty ? null : (v) => _folderAction(v, f, all, named, i),
+                      canMoveUp: f.isNotEmpty && i > 0,
+                      canMoveDown: f.isNotEmpty && i < named.length - 1,
+                      onDropProgram: (t, index) => _place(t, f, index ?? programs.where((x) => x.id != t.id).length),
+                      onDragStart: _startDrag,
+                      onDragEnd: _endDrag,
+                      onMoveProgram: (t, delta) {
+                        final rest = programs.where((x) => x.id != t.id).toList();
+                        final at = programs.indexWhere((x) => x.id == t.id) + delta;
+                        if (at >= 0 && at <= rest.length) _place(t, f, at);
+                      },
+                      onMoveToFolder: (t) => _moveToFolder(t, all, folderOrder),
+                      canRestore:
+                          () => f.isNotEmpty && !_restorePlan(folderKeys: builtinFolderKeysOf(f, ref.read(templateListProvider))).isEmpty,
+                    );
+                  },
+                ),
+              ),
+            const SliverToBoxAdapter(child: SizedBox(height: 140)),
+          ],
+        ),
       ),
     );
   }
 
-  void _saveOrder(List<WorkoutTemplate> list) {
-    ref.read(repoProvider)!.saveTemplates([for (var i = 0; i < list.length; i++) list[i].copyWith(order: i)]);
-  }
+  /// The lifted folder card while it is dragged.
+  Widget _proxy(Widget child, int index, Animation<double> animation) => AnimatedBuilder(
+    animation: animation,
+    builder:
+        (c, child) => Transform.scale(
+          scale: 1 + 0.02 * Curves.easeOut.transform(animation.value),
+          child: Material(
+            color: Colors.transparent,
+            elevation: 8 * Curves.easeOut.transform(animation.value),
+            shadowColor: Colors.black54,
+            borderRadius: BorderRadius.circular(18),
+            child: child,
+          ),
+        ),
+    child: child,
+  );
 
-  Future<void> _newFolder(UserProfile p, List<String> folders) async {
+  Future<void> _newFolder(List<WorkoutTemplate> all, List<String> folderOrder) async {
     final l = context.l10n;
     final name = (await askText(context, l.newFolder, hint: l.folderNameHint))?.trim();
-    if (name == null || name.isEmpty) return;
-    if (!mounted) return;
-    if (folders.contains(name)) return toast(context, l.folderExists);
-    ref.read(repoProvider)!.saveFolderOrder([...folders.where((f) => f.isNotEmpty), name]);
+    if (name == null || name.isEmpty || !mounted) return;
+    final named = _folders(all, folderOrder, false).where((f) => f.isNotEmpty).toList();
+    if (named.contains(name)) return toast(context, l.folderExists);
+    _saveFolderOrder([...named, name]);
     setState(() => _open.add(name));
   }
 
-  Future<void> _folderAction(String action, String folder, List<WorkoutTemplate> all, UserProfile p, List<String> folders) async {
+  /// "In Ordner verschieben": a sheet of the folders (+ new folder); the program goes to the
+  /// end of the chosen folder.
+  Future<void> _moveToFolder(WorkoutTemplate t, List<WorkoutTemplate> all, List<String> folderOrder) async {
+    final l = context.l10n;
+    final folders = _folders(all, folderOrder, false).where((f) => f.isNotEmpty).toList();
+    final target = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder:
+          (c) => SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(title: Text(l.moveToFolder, style: const TextStyle(fontWeight: FontWeight.w700))),
+                for (final f in [...folders, ''])
+                  ListTile(
+                    leading: Icon(f == t.folder ? Icons.check_rounded : Icons.folder_outlined),
+                    title: Text(f.isEmpty ? l.noFolder : f),
+                    onTap: () => Navigator.pop(c, f),
+                  ),
+                ListTile(
+                  leading: const Icon(Icons.create_new_folder_outlined),
+                  title: Text(l.newFolder),
+                  onTap: () async {
+                    final n = (await askText(c, l.newFolder, hint: l.folderNameHint))?.trim();
+                    if (c.mounted && n != null && n.isNotEmpty) Navigator.pop(c, n);
+                  },
+                ),
+              ],
+            ),
+          ),
+    );
+    if (target == null || target == t.folder || !mounted) return;
+    final shown = all.where((x) => x.folder == target && x.id != t.id && _visible(x)).length;
+    _place(t, target, shown);
+    setState(() => _open.add(target));
+    toast(context, l.movedToFolder(target.isEmpty ? l.noFolder : target));
+  }
+
+  Future<void> _folderAction(String action, String folder, List<WorkoutTemplate> all, List<String> named, int index) async {
     final l = context.l10n;
     final repo = ref.read(repoProvider)!;
     final inside = all.where((t) => t.folder == folder).toList();
-    final named = folders.where((f) => f.isNotEmpty).toList();
+    final full = _folders(all, _folderOrder(ref.read(profileOrDefaultProvider)), false).where((f) => f.isNotEmpty).toList();
     switch (action) {
+      case 'up' || 'down':
+        _saveFolderOrder(reorderFolders(full, named, index, action == 'up' ? index - 1 : index + 1));
+      case 'restore':
+        await _restoreFolder(folder);
       case 'add':
         await Navigator.push(
           context,
@@ -239,9 +418,9 @@ class _TrainPageState extends ConsumerState<TrainPage> {
       case 'rename':
         final name = (await askText(context, l.rename, initial: folder))?.trim();
         if (name == null || name.isEmpty || name == folder) return;
-        if (named.contains(name)) return mounted ? toast(context, l.folderExists) : null;
+        if (full.contains(name)) return mounted ? toast(context, l.folderExists) : null;
         repo.saveTemplates([for (final t in inside) t.copyWith(folder: name)]);
-        repo.saveFolderOrder([for (final f in named) f == folder ? name : f]);
+        _saveFolderOrder([for (final f in full) f == folder ? name : f]);
         if (_open.remove(folder)) _open.add(name);
         setState(() {});
       case 'delete':
@@ -268,7 +447,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
         } else {
           repo.deleteTemplates(inside.map((t) => t.id));
         }
-        repo.saveFolderOrder(named.where((f) => f != folder).toList());
+        _saveFolderOrder(full.where((f) => f != folder).toList());
     }
   }
 
@@ -284,17 +463,53 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     }
   }
 
-  /// Lets the user add (missing) built-in program folders.
-  Future<void> _addBuiltins(List<WorkoutTemplate> all) async {
+  /// What restoring the built-in programs of [folderKeys] (null = all) would change.
+  BuiltinRestore _restorePlan({Set<String>? folderKeys}) {
+    final repo = ref.read(repoProvider)!;
+    return planBuiltinRestore(
+      ref.read(templateListProvider),
+      repo.newId,
+      de: context.localeName.startsWith('de'),
+      goal: ref.read(profileOrDefaultProvider).athlete.gymGoal,
+      ownSuffix: context.l10n.ownVersionSuffix,
+      folderKeys: folderKeys,
+    );
+  }
+
+  void _applyRestore(BuiltinRestore plan) {
+    if (plan.isEmpty) return;
+    ref.read(repoProvider)!.saveTemplates(plan.writes);
+    final opened = plan.add.map((t) => t.folder).where((f) => f.isNotEmpty);
+    setState(() => _open.addAll(opened));
+    toast(context, context.l10n.programsRestored(plan.add.length));
+  }
+
+  /// Folder menu "Standardprogramme wiederherstellen": confirms what is added and kept.
+  Future<void> _restoreFolder(String folder) async {
+    final l = context.l10n;
+    final plan = _restorePlan(folderKeys: builtinFolderKeysOf(folder, ref.read(templateListProvider)));
+    if (plan.isEmpty) return toast(context, l.builtinsAllOriginal);
+    final ok = await confirm(
+      context,
+      l.restoreBuiltins,
+      body: [
+        l.restoreBuiltinsAdd(plan.add.map((t) => t.name).join(', ')),
+        if (plan.keep.isNotEmpty) l.restoreBuiltinsKeep(plan.keep.map((t) => '„${t.name}“').join(', ')),
+      ].join('\n\n'),
+      ok: l.restoreAction,
+    );
+    if (ok && mounted) _applyRestore(_restorePlan(folderKeys: builtinFolderKeysOf(folder, ref.read(templateListProvider))));
+  }
+
+  /// Overflow / empty state: every built-in folder with missing or changed programs.
+  Future<void> _restoreBuiltins() async {
     final l = context.l10n;
     final de = context.localeName.startsWith('de');
-    final repo = ref.read(repoProvider)!;
-    final missing = missingBuiltins(all, repo.newId, de: de);
-    if (missing.isEmpty) return toast(context, l.builtinsComplete);
-    final byFolder = <String, List<WorkoutTemplate>>{};
-    for (final t in missing) {
-      byFolder.putIfAbsent(t.folder, () => []).add(t);
-    }
+    final byFolder = <String, BuiltinRestore>{
+      for (final fk in builtinFolderKeys)
+        if (_restorePlan(folderKeys: {fk}) case final p when !p.isEmpty) fk: p,
+    };
+    if (byFolder.isEmpty) return toast(context, l.builtinsAllOriginal);
     final chosen = <String>{...byFolder.keys};
     final ok = await showModalBottomSheet<bool>(
       context: context,
@@ -309,9 +524,9 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(l.addBuiltinPrograms, style: Theme.of(c).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                        Text(l.restoreBuiltins, style: Theme.of(c).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                         const SizedBox(height: 4),
-                        Text(l.addBuiltinProgramsSub, style: Theme.of(c).textTheme.bodySmall),
+                        Text(l.restoreBuiltinsSub, style: Theme.of(c).textTheme.bodySmall),
                         const SizedBox(height: 8),
                         Flexible(
                           child: ListView(
@@ -319,20 +534,29 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                             children: [
                               for (final e in byFolder.entries)
                                 CheckboxListTile(
+                                  key: ValueKey('restore-${e.key}'),
                                   contentPadding: EdgeInsets.zero,
                                   value: chosen.contains(e.key),
                                   onChanged: (v) => setS(() => v! ? chosen.add(e.key) : chosen.remove(e.key)),
-                                  secondary: SportBadge(e.value.first.sport),
-                                  title: Text(e.key, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  subtitle: Text(e.value.map((t) => t.name).join(', '), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                  secondary: SportBadge(e.value.add.first.sport),
+                                  title: Text(folderName(e.key, de), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  subtitle: Text(
+                                    [
+                                      e.value.add.map((t) => t.name).join(', '),
+                                      if (e.value.keep.isNotEmpty) l.builtinChangedLine(e.value.changedNames.join(', ')),
+                                    ].join('\n'),
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 8),
                         FilledButton(
+                          key: const ValueKey('restoreConfirm'),
                           onPressed: chosen.isEmpty ? null : () => Navigator.pop(c, true),
-                          child: Text(l.addN(chosen.fold<int>(0, (n, f) => n + byFolder[f]!.length))),
+                          child: Text(l.addN(chosen.fold<int>(0, (n, f) => n + byFolder[f]!.add.length))),
                         ),
                       ],
                     ),
@@ -340,59 +564,88 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                 ),
           ),
     );
-    if (ok != true) return;
-    final add = [for (final f in chosen) ...byFolder[f]!];
-    repo.saveTemplates(add);
-    if (mounted) toast(context, l.programsAdded(add.length));
+    if (ok != true || !mounted) return;
+    _applyRestore(_restorePlan(folderKeys: chosen));
   }
 }
 
-class _FolderCard extends StatelessWidget {
+class _FolderCard extends StatefulWidget {
   const _FolderCard({
     super.key,
+    required this.index,
+    required this.folder,
     required this.name,
     required this.programs,
     required this.open,
-    required this.sorting,
     required this.onToggle,
+    required this.onOpen,
     required this.onMenu,
-    required this.onReorderPrograms,
-    this.dragIndex,
+    required this.canMoveUp,
+    required this.canMoveDown,
+    required this.onDropProgram,
+    required this.onDragStart,
+    required this.onDragEnd,
+    required this.onMoveProgram,
+    required this.onMoveToFolder,
+    required this.canRestore,
   });
+  final int index;
+  final String folder;
   final String name;
   final List<WorkoutTemplate> programs;
   final bool open;
-  final bool sorting;
-  final int? dragIndex;
   final VoidCallback onToggle;
+  final VoidCallback onOpen;
   final ValueChanged<String>? onMenu;
-  final ValueChanged<List<WorkoutTemplate>> onReorderPrograms;
+  final bool canMoveUp;
+  final bool canMoveDown;
+
+  /// A program dropped into this folder: at [index] among its shown programs (null = end).
+  final void Function(WorkoutTemplate t, int? index) onDropProgram;
+  final ValueChanged<ScrollableState> onDragStart;
+  final VoidCallback onDragEnd;
+  final void Function(WorkoutTemplate t, int delta) onMoveProgram;
+  final ValueChanged<WorkoutTemplate> onMoveToFolder;
+
+  /// Whether the folder stands for built-in programs that are missing or changed (asked when
+  /// its menu opens).
+  final bool Function() canRestore;
+
+  @override
+  State<_FolderCard> createState() => _FolderCardState();
+}
+
+class _FolderCardState extends State<_FolderCard> {
+  /// A closed folder opens when a program hovers over its header for a moment.
+  Timer? _springOpen;
+
+  @override
+  void dispose() {
+    _springOpen?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    final programs = widget.programs;
     final sports = programs.map((t) => t.sport).toSet().toList()..sort((a, b) => a.index.compareTo(b.index));
     final color = sports.length == 1 ? sports.first.color : AppColors.brand;
-    final header = InkWell(
+    final open = widget.open;
+
+    Widget header(bool hover) => InkWell(
       borderRadius: BorderRadius.circular(18),
-      onTap: onToggle,
+      onTap: widget.onToggle,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
         child: Row(
           children: [
-            if (sorting)
-              dragIndex == null
-                  ? const SizedBox(width: 32)
-                  : ReorderableDragStartListener(
-                    index: dragIndex!,
-                    child: Padding(padding: const EdgeInsets.only(right: 8), child: Icon(Icons.drag_indicator, color: scheme.outline)),
-                  ),
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(12)),
-              child: Icon(open ? Icons.folder_open_rounded : Icons.folder_rounded, color: color),
+              decoration: BoxDecoration(color: color.withValues(alpha: hover ? 0.32 : 0.16), borderRadius: BorderRadius.circular(12)),
+              child: Icon(open || hover ? Icons.folder_open_rounded : Icons.folder_rounded, color: color),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -400,7 +653,7 @@ class _FolderCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name,
+                    widget.name,
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -408,7 +661,14 @@ class _FolderCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      Text(l.programsCount(programs.length), style: Theme.of(context).textTheme.bodySmall),
+                      Flexible(
+                        child: Text(
+                          l.programsCount(programs.length),
+                          style: Theme.of(context).textTheme.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       for (final s in sports)
                         Padding(padding: const EdgeInsets.only(left: 6), child: Icon(s.icon, size: 14, color: s.color)),
                     ],
@@ -416,19 +676,31 @@ class _FolderCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (!sorting)
-              AnimatedRotation(
-                turns: open ? 0.5 : 0,
-                duration: const Duration(milliseconds: 200),
-                child: const Icon(Icons.expand_more_rounded),
-              ),
-            if (onMenu != null && !sorting)
+            AnimatedRotation(
+              turns: open ? 0.5 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: const Icon(Icons.expand_more_rounded),
+            ),
+            if (widget.onMenu != null)
               PopupMenuButton<String>(
-                onSelected: onMenu,
+                key: ValueKey('folderMenu-${widget.folder}'),
+                onSelected: widget.onMenu,
                 itemBuilder:
                     (_) => [
                       PopupMenuItem(value: 'add', child: ListTile(leading: const Icon(Icons.add), title: Text(l.newProgram))),
                       PopupMenuItem(value: 'rename', child: ListTile(leading: const Icon(Icons.edit_outlined), title: Text(l.rename))),
+                      if (widget.canMoveUp)
+                        PopupMenuItem(value: 'up', child: ListTile(leading: const Icon(Icons.arrow_upward_rounded), title: Text(l.moveUp))),
+                      if (widget.canMoveDown)
+                        PopupMenuItem(
+                          value: 'down',
+                          child: ListTile(leading: const Icon(Icons.arrow_downward_rounded), title: Text(l.moveDown)),
+                        ),
+                      if (widget.canRestore())
+                        PopupMenuItem(
+                          value: 'restore',
+                          child: ListTile(leading: const Icon(Icons.settings_backup_restore_rounded), title: Text(l.restoreBuiltins)),
+                        ),
                       PopupMenuItem(
                         value: 'delete',
                         child: ListTile(
@@ -438,11 +710,37 @@ class _FolderCard extends StatelessWidget {
                       ),
                     ],
               )
-            else if (!sorting)
+            else
               const SizedBox(width: 12),
           ],
         ),
       ),
+    );
+
+    // The header takes programs (to the end of this folder) and starts a folder drag on a
+    // long press ("no folder" stays last and is not draggable).
+    final headerTarget = DragTarget<WorkoutTemplate>(
+      onWillAcceptWithDetails: (d) => d.data.folder != widget.folder,
+      onMove: (_) {
+        if (!widget.open && _springOpen == null) {
+          _springOpen = Timer(const Duration(milliseconds: 700), () {
+            _springOpen = null;
+            if (mounted && !widget.open) widget.onOpen();
+          });
+        }
+      },
+      onLeave: (_) {
+        _springOpen?.cancel();
+        _springOpen = null;
+      },
+      onAcceptWithDetails: (d) {
+        _springOpen?.cancel();
+        _springOpen = null;
+        HapticFeedback.selectionClick();
+        widget.onDropProgram(d.data, null);
+        widget.onOpen();
+      },
+      builder: (c, candidates, _) => header(candidates.isNotEmpty),
     );
 
     return Padding(
@@ -453,7 +751,7 @@ class _FolderCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
-            header,
+            ReorderableDelayedDragStartListener(index: widget.index, enabled: widget.folder.isNotEmpty, child: headerTarget),
             AnimatedSize(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
@@ -465,27 +763,39 @@ class _FolderCard extends StatelessWidget {
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                         child:
                             programs.isEmpty
-                                ? Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Text(l.folderEmpty, style: Theme.of(context).textTheme.bodySmall),
+                                ? DragTarget<WorkoutTemplate>(
+                                  onAcceptWithDetails: (d) => widget.onDropProgram(d.data, 0),
+                                  builder:
+                                      (c, cand, _) => Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(14),
+                                          border: Border.all(color: cand.isNotEmpty ? AppColors.brand : Colors.transparent, width: 2),
+                                        ),
+                                        child: Text(l.folderEmpty, style: Theme.of(context).textTheme.bodySmall),
+                                      ),
                                 )
-                                : sorting
-                                ? ReorderableListView(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  buildDefaultDragHandles: false,
-                                  onReorder: (a, b) {
-                                    final list = [...programs];
-                                    final t = list.removeAt(a);
-                                    list.insert(b > a ? b - 1 : b, t);
-                                    onReorderPrograms(list);
-                                  },
+                                : Column(
                                   children: [
                                     for (var i = 0; i < programs.length; i++)
-                                      _TemplateTile(key: ValueKey(programs[i].id), t: programs[i], dragIndex: i),
+                                      _ProgramRow(
+                                        key: ValueKey(programs[i].id),
+                                        t: programs[i],
+                                        canMoveUp: i > 0,
+                                        canMoveDown: i < programs.length - 1,
+                                        onDrop: (dragged, after) {
+                                          final rest = programs.where((x) => x.id != dragged.id).toList();
+                                          final at = rest.indexWhere((x) => x.id == programs[i].id);
+                                          widget.onDropProgram(dragged, at + (after ? 1 : 0));
+                                        },
+                                        onDragStart: widget.onDragStart,
+                                        onDragEnd: widget.onDragEnd,
+                                        onMove: (delta) => widget.onMoveProgram(programs[i], delta),
+                                        onMoveToFolder: () => widget.onMoveToFolder(programs[i]),
+                                      ),
                                   ],
-                                )
-                                : Column(children: [for (final t in programs) _TemplateTile(key: ValueKey(t.id), t: t)]),
+                                ),
                       ),
             ),
           ],
@@ -493,6 +803,125 @@ class _FolderCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A program in a folder: long-press lifts it (haptic); dropping another program on it
+/// inserts that one above or below (where the line shows).
+class _ProgramRow extends StatefulWidget {
+  const _ProgramRow({
+    super.key,
+    required this.t,
+    required this.canMoveUp,
+    required this.canMoveDown,
+    required this.onDrop,
+    required this.onDragStart,
+    required this.onDragEnd,
+    required this.onMove,
+    required this.onMoveToFolder,
+  });
+  final WorkoutTemplate t;
+  final bool canMoveUp;
+  final bool canMoveDown;
+  final void Function(WorkoutTemplate dragged, bool after) onDrop;
+  final ValueChanged<ScrollableState> onDragStart;
+  final VoidCallback onDragEnd;
+  final ValueChanged<int> onMove;
+  final VoidCallback onMoveToFolder;
+
+  @override
+  State<_ProgramRow> createState() => _ProgramRowState();
+}
+
+class _ProgramRowState extends State<_ProgramRow> {
+  /// Where a hovering program would land: above (false) or below (true) this one.
+  bool? _after;
+
+  bool _below(Offset feedbackTopLeft) {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return false;
+    return box.globalToLocal(feedbackTopLeft).dy > 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.t;
+    final tile = _TemplateTile(
+      t: t,
+      canMoveUp: widget.canMoveUp,
+      canMoveDown: widget.canMoveDown,
+      onMove: widget.onMove,
+      onMoveToFolder: widget.onMoveToFolder,
+    );
+    return LayoutBuilder(
+      builder:
+          (c, box) => DragTarget<WorkoutTemplate>(
+            onWillAcceptWithDetails: (d) => d.data.id != t.id,
+            onMove: (d) {
+              final after = _below(d.offset);
+              if (after != _after) setState(() => _after = after);
+            },
+            onLeave: (_) => setState(() => _after = null),
+            onAcceptWithDetails: (d) {
+              final after = _below(d.offset);
+              setState(() => _after = null);
+              HapticFeedback.selectionClick();
+              widget.onDrop(d.data, after);
+            },
+            builder:
+                (c, cand, _) => LongPressDraggable<WorkoutTemplate>(
+                  data: t,
+                  hapticFeedbackOnStart: true,
+                  onDragStarted: () => widget.onDragStart(Scrollable.of(context)),
+                  onDragEnd: (_) => widget.onDragEnd(),
+                  feedback: _DragFeedback(t: t, width: box.maxWidth),
+                  childWhenDragging: Opacity(opacity: 0.35, child: tile),
+                  child: Container(
+                    foregroundDecoration:
+                        cand.isEmpty || _after == null
+                            ? null
+                            : BoxDecoration(
+                              border: Border(
+                                top: _after! ? BorderSide.none : const BorderSide(color: AppColors.brand, width: 3),
+                                bottom: _after! ? const BorderSide(color: AppColors.brand, width: 3) : BorderSide.none,
+                              ),
+                            ),
+                    child: tile,
+                  ),
+                ),
+          ),
+    );
+  }
+}
+
+/// The lifted program under the finger.
+class _DragFeedback extends StatelessWidget {
+  const _DragFeedback({required this.t, required this.width});
+  final WorkoutTemplate t;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    elevation: 8,
+    shadowColor: Colors.black54,
+    color: Theme.of(context).colorScheme.surfaceContainerHigh,
+    borderRadius: BorderRadius.circular(14),
+    child: SizedBox(
+      width: width,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 12, 12, 12),
+        child: Row(
+          children: [
+            SportBadge(t.sport),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(t.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
+            Icon(Icons.drag_indicator_rounded, color: Theme.of(context).colorScheme.outline),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _ActionTile extends StatelessWidget {
@@ -580,9 +1009,18 @@ class _QuickTile extends StatelessWidget {
 }
 
 class _TemplateTile extends ConsumerWidget {
-  const _TemplateTile({super.key, required this.t, this.dragIndex});
+  const _TemplateTile({
+    required this.t,
+    required this.canMoveUp,
+    required this.canMoveDown,
+    required this.onMove,
+    required this.onMoveToFolder,
+  });
   final WorkoutTemplate t;
-  final int? dragIndex;
+  final bool canMoveUp;
+  final bool canMoveDown;
+  final ValueChanged<int> onMove;
+  final VoidCallback onMoveToFolder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -608,35 +1046,12 @@ class _TemplateTile extends ConsumerWidget {
           repo.saveTemplate(
             WorkoutTemplate.fromMap(repo.newId(), {...t.toMap(), 'name': '${t.name} (${l.copy})', 'key': null, 'order': t.order + 1}),
           );
+        case 'up':
+          onMove(-1);
+        case 'down':
+          onMove(1);
         case 'move':
-          final folders = ref.read(templateListProvider).map((x) => x.folder).where((f) => f.isNotEmpty).toSet().toList()..sort();
-          final target = await showModalBottomSheet<String>(
-            context: context,
-            builder:
-                (c) => SafeArea(
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: [
-                      ListTile(title: Text(l.moveToFolder, style: const TextStyle(fontWeight: FontWeight.w700))),
-                      for (final f in [...folders, ''])
-                        ListTile(
-                          leading: Icon(f == t.folder ? Icons.check_rounded : Icons.folder_outlined),
-                          title: Text(f.isEmpty ? l.noFolder : f),
-                          onTap: () => Navigator.pop(c, f),
-                        ),
-                      ListTile(
-                        leading: const Icon(Icons.create_new_folder_outlined),
-                        title: Text(l.newFolder),
-                        onTap: () async {
-                          final n = (await askText(c, l.newFolder, hint: l.folderNameHint))?.trim();
-                          if (c.mounted && n != null && n.isNotEmpty) Navigator.pop(c, n);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-          );
-          if (target != null && target != t.folder) repo.saveTemplate(t.copyWith(folder: target, order: 999));
+          onMoveToFolder();
         case 'delete':
           if (await confirm(context, l.deleteProgram, body: t.name, ok: l.delete, danger: true)) repo.deleteTemplate(t.id);
       }
@@ -650,17 +1065,11 @@ class _TemplateTile extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           // Tapping opens the read-only preview (big "Start"); editing sits behind its pencil.
-          onTap:
-              dragIndex != null ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProgramPreviewPage(template: t))),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProgramPreviewPage(template: t))),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
             child: Row(
               children: [
-                if (dragIndex != null)
-                  ReorderableDragStartListener(
-                    index: dragIndex!,
-                    child: const Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.drag_indicator)),
-                  ),
                 SportBadge(t.sport),
                 const SizedBox(width: 12),
                 Expanded(
@@ -672,36 +1081,45 @@ class _TemplateTile extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (dragIndex == null) ...[
-                  IconButton.filledTonal(
-                    tooltip: l.startWorkout,
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    onPressed:
-                        () =>
-                            t.sport == Sport.gym
-                                ? startGym(context, ref, title: t.name, template: t)
-                                : showCardioStart(context, ref, t.sport, title: t.name, steps: t.steps),
-                  ),
-                  PopupMenuButton<String>(
-                    onSelected: menu,
-                    itemBuilder:
-                        (_) => [
-                          PopupMenuItem(value: 'edit', child: ListTile(leading: const Icon(Icons.edit_outlined), title: Text(l.edit))),
-                          PopupMenuItem(value: 'dup', child: ListTile(leading: const Icon(Icons.copy_rounded), title: Text(l.duplicate))),
+                IconButton.filledTonal(
+                  tooltip: l.startWorkout,
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  onPressed:
+                      () =>
+                          t.sport == Sport.gym
+                              ? startGym(context, ref, title: t.name, template: t)
+                              : showCardioStart(context, ref, t.sport, title: t.name, steps: t.steps),
+                ),
+                PopupMenuButton<String>(
+                  key: ValueKey('programMenu-${t.id}'),
+                  onSelected: menu,
+                  itemBuilder:
+                      (_) => [
+                        PopupMenuItem(value: 'edit', child: ListTile(leading: const Icon(Icons.edit_outlined), title: Text(l.edit))),
+                        PopupMenuItem(value: 'dup', child: ListTile(leading: const Icon(Icons.copy_rounded), title: Text(l.duplicate))),
+                        if (canMoveUp)
                           PopupMenuItem(
-                            value: 'move',
-                            child: ListTile(leading: const Icon(Icons.drive_file_move_outlined), title: Text(l.moveToFolder)),
+                            value: 'up',
+                            child: ListTile(leading: const Icon(Icons.arrow_upward_rounded), title: Text(l.moveUp)),
                           ),
+                        if (canMoveDown)
                           PopupMenuItem(
-                            value: 'delete',
-                            child: ListTile(
-                              leading: const Icon(Icons.delete_outline, color: AppColors.danger),
-                              title: Text(l.delete, style: const TextStyle(color: AppColors.danger)),
-                            ),
+                            value: 'down',
+                            child: ListTile(leading: const Icon(Icons.arrow_downward_rounded), title: Text(l.moveDown)),
                           ),
-                        ],
-                  ),
-                ],
+                        PopupMenuItem(
+                          value: 'move',
+                          child: ListTile(leading: const Icon(Icons.drive_file_move_outlined), title: Text(l.moveToFolder)),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: ListTile(
+                            leading: const Icon(Icons.delete_outline, color: AppColors.danger),
+                            title: Text(l.delete, style: const TextStyle(color: AppColors.danger)),
+                          ),
+                        ),
+                      ],
+                ),
               ],
             ),
           ),

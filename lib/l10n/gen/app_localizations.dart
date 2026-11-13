@@ -8120,7 +8120,7 @@ abstract class AppLocalizations {
   /// No description provided for @logRirSetting.
   ///
   /// In en, this message translates to:
-  /// **'Log reserve per set'**
+  /// **'Reserve per set'**
   String get logRirSetting;
 
   /// No description provided for @logRirSettingSub.
@@ -10864,6 +10864,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'longest hold {time}'**
   String longestHoldN(String time);
+
+  /// No description provided for @infoAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About {title}'**
+  String infoAbout(String title);
+
+  /// No description provided for @logRirSettingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Reps in the tank (RIR) after each set'**
+  String get logRirSettingShort;
+
+  /// No description provided for @logRirSettingInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'After every set you note how many more reps you could have done (reps in reserve, RIR). When an exercise has no quick rating, Strive uses these values for your next progression. The quick rating per exercise stays either way.'**
+  String get logRirSettingInfo;
+
+  /// No description provided for @trainingReminderShort.
+  ///
+  /// In en, this message translates to:
+  /// **'On planned training days'**
+  String get trainingReminderShort;
+
+  /// No description provided for @vibrationInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibrates when a rest timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity.'**
+  String get vibrationInfo;
+
+  /// No description provided for @reorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Long-press folders and programs to move them.'**
+  String get reorderHint;
+
+  /// No description provided for @restoreBuiltins.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore standard programs'**
+  String get restoreBuiltins;
+
+  /// No description provided for @restoreBuiltinsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Added in their original state: {names}.'**
+  String restoreBuiltinsAdd(String names);
+
+  /// No description provided for @restoreBuiltinsKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Your changed versions stay as your own programs ({names}). New plans use the originals again.'**
+  String restoreBuiltinsKeep(String names);
+
+  /// No description provided for @restoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restoreAction;
+
+  /// No description provided for @programsRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} programs restored'**
+  String programsRestored(int count);
+
+  /// No description provided for @ownVersionSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'custom'**
+  String get ownVersionSuffix;
+
+  /// No description provided for @builtinChangedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed: {names}'**
+  String builtinChangedLine(String names);
+
+  /// No description provided for @builtinsAllOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'All standard programs are in their original state.'**
+  String get builtinsAllOriginal;
+
+  /// No description provided for @restoreBuiltinsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds missing or changed standard programs in their original state. Your changed versions are kept.'**
+  String get restoreBuiltinsSub;
+
+  /// No description provided for @movedToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to {folder}'**
+  String movedToFolder(String folder);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

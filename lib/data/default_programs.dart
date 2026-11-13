@@ -631,6 +631,17 @@ List<WorkoutTemplate> _templates(String Function() id, bool de) => [
   ),
 ];
 
+/// Built-in folder keys in display order ('fullbody' … 'swim').
+List<String> get builtinFolderKeys => _folders.keys.toList();
+
+/// Both shipped names of a built-in folder (English, German).
+Set<String> builtinFolderNames(String folderKey) => {folderName(folderKey, false), folderName(folderKey, true)};
+
+/// Folder key of every built-in program (e.g. 'ppl_pull' → 'ppl').
+final Map<String, String> builtinFolderOf = {
+  for (final t in defaultTemplates(() => '')) t.key!: _folders.entries.firstWhere((e) => e.value.$1 == t.folder).key,
+};
+
 /// Built-in programs whose key is not yet present in [existing] (for adding missing ones).
 List<WorkoutTemplate> missingBuiltins(List<WorkoutTemplate> existing, String Function() id, {bool de = false, Set<String>? only}) {
   final have = existing.map((t) => t.key).whereType<String>().toSet();
