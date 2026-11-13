@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show compute, kIsWeb;
 import 'package:flutter/services.dart';
 
 import 'exercise_names_de.dart';
@@ -44,33 +46,44 @@ class ExerciseDb {
 
   static Future<ExerciseDb> load() async {
     final raw = await rootBundle.loadString('assets/data/exercises.json');
-    final list = (jsonDecode(raw) as List).map((e) => Exercise.fromJson(e)).toList()..sort((a, b) => a.name.compareTo(b.name));
+    // ~0.8 MB of JSON: decoded off the UI thread (it stalled the frame opening the library).
+    // Not under `flutter test`: fake-async widget tests would never see the isolate finish.
+    final list = _underTest ? parseExercises(raw) : await compute(parseExercises, raw);
     return ExerciseDb(list);
   }
 
   Exercise? byId(String id) => _byId[id];
 
-  List<String> get bodyParts => all.map((e) => e.bodyPart).toSet().toList()..sort();
-  List<String> get equipment => all.map((e) => e.equipment).toSet().toList()..sort();
+  late final List<String> bodyParts = all.map((e) => e.bodyPart).toSet().toList()..sort();
+  late final List<String> equipment = all.map((e) => e.equipment).toSet().toList()..sort();
+
+  /// Lower-case search text of each exercise (names, muscles, equipment, German aliases):
+  /// built once instead of for all 1300+ exercises on every keystroke.
+  late final Map<String, String> _haystack = {
+    for (final e in all)
+      e.id:
+          '${e.name} ${exerciseNamesDe[e.id] ?? ''} ${e.target} ${e.bodyPart} ${e.equipment} '
+                  '${term(e.target, 'de')} ${term(e.bodyPart, 'de')} ${term(e.equipment, 'de')} ${germanAlias(e)}'
+              .toLowerCase(),
+  };
 
   /// Search by German and English name, muscles and equipment. Ranking: exact name,
   /// name prefix, word prefix, then common exercises (curated / built-in programs)
   /// before the rest, shorter names first.
   List<Exercise> search(String q, {String? bodyPart, String? equipment, String lang = 'en'}) {
     final q0 = q.toLowerCase().trim();
-    final terms = q0.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final terms = q0.split(_spaces).where((t) => t.isNotEmpty).toList();
     final res =
         all.where((e) {
           if (bodyPart != null && e.bodyPart != bodyPart) return false;
           if (equipment != null && e.equipment != equipment) return false;
           if (terms.isEmpty) return true;
-          final hay =
-              '${e.name} ${exerciseNamesDe[e.id] ?? ''} ${e.target} ${e.bodyPart} ${e.equipment} '
-                      '${term(e.target, 'de')} ${term(e.bodyPart, 'de')} ${term(e.equipment, 'de')} ${germanAlias(e)}'
-                  .toLowerCase();
+          final hay = _haystack[e.id]!;
           return terms.every(hay.contains);
         }).toList();
-    String shown(Exercise e) => exerciseName(e.id, e.name, lang);
+    // Each hit's shown name once – the comparators below asked for it O(n log n) times.
+    final names = {for (final e in res) e.id: exerciseName(e.id, e.name, lang)};
+    String shown(Exercise e) => names[e.id]!;
     if (terms.isNotEmpty) {
       final ranks = {for (final e in res) e.id: searchRank(e, q0)};
       int common(Exercise e) => commonExerciseIds.contains(e.id) ? 0 : 1;
@@ -81,23 +94,34 @@ class ExerciseDb {
         return k != 0 ? k : shown(a).length.compareTo(shown(b).length);
       });
     } else if (lang != 'en') {
-      res.sort((a, b) => shown(a).toLowerCase().compareTo(shown(b).toLowerCase()));
+      final keys = {for (final e in res) e.id: shown(e).toLowerCase()};
+      res.sort((a, b) => keys[a.id]!.compareTo(keys[b.id]!));
     }
     return res;
   }
 }
+
+final _spaces = RegExp(r'\s+');
+
+bool get _underTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
+/// The exercises of the bundled JSON, sorted by database name (top-level for [compute]).
+List<Exercise> parseExercises(String raw) =>
+    (jsonDecode(raw) as List).map((e) => Exercise.fromJson(e)).toList()..sort((a, b) => a.name.compareTo(b.name));
 
 /// Rank of [e] for the lower-case query [q] (lower = better): 0 exact name, 1/2 name
 /// prefix, 3/4 word prefix, 5/6 anything else – common exercises first in each group.
 int searchRank(Exercise e, String q) {
   final names = [e.name, if (exerciseNamesDe[e.id] case final de?) de.toLowerCase()];
   final popular = exerciseNamesDe.containsKey(e.id);
-  final bare = RegExp(r'\s*\(.*\)$');
-  if (names.any((n) => n == q || n.replaceAll(bare, '') == q)) return 0;
+  if (names.any((n) => n == q || n.replaceAll(_bracketSuffix, '') == q)) return 0;
   if (names.any((n) => n.startsWith(q))) return popular ? 1 : 2;
-  if (names.any((n) => n.split(RegExp(r'[\s\-/(]+')).any((w) => w.startsWith(q)))) return popular ? 3 : 4;
+  if (names.any((n) => n.split(_wordBreaks).any((w) => w.startsWith(q)))) return popular ? 3 : 4;
   return popular ? 5 : 6;
 }
+
+final _bracketSuffix = RegExp(r'\s*\(.*\)$');
+final _wordBreaks = RegExp(r'[\s\-/(]+');
 
 /// German search aliases so "bankdrücken" or "kniebeuge" find the right lifts.
 String germanAlias(Exercise e) {
