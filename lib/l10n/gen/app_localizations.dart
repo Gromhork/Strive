@@ -11182,6 +11182,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start empty'**
   String get startEmptyWorkout;
+
+  /// No description provided for @duplicateFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate folder'**
+  String get duplicateFolder;
+
+  /// No description provided for @duplicateToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate to folder'**
+  String get duplicateToFolder;
+
+  /// No description provided for @programDuplicated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created “{name}”.'**
+  String programDuplicated(String name);
+
+  /// No description provided for @programDuplicatedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Created “{name}” in {folder}.'**
+  String programDuplicatedTo(String name, String folder);
+
+  /// No description provided for @folderDuplicated.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =0{Created the empty folder “{name}”.} =1{Created the folder “{name}” with 1 program.} other{Created the folder “{name}” with {n} programs.}}'**
+  String folderDuplicated(String name, int n);
+
+  /// No description provided for @folderDuplicatedHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 of them belongs to another sport and is hidden by the sport filter.} other{{n} of them belong to other sports and are hidden by the sport filter.}}'**
+  String folderDuplicatedHidden(int n);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -6225,4 +6225,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startEmptyWorkout => 'Start empty';
+
+  @override
+  String get duplicateFolder => 'Duplicate folder';
+
+  @override
+  String get duplicateToFolder => 'Duplicate to folder';
+
+  @override
+  String programDuplicated(String name) {
+    return 'Created “$name”.';
+  }
+
+  @override
+  String programDuplicatedTo(String name, String folder) {
+    return 'Created “$name” in $folder.';
+  }
+
+  @override
+  String folderDuplicated(String name, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Created the folder “$name” with $n programs.',
+      one: 'Created the folder “$name” with 1 program.',
+      zero: 'Created the empty folder “$name”.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String folderDuplicatedHidden(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n of them belong to other sports and are hidden by the sport filter.',
+      one: '1 of them belongs to another sport and is hidden by the sport filter.',
+    );
+    return '$_temp0';
+  }
 }

@@ -1794,4 +1794,8 @@ const l10nPairs = <(String, String)>[
   ('Choose a program or exercises for it – or start an empty workout.', 'Wähle ein Programm oder Übungen dafür – oder starte eine leere Einheit.'),
   ('Choose program', 'Programm wählen'),
   ('Start empty', 'Leer starten'),
+  ('Duplicate folder', 'Ordner duplizieren'),
+  ('Duplicate to folder', 'In Ordner duplizieren'),
+  ('Created “{name}”.', '„{name}“ erstellt.'),
+  ('Created “{name}” in {folder}.', '„{name}“ in {folder} erstellt.'),
 ];

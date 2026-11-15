@@ -13,6 +13,7 @@ import '../../core/theme.dart';
 import '../../data/builtin_upgrade.dart';
 import '../../data/default_programs.dart';
 import '../../data/models.dart';
+import '../../data/repository.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/plan_exercises.dart';
@@ -22,6 +23,7 @@ import '../session/start_helpers.dart';
 import '../session/step_text.dart';
 import 'exercise_picker.dart';
 import 'program_delete_actions.dart';
+import 'program_duplicate.dart';
 import 'program_order.dart';
 import 'program_preview_page.dart';
 import 'template_editor_page.dart';
@@ -32,7 +34,8 @@ import 'template_editor_page.dart';
 /// program to move it – inside its folder, into another (open) folder or onto a folder header
 /// (a closed folder opens while a program hovers over it). The lists auto-scroll at the edges.
 /// Menus offer the same without dragging ("Nach oben / unten", "In Ordner verschieben"). The
-/// order is synced via Firestore (profile `folderOrder`, program `order`).
+/// order is synced via Firestore (profile `folderOrder`, program `order`). Programs and whole
+/// folders can be duplicated (lib/features/train/program_duplicate.dart) – with "Undo".
 class TrainPage extends ConsumerStatefulWidget {
   const TrainPage({super.key});
 
@@ -57,11 +60,12 @@ class _TrainPageState extends ConsumerState<TrainPage> {
   PointerMoveEvent? _lastMove;
 
   /// Optimistic order until Firestore's snapshot arrives (no snap-back after a drop): the new
-  /// folder order and the moved programs, each with the data it was based on – any newer
-  /// snapshot replaces them.
+  /// folder order and the moved or new (duplicated) programs, each with the data it was based
+  /// on – any newer snapshot replaces them. [_localRemoved]: duplicates taken back ("Undo").
   List<String>? _localFolders;
   List<String>? _localFoldersBase;
   Map<String, WorkoutTemplate>? _localPrograms;
+  Set<String>? _localRemoved;
   List<WorkoutTemplate>? _localProgramsBase;
 
   @override
@@ -105,15 +109,25 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     return _localFolders ?? p.folderOrder;
   }
 
-  /// The programs (display order) with the optimistic changes of the last drop.
+  /// The programs (display order) with the optimistic changes of the last drop / duplicate.
   List<WorkoutTemplate> _programs(List<WorkoutTemplate> stored) {
-    final local = _localPrograms;
-    if (local == null) return stored;
+    final local = _localPrograms, removed = _localRemoved;
+    if (local == null && removed == null) return stored;
     if (!identical(_localProgramsBase, stored)) {
-      _localPrograms = _localProgramsBase = null;
+      _localPrograms = null;
+      _localRemoved = null;
+      _localProgramsBase = null;
       return stored;
     }
-    return [for (final t in stored) local[t.id] ?? t]..sort((a, b) {
+    final ids = {for (final t in stored) t.id};
+    return [
+      for (final t in stored)
+        if (removed == null || !removed.contains(t.id)) local?[t.id] ?? t,
+      // New programs (duplicates) the snapshot does not have yet.
+      if (local != null)
+        for (final t in local.values)
+          if (!ids.contains(t.id)) t,
+    ]..sort((a, b) {
       final o = a.order.compareTo(b.order);
       return o != 0 ? o : compareNames(a.name, b.name);
     });
@@ -137,6 +151,28 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     ref.read(repoProvider)!.saveTemplates(changed);
   }
 
+  /// Deletes the programs [ids] again (a duplicate taken back) – gone from the list right away.
+  void _dropPrograms(Repository repo, Set<String> ids) {
+    if (ids.isEmpty) return;
+    final stored = ref.read(templateListProvider);
+    final pending = identical(_localProgramsBase, stored);
+    setState(() {
+      _localPrograms = {if (pending) ...?_localPrograms}..removeWhere((id, _) => ids.contains(id));
+      _localRemoved = {if (pending) ...?_localRemoved, ...ids};
+      _localProgramsBase = stored;
+    });
+    repo.deleteTemplates(ids).ignore();
+  }
+
+  /// A folder only known from its programs joins the stored order (keeps its place); a new one
+  /// goes to the end. [all]: the programs before the change.
+  void _keepFolderInOrder(String folder, List<WorkoutTemplate> all) {
+    final profile = ref.read(profileOrDefaultProvider);
+    if (folder.isEmpty || profile.folderOrder.contains(folder)) return;
+    final named = _folders(all, _folderOrder(profile), false).where((f) => f.isNotEmpty).toList();
+    _saveFolderOrder(named.contains(folder) ? named : [...named, folder]);
+  }
+
   bool _visible(WorkoutTemplate t) {
     final filter = ref.read(sportFilterProvider);
     return filter == null || t.sport == filter;
@@ -147,11 +183,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     final all = _programs(ref.read(templateListProvider));
     final current = all.firstWhere((x) => x.id == t.id, orElse: () => t);
     _savePrograms(placeProgram(all, current, folder, index, isVisible: _visible));
-    if (folder.isNotEmpty && !ref.read(profileOrDefaultProvider).folderOrder.contains(folder)) {
-      // A folder only known from its programs joins the stored order (keeps its place).
-      final named = _folders(all, _folderOrder(ref.read(profileOrDefaultProvider)), false).where((f) => f.isNotEmpty).toList();
-      _saveFolderOrder(named.contains(folder) ? named : [...named, folder]);
-    }
+    _keepFolderInOrder(folder, all);
   }
 
   void _startDrag(ScrollableState scrollable) {
@@ -367,6 +399,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                         if (at >= 0 && at <= rest.length) _place(t, f, at);
                       },
                       onMoveToFolder: (t) => _moveToFolder(t, all, folderOrder),
+                      onDuplicateProgram: (t, pickFolder) => _duplicateProgram(t, pickFolder: pickFolder),
                       canRestore:
                           () => f.isNotEmpty && !_restorePlan(folderKeys: builtinFolderKeysOf(f, ref.read(templateListProvider))).isEmpty,
                     );
@@ -407,12 +440,12 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     setState(() => _open.add(name));
   }
 
-  /// "In Ordner verschieben": a sheet of the folders (+ new folder); the program goes to the
-  /// end of the chosen folder.
-  Future<void> _moveToFolder(WorkoutTemplate t, List<WorkoutTemplate> all, List<String> folderOrder) async {
+  /// A sheet of every folder (+ "no folder", + new folder) titled [title]; [current] is ticked.
+  /// The chosen folder name ('' = no folder), null when dismissed.
+  Future<String?> _pickFolder(String title, String current, List<WorkoutTemplate> all, List<String> folderOrder) {
     final l = context.l10n;
     final folders = _folders(all, folderOrder, false).where((f) => f.isNotEmpty).toList();
-    final target = await showModalBottomSheet<String>(
+    return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       builder:
@@ -420,10 +453,11 @@ class _TrainPageState extends ConsumerState<TrainPage> {
             child: ListView(
               shrinkWrap: true,
               children: [
-                ListTile(title: Text(l.moveToFolder, style: const TextStyle(fontWeight: FontWeight.w700))),
+                ListTile(title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700))),
                 for (final f in [...folders, ''])
                   ListTile(
-                    leading: Icon(f == t.folder ? Icons.check_rounded : Icons.folder_outlined),
+                    key: ValueKey('pickFolder-$f'),
+                    leading: Icon(f == current ? Icons.check_rounded : Icons.folder_outlined),
                     title: Text(f.isEmpty ? l.noFolder : f),
                     onTap: () => Navigator.pop(c, f),
                   ),
@@ -439,11 +473,87 @@ class _TrainPageState extends ConsumerState<TrainPage> {
             ),
           ),
     );
+  }
+
+  /// "In Ordner verschieben": a sheet of the folders (+ new folder); the program goes to the
+  /// end of the chosen folder.
+  Future<void> _moveToFolder(WorkoutTemplate t, List<WorkoutTemplate> all, List<String> folderOrder) async {
+    final l = context.l10n;
+    final target = await _pickFolder(l.moveToFolder, t.folder, all, folderOrder);
     if (target == null || target == t.folder || !mounted) return;
     final shown = all.where((x) => x.folder == target && x.id != t.id && _visible(x)).length;
     _place(t, target, shown);
     setState(() => _open.add(target));
     toast(context, l.movedToFolder(target.isEmpty ? l.noFolder : target));
+  }
+
+  /// Program menu "Duplizieren": the copy sits directly below [t] ("Name (Kopie)").
+  /// "In Ordner duplizieren" ([pickFolder]): at the end of the chosen folder. The copy is the
+  /// athlete's own program (no built-in key, [programCopy]).
+  Future<void> _duplicateProgram(WorkoutTemplate t, {bool pickFolder = false}) async {
+    final l = context.l10n;
+    String? folder;
+    if (pickFolder) {
+      final shown = _programs(ref.read(templateListProvider));
+      folder = await _pickFolder(l.duplicateToFolder, t.folder, shown, _folderOrder(ref.read(profileOrDefaultProvider)));
+      if (folder == null || !mounted) return;
+    }
+    final repo = ref.read(repoProvider)!;
+    final all = _programs(ref.read(templateListProvider));
+    final current = all.firstWhere((x) => x.id == t.id, orElse: () => t);
+    final d = duplicateProgram(all, current, repo.newId(), suffix: l.copy, folder: folder);
+    final target = d.copy.folder;
+    final order = _folderOrder(ref.read(profileOrDefaultProvider));
+    // A folder created in the sheet goes again when the copy is taken back.
+    final created = target.isNotEmpty && !_folders(all, order, false).contains(target);
+    _savePrograms(d.writes);
+    _keepFolderInOrder(target, all);
+    setState(() => _open.add(target));
+    undoToast(
+      ScaffoldMessenger.of(context),
+      text:
+          target == current.folder
+              ? l.programDuplicated(d.copy.name)
+              : l.programDuplicatedTo(d.copy.name, target.isEmpty ? l.noFolder : target),
+      undoLabel: l.undo,
+      icon: Icons.copy_rounded,
+      onUndo: () => _undoDuplicate(repo, {d.copy.id}, folder: created ? target : null, order: [...order, if (created) target]),
+    );
+  }
+
+  /// Folder menu "Ordner duplizieren": a new folder "Name (Kopie)" directly below [folder] with
+  /// copies of all its programs – every sport, also the ones the sport filter hides (the folder
+  /// is one unit; the snack bar says how many are hidden). [full]: every named folder in order.
+  void _duplicateFolder(String folder, List<WorkoutTemplate> all, List<String> full) {
+    final l = context.l10n;
+    final repo = ref.read(repoProvider)!;
+    final d = duplicateFolder(all, full, folder, repo.newId, suffix: l.copy);
+    _savePrograms(d.copies);
+    _saveFolderOrder(d.folderOrder);
+    setState(() => _open.add(d.folder));
+    final hidden = d.copies.where((t) => !_visible(t)).length;
+    undoToast(
+      ScaffoldMessenger.of(context),
+      text: [l.folderDuplicated(d.folder, d.copies.length), if (hidden > 0) l.folderDuplicatedHidden(hidden)].join(' '),
+      undoLabel: l.undo,
+      icon: Icons.copy_rounded,
+      onUndo: () => _undoDuplicate(repo, {for (final t in d.copies) t.id}, folder: d.folder, order: d.folderOrder),
+    );
+  }
+
+  /// "Undo" of a duplicate: deletes the copies [ids] and takes the new [folder] out of the folder
+  /// order ([order]: the order written with it, used when this page is gone).
+  void _undoDuplicate(Repository repo, Set<String> ids, {String? folder, List<String> order = const []}) {
+    if (!mounted) {
+      repo.deleteTemplates(ids).ignore();
+      if (folder != null) repo.saveFolderOrder(order.where((f) => f != folder).toList());
+      return;
+    }
+    _dropPrograms(repo, ids);
+    if (folder == null) return;
+    final now = _folders(_programs(ref.read(templateListProvider)), _folderOrder(ref.read(profileOrDefaultProvider)), false);
+    _saveFolderOrder(now.where((f) => f.isNotEmpty && f != folder).toList());
+    _open.remove(folder);
   }
 
   Future<void> _folderAction(String action, String folder, List<WorkoutTemplate> all, List<String> named, int index) async {
@@ -456,6 +566,8 @@ class _TrainPageState extends ConsumerState<TrainPage> {
         _saveFolderOrder(reorderFolders(full, named, index, action == 'up' ? index - 1 : index + 1));
       case 'restore':
         await _restoreFolder(folder);
+      case 'dup':
+        _duplicateFolder(folder, all, full);
       case 'add':
         await Navigator.push(
           context,
@@ -663,6 +775,7 @@ class _FolderCard extends StatefulWidget {
     required this.onDragEnd,
     required this.onMoveProgram,
     required this.onMoveToFolder,
+    required this.onDuplicateProgram,
     required this.canRestore,
   });
   final int index;
@@ -682,6 +795,9 @@ class _FolderCard extends StatefulWidget {
   final VoidCallback onDragEnd;
   final void Function(WorkoutTemplate t, int delta) onMoveProgram;
   final ValueChanged<WorkoutTemplate> onMoveToFolder;
+
+  /// Duplicates a program: below itself, or (true) into a folder the athlete picks.
+  final void Function(WorkoutTemplate t, bool pickFolder) onDuplicateProgram;
 
   /// Whether the folder stands for built-in programs that are missing or changed (asked when
   /// its menu opens).
@@ -765,6 +881,7 @@ class _FolderCardState extends State<_FolderCard> {
                     (_) => [
                       PopupMenuItem(value: 'add', child: ListTile(leading: const Icon(Icons.add), title: Text(l.newProgram))),
                       PopupMenuItem(value: 'rename', child: ListTile(leading: const Icon(Icons.edit_outlined), title: Text(l.rename))),
+                      PopupMenuItem(value: 'dup', child: ListTile(leading: const Icon(Icons.copy_rounded), title: Text(l.duplicateFolder))),
                       if (widget.canMoveUp)
                         PopupMenuItem(value: 'up', child: ListTile(leading: const Icon(Icons.arrow_upward_rounded), title: Text(l.moveUp))),
                       if (widget.canMoveDown)
@@ -869,6 +986,7 @@ class _FolderCardState extends State<_FolderCard> {
                                         onDragEnd: widget.onDragEnd,
                                         onMove: (delta) => widget.onMoveProgram(programs[i], delta),
                                         onMoveToFolder: () => widget.onMoveToFolder(programs[i]),
+                                        onDuplicate: (pickFolder) => widget.onDuplicateProgram(programs[i], pickFolder),
                                       ),
                                   ],
                                 ),
@@ -894,6 +1012,7 @@ class _ProgramRow extends StatefulWidget {
     required this.onDragEnd,
     required this.onMove,
     required this.onMoveToFolder,
+    required this.onDuplicate,
   });
   final WorkoutTemplate t;
   final bool canMoveUp;
@@ -903,6 +1022,7 @@ class _ProgramRow extends StatefulWidget {
   final VoidCallback onDragEnd;
   final ValueChanged<int> onMove;
   final VoidCallback onMoveToFolder;
+  final ValueChanged<bool> onDuplicate;
 
   @override
   State<_ProgramRow> createState() => _ProgramRowState();
@@ -927,6 +1047,7 @@ class _ProgramRowState extends State<_ProgramRow> {
       canMoveDown: widget.canMoveDown,
       onMove: widget.onMove,
       onMoveToFolder: widget.onMoveToFolder,
+      onDuplicate: widget.onDuplicate,
     );
     return LayoutBuilder(
       builder:
@@ -1164,12 +1285,16 @@ class _TemplateTile extends ConsumerWidget {
     required this.canMoveDown,
     required this.onMove,
     required this.onMoveToFolder,
+    required this.onDuplicate,
   });
   final WorkoutTemplate t;
   final bool canMoveUp;
   final bool canMoveDown;
   final ValueChanged<int> onMove;
   final VoidCallback onMoveToFolder;
+
+  /// Duplicates the program: below itself, or (true) into a folder the athlete picks.
+  final ValueChanged<bool> onDuplicate;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1185,22 +1310,15 @@ class _TemplateTile extends ConsumerWidget {
                 l.stepsCount(t.steps.length),
               intensityLabel(l, t.intensity),
             ].join(' · ');
-    final repo = ref.read(repoProvider)!;
 
     Future<void> menu(String v) async {
       switch (v) {
         case 'edit':
           Navigator.push(context, MaterialPageRoute(builder: (_) => TemplateEditorPage(template: t)));
         case 'dup':
-          repo.saveTemplate(
-            WorkoutTemplate.fromMap(repo.newId(), {
-              ...t.toMap(),
-              'name': '${t.name} (${l.copy})',
-              'key': null,
-              'origKey': null,
-              'order': t.order + 1,
-            }),
-          );
+          onDuplicate(false);
+        case 'dupTo':
+          onDuplicate(true);
         case 'up':
           onMove(-1);
         case 'down':
@@ -1253,6 +1371,10 @@ class _TemplateTile extends ConsumerWidget {
                       (_) => [
                         PopupMenuItem(value: 'edit', child: ListTile(leading: const Icon(Icons.edit_outlined), title: Text(l.edit))),
                         PopupMenuItem(value: 'dup', child: ListTile(leading: const Icon(Icons.copy_rounded), title: Text(l.duplicate))),
+                        PopupMenuItem(
+                          value: 'dupTo',
+                          child: ListTile(leading: const Icon(Icons.folder_copy_outlined), title: Text(l.duplicateToFolder)),
+                        ),
                         if (canMoveUp)
                           PopupMenuItem(
                             value: 'up',

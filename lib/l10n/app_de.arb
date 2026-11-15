@@ -1847,5 +1847,11 @@
   "planProgramMissing": "Das Programm dieser Einheit wurde gelöscht",
   "planProgramMissingSub": "Wähle ein Programm oder Übungen dafür – oder starte eine leere Einheit.",
   "planProgramChoose": "Programm wählen",
-  "startEmptyWorkout": "Leer starten"
+  "startEmptyWorkout": "Leer starten",
+  "duplicateFolder": "Ordner duplizieren",
+  "duplicateToFolder": "In Ordner duplizieren",
+  "programDuplicated": "„{name}“ erstellt.",
+  "programDuplicatedTo": "„{name}“ in {folder} erstellt.",
+  "folderDuplicated": "{n, plural, =0{Leeren Ordner „{name}“ erstellt.} =1{Ordner „{name}“ mit 1 Programm erstellt.} other{Ordner „{name}“ mit {n} Programmen erstellt.}}",
+  "folderDuplicatedHidden": "{n, plural, =1{1 davon gehört zu einer anderen Sportart und ist durch den Sportfilter ausgeblendet.} other{{n} davon gehören zu anderen Sportarten und sind durch den Sportfilter ausgeblendet.}}"
 }
