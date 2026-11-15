@@ -512,6 +512,8 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
                     ref.read(repoProvider)!.saveProfile(p.copyWith(athlete: p.athlete.merge({'targetTimeSec': sec})));
                     toast(context, l.targetAdjusted(clock(sec)));
                   },
+                  // Saved with the profile like the target; "Plan neu aufsetzen" below builds the plan with it.
+                  onExtendLongRun: (v) => ref.read(repoProvider)!.saveProfile(p.copyWith(athlete: p.athlete.merge({'longRunExtend': v}))),
                 ),
               ],
               const SizedBox(height: 16),

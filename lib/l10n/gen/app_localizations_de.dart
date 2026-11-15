@@ -6225,4 +6225,78 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get startEmptyWorkout => 'Leer starten';
+
+  @override
+  String feasCapLine(String time, String have, String race) {
+    return 'Deine langen Läufe enden bei $time – bei deinem lockeren Tempo sind das etwa $have km (viele Pläne gehen bis $race km).';
+  }
+
+  @override
+  String feasCapLineUsual(String time, String have, String race) {
+    return 'Deine langen Läufe enden normalerweise bei $time – bei deinem lockeren Tempo sind das etwa $have km (viele Pläne gehen bis $race km).';
+  }
+
+  @override
+  String feasCapNotYourTime(String set, String day) {
+    return 'Das liegt nicht an deiner Zeit (für $day hast du $set eingeplant) – die Grenze ist bewusst gesetzt.';
+  }
+
+  @override
+  String get feasCapWhy => 'Länger am Stück bringt mehr Verletzungsrisiko und Erholungsbedarf als Fitness.';
+
+  @override
+  String get feasCapWhyTri => 'Im Triathlon- und Duathlon-Training ist diese Grenze fest: Die Ausdauer kommt vom Rad, und ein noch längerer Lauf würde dich die wichtigen Einheiten der Folgetage kosten.';
+
+  @override
+  String feasCapOffer(String time, String dist) {
+    return 'Wenn du möchtest, verlängert der Plan die letzten langen Läufe vor dem Tapering schrittweise bis $time (etwa $dist km) – mit Gehpausen von Beginn an und leichteren Tagen danach.';
+  }
+
+  @override
+  String get feasCapOfferWhere => 'Einschalten kannst du das in den Planeinstellungen.';
+
+  @override
+  String feasCapExtended(String time, String dist) {
+    return 'Du hast längere Läufe erlaubt: Die letzten langen Läufe vor dem Tapering gehen schrittweise bis $time (etwa $dist km) – mit Gehpausen von Beginn an und leichteren Tagen danach.';
+  }
+
+  @override
+  String get feasCapExtendedNoGain => 'Du hast längere Läufe erlaubt, dieser Plan kann sie aber nicht nutzen: Es bleiben zu wenige Wochen, um sicher über die Grenze hinaus aufzubauen.';
+
+  @override
+  String get feasCapFinish => 'Daher: Ankommen ist das Ziel – ruhig loslaufen und von Beginn an kurze Gehpausen einplanen (z. B. 1 min alle 10 min).';
+
+  @override
+  String get feasCapFinishTri => 'Für den Lauf im Rennen heißt das: ruhig anlaufen und von Beginn an kurze Gehpausen einplanen, z. B. an jeder Verpflegungsstelle.';
+
+  @override
+  String longRunExtendSwitch(String time) {
+    return 'Lange Läufe bis $time erlauben';
+  }
+
+  @override
+  String longRunExtendSub(String time) {
+    return 'Standard: höchstens $time am Stück. Mit dieser Option werden nur die letzten langen Läufe vor dem Tapering länger – schrittweise, mit Gehpausen und leichteren Tagen danach.';
+  }
+
+  @override
+  String timeLongCapRun(String time) {
+    return 'Deine Tageszeit ist eine Obergrenze, kein Soll: Lange Läufe plant Strive für dieses Ziel höchstens $time am Stück, auch wenn der Tag mehr Zeit hat.';
+  }
+
+  @override
+  String timeLongCapRide(String time) {
+    return 'Deine Tageszeit ist eine Obergrenze, kein Soll: Lange Ausfahrten plant Strive für dieses Ziel höchstens $time, auch wenn der Tag mehr Zeit hat.';
+  }
+
+  @override
+  String wLongRunExtendedNote(String time) {
+    return 'Verlängerter langer Lauf (über deine üblichen $time hinaus): von Beginn an nach je 10 min Laufen 1 min gehen, früh essen und trinken. Brich ab, wenn etwas schmerzt – gesund bleiben zählt mehr als die Minuten. Die nächsten zwei Tage locker oder frei halten.';
+  }
+
+  @override
+  String get wAfterExtendedNote => 'Bewusst locker gehalten: Deine Beine erholen sich noch vom verlängerten langen Lauf.';
+
+  @override
+  String get longRunExtendTitle => 'Längere lange Läufe';
 }

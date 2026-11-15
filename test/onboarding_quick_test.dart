@@ -54,6 +54,7 @@ Future<_FakeRepo> _pump(
   UserProfile? profile,
   SetupMode mode = SetupMode.setup,
   List<PlannedWorkout> existing = const [],
+  bool loaded = false,
 }) async {
   tester.view.physicalSize = const Size(1200, 2800);
   tester.view.devicePixelRatio = 2;
@@ -83,9 +84,12 @@ Future<_FakeRepo> _pump(
             mode == SetupMode.setup
                 ? page
                 : Scaffold(
-                  body: Builder(
+                  body: Consumer(
                     builder:
-                        (c) => TextButton(
+                        // [loaded]: the profile stream is listened to before the page opens (as in the app,
+                        // where the calendar already shows the profile) – the page then starts from it.
+                        (c, ref, _) => TextButton(
+                          key: ValueKey(loaded ? ref.watch(profileProvider).value?.name : null),
                           onPressed: () => Navigator.push(c, MaterialPageRoute(builder: (_) => page)),
                           child: const Text('open'),
                         ),
@@ -311,5 +315,71 @@ void main() {
     expect(eventFitsFocus('70.3', TrainingFocus.triathlon), isTrue);
     expect(eventFitsFocus('ride100', TrainingFocus.triathlon), isFalse);
     expect(eventFitsFocus(null, TrainingFocus.ride), isTrue);
+  });
+
+  // User report 2026-11 ("5 h set for long runs, yet the note says they stop at 3 h"): the plan settings say
+  // that the day's time is an upper limit, and offer the opt-in extension – next to the day times and in the
+  // note of the plan step. The switch is saved with the profile and the new plan uses it.
+  testWidgets('plan settings: long-run cap hint and the switch for longer long runs (slow marathoner)', (tester) async {
+    final now = DateTime.now();
+    final profile = UserProfile(
+      name: 'Mia',
+      birthYear: now.year - 35,
+      level: 'intermediate',
+      focus: TrainingFocus.run,
+      experience: const {Sport.run},
+      trainingDays: const [1, 2, 4, 6, 7],
+      longDay: 6,
+      onboarded: true,
+      athlete: AthleteData(
+        setupMode: 'advanced',
+        sessionMinutes: 75,
+        dayMinutes: const {6: 300},
+        dayPlan: const {
+          1: [Sport.run],
+          2: [Sport.run],
+          4: [Sport.run],
+          6: [Sport.run],
+          7: [Sport.run],
+        },
+        raceTimes: const {'10k': 68 * 60},
+        runWeeklyKm: 35,
+        longestRunKm: 16,
+        eventDistance: 'm',
+        eventDate: addDays(startOfWeek(dayOnly(now)), 7 * 17 + 6),
+      ),
+    );
+    final repo = await _pump(tester, profile: profile, mode: SetupMode.plan, loaded: true);
+    final setting = find.byKey(const ValueKey('extendLongRunSetting'));
+    for (var i = 0; i < 4 && setting.evaluate().isEmpty; i++) {
+      await _next(tester);
+    }
+    expect(setting, findsOneWidget, reason: 'next to the day times');
+    expect(find.byKey(const ValueKey('longCapHint-run')), findsOneWidget);
+    expect(find.text(l.timeLongCapRun(formatMinutes(180))), findsOneWidget);
+    expect(find.text(l.longRunExtendSwitch(formatMinutes(210))), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(setting).value, isFalse);
+    await _tap(tester, setting);
+    expect(tester.widget<SwitchListTile>(setting).value, isTrue);
+    expect(find.text(l.timeLongCapRun(formatMinutes(210))), findsOneWidget, reason: 'the hint follows the switch');
+    // Plan step: the note is an info card with the same switch.
+    final inNote = find.byKey(const ValueKey('extendLongRun'));
+    for (var i = 0; i < 6 && inNote.evaluate().isEmpty; i++) {
+      await _next(tester);
+    }
+    expect(inNote, findsOneWidget);
+    expect(find.byKey(const ValueKey('feasNoteIcon')), findsOneWidget);
+    expect(find.text(l.feasTitleNote), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(inNote).value, isTrue);
+    await _tap(tester, inNote);
+    expect(tester.widget<SwitchListTile>(inNote).value, isFalse);
+    await _tap(tester, inNote);
+    expect(tester.widget<SwitchListTile>(inNote).value, isTrue);
+    await _finish(tester);
+    if (find.text(l.replacePlanOk).evaluate().isNotEmpty) await _tap(tester, find.text(l.replacePlanOk));
+    expect(repo.savedProfile!.athlete.longRunExtend, isTrue);
+    final longRuns = repo.savedPlans.where((w) => w.sport == Sport.run && w.intensity == 'long');
+    expect(longRuns.where((w) => w.durationMin > 182).length, inInclusiveRange(1, 2));
+    expect(longRuns.every((w) => w.durationMin <= 210), isTrue);
   });
 }

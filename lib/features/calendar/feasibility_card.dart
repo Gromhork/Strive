@@ -36,8 +36,20 @@ String _hm(int m) => formatMinutes(m);
 /// Short warning when the event goal is not realistic in the time left, with what would
 /// make it work (later date, shorter distance, run/walk). Nothing when the goal is fine.
 class FeasibilityCard extends StatelessWidget {
-  const FeasibilityCard(this.f, {super.key, this.planAnyway = false, this.onClose, this.onAdjustTarget, this.showTargetOk = false});
+  const FeasibilityCard(
+    this.f, {
+    super.key,
+    this.planAnyway = false,
+    this.onClose,
+    this.onAdjustTarget,
+    this.showTargetOk = false,
+    this.onExtendLongRun,
+  });
   final PlanFeasibility f;
+
+  /// Switch "allow long runs up to …" inside the long-run cap note ([LongRunCapNote], where the athlete can
+  /// opt in to the extension); without it the note says where to switch it on.
+  final ValueChanged<bool>? onExtendLongRun;
 
   /// One tap "set target to the realistic time" (shown with a target-time issue).
   final ValueChanged<int>? onAdjustTarget;
@@ -49,7 +61,7 @@ class FeasibilityCard extends StatelessWidget {
   final bool planAnyway;
   final VoidCallback? onClose;
 
-  static String issueText(AppLocalizations l, PlanFeasibility f, String issue) => switch (issue) {
+  static String issueText(AppLocalizations l, PlanFeasibility f, String issue, {bool canSwitch = false}) => switch (issue) {
     'beginnerMarathon' => l.feasBeginnerMarathon,
     'beginnerDistance' => l.feasBeginnerDistance,
     'longSwim' =>
@@ -64,7 +76,7 @@ class FeasibilityCard extends StatelessWidget {
     'targetUnrealistic' => l.feasTargetUnrealistic(clock(f.target!.targetSec), clock(f.target!.currentSec), clock(f.target!.realisticSec)),
     // New issues (review 2026-11: long-day default, long-run share, conservative target) carry their own text.
     _ =>
-      f.extraIssueText(l, issue, dayName: (d) => DateFormat.EEEE(l.localeName).format(DateTime(2024, 1, d))) ??
+      f.extraIssueText(l, issue, dayName: (d) => DateFormat.EEEE(l.localeName).format(DateTime(2024, 1, d)), canSwitch: canSwitch) ??
           l.feasTooShort(f.weeks ?? 0),
   };
 
@@ -120,15 +132,30 @@ class FeasibilityCard extends StatelessWidget {
       if (targetIssue && onAdjustTarget == null) l.feasTargetSuggest(clock(t.suggestedSec)),
       if (targetIssue && t.laterDate != null) l.feasTargetLater(clock(t.targetSec), df.format(t.laterDate!)),
     ];
+    // Notes only (the goal itself is fine): a neutral info look, not a warning (user report 2026-11: the
+    // long-run cap note read as a warning that contradicted the time the athlete had set).
+    final note = f.onlyNotes;
+    final cap = f.capNote;
+    final extendMax = issues.contains('longRunTimeCap') ? cap?.extendMaxMin : null;
+    final canSwitch = extendMax != null && onExtendLongRun != null;
     return Container(
       key: const ValueKey('feasibility'),
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-      decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: note ? Theme.of(context).colorScheme.surfaceContainerHighest : AppColors.warning.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 22)),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child:
+                note
+                    ? const Icon(Icons.info_outline_rounded, key: ValueKey('feasNoteIcon'), color: AppColors.brand, size: 22)
+                    : const Icon(Icons.warning_amber_rounded, key: ValueKey('feasWarnIcon'), color: AppColors.warning, size: 22),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -139,7 +166,17 @@ class FeasibilityCard extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
-                for (final i in issues) Text(issueText(l, f, i), style: const TextStyle(fontSize: 13)),
+                for (final i in issues) Text(issueText(l, f, i, canSwitch: canSwitch), style: const TextStyle(fontSize: 13)),
+                if (canSwitch)
+                  SwitchListTile(
+                    key: const ValueKey('extendLongRun'),
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    visualDensity: VisualDensity.compact,
+                    value: cap!.extendOn,
+                    onChanged: onExtendLongRun,
+                    title: Text(l.longRunExtendSwitch(_hm(extendMax)), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ),
                 if (options.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(l.feasOptions, style: small?.copyWith(fontWeight: FontWeight.w600)),

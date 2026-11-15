@@ -11182,6 +11182,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start empty'**
   String get startEmptyWorkout;
+
+  /// No description provided for @feasCapLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Your long runs stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km).'**
+  String feasCapLine(String time, String have, String race);
+
+  /// No description provided for @feasCapLineUsual.
+  ///
+  /// In en, this message translates to:
+  /// **'Your long runs usually stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km).'**
+  String feasCapLineUsual(String time, String have, String race);
+
+  /// No description provided for @feasCapNotYourTime.
+  ///
+  /// In en, this message translates to:
+  /// **'That is not about your time (you planned {set} for {day}) – the limit is set on purpose.'**
+  String feasCapNotYourTime(String set, String day);
+
+  /// No description provided for @feasCapWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Longer single runs add more injury risk and recovery cost than fitness.'**
+  String get feasCapWhy;
+
+  /// No description provided for @feasCapWhyTri.
+  ///
+  /// In en, this message translates to:
+  /// **'In triathlon and duathlon training this limit is fixed: the bike carries the endurance, and an even longer run would cost you the key sessions of the following days.'**
+  String get feasCapWhyTri;
+
+  /// No description provided for @feasCapOffer.
+  ///
+  /// In en, this message translates to:
+  /// **'If you like, the plan extends the last long runs before the taper step by step up to {time} (about {dist} km) – with walk breaks from the start and easier days afterwards.'**
+  String feasCapOffer(String time, String dist);
+
+  /// No description provided for @feasCapOfferWhere.
+  ///
+  /// In en, this message translates to:
+  /// **'You can switch this on in the plan settings.'**
+  String get feasCapOfferWhere;
+
+  /// No description provided for @feasCapExtended.
+  ///
+  /// In en, this message translates to:
+  /// **'You allowed longer runs: the last long runs before the taper go step by step up to {time} (about {dist} km) – with walk breaks from the start and easier days afterwards.'**
+  String feasCapExtended(String time, String dist);
+
+  /// No description provided for @feasCapExtendedNoGain.
+  ///
+  /// In en, this message translates to:
+  /// **'You allowed longer runs, but this plan cannot use them: there are too few weeks left to build beyond the limit safely.'**
+  String get feasCapExtendedNoGain;
+
+  /// No description provided for @feasCapFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'So: finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).'**
+  String get feasCapFinish;
+
+  /// No description provided for @feasCapFinishTri.
+  ///
+  /// In en, this message translates to:
+  /// **'For the run of your race that means: start easy and plan short walk breaks from the beginning, e.g. at every aid station.'**
+  String get feasCapFinishTri;
+
+  /// No description provided for @longRunExtendSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow long runs up to {time}'**
+  String longRunExtendSwitch(String time);
+
+  /// No description provided for @longRunExtendSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Default: at most {time} in one run. With this option only the last long runs before the taper get longer – step by step, with walk breaks and easier days afterwards.'**
+  String longRunExtendSub(String time);
+
+  /// No description provided for @timeLongCapRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Your day time is an upper limit, not a target: for this goal Strive plans long runs of at most {time} in one go, even when the day has more time.'**
+  String timeLongCapRun(String time);
+
+  /// No description provided for @timeLongCapRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Your day time is an upper limit, not a target: for this goal Strive plans long rides of at most {time}, even when the day has more time.'**
+  String timeLongCapRide(String time);
+
+  /// No description provided for @wLongRunExtendedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended long run (beyond your usual {time}): walk 1 min after every 10 min of running from the very start, eat and drink early. Stop if something hurts – the minutes matter less than staying healthy. Keep the next two days easy or free.'**
+  String wLongRunExtendedNote(String time);
+
+  /// No description provided for @wAfterExtendedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept easy on purpose: your legs are still recovering from the extended long run.'**
+  String get wAfterExtendedNote;
+
+  /// No description provided for @longRunExtendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Longer long runs'**
+  String get longRunExtendTitle;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

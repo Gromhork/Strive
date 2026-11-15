@@ -1060,6 +1060,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Widget _timeSection(AppLocalizations l, {required List<int> days}) {
     final profile = _advanced ? _profile : _quickProfile;
     final longDay = PlanGenerator.longDayOf(profile);
+    // Long sessions capped below the time the athlete set for their day, and the opt-in extension of the
+    // long run's cap (marathon / ultra, [PlanGenerator.longRunExtension]).
+    final caps = PlanGenerator.longCapsBelowDayTime(profile);
+    final ext = PlanGenerator.longRunExtension(profile);
+    final extSpec = EventSpec.of(a.eventDistance);
+    final extShown = ext != null || (a.longRunExtend && (extSpec?.longRunExtraMin ?? 0) > 0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1115,6 +1121,30 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             ],
           ),
         ),
+        for (final c in caps)
+          Padding(
+            key: ValueKey('longCapHint-${c.sport.name}'),
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              c.sport == Sport.ride ? l.timeLongCapRide(_MinutesStepper.fmt(c.capMin)) : l.timeLongCapRun(_MinutesStepper.fmt(c.capMin)),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        if (extShown)
+          SwitchListTile(
+            key: const ValueKey('extendLongRunSetting'),
+            contentPadding: EdgeInsets.zero,
+            value: a.longRunExtend,
+            onChanged: (v) => _setA({'longRunExtend': v}),
+            title: Text(
+              l.longRunExtendSwitch(_MinutesStepper.fmt(ext?.maxMin ?? extSpec!.longRunCapMin + extSpec.longRunExtraMin)),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            subtitle: Text(
+              l.longRunExtendSub(_MinutesStepper.fmt(ext?.capMin ?? extSpec!.longRunCapMin)),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
       ],
     );
   }
@@ -2006,6 +2036,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             planAnyway: _generatePlan,
             showTargetOk: true,
             onAdjustTarget: (sec) => _setA({'targetTimeSec': sec}),
+            onExtendLongRun: (v) => _setA({'longRunExtend': v}),
           ),
         ],
         const Divider(height: 32),
@@ -2093,6 +2124,7 @@ List<String> planSettingChanges(
   add(l.summaryRace, race(b, nameBefore), race(a, nameAfter));
   if (a.eventDate == null) add(l.planLength, l.planWeeksN(b.planWeeks), l.planWeeksN(a.planWeeks));
   add(l.difficultyTitle, diff(b.difficulty), diff(a.difficulty));
+  add(l.longRunExtendTitle, b.longRunExtend ? l.yes : l.no, a.longRunExtend ? l.yes : l.no);
   return out;
 }
 
