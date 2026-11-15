@@ -16,6 +16,7 @@ import '../../services/session_checks.dart';
 import '../stats/session_check_hint.dart';
 import '../calendar/auto_adjust.dart';
 import '../shell/health_sync.dart';
+import '../../widgets/superset_group.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
 import '../../widgets/duration_picker.dart';
@@ -345,8 +346,9 @@ class _GymFromPlan extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          for (final e in exercises)
-            Padding(
+          ...groupedExerciseWidgets(exercises, hint: false, info: false, bottomInset: 4, (i) {
+            final e = exercises[i];
+            return Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,7 +364,8 @@ class _GymFromPlan extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
+            );
+          }),
           _FromPlanHint(text: l.fromPlanHintGym),
         ],
       ),

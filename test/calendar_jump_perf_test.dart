@@ -198,7 +198,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('replacesLabel')), findsOneWidget);
     expect(find.byKey(const ValueKey('doneElsewhere_m')), findsOneWidget);
-  });
+    // On a Monday "the day before" lies in last week, which the week list does not show.
+  }, skip: today.weekday == DateTime.monday);
 
   testWidgets("each day's add button keeps a 40 px target and its label", (tester) async {
     await phone(tester);

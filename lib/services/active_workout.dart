@@ -9,6 +9,7 @@ import '../core/sport.dart';
 import '../data/models.dart';
 import '../providers.dart';
 import 'supersets.dart';
+import 'supersets.dart' as supersets;
 import 'workout_alerts.dart';
 
 /// Lead-in of the hold timer: "3, 2, 1" to get into position before the hold time runs.
@@ -254,15 +255,42 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     _touch();
   }
 
-  /// Moves an exercise; a superset member that is moved away leaves its superset.
-  void moveExercise(int from, int to) {
+  /// Moves an exercise to index [to] (as in a reorderable list: the index *before* removal).
+  /// Supersets stay contiguous, see [supersets.moveExercise].
+  SupersetMove moveExercise(int from, int to) {
+    final list = state?.exercises;
+    if (list == null) return SupersetMove.moved;
+    cancelHold();
+    final focused = _focused(list);
+    final r = supersets.moveExercise(list, from, to > from ? to - 1 : to);
+    _refocus(list, focused);
+    _touch();
+    return r;
+  }
+
+  /// "Move up / down": one step, jumping over a whole superset instead of entering it
+  /// ([supersets.stepExercise]).
+  void stepExercise(int i, int dir) {
     final list = state?.exercises;
     if (list == null) return;
     cancelHold();
-    final e = list.removeAt(from);
-    list.insert(to > from ? to - 1 : to, e);
-    normalizeSupersets(list);
+    final focused = _focused(list);
+    supersets.stepExercise(list, i, dir);
+    _refocus(list, focused);
     _touch();
+  }
+
+  GymExercise? _focused(List<GymExercise> list) {
+    final f = state?.focus ?? -1;
+    return f >= 0 && f < list.length ? list[f] : null;
+  }
+
+  /// The focus view keeps showing the same exercise after a reorder.
+  void _refocus(List<GymExercise> list, GymExercise? focused) {
+    final w = state;
+    if (w == null || focused == null) return;
+    final i = list.indexWhere((x) => identical(x, focused));
+    if (i >= 0 && i != w.focus) state = w.copyWith(focus: i);
   }
 
   void addSet(int ex) {

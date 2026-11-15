@@ -9,6 +9,7 @@ import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/exercise_class.dart';
 import '../../services/supersets.dart';
+import '../../widgets/superset_group.dart';
 import '../../widgets/common.dart';
 import '../../widgets/duration_picker.dart';
 import '../../widgets/exercise_media.dart';
@@ -52,6 +53,33 @@ class GymExerciseEditor extends ConsumerWidget {
     final u = ref.watch(profileOrDefaultProvider).units;
     final minutes = estimateGymMinutes(exercises);
     final sets = exercises.fold<int>(0, (a, e) => a + e.workSets.length);
+    // Supersets as blocks (adjacent runs – also for programs that were never normalised).
+    final blocks = exerciseBlocks(exercises);
+    Widget card(int i) => _ExerciseEditCard(
+      suggested: ref.watch(loadPrescriberProvider).forExercise(exercises[i], phase: phase)?.weight,
+      index: i,
+      exercise: exercises[i],
+      units: u,
+      onChanged: () => touch(() {}),
+      onRemove:
+          () => touch(() {
+            exercises.removeAt(i);
+            normalizeSupersets(exercises);
+          }),
+      onReplace: () async {
+        final picked = await pickExercises(context, single: true);
+        if (picked.isEmpty) return;
+        touch(() {
+          final e = exercises[i];
+          final wasTimed = e.isTimed;
+          e.exId = picked.first.id;
+          e.name = picked.first.name;
+          e.timed = null;
+          // Reps ↔ hold time: the sets switch their measure with the exercise.
+          if (e.isTimed != wasTimed) _convertSets(e, ref.read(profileOrDefaultProvider).athlete.gymGoal);
+        });
+      },
+    );
     return [
       Row(
         children: [
@@ -65,52 +93,66 @@ class GymExerciseEditor extends ConsumerWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         buildDefaultDragHandles: false,
-        onReorder:
-            (a, b) => touch(() {
-              final e = exercises.removeAt(a);
-              exercises.insert(b > a ? b - 1 : b, e);
-              normalizeSupersets(exercises);
-            }),
+        onReorder: (a, b) {
+          // A dragged exercise never tears a superset apart: dropped between two members it
+          // joins them (or lands behind a full superset).
+          if (a < 0 || a >= exercises.length) return;
+          final moved = exercises[a];
+          late SupersetMove move;
+          touch(() => move = moveExercise(exercises, a, b > a ? b - 1 : b));
+          if (move == SupersetMove.full) toast(context, l.supersetFullMoved);
+          if (move == SupersetMove.joined && moved.group != null) toast(context, l.supersetJoined(moved.group!));
+        },
         children: [
-          for (var i = 0; i < exercises.length; i++)
-            Column(
-              key: ObjectKey(exercises[i]),
-              children: [
-                _ExerciseEditCard(
-                  suggested: ref.watch(loadPrescriberProvider).forExercise(exercises[i], phase: phase)?.weight,
-                  index: i,
-                  exercise: exercises[i],
-                  units: u,
-                  inSuperset: exercises[i].group != null,
-                  onChanged: () => touch(() {}),
-                  onRemove:
-                      () => touch(() {
-                        exercises.removeAt(i);
-                        normalizeSupersets(exercises);
-                      }),
-                  onReplace: () async {
-                    final picked = await pickExercises(context, single: true);
-                    if (picked.isEmpty) return;
-                    touch(() {
-                      final e = exercises[i];
-                      final wasTimed = e.isTimed;
-                      e.exId = picked.first.id;
-                      e.name = picked.first.name;
-                      e.timed = null;
-                      // Reps ↔ hold time: the sets switch their measure with the exercise.
-                      if (e.isTimed != wasTimed) _convertSets(e, ref.read(profileOrDefaultProvider).athlete.gymGoal);
-                    });
-                  },
-                ),
-                if (i < exercises.length - 1)
-                  _SupersetLink(
-                    linked: exercises[i].group != null && exercises[i].group == exercises[i + 1].group,
-                    onTap: () => _toggleSuperset(context, i),
-                  ),
-              ],
-            ),
+          for (final block in blocks)
+            for (final i in block.indices)
+              Column(
+                key: ObjectKey(exercises[i]),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (block.grouped)
+                    SupersetSegment(
+                      letter: block.letter!,
+                      position: i - block.start,
+                      count: block.length,
+                      badgeTop: 24, // next to the card's title row
+                      trailing: TextButton(
+                        key: ValueKey('dissolveSuperset-${block.letter}'),
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        onPressed: () => touch(() => dissolveSuperset(exercises, i)),
+                        child: Tooltip(
+                          message: l.supersetDissolveTip,
+                          child: Text(l.supersetDissolve, style: const TextStyle(fontSize: 12)),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          card(i),
+                          // Inside the frame: the link to the next member (tap to split here).
+                          if (i < block.end)
+                            _SupersetLink(linked: true, onTap: () => _toggleSuperset(context, i))
+                          else
+                            const SizedBox(height: 4),
+                        ],
+                      ),
+                    )
+                  else
+                    card(i),
+                  // Between two blocks: "link as superset".
+                  if (i == block.end && i < exercises.length - 1) _SupersetLink(linked: false, onTap: () => _toggleSuperset(context, i)),
+                ],
+              ),
         ],
       ),
+      if (exercises.length > 1 && !blocks.any((b) => b.grouped))
+        Padding(
+          key: const ValueKey('supersetEditHint'),
+          padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+          child: Text(l.supersetEditHint, style: Theme.of(context).textTheme.bodySmall),
+        ),
       const SizedBox(height: 8),
       OutlinedButton.icon(
         icon: const Icon(Icons.add),
@@ -193,7 +235,6 @@ class _ExerciseEditCard extends ConsumerWidget {
     required this.index,
     required this.exercise,
     required this.units,
-    required this.inSuperset,
     required this.onChanged,
     required this.onRemove,
     required this.onReplace,
@@ -202,7 +243,6 @@ class _ExerciseEditCard extends ConsumerWidget {
   final int index;
   final GymExercise exercise;
   final Units units;
-  final bool inSuperset;
   final VoidCallback onChanged;
   final VoidCallback onRemove;
   final VoidCallback onReplace;
@@ -217,11 +257,7 @@ class _ExerciseEditCard extends ConsumerWidget {
     final name = exName(context, e.exId, e.name);
 
     return Container(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(18),
-        border: inSuperset ? Border.all(color: AppColors.brand.withValues(alpha: 0.6), width: 1.5) : null,
-      ),
+      decoration: BoxDecoration(color: scheme.surfaceContainer, borderRadius: BorderRadius.circular(18)),
       padding: const EdgeInsets.fromLTRB(4, 8, 8, 8),
       child: Column(
         children: [
@@ -248,13 +284,6 @@ class _ExerciseEditCard extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        if (e.group != null)
-                          Container(
-                            margin: const EdgeInsets.only(right: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                            decoration: BoxDecoration(color: AppColors.brand, borderRadius: BorderRadius.circular(6)),
-                            child: Text(e.group!, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
-                          ),
                         Expanded(
                           child: Text(
                             name,
@@ -681,11 +710,16 @@ class _MiniChip extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: Theme.of(context).colorScheme.outline),
           const SizedBox(width: 3),
-          Text(
-            text,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(decoration: TextDecoration.underline, decorationStyle: TextDecorationStyle.dotted),
+          // Flexible: a long chip ("8–12 Wdh.") is cut off instead of overflowing on narrow screens.
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(decoration: TextDecoration.underline, decorationStyle: TextDecorationStyle.dotted),
+            ),
           ),
         ],
       ),

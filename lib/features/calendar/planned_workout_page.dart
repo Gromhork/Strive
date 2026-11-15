@@ -16,6 +16,7 @@ import '../../data/exercise_measure.dart' show formatHold, holdPerSide;
 import '../../data/exercise_names_de.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/plan_amount.dart';
+import '../../widgets/superset_group.dart';
 import '../../widgets/prescription.dart';
 import '../session/manual_entry_page.dart';
 import '../session/start_helpers.dart';
@@ -27,7 +28,6 @@ import '../../widgets/term_info.dart';
 import 'not_fit_sheet.dart';
 import 'plan_editor.dart';
 import '../../services/plan_exercises.dart';
-import '../../services/supersets.dart' show supersetOf;
 
 String phaseLabel(AppLocalizations l, String? phase) => switch (phase) {
   'base' => l.phaseBase,
@@ -294,19 +294,15 @@ class PlannedWorkoutPage extends ConsumerWidget {
                   ),
                 ),
               ),
-            for (final (i, e) in exercises.indexed) ...[
-              // Supersets as the program and the running workout show them: "Supersatz A" above
-              // its first member, the letter before each member's name.
-              if (supersetOf(exercises, i).length > 1 && supersetOf(exercises, i).first == i)
-                Padding(
-                  key: ValueKey('plannedSuperset-${e.group}'),
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text('${l.superset} ${e.group}', style: t.labelLarge?.copyWith(color: AppColors.gym, fontWeight: FontWeight.w700)),
-                ),
-              ListTile(
+            // Supersets in one frame with a rail ("A1", "A2") – like the program, the editor and
+            // the running workout show them.
+            ...groupedExerciseWidgets(exercises, (i) {
+              final e = exercises[i];
+              return ListTile(
+                key: ValueKey('plannedExercise-$i'),
                 contentPadding: EdgeInsets.zero,
                 leading: ExerciseMedia(exId: e.exId, animated: false, size: 48, radius: 12),
-                title: Text('${supersetOf(exercises, i).length > 1 ? '${e.group} · ' : ''}${exName(context, e.exId, e.name)}'),
+                title: Text(exName(context, e.exId, e.name)),
                 subtitle: Builder(
                   builder: (_) {
                     final rx = p.isDone ? null : prescriber.forExercise(e, phase: gymLoadPhase(p));
@@ -352,8 +348,8 @@ class PlannedWorkoutPage extends ConsumerWidget {
                     );
                   },
                 ),
-              ),
-            ],
+              );
+            }),
           ],
         ],
       ),

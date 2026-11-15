@@ -1341,7 +1341,7 @@
   "structuredWorkout": "Structured",
   "structuredWorkoutSub": "Phases with targets – guided step by step during the workout (voice, pace/power/HR).",
   "freeWorkoutSub": "Just a duration or distance goal, no sections.",
-  "supersetLinked": "Superset – tap to unlink",
+  "supersetLinked": "Linked – tap to split here",
   "repRange": "Rep range",
   "repRangeHint": "Double progression: add reps until you hit the top of the range on all sets, then increase the weight.",
   "exerciseLoadError": "Exercises could not be loaded.",
@@ -4386,5 +4386,76 @@
   "planProgramMissing": "The program of this workout was deleted",
   "planProgramMissingSub": "Choose a program or exercises for it – or start an empty workout.",
   "planProgramChoose": "Choose program",
-  "startEmptyWorkout": "Start empty"
+  "startEmptyWorkout": "Start empty",
+  "circuit": "Circuit",
+  "supersetGroupTitle": "{kind} {letter} · {count} exercises",
+  "@supersetGroupTitle": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "letter": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "supersetGroupHint": "Alternate · rest after each round",
+  "supersetMemberOf": "{kind} {letter}, exercise {x} of {y}",
+  "@supersetMemberOf": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "letter": {
+        "type": "String"
+      },
+      "x": {
+        "type": "int"
+      },
+      "y": {
+        "type": "int"
+      }
+    }
+  },
+  "supersetPosition": "{kind} {letter} · {x}/{y}",
+  "@supersetPosition": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "letter": {
+        "type": "String"
+      },
+      "x": {
+        "type": "int"
+      },
+      "y": {
+        "type": "int"
+      }
+    }
+  },
+  "supersetThen": "Then straight on to: {name}",
+  "@supersetThen": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "supersetThenRest": "Last exercise of the round – rest afterwards",
+  "supersetDissolve": "Dissolve",
+  "supersetDissolveTip": "Dissolve superset",
+  "supersetFullMoved": "This superset is full (max. 3 exercises) – the exercise was placed after it.",
+  "supersetJoined": "Added to superset {letter}.",
+  "@supersetJoined": {
+    "placeholders": {
+      "letter": {
+        "type": "String"
+      }
+    }
+  },
+  "supersetEditHint": "Tip: link two exercises with the chain button between them to do them alternately as a superset."
 }

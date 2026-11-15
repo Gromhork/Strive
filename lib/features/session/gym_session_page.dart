@@ -23,7 +23,7 @@ import '../../widgets/prescription.dart';
 import '../train/exercise_picker.dart';
 import 'exercise_focus_page.dart';
 import 'music.dart';
-import '../../widgets/term_info.dart';
+import '../../widgets/superset_group.dart';
 import 'session_summary_page.dart';
 
 /// Workout overview: progress, "up next" hero and the exercise list.
@@ -170,13 +170,17 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
           ],
           if (!_table && next == null && w.exercises.isNotEmpty) ...[_AllDoneCard(onFinish: () => _finish(w)), const SizedBox(height: 18)],
           if (_table)
-            for (var i = 0; i < w.exercises.length; i++)
-              _ExerciseCard(
+            ...groupedExerciseWidgets(
+              w.exercises,
+              bottomInset: 14,
+              badgeTop: 22, // next to the card's title row
+              (i) => _ExerciseCard(
                 index: i,
                 exercise: w.exercises[i],
                 previous: ref.watch(loadPrescriberProvider).previousSets(w.exercises[i]),
                 units: u,
-              )
+              ),
+            )
           else
             ..._exerciseList(w, u),
           const SizedBox(height: 8),
@@ -192,32 +196,16 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
     );
   }
 
-  /// Exercises in order; adjacent superset members are framed together. (Supersets are
-  /// adjacent runs only – a letter shared by distant exercises never pulls the
+  /// Exercises in order; adjacent superset members sit in one frame ([SupersetGroup]).
+  /// (Supersets are adjacent runs only – a letter shared by distant exercises never pulls the
   /// exercises in between out of the list.)
-  List<Widget> _exerciseList(ActiveGym w, Units u) {
-    final out = <Widget>[];
-    var i = 0;
-    while (i < w.exercises.length) {
-      final group = w.groupOf(i);
-      if (group.length > 1) {
-        out.add(
-          _SupersetFrame(
-            letter: w.exercises[i].group!,
-            children: [for (final k in group) _ExerciseTile(w: w, index: k, units: u, onTap: () => _openFocus(k))],
-          ),
-        );
-        i = group.last + 1;
-        continue;
-      }
-      // Copy the index: the closure must not capture the loop variable (it would open
-      // the last exercise for every tile).
-      final k = i;
-      out.add(_ExerciseTile(w: w, index: k, units: u, onTap: () => _openFocus(k)));
-      i++;
-    }
-    return out;
-  }
+  List<Widget> _exerciseList(ActiveGym w, Units u) => groupedExerciseWidgets(
+    w.exercises,
+    bottomInset: 10,
+    // The builder gets its own index per call: the closure must not capture a loop variable
+    // (it would open the last exercise for every tile).
+    (k) => _ExerciseTile(w: w, index: k, units: u, onTap: () => _openFocus(k)),
+  );
 }
 
 // ───────────────────────────── Overview widgets ─────────────────────────────
@@ -314,6 +302,7 @@ class _UpNextCard extends StatelessWidget {
     final e = w.exercises[index];
     final setIdx = e.sets.indexWhere((s) => !s.done);
     final set = setIdx < 0 ? null : e.sets[setIdx];
+    final group = w.groupOf(index);
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainerHigh,
       borderRadius: BorderRadius.circular(24),
@@ -347,6 +336,21 @@ class _UpNextCard extends StatelessWidget {
                         '${l.setXofY(setIdx + 1, e.sets.length)} · ${setLabelOf(l, e, set, units)}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
+                    // Superset: which one, the position in it and what follows without a rest.
+                    if (group.length > 1) ...[
+                      const SizedBox(height: 6),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: SupersetChip(
+                          key: const ValueKey('upNextSuperset'),
+                          letter: e.group ?? 'A',
+                          position: group.indexOf(index),
+                          count: group.length,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      SupersetNextLine(exercises: w.exercises, index: index),
+                    ],
                   ],
                 ),
               ),
@@ -384,42 +388,6 @@ class _AllDoneCard extends StatelessWidget {
             onPressed: onFinish,
             child: Text(l.finish),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SupersetFrame extends StatelessWidget {
-  const _SupersetFrame({required this.letter, required this.children});
-  final String letter;
-  final List<Widget> children;
-  @override
-  Widget build(BuildContext context) {
-    const c = AppColors.brand;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.fromLTRB(10, 8, 0, 0),
-      decoration: const BoxDecoration(border: Border(left: BorderSide(color: c, width: 3))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              children: [
-                const Icon(Icons.link_rounded, size: 16, color: c),
-                const SizedBox(width: 4),
-                Text(
-                  '${context.l10n.superset} $letter',
-                  style: const TextStyle(color: c, fontWeight: FontWeight.w700, fontSize: 12, letterSpacing: 0.6),
-                ),
-                // The full explanation lives in the info sheet (the one-line hint was cut off).
-                const TermInfoButton(Term.superset, size: 15),
-              ],
-            ),
-          ),
-          ...children,
         ],
       ),
     );
@@ -516,6 +484,7 @@ class ExerciseMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final e = w.exercises[index];
+    final inSuperset = w.groupOf(index).length > 1;
     return PopupMenuButton<String>(
       icon: icon,
       onSelected: (v) async {
@@ -535,23 +504,23 @@ class ExerciseMenu extends ConsumerWidget {
             final s = await askNumber(context, l.restTimeSeconds, initial: e.restSec.toDouble(), suffix: 's');
             if (s != null) n.setRest(index, s.round());
           case 'up':
-            if (index > 0) n.moveExercise(index, index - 1);
+            n.stepExercise(index, -1);
           case 'down':
-            n.moveExercise(index, index + 2);
+            n.stepExercise(index, 1);
           case 'remove':
             n.removeExercise(index);
         }
       },
       itemBuilder:
           (_) => [
-            if (e.group != null || index + 1 < w.exercises.length)
+            if (inSuperset || index + 1 < w.exercises.length)
               PopupMenuItem(
                 value: 'superset',
                 child: ListTile(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(e.group != null ? Icons.link_off_rounded : Icons.link_rounded),
-                  title: Text(e.group != null ? l.unlinkSuperset : l.linkSuperset),
+                  leading: Icon(inSuperset ? Icons.link_off_rounded : Icons.link_rounded),
+                  title: Text(inSuperset ? l.unlinkSuperset : l.linkSuperset),
                 ),
               ),
             PopupMenuItem(
@@ -663,14 +632,7 @@ class _ExerciseCard extends ConsumerWidget {
       child: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: BorderSide(
-            color:
-                allDone
-                    ? AppColors.success.withValues(alpha: 0.6)
-                    : exercise.group != null
-                    ? AppColors.brand.withValues(alpha: 0.6)
-                    : Theme.of(context).colorScheme.outlineVariant,
-          ),
+          side: BorderSide(color: allDone ? AppColors.success.withValues(alpha: 0.6) : Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 6, 4, 10),
@@ -682,7 +644,7 @@ class _ExerciseCard extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '${exercise.group != null ? '${exercise.group} · ' : ''}${exName(context, exercise.exId, exercise.name)}',
+                      exName(context, exercise.exId, exercise.name),
                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.gym),
                     ),
                   ),

@@ -12,6 +12,8 @@ import '../../data/models.dart';
 import '../../data/exercise_names_de.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/supersets.dart';
+import '../../widgets/superset_group.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
 import '../../widgets/duration_picker.dart';
@@ -193,9 +195,8 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   }
 
   void _move(int i, int by) {
-    final j = i + by;
-    if (j < 0 || j >= _exercises.length) return;
-    setState(() => _exercises.insert(j, _exercises.removeAt(i)));
+    // One step; a superset of the session is jumped over as a whole instead of being torn apart.
+    setState(() => stepExercise(_exercises, i, by));
   }
 
   @override
@@ -337,8 +338,12 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
             TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
             if (!cardio) ...[
               const SizedBox(height: 16),
-              for (var i = 0; i < _exercises.length; i++)
-                Padding(
+              ...groupedExerciseWidgets(
+                _exercises,
+                hint: false,
+                bottomInset: 12,
+                badgeTop: 26, // next to the card's title row
+                (i) => Padding(
                   key: ObjectKey(_exercises[i]),
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _ExerciseEditor(
@@ -351,6 +356,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
                     onRemove: () => _removeExercise(i),
                   ),
                 ),
+              ),
               OutlinedButton.icon(
                 key: const ValueKey('editAddExercise'),
                 onPressed: _addExercises,
