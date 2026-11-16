@@ -11210,13 +11210,13 @@ abstract class AppLocalizations {
   /// No description provided for @folderDuplicated.
   ///
   /// In en, this message translates to:
-  /// **'{n, plural, =0{Created the empty folder “{name}”.} =1{Created the folder “{name}” with 1 program.} other{Created the folder “{name}” with {n} programs.}}'**
-  String folderDuplicated(String name, int n);
+  /// **'{n, plural, =0{Empty folder duplicated.} =1{Folder duplicated (1 program).} other{Folder duplicated ({n} programs).}}'**
+  String folderDuplicated(int n);
 
   /// No description provided for @folderDuplicatedHidden.
   ///
   /// In en, this message translates to:
-  /// **'{n, plural, =1{1 of them belongs to another sport and is hidden by the sport filter.} other{{n} of them belong to other sports and are hidden by the sport filter.}}'**
+  /// **'{n} hidden by the sport filter.'**
   String folderDuplicatedHidden(int n);
 }
 

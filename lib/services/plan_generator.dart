@@ -3447,8 +3447,26 @@ class PlanGenerator {
     'ppl_legs': 'Legs',
   };
 
-  WorkoutTemplate? _template(String key) =>
-      templates.where((t) => t.key == key).firstOrNull ?? templates.where((t) => t.name == _legacyNames[key]).firstOrNull;
+  WorkoutTemplate? _template(String key) => templates.where((t) => t.key == key).firstOrNull ?? _legacyTemplate(_legacyNames[key]);
+
+  /// The pre-key program called [name]. Several can share the name – a duplicated folder holds
+  /// "Push" / "Pull" / "Legs" again: the one in the folder with the shortest name wins ("Push Pull
+  /// Legs" before "Push Pull Legs (copy)"), then folder name and id – never the document order.
+  WorkoutTemplate? _legacyTemplate(String? name) {
+    WorkoutTemplate? best;
+    for (final t in templates) {
+      if (t.name != name) continue;
+      if (best == null || _legacyRank(t, best) < 0) best = t;
+    }
+    return best;
+  }
+
+  static int _legacyRank(WorkoutTemplate a, WorkoutTemplate b) {
+    final length = a.folder.length.compareTo(b.folder.length);
+    if (length != 0) return length;
+    final folder = a.folder.compareTo(b.folder);
+    return folder != 0 ? folder : a.id.compareTo(b.id);
+  }
 
   /// Built-in programs in the plan's language (names and muscle groups of programs the athlete
   /// does not have).

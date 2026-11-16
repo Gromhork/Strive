@@ -1798,4 +1798,5 @@ const l10nPairs = <(String, String)>[
   ('Duplicate to folder', 'In Ordner duplizieren'),
   ('Created “{name}”.', '„{name}“ erstellt.'),
   ('Created “{name}” in {folder}.', '„{name}“ in {folder} erstellt.'),
+  ('{n} hidden by the sport filter.', '{n} davon blendet der Sportfilter aus.'),
 ];

@@ -310,9 +310,13 @@ void toast(BuildContext context, String msg) {
     ..showSnackBar(SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating));
 }
 
-/// Snack bar with an icon and an "Undo" action on one line. Takes the messenger (captured
-/// before an async gap / pop) so it also works after the calling page is gone.
-void undoToast(
+/// Snack bar with an icon and an "Undo" action. Takes the messenger (captured before an async
+/// gap / pop) so it also works after the calling page is gone. Short texts keep the action on
+/// their line (theme); a text that would wrap into more than two lines beside it – small phones,
+/// large fonts, long names – gets the full width with the action below (not Material's own
+/// overflow layout, which leaves 40 % of the bar empty beside the text), and is cut after four
+/// lines, so the bar never grows over the screen. Returns the bar (to close it early).
+ScaffoldFeatureController<SnackBar, SnackBarClosedReason> undoToast(
   ScaffoldMessengerState messenger, {
   required String text,
   required String undoLabel,
@@ -321,15 +325,69 @@ void undoToast(
   // Long enough to read and react: an accidental delete must stay undoable (8–10 s).
   Duration duration = const Duration(seconds: 10),
 }) {
-  messenger
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        duration: duration,
-        content: Row(children: [Icon(icon, size: 20, color: Colors.white70), const SizedBox(width: 12), Expanded(child: Text(text))]),
-        action: SnackBarAction(label: undoLabel, onPressed: onUndo),
-      ),
-    );
+  final below = _undoActionBelow(messenger.context, text, undoLabel);
+  final line = Row(
+    children: [
+      Icon(icon, size: 20, color: Colors.white70),
+      const SizedBox(width: 12),
+      Expanded(child: Text(text, maxLines: below ? 4 : 2, overflow: TextOverflow.ellipsis)),
+    ],
+  );
+  var undone = false;
+  messenger.hideCurrentSnackBar();
+  return messenger.showSnackBar(
+    SnackBar(
+      duration: duration,
+      padding: below ? const EdgeInsetsDirectional.fromSTEB(16, 0, 8, 0) : null,
+      content:
+          below
+              ? Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Padding(padding: const EdgeInsetsDirectional.only(top: 14, end: 8), child: line),
+                  Builder(
+                    builder:
+                        (context) => TextButton(
+                          style: TextButton.styleFrom(foregroundColor: Theme.of(context).snackBarTheme.actionTextColor),
+                          onPressed: () {
+                            // Once, like [SnackBarAction].
+                            if (undone) return;
+                            undone = true;
+                            onUndo();
+                            messenger.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+                          },
+                          child: Text(undoLabel),
+                        ),
+                  ),
+                ],
+              )
+              : line,
+      action: below ? null : SnackBarAction(label: undoLabel, onPressed: onUndo),
+    ),
+  );
+}
+
+/// Whether [text] needs more than two lines in the space an inline action [label] leaves.
+bool _undoActionBelow(BuildContext context, String text, String label) {
+  final media = MediaQuery.maybeOf(context);
+  if (media == null) return text.length > 60;
+  final theme = Theme.of(context);
+  TextPainter paint(String s, TextStyle? style, double width, {int? maxLines}) => TextPainter(
+    text: TextSpan(text: s, style: style),
+    textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+    textScaler: media.textScaler,
+    maxLines: maxLines,
+  )..layout(maxWidth: width);
+  final action = paint(label, theme.textTheme.labelLarge, double.infinity, maxLines: 1);
+  // Bar insets (2 × 16), content padding (16), icon + gap (32), the action's padding and margins (2 × 20).
+  final width = media.size.width - 120 - action.width;
+  action.dispose();
+  if (width < 60) return true;
+  final body = paint(text, theme.snackBarTheme.contentTextStyle ?? theme.textTheme.bodyMedium, width, maxLines: 2);
+  final over = body.didExceedMaxLines;
+  body.dispose();
+  return over;
 }
 
 /// Number input dialog (returns parsed value or null when cancelled). [signed] allows negative

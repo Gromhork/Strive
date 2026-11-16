@@ -3,12 +3,11 @@
  'duplicateToFolder': ['Duplicate to folder', 'In Ordner duplizieren'],
  'programDuplicated': ['Created “{name}”.', '„{name}“ erstellt.'],
  'programDuplicatedTo': ['Created “{name}” in {folder}.', '„{name}“ in {folder} erstellt.'],
+ # Short on purpose (undo snack bar on a 320 dp phone at text x1.3): the new folder shows opened
+ # right below its source, so its name is not repeated.
  'folderDuplicated': [
-  '{n, plural, =0{Created the empty folder “{name}”.} =1{Created the folder “{name}” with 1 program.} other{Created the folder “{name}” with {n} programs.}}',
-  '{n, plural, =0{Leeren Ordner „{name}“ erstellt.} =1{Ordner „{name}“ mit 1 Programm erstellt.} other{Ordner „{name}“ mit {n} Programmen erstellt.}}',
+  '{n, plural, =0{Empty folder duplicated.} =1{Folder duplicated (1 program).} other{Folder duplicated ({n} programs).}}',
+  '{n, plural, =0{Leeren Ordner dupliziert.} =1{Ordner dupliziert (1 Programm).} other{Ordner dupliziert ({n} Programme).}}',
  ],
- 'folderDuplicatedHidden': [
-  '{n, plural, =1{1 of them belongs to another sport and is hidden by the sport filter.} other{{n} of them belong to other sports and are hidden by the sport filter.}}',
-  '{n, plural, =1{1 davon gehört zu einer anderen Sportart und ist durch den Sportfilter ausgeblendet.} other{{n} davon gehören zu anderen Sportarten und sind durch den Sportfilter ausgeblendet.}}',
- ],
+ 'folderDuplicatedHidden': ['{n} hidden by the sport filter.', '{n} davon blendet der Sportfilter aus.'],
 }

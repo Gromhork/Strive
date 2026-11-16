@@ -68,6 +68,9 @@ class _TrainPageState extends ConsumerState<TrainPage> {
   Set<String>? _localRemoved;
   List<WorkoutTemplate>? _localProgramsBase;
 
+  /// The duplicate whose "Undo" bar is showing.
+  _PendingDuplicate? _dup;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -363,47 +366,53 @@ class _TrainPageState extends ConsumerState<TrainPage> {
             else
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverReorderableList(
-                  itemCount: folders.length,
-                  onReorderStart: (_) => HapticFeedback.mediumImpact(),
-                  onReorder: (from, to) {
-                    // Folders only: "no folder" stays last.
-                    if (from >= named.length) return;
-                    final target = (to > from ? to - 1 : to).clamp(0, named.length - 1);
-                    if (target == from) return;
-                    final full = _folders(all, folderOrder, false).where((f) => f.isNotEmpty).toList();
-                    _saveFolderOrder(reorderFolders(full, named, from, target));
+                sliver: NotificationListener<_ProgramUsed>(
+                  onNotification: (n) {
+                    _endUndo(programs: [n.id]);
+                    return true;
                   },
-                  proxyDecorator: _proxy,
-                  itemBuilder: (c, i) {
-                    final f = folders[i];
-                    final programs = inFolder(f);
-                    return _FolderCard(
-                      key: ValueKey('f-$f'),
-                      index: i,
-                      folder: f,
-                      name: f.isEmpty ? l.noFolder : f,
-                      programs: programs,
-                      open: _open.contains(f),
-                      onToggle: () => setState(() => _open.contains(f) ? _open.remove(f) : _open.add(f)),
-                      onOpen: () => setState(() => _open.add(f)),
-                      onMenu: f.isEmpty ? null : (v) => _folderAction(v, f, all, named, i),
-                      canMoveUp: f.isNotEmpty && i > 0,
-                      canMoveDown: f.isNotEmpty && i < named.length - 1,
-                      onDropProgram: (t, index) => _place(t, f, index ?? programs.where((x) => x.id != t.id).length),
-                      onDragStart: _startDrag,
-                      onDragEnd: _endDrag,
-                      onMoveProgram: (t, delta) {
-                        final rest = programs.where((x) => x.id != t.id).toList();
-                        final at = programs.indexWhere((x) => x.id == t.id) + delta;
-                        if (at >= 0 && at <= rest.length) _place(t, f, at);
-                      },
-                      onMoveToFolder: (t) => _moveToFolder(t, all, folderOrder),
-                      onDuplicateProgram: (t, pickFolder) => _duplicateProgram(t, pickFolder: pickFolder),
-                      canRestore:
-                          () => f.isNotEmpty && !_restorePlan(folderKeys: builtinFolderKeysOf(f, ref.read(templateListProvider))).isEmpty,
-                    );
-                  },
+                  child: SliverReorderableList(
+                    itemCount: folders.length,
+                    onReorderStart: (_) => HapticFeedback.mediumImpact(),
+                    onReorder: (from, to) {
+                      // Folders only: "no folder" stays last.
+                      if (from >= named.length) return;
+                      final target = (to > from ? to - 1 : to).clamp(0, named.length - 1);
+                      if (target == from) return;
+                      final full = _folders(all, folderOrder, false).where((f) => f.isNotEmpty).toList();
+                      _saveFolderOrder(reorderFolders(full, named, from, target));
+                    },
+                    proxyDecorator: _proxy,
+                    itemBuilder: (c, i) {
+                      final f = folders[i];
+                      final programs = inFolder(f);
+                      return _FolderCard(
+                        key: ValueKey('f-$f'),
+                        index: i,
+                        folder: f,
+                        name: f.isEmpty ? l.noFolder : f,
+                        programs: programs,
+                        open: _open.contains(f),
+                        onToggle: () => setState(() => _open.contains(f) ? _open.remove(f) : _open.add(f)),
+                        onOpen: () => setState(() => _open.add(f)),
+                        onMenu: f.isEmpty ? null : (v) => _folderAction(v, f, all, named, i),
+                        canMoveUp: f.isNotEmpty && i > 0,
+                        canMoveDown: f.isNotEmpty && i < named.length - 1,
+                        onDropProgram: (t, index) => _place(t, f, index ?? programs.where((x) => x.id != t.id).length),
+                        onDragStart: _startDrag,
+                        onDragEnd: _endDrag,
+                        onMoveProgram: (t, delta) {
+                          final rest = programs.where((x) => x.id != t.id).toList();
+                          final at = programs.indexWhere((x) => x.id == t.id) + delta;
+                          if (at >= 0 && at <= rest.length) _place(t, f, at);
+                        },
+                        onMoveToFolder: (t) => _moveToFolder(t, all, folderOrder),
+                        onDuplicateProgram: (t, pickFolder) => _duplicateProgram(t, pickFolder: pickFolder),
+                        canRestore:
+                            () => f.isNotEmpty && !_restorePlan(folderKeys: builtinFolderKeysOf(f, ref.read(templateListProvider))).isEmpty,
+                      );
+                    },
+                  ),
                 ),
               ),
             const SliverToBoxAdapter(child: SizedBox(height: 140)),
@@ -509,21 +518,19 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     _savePrograms(d.writes);
     _keepFolderInOrder(target, all);
     setState(() => _open.add(target));
-    undoToast(
-      ScaffoldMessenger.of(context),
-      text:
-          target == current.folder
-              ? l.programDuplicated(d.copy.name)
-              : l.programDuplicatedTo(d.copy.name, target.isEmpty ? l.noFolder : target),
-      undoLabel: l.undo,
-      icon: Icons.copy_rounded,
-      onUndo: () => _undoDuplicate(repo, {d.copy.id}, folder: created ? target : null, order: [...order, if (created) target]),
+    _offerUndo(
+      target == current.folder
+          ? l.programDuplicated(d.copy.name)
+          : l.programDuplicatedTo(d.copy.name, target.isEmpty ? l.noFolder : target),
+      {d.copy.id},
+      created ? target : null,
     );
   }
 
   /// Folder menu "Ordner duplizieren": a new folder "Name (Kopie)" directly below [folder] with
   /// copies of all its programs – every sport, also the ones the sport filter hides (the folder
-  /// is one unit; the snack bar says how many are hidden). [full]: every named folder in order.
+  /// is one unit; the snack bar says how many are hidden). The snack bar stays short – the new
+  /// folder shows opened right below its source. [full]: every named folder in order.
   void _duplicateFolder(String folder, List<WorkoutTemplate> all, List<String> full) {
     final l = context.l10n;
     final repo = ref.read(repoProvider)!;
@@ -532,28 +539,68 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     _saveFolderOrder(d.folderOrder);
     setState(() => _open.add(d.folder));
     final hidden = d.copies.where((t) => !_visible(t)).length;
-    undoToast(
-      ScaffoldMessenger.of(context),
-      text: [l.folderDuplicated(d.folder, d.copies.length), if (hidden > 0) l.folderDuplicatedHidden(hidden)].join(' '),
-      undoLabel: l.undo,
-      icon: Icons.copy_rounded,
-      onUndo: () => _undoDuplicate(repo, {for (final t in d.copies) t.id}, folder: d.folder, order: d.folderOrder),
-    );
+    _offerUndo([l.folderDuplicated(d.copies.length), if (hidden > 0) l.folderDuplicatedHidden(hidden)].join(' '), {
+      for (final t in d.copies) t.id,
+    }, d.folder);
   }
 
-  /// "Undo" of a duplicate: deletes the copies [ids] and takes the new [folder] out of the folder
-  /// order ([order]: the order written with it, used when this page is gone).
-  void _undoDuplicate(Repository repo, Set<String> ids, {String? folder, List<String> order = const []}) {
+  /// The snack bar of a duplicate ([text]) with "Undo" for the copies [ids] and the [folder] the
+  /// duplicate created (null: none).
+  void _offerUndo(String text, Set<String> ids, String? folder) {
+    final l = context.l10n;
+    final repo = ref.read(repoProvider)!;
+    // Outlives this page: "Undo" still works from another tab.
+    final scope = ProviderScope.containerOf(context, listen: false);
+    final pending = _PendingDuplicate(ids, folder);
+    final bar = undoToast(
+      ScaffoldMessenger.of(context),
+      text: text,
+      undoLabel: l.undo,
+      icon: Icons.copy_rounded,
+      onUndo: () => _undoDuplicate(repo, scope, pending),
+    );
+    _dup = pending..bar = bar;
+    // Keeps the library and the folder order current while "Undo" is offered – also with no page
+    // watching them.
+    final watch = [scope.listen(templateListProvider, (_, _) {}), scope.listen(profileOrDefaultProvider, (_, _) {})];
+    bar.closed.whenComplete(() {
+      for (final w in watch) {
+        w.close();
+      }
+      if (identical(_dup, pending)) _dup = null;
+    });
+  }
+
+  /// Closes the "Undo" bar of the last duplicate once one of its copies ([programs]) is opened,
+  /// edited or deleted, or its (still empty) [folder] is renamed or deleted: "Undo" must not
+  /// take away what the athlete has started to work with.
+  void _endUndo({Iterable<String> programs = const [], String? folder}) {
+    final d = _dup;
+    if (d == null || !(programs.any(d.ids.contains) || (folder != null && folder == d.folder))) return;
+    _dup = null;
+    d.bar?.close();
+  }
+
+  /// "Undo" of the duplicate [d]: deletes the copies and takes the folder it created out of the
+  /// folder order – under the name it has now ([foldersOfUndoneDuplicate]). Works on the current
+  /// library and folder order ([scope]), also when this page is gone.
+  void _undoDuplicate(Repository repo, ProviderContainer scope, _PendingDuplicate d) {
+    final stored = scope.read(templateListProvider);
+    final profile = scope.read(profileOrDefaultProvider);
     if (!mounted) {
-      repo.deleteTemplates(ids).ignore();
-      if (folder != null) repo.saveFolderOrder(order.where((f) => f != folder).toList());
+      final gone = foldersOfUndoneDuplicate(stored, profile.folderOrder, d.ids, d.folder);
+      repo.deleteTemplates(d.ids).ignore();
+      if (profile.folderOrder.any(gone.contains)) repo.saveFolderOrder(profile.folderOrder.where((f) => !gone.contains(f)).toList());
       return;
     }
-    _dropPrograms(repo, ids);
-    if (folder == null) return;
-    final now = _folders(_programs(ref.read(templateListProvider)), _folderOrder(ref.read(profileOrDefaultProvider)), false);
-    _saveFolderOrder(now.where((f) => f.isNotEmpty && f != folder).toList());
-    _open.remove(folder);
+    final all = _programs(stored), order = _folderOrder(profile);
+    final gone = foldersOfUndoneDuplicate(all, _folders(all, order, false), d.ids, d.folder);
+    _dropPrograms(repo, d.ids);
+    if (gone.isEmpty) return;
+    // The folders of the programs that stay (a folder only the copies stood for goes with them).
+    final left = _folders([...all.where((t) => !d.ids.contains(t.id))], order, false);
+    _saveFolderOrder(left.where((f) => f.isNotEmpty && !gone.contains(f)).toList());
+    _open.removeAll(gone);
   }
 
   Future<void> _folderAction(String action, String folder, List<WorkoutTemplate> all, List<String> named, int index) async {
@@ -580,6 +627,14 @@ class _TrainPageState extends ConsumerState<TrainPage> {
         repo.saveTemplates([for (final t in inside) t.copyWith(folder: name)]);
         _saveFolderOrder([for (final f in full) f == folder ? name : f]);
         if (_open.remove(folder)) _open.add(name);
+        // "Undo" of a duplicate follows the folder's new name; an empty one cannot be found again.
+        if (_dup case final d? when d.folder == folder) {
+          if (inside.isEmpty) {
+            _endUndo(folder: folder);
+          } else {
+            d.folder = name;
+          }
+        }
         setState(() {});
       case 'delete':
         if (!mounted) return;
@@ -608,6 +663,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
               ),
         );
         if (choice == null) return;
+        _endUndo(programs: ids, folder: folder);
         if (choice == 'keep') {
           repo.saveTemplates([for (final t in inside) t.copyWith(folder: '')]);
         } else {
@@ -755,6 +811,21 @@ class _TrainPageState extends ConsumerState<TrainPage> {
     if (ok != true || !mounted) return;
     await _applyRestore(_restorePlan(folderKeys: chosen));
   }
+}
+
+/// A duplicate that can still be taken back: its copies, the folder it created (null: none; it
+/// follows a rename) and its "Undo" bar.
+class _PendingDuplicate {
+  _PendingDuplicate(this.ids, this.folder);
+  final Set<String> ids;
+  String? folder;
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? bar;
+}
+
+/// A program is opened, edited or deleted (bubbles up from its tile to the page).
+class _ProgramUsed extends Notification {
+  const _ProgramUsed(this.id);
+  final String id;
 }
 
 class _FolderCard extends StatefulWidget {
@@ -1314,6 +1385,7 @@ class _TemplateTile extends ConsumerWidget {
     Future<void> menu(String v) async {
       switch (v) {
         case 'edit':
+          _ProgramUsed(t.id).dispatch(context);
           Navigator.push(context, MaterialPageRoute(builder: (_) => TemplateEditorPage(template: t)));
         case 'dup':
           onDuplicate(false);
@@ -1327,6 +1399,7 @@ class _TemplateTile extends ConsumerWidget {
           onMoveToFolder();
         case 'delete':
           // The plan keeps the workouts of this program ([programDeletion]) – the dialog says so.
+          _ProgramUsed(t.id).dispatch(context);
           await confirmDeleteProgram(context, ref, t);
       }
     }
@@ -1339,7 +1412,10 @@ class _TemplateTile extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           // Tapping opens the read-only preview (big "Start"); editing sits behind its pencil.
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProgramPreviewPage(template: t))),
+          onTap: () {
+            _ProgramUsed(t.id).dispatch(context);
+            Navigator.push(context, MaterialPageRoute(builder: (_) => ProgramPreviewPage(template: t)));
+          },
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
             child: Row(

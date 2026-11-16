@@ -6243,25 +6243,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String folderDuplicated(String name, int n) {
+  String folderDuplicated(int n) {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: 'Created the folder “$name” with $n programs.',
-      one: 'Created the folder “$name” with 1 program.',
-      zero: 'Created the empty folder “$name”.',
+      other: 'Folder duplicated ($n programs).',
+      one: 'Folder duplicated (1 program).',
+      zero: 'Empty folder duplicated.',
     );
     return '$_temp0';
   }
 
   @override
   String folderDuplicatedHidden(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: '$n of them belong to other sports and are hidden by the sport filter.',
-      one: '1 of them belongs to another sport and is hidden by the sport filter.',
-    );
-    return '$_temp0';
+    return '$n hidden by the sport filter.';
   }
 }

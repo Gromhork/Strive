@@ -1852,6 +1852,6 @@
   "duplicateToFolder": "In Ordner duplizieren",
   "programDuplicated": "„{name}“ erstellt.",
   "programDuplicatedTo": "„{name}“ in {folder} erstellt.",
-  "folderDuplicated": "{n, plural, =0{Leeren Ordner „{name}“ erstellt.} =1{Ordner „{name}“ mit 1 Programm erstellt.} other{Ordner „{name}“ mit {n} Programmen erstellt.}}",
-  "folderDuplicatedHidden": "{n, plural, =1{1 davon gehört zu einer anderen Sportart und ist durch den Sportfilter ausgeblendet.} other{{n} davon gehören zu anderen Sportarten und sind durch den Sportfilter ausgeblendet.}}"
+  "folderDuplicated": "{n, plural, =0{Leeren Ordner dupliziert.} =1{Ordner dupliziert (1 Programm).} other{Ordner dupliziert ({n} Programme).}}",
+  "folderDuplicatedHidden": "{n} davon blendet der Sportfilter aus."
 }
