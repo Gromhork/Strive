@@ -5096,7 +5096,7 @@ abstract class AppLocalizations {
   /// No description provided for @supersetLinked.
   ///
   /// In en, this message translates to:
-  /// **'Superset – tap to unlink'**
+  /// **'Linked – tap to split here'**
   String get supersetLinked;
 
   /// No description provided for @repRange.
@@ -11314,6 +11314,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Applied when you rebuild the plan below – your current plan stays as it is until then.'**
   String get planRebuildExtendHint;
+
+  /// No description provided for @circuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Circuit'**
+  String get circuit;
+
+  /// No description provided for @supersetGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} {letter} · {count} exercises'**
+  String supersetGroupTitle(String kind, String letter, int count);
+
+  /// No description provided for @supersetGroupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Alternate · rest after each round'**
+  String get supersetGroupHint;
+
+  /// No description provided for @supersetMemberOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} {letter}, exercise {x} of {y}'**
+  String supersetMemberOf(String kind, String letter, int x, int y);
+
+  /// No description provided for @supersetPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} {letter} · {x}/{y}'**
+  String supersetPosition(String kind, String letter, int x, int y);
+
+  /// No description provided for @supersetThen.
+  ///
+  /// In en, this message translates to:
+  /// **'Then straight on to: {name}'**
+  String supersetThen(String name);
+
+  /// No description provided for @supersetThenRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Last exercise of the round – rest afterwards'**
+  String get supersetThenRest;
+
+  /// No description provided for @supersetDissolve.
+  ///
+  /// In en, this message translates to:
+  /// **'Dissolve'**
+  String get supersetDissolve;
+
+  /// No description provided for @supersetDissolveTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Dissolve superset'**
+  String get supersetDissolveTip;
+
+  /// No description provided for @supersetFullMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'This superset is full (max. 3 exercises) – the exercise was placed after it.'**
+  String get supersetFullMoved;
+
+  /// No description provided for @supersetJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to superset {letter}.'**
+  String supersetJoined(String letter);
+
+  /// No description provided for @supersetEditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: link two exercises with the chain button between them to do them alternately as a superset.'**
+  String get supersetEditHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -2636,7 +2636,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get freeWorkoutSub => 'Just a duration or distance goal, no sections.';
 
   @override
-  String get supersetLinked => 'Superset – tap to unlink';
+  String get supersetLinked => 'Linked – tap to split here';
 
   @override
   String get repRange => 'Rep range';
@@ -6317,4 +6317,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planRebuildExtendHint => 'Applied when you rebuild the plan below – your current plan stays as it is until then.';
+
+  @override
+  String get circuit => 'Circuit';
+
+  @override
+  String supersetGroupTitle(String kind, String letter, int count) {
+    return '$kind $letter · $count exercises';
+  }
+
+  @override
+  String get supersetGroupHint => 'Alternate · rest after each round';
+
+  @override
+  String supersetMemberOf(String kind, String letter, int x, int y) {
+    return '$kind $letter, exercise $x of $y';
+  }
+
+  @override
+  String supersetPosition(String kind, String letter, int x, int y) {
+    return '$kind $letter · $x/$y';
+  }
+
+  @override
+  String supersetThen(String name) {
+    return 'Then straight on to: $name';
+  }
+
+  @override
+  String get supersetThenRest => 'Last exercise of the round – rest afterwards';
+
+  @override
+  String get supersetDissolve => 'Dissolve';
+
+  @override
+  String get supersetDissolveTip => 'Dissolve superset';
+
+  @override
+  String get supersetFullMoved => 'This superset is full (max. 3 exercises) – the exercise was placed after it.';
+
+  @override
+  String supersetJoined(String letter) {
+    return 'Added to superset $letter.';
+  }
+
+  @override
+  String get supersetEditHint => 'Tip: link two exercises with the chain button between them to do them alternately as a superset.';
 }

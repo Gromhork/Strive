@@ -1215,7 +1215,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get linkSuperset => 'Als Supersatz verbinden';
 
   @override
-  String get unlinkSuperset => 'Aus Superset lösen';
+  String get unlinkSuperset => 'Aus Supersatz lösen';
 
   @override
   String get replaceExercise => 'Übung ersetzen';
@@ -2636,7 +2636,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get freeWorkoutSub => 'Nur ein Zeit- oder Distanzziel, ohne Abschnitte.';
 
   @override
-  String get supersetLinked => 'Supersatz – tippen zum Lösen';
+  String get supersetLinked => 'Verbunden – hier tippen zum Trennen';
 
   @override
   String get repRange => 'Wiederholungsbereich';
@@ -6317,4 +6317,50 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get planRebuildExtendHint => 'Gilt, sobald du den Plan unten neu aufsetzt – bis dahin bleibt dein aktueller Plan unverändert.';
+
+  @override
+  String get circuit => 'Zirkel';
+
+  @override
+  String supersetGroupTitle(String kind, String letter, int count) {
+    return '$kind $letter · $count Übungen';
+  }
+
+  @override
+  String get supersetGroupHint => 'Abwechselnd · Pause nach jeder Runde';
+
+  @override
+  String supersetMemberOf(String kind, String letter, int x, int y) {
+    return '$kind $letter, Übung $x von $y';
+  }
+
+  @override
+  String supersetPosition(String kind, String letter, int x, int y) {
+    return '$kind $letter · $x/$y';
+  }
+
+  @override
+  String supersetThen(String name) {
+    return 'Danach direkt: $name';
+  }
+
+  @override
+  String get supersetThenRest => 'Letzte Übung der Runde – danach Pause';
+
+  @override
+  String get supersetDissolve => 'Auflösen';
+
+  @override
+  String get supersetDissolveTip => 'Supersatz auflösen';
+
+  @override
+  String get supersetFullMoved => 'Dieser Supersatz ist voll (max. 3 Übungen) – die Übung steht jetzt dahinter.';
+
+  @override
+  String supersetJoined(String letter) {
+    return 'Zu Supersatz $letter hinzugefügt.';
+  }
+
+  @override
+  String get supersetEditHint => 'Tipp: Verbinde zwei Übungen über den Ketten-Button dazwischen, um sie abwechselnd als Supersatz zu trainieren.';
 }

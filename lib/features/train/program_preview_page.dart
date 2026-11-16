@@ -11,6 +11,7 @@ import '../../services/zones.dart' show estimateStepsSec;
 import '../../widgets/common.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/prescription.dart' show bodyweightLoad;
+import '../../widgets/superset_group.dart';
 import '../session/gym_session_page.dart' show exerciseSummary;
 import '../session/start_helpers.dart';
 import '../session/step_list.dart';
@@ -90,8 +91,9 @@ class ProgramPreviewPage extends ConsumerWidget {
           if (p.description.isNotEmpty) ...[const SizedBox(height: 12), Text(p.description, style: t.bodyMedium?.copyWith(height: 1.4))],
           const SizedBox(height: 16),
           if (p.sport == Sport.gym)
-            for (final e in exercises)
-              Padding(
+            ...groupedExerciseWidgets(exercises, bottomInset: 8, (i) {
+              final e = exercises[i];
+              return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Material(
                   color: Theme.of(context).colorScheme.surfaceContainer,
@@ -107,7 +109,7 @@ class ProgramPreviewPage extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${e.group != null ? '${e.group} · ' : ''}${exName(context, e.exId, e.name)}',
+                                exName(context, e.exId, e.name),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(fontWeight: FontWeight.w600),
@@ -120,7 +122,8 @@ class ProgramPreviewPage extends ConsumerWidget {
                     ),
                   ),
                 ),
-              )
+              );
+            })
           else if (p.steps.isNotEmpty)
             StepList(steps: p.steps, sport: p.sport, units: u)
           else

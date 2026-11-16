@@ -13,6 +13,8 @@ import '../../data/exercise_names_de.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/insights.dart';
+import '../../services/supersets.dart';
+import '../../widgets/superset_group.dart';
 import '../../widgets/common.dart';
 import '../calendar/auto_adjust.dart' show undoAutoAdjust;
 import '../session/route_map.dart';
@@ -293,8 +295,10 @@ class SessionDetailPage extends ConsumerWidget {
           ],
           if (s.exercises.isNotEmpty) ...[
             const SizedBox(height: 12),
-            for (final e in s.exercises)
-              Padding(
+            // Supersets of the workout in one frame, as it was trained.
+            ...groupedExerciseWidgets(s.exercises, hint: false, bottomInset: 8, (i) {
+              final e = s.exercises[i];
+              return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: SectionCard(
                   title: exName(context, e.exId, e.name),
@@ -312,7 +316,8 @@ class SessionDetailPage extends ConsumerWidget {
                     ],
                   ),
                 ),
-              ),
+              );
+            }),
           ],
           if (s.notes.isNotEmpty) ...[const SizedBox(height: 12), SectionCard(title: l.notes, child: Text(s.notes))],
         ],
@@ -330,10 +335,43 @@ class SessionDetailPage extends ConsumerWidget {
       if (s.volume > 0) u.volume(s.volume),
       if (s.holdSec > 0) '${l.holdTime} ${clock(s.holdSec)}',
     ];
-    return '${parts.join(' · ')}\n${l.sharedFromStrive}';
+    return [parts.join(' · '), ...gymShareLines(context, s, u), l.sharedFromStrive].join('\n');
   }
 
   Widget _half(BuildContext c, Widget w) => SizedBox(width: (MediaQuery.sizeOf(c).width - 64) / 2, child: w);
+}
+
+/// The exercises of a gym session for the share text, supersets grouped under their own line:
+///
+///     Klimmzug: 3 × 8
+///     Supersatz A:
+///       A1 Reverse Flys: 2 × 3 kg × 12
+///       A2 Bizepscurl: 20 kg × 10, 20 kg × 8
+///
+/// Only sets that were done; exercises without a done set and manual entries are left out.
+List<String> gymShareLines(BuildContext context, Session s, Units u) {
+  final l = context.l10n;
+  final out = <String>[];
+  for (final b in exerciseBlocks(s.exercises)) {
+    final members = <(int, String)>[];
+    for (final i in b.indices) {
+      final e = s.exercises[i];
+      final done = e.sets.where((x) => x.done && !x.warmup).toList();
+      if (done.isEmpty || e.exId == 'manual') continue;
+      final sets = done.map((x) => setLabelOf(l, e, x, u)).toList();
+      // "3 × 60 kg × 8" when every set is the same, the list otherwise.
+      final text = sets.toSet().length == 1 && sets.length > 1 ? '${sets.length} × ${sets.first}' : sets.join(', ');
+      members.add((i - b.start + 1, '${exName(context, e.exId, e.name)}: $text'));
+    }
+    // A superset of which only one exercise was done is listed like a straight set.
+    if (b.grouped && members.length > 1) {
+      out.add('${supersetKind(l, b.length)} ${b.letter}:');
+      out.addAll(members.map((m) => '  ${b.letter}${m.$1} ${m.$2}'));
+    } else {
+      out.addAll(members.map((m) => m.$2));
+    }
+  }
+  return out;
 }
 
 /// Caption of a gym volume ([Session.volume]) that contains body weight: "incl. body weight (80 kg)";

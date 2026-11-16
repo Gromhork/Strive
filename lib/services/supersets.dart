@@ -34,7 +34,10 @@ List<int> supersetOf(List<GymExercise> ex, int i) {
 /// * chains longer than [maxSupersetSize] are split into sensible pairs
 ///   ([goodSupersetPair]); exercises without a good partner become straight sets,
 /// * letters are re-assigned A, B, C … in order.
-bool normalizeSupersets(List<GymExercise> ex) {
+///
+/// With [split] = false a longer chain stays linked as it is (a circuit that was trained that
+/// way – the history of a stored session is not rewritten by merely editing it).
+bool normalizeSupersets(List<GymExercise> ex, {bool split = true}) {
   final before = [for (final e in ex) e.group];
   final out = List<String?>.filled(ex.length, null);
   var letter = 0;
@@ -51,7 +54,7 @@ bool normalizeSupersets(List<GymExercise> ex) {
       j++;
     }
     final len = j - i + 1;
-    if (len >= 2 && len <= maxSupersetSize) {
+    if (len >= 2 && (len <= maxSupersetSize || !split)) {
       final l = next();
       for (var k = i; k <= j; k++) {
         out[k] = l;
@@ -126,4 +129,191 @@ void leaveSuperset(List<GymExercise> ex, int i) {
   }
   ex[i].group = null;
   normalizeSupersets(ex);
+}
+
+/// Removes the whole superset that exercise [i] belongs to (all members become straight sets).
+void dissolveSuperset(List<GymExercise> ex, int i) {
+  if (i < 0 || i >= ex.length) return;
+  for (final k in supersetOf(ex, i)) {
+    ex[k].group = null;
+  }
+  normalizeSupersets(ex);
+}
+
+/// The other members of exercise [i]'s superset – to put it back where it was
+/// ([restoreExercise], undo of a removal).
+List<GymExercise> supersetPartners(List<GymExercise> ex, int i) => [
+  for (final k in supersetOf(ex, i))
+    if (k != i) ex[k],
+];
+
+/// Undo of a removal: puts [e] back at [index]. It is linked again with those of its former
+/// [partners] ([supersetPartners]) it lands next to, and with nothing else – whatever was moved,
+/// removed or re-lettered in between: a stale letter never makes it part of another superset, and
+/// it is never put into the middle of one (it lands behind that superset then). Returns its index.
+int restoreExercise(List<GymExercise> ex, int index, GymExercise e, List<GymExercise> partners, {bool split = true}) {
+  bool partner(GymExercise x) => partners.any((p) => identical(p, x));
+  normalizeSupersets(ex, split: split);
+  var k = index.clamp(0, ex.length);
+  if (k > 0 && k < ex.length && ex[k - 1].group != null && ex[k - 1].group == ex[k].group && !partner(ex[k - 1])) {
+    final g = ex[k].group;
+    while (k < ex.length && ex[k].group == g) {
+      k++;
+    }
+  }
+  ex.insert(k, e);
+  // Former partners directly around it (normalised: a lone partner carries no letter any more).
+  final near = <GymExercise>[];
+  for (var a = k - 1; a >= 0 && partner(ex[a]); a--) {
+    near.add(ex[a]);
+  }
+  for (var b = k + 1; b < ex.length && partner(ex[b]); b++) {
+    near.add(ex[b]);
+  }
+  if (near.isEmpty) {
+    e.group = null;
+  } else {
+    const tmp = '\u0002';
+    for (final x in [e, ...near]) {
+      x.group = tmp;
+    }
+  }
+  normalizeSupersets(ex, split: split);
+  return k;
+}
+
+/// One display block of an exercise list: a single exercise ([letter] == null) or a run of
+/// adjacent exercises that share a group letter (a superset; four and more = a circuit).
+class ExerciseBlock {
+  const ExerciseBlock(this.start, this.end, this.letter);
+
+  /// First and last index (inclusive) in the exercise list.
+  final int start, end;
+
+  /// Display letter A, B, C … in order of appearance; null for a single exercise.
+  final String? letter;
+
+  int get length => end - start + 1;
+  bool get grouped => letter != null;
+  Iterable<int> get indices => Iterable.generate(length, (k) => start + k);
+}
+
+/// Splits [ex] into the blocks every list of a workout's exercises shows. Works on data that
+/// was never normalised (stored sessions, old programs): a letter only links *adjacent*
+/// exercises, so a superset whose members are separated by another exercise falls apart into
+/// straight sets (or two smaller groups) instead of framing the stranger in between, and the
+/// groups are lettered A, B, C … in the order they appear – never two different "A".
+List<ExerciseBlock> exerciseBlocks(List<GymExercise> ex) {
+  final out = <ExerciseBlock>[];
+  var letter = 0;
+  var i = 0;
+  while (i < ex.length) {
+    final run = supersetOf(ex, i);
+    if (run.length < 2) {
+      out.add(ExerciseBlock(i, i, null));
+      i++;
+      continue;
+    }
+    out.add(ExerciseBlock(run.first, run.last, supersetLetter(letter++)));
+    i = run.last + 1;
+  }
+  return out;
+}
+
+/// Display letter of the superset exercise [i] belongs to – the letter every list shows on the
+/// frame and the "A1" badges ([exerciseBlocks]), which is not always the stored one (data that was
+/// never normalised). Null for an exercise outside a superset.
+String? supersetLetterAt(List<GymExercise> ex, int i) {
+  for (final b in exerciseBlocks(ex)) {
+    if (i >= b.start && i <= b.end) return b.letter;
+  }
+  return null;
+}
+
+/// Running workout: the member of [i]'s superset the athlete switches to right after the next set
+/// of [i] – the first *later* member that still has open sets. Null when the full rest follows
+/// (last member of the round, or the later members are finished already – unequal set counts).
+int? nextInSupersetRound(List<GymExercise> ex, int i) {
+  for (final k in supersetOf(ex, i)) {
+    if (k > i && !ex[k].allDone) return k;
+  }
+  return null;
+}
+
+/// "A" … "Z" for group number [n] (0-based); later groups stay "Z" like [normalizeSupersets].
+String supersetLetter(int n) => String.fromCharCode(65 + (n < 0 ? 0 : (n > 25 ? 25 : n)));
+
+/// Result of [moveExercise].
+enum SupersetMove {
+  /// Moved; group membership as before or straight sets now.
+  moved,
+
+  /// Dropped between two members of another superset and joined it.
+  joined,
+
+  /// Dropped between two members of a superset that is already full: placed right after it.
+  full,
+}
+
+/// Moves the exercise at [from] so that it ends up at index [to] of the list *without* it
+/// (drag & drop), keeping every superset contiguous:
+/// * dropped between two members of a superset it joins that superset – a group never ends up
+///   with a stranger in its middle; if the group is full ([maxSupersetSize]) the exercise is
+///   placed directly after the group instead,
+/// * moved inside its own superset it only changes its position there,
+/// * moved anywhere else it leaves its superset (the others stay linked if two remain).
+SupersetMove moveExercise(List<GymExercise> ex, int from, int to) {
+  if (from < 0 || from >= ex.length) return SupersetMove.moved;
+  normalizeSupersets(ex);
+  final own = ex[from].group;
+  final e = ex.removeAt(from);
+  to = to.clamp(0, ex.length);
+  final before = to > 0 ? ex[to - 1].group : null, after = to < ex.length ? ex[to].group : null;
+  var result = SupersetMove.moved;
+  if (before != null && before == after) {
+    // Between two members of one superset.
+    if (before != own) {
+      final size = ex.where((x) => x.group == before).length;
+      if (size < maxSupersetSize) {
+        result = SupersetMove.joined;
+      } else {
+        result = SupersetMove.full;
+        while (to < ex.length && ex[to].group == before) {
+          to++;
+        }
+      }
+    }
+    e.group = result == SupersetMove.full ? null : before;
+  } else if (own == null || (before != own && after != own)) {
+    e.group = null;
+  }
+  ex.insert(to, e);
+  normalizeSupersets(ex);
+  return result;
+}
+
+/// Moves exercise [i] one step up ([dir] = -1) or down (+1) with the "move up/down" buttons and
+/// returns its new index. A superset is never torn apart by an exercise passing through:
+/// * inside its superset a member swaps places with its neighbour,
+/// * otherwise the exercise jumps over the whole neighbouring block (a single exercise or a
+///   complete superset); a member at the edge of its superset leaves it that way.
+///
+/// [split] = false keeps chains longer than [maxSupersetSize] linked (see [normalizeSupersets]).
+int stepExercise(List<GymExercise> ex, int i, int dir, {bool split = true}) {
+  if (i < 0 || i >= ex.length || dir == 0) return i;
+  normalizeSupersets(ex, split: split);
+  final j = i + (dir < 0 ? -1 : 1);
+  if (j < 0 || j >= ex.length) return i;
+  final own = supersetOf(ex, i);
+  if (own.contains(j)) {
+    final e = ex.removeAt(i);
+    ex.insert(j, e);
+    return j;
+  }
+  final block = supersetOf(ex, j);
+  final e = ex.removeAt(i)..group = null;
+  final to = dir < 0 ? block.first : block.last; // index in the list without [e]
+  ex.insert(to, e);
+  normalizeSupersets(ex, split: split);
+  return to;
 }
