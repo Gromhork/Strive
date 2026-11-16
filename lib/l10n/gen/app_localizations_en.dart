@@ -6227,6 +6227,98 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startEmptyWorkout => 'Start empty';
 
   @override
+  String feasCapLine(String time, String have, String race) {
+    return 'Your long runs stop at $time – at your easy pace that is about $have km (many plans go up to $race km).';
+  }
+
+  @override
+  String feasCapLineUsual(String time, String have, String race) {
+    return 'Your long runs usually stop at $time – at your easy pace that is about $have km (many plans go up to $race km).';
+  }
+
+  @override
+  String feasCapNotYourTime(String set, String day) {
+    return 'That is not about your time (you planned $set for $day) – the limit is set on purpose.';
+  }
+
+  @override
+  String get feasCapWhy => 'Longer single runs add more injury risk and recovery cost than fitness.';
+
+  @override
+  String get feasCapWhyTri => 'In triathlon and duathlon training this limit is fixed: the bike carries the endurance, and an even longer run would cost you the key sessions of the following days.';
+
+  @override
+  String feasCapOffer(String time, String dist) {
+    return 'If you like, the last long runs before the taper go step by step up to $time (about $dist km), with walk breaks.';
+  }
+
+  @override
+  String feasCapExtended(String time, String dist) {
+    return 'You allowed longer runs: the last long runs before the taper go step by step up to $time (about $dist km), with walk breaks.';
+  }
+
+  @override
+  String get feasCapExtendedNoGain => 'You allowed longer runs, but this plan cannot use them: there are too few weeks left to build beyond the limit safely.';
+
+  @override
+  String get feasCapFinish => 'So finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).';
+
+  @override
+  String get feasCapFinishTri => 'For the run of your race that means: start easy and plan short walk breaks from the beginning, e.g. at every aid station.';
+
+  @override
+  String longRunExtendSwitch(String time) {
+    return 'Allow long runs up to $time';
+  }
+
+  @override
+  String longRunExtendSub(String time) {
+    return 'Default: at most $time in one run. With this option only the last long runs before the taper get longer – step by step, with walk breaks and easier days afterwards.';
+  }
+
+  @override
+  String timeLongCapRun(String time) {
+    return 'Your day time is an upper limit, not a target: for this goal Strive plans long runs of at most $time in one go, even when the day has more time.';
+  }
+
+  @override
+  String timeLongCapRide(String time) {
+    return 'Your day time is an upper limit, not a target: for this goal Strive plans long rides of at most $time, even when the day has more time.';
+  }
+
+  @override
+  String wLongRunExtendedNote(String time) {
+    return 'Extended long run (beyond your usual $time): walk 1 min after every 10 min of running from the very start, eat and drink early. Stop if something hurts – the minutes matter less than staying healthy. Keep the next two days easy or free.';
+  }
+
+  @override
+  String get wAfterExtendedNote => 'Kept easy on purpose: your legs are still recovering from the extended long run.';
+
+  @override
+  String get longRunExtendTitle => 'Longer long runs';
+
+  @override
+  String feasCapWhySet(String day, String set) {
+    return 'That is not about your time ($day: $set) – longer single runs add more injury risk and recovery cost than fitness.';
+  }
+
+  @override
+  String feasCapOfferSettings(String time, String dist) {
+    return 'In the plan settings you can allow the last long runs before the taper to go step by step up to $time (about $dist km), with walk breaks.';
+  }
+
+  @override
+  String get feasCapExtendedNoGainVolume => 'You allowed longer runs, but this plan cannot use them: your weekly running volume does not carry a longer long run – that takes more or longer runs on the other days, not fewer weeks.';
+
+  @override
+  String feasRunFrequencyLong(String have, String time, String need) {
+    return 'With these runs your longest long run reaches about $have km ($time); the race needs about $need km. The runs per week set that limit, not your time.';
+  }
+
+  @override
+  String get planRebuildExtendHint => 'Applied when you rebuild the plan below – your current plan stays as it is until then.';
+
+  @override
   String get circuit => 'Circuit';
 
   @override
