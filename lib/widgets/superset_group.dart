@@ -26,6 +26,27 @@ Color supersetColor(String? letter) {
   return palette[(i < 0 ? 0 : i) % palette.length];
 }
 
+/// Number of different [supersetColor]s (the palette repeats after that).
+const supersetColorCount = 5;
+
+/// WCAG contrast ratio of two opaque colours (1–21).
+double contrastRatio(Color a, Color b) {
+  final x = a.computeLuminance(), y = b.computeLuminance();
+  return ((x > y ? x : y) + 0.05) / ((x > y ? y : x) + 0.05);
+}
+
+/// Text colour on a badge or chip filled with [c]: black or white, whichever is easier to read
+/// (always at least 4.5:1 – the brightness estimate alone put white on the pink of group D at
+/// under 3:1).
+Color supersetOnColor(Color c) => contrastRatio(c, Colors.white) >= contrastRatio(c, Colors.black) ? Colors.white : Colors.black;
+
+/// Outline of a group's frame: the accent, darkened on light backgrounds where amber and teal
+/// would hardly stand out against white.
+Color supersetFrameColor(String? letter, {required bool dark}) {
+  final c = supersetColor(letter);
+  return dark ? c.withValues(alpha: 0.6) : Color.lerp(c, Colors.black, 0.22)!.withValues(alpha: 0.8);
+}
+
 /// "Superset" for 2–3 exercises, "Circuit" for longer chains (only in data that was never
 /// normalised – the editors keep supersets at [maxSupersetSize]).
 String supersetKind(AppLocalizations l, int count) => count > maxSupersetSize ? l.circuit : l.superset;
@@ -33,16 +54,23 @@ String supersetKind(AppLocalizations l, int count) => count > maxSupersetSize ? 
 /// "Superset A · 2 exercises".
 String supersetTitle(AppLocalizations l, String letter, int count) => l.supersetGroupTitle(supersetKind(l, count), letter, count);
 
-/// What follows exercise [i] inside its superset: "Then straight on to: Biceps curl" for every
-/// member but the last, "Last exercise of the round – rest afterwards" for the last; null for
-/// an exercise outside a superset.
-String? supersetNextText(BuildContext context, List<GymExercise> exercises, int i) {
-  final run = supersetOf(exercises, i);
-  if (run.length < 2) return null;
+/// What follows the next set of exercise [i] inside its superset – from the real state of the
+/// workout, exactly as the tracker then switches ([nextInSupersetRound]): "Then straight on to:
+/// Biceps curl" while a later member still has open sets, else "Last exercise of the round – rest
+/// afterwards" (the last member, or the partners are finished already – unequal set counts).
+/// Null for an exercise outside a superset, for a finished one, and before a warm-up set that is
+/// not its last open set (the tracker stays on the exercise then).
+String? supersetNextText(BuildContext context, List<GymExercise> exercises, int i) => _supersetNext(context, exercises, i)?.$1;
+
+/// [supersetNextText] and whether the full rest follows.
+(String, bool)? _supersetNext(BuildContext context, List<GymExercise> exercises, int i) {
+  if (i < 0 || i >= exercises.length || supersetOf(exercises, i).length < 2) return null;
+  final open = exercises[i].sets.where((s) => !s.done).toList();
+  if (open.isEmpty || (open.first.warmup && open.length > 1)) return null;
   final l = context.l10n;
-  if (i == run.last) return l.supersetThenRest;
-  final next = exercises[i + 1];
-  return l.supersetThen(exName(context, next.exId, next.name));
+  final next = nextInSupersetRound(exercises, i);
+  if (next == null) return (l.supersetThenRest, true);
+  return (l.supersetThen(exName(context, exercises[next].exId, exercises[next].name)), false);
 }
 
 /// The exercises of a workout as every list shows them: straight sets as they are
@@ -157,6 +185,7 @@ class SupersetSegment extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final c = supersetColor(letter);
+    final stroke = supersetFrameColor(letter, dark: dark);
     final first = position == 0, last = position == count - 1;
     return Semantics(
       container: true,
@@ -165,7 +194,7 @@ class SupersetSegment extends StatelessWidget {
         // Clear air before and after the group; none between its members.
         padding: EdgeInsets.only(top: first ? 6 : 0, bottom: last ? 16 : 0),
         child: CustomPaint(
-          painter: _FramePainter(color: c, fill: c.withValues(alpha: dark ? 0.11 : 0.08), first: first, last: last),
+          painter: _FramePainter(color: stroke, fill: c.withValues(alpha: dark ? 0.11 : 0.08), first: first, last: last),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -237,7 +266,7 @@ class SupersetBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = supersetColor(letter);
-    final onC = ThemeData.estimateBrightnessForColor(c) == Brightness.dark ? Colors.white : Colors.black;
+    final onC = supersetOnColor(c);
     return ExcludeSemantics(
       child: Container(
         width: width,
@@ -266,7 +295,7 @@ class SupersetChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final c = supersetColor(letter);
-    final onC = ThemeData.estimateBrightnessForColor(c) == Brightness.dark ? Colors.white : Colors.black;
+    final onC = supersetOnColor(c);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(20)),
@@ -298,11 +327,10 @@ class SupersetNextLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = supersetNextText(context, exercises, index);
-    if (text == null) return const SizedBox.shrink();
-    final run = supersetOf(exercises, index);
-    final letter = exerciseBlocks(exercises).firstWhere((b) => b.start == run.first).letter!;
-    final last = index == run.last;
+    final next = _supersetNext(context, exercises, index);
+    if (next == null) return const SizedBox.shrink();
+    final (text, last) = next;
+    final letter = supersetLetterAt(exercises, index);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -334,7 +362,7 @@ class _FramePainter extends CustomPainter {
     canvas.drawRRect(
       rect,
       Paint()
-        ..color = color.withValues(alpha: 0.6)
+        ..color = color
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );

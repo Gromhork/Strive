@@ -227,6 +227,8 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
   /// still running keeps its end time; an expired one is cleared.
   void restore(ActiveGym g) {
     _restTimer?.cancel();
+    // Like [start]: a workout stored by an older version may carry superset data that was never repaired.
+    normalizeSupersets(g.exercises);
     final left = g.restEnd?.difference(DateTime.now());
     if (left == null || left.isNegative) {
       state = g.copyWith(clearRest: true);
@@ -369,11 +371,10 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
       return;
     }
     final group = w.groupOf(ex);
-    final pos = group.indexOf(ex);
     // Next member of the superset in this round that still has open sets.
-    final laterInRound = group.skip(pos + 1).where((i) => !w.exercises[i].allDone);
-    if (group.length > 1 && laterInRound.isNotEmpty) {
-      state = w.copyWith(focus: laterInRound.first, clearRest: true);
+    final laterInRound = nextInSupersetRound(w.exercises, ex);
+    if (laterInRound != null) {
+      state = w.copyWith(focus: laterInRound, clearRest: true);
       if (s.type != SetType.drop) startRest(supersetTransitionSec, transition: true, effortFor: rate);
       return;
     }

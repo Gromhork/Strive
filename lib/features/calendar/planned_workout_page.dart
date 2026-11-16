@@ -248,9 +248,13 @@ class PlannedWorkoutPage extends ConsumerWidget {
           ],
           if (p.sport == Sport.gym) ...[
             const SizedBox(height: 20),
-            Row(
+            // The button wraps below the title when both don't fit (narrow phone, large font).
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
               children: [
-                Expanded(child: Text(l.exercises, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                Text(l.exercises, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                 if (!p.isDone)
                   TextButton.icon(
                     icon: const Icon(Icons.tune_rounded, size: 18),

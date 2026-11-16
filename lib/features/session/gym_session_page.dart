@@ -23,6 +23,7 @@ import '../../widgets/prescription.dart';
 import '../train/exercise_picker.dart';
 import 'exercise_focus_page.dart';
 import 'music.dart';
+import '../../services/supersets.dart';
 import '../../widgets/superset_group.dart';
 import 'session_summary_page.dart';
 
@@ -165,7 +166,7 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
           _ProgressHeader(w: w, units: u),
           const SizedBox(height: 14),
           if (!_table && next != null) ...[
-            _UpNextCard(w: w, index: next, units: u, onTap: () => _openFocus(next)),
+            _UpNextCard(key: const ValueKey('upNextCard'), w: w, index: next, units: u, onTap: () => _openFocus(next)),
             const SizedBox(height: 18),
           ],
           if (!_table && next == null && w.exercises.isNotEmpty) ...[_AllDoneCard(onFinish: () => _finish(w)), const SizedBox(height: 18)],
@@ -290,7 +291,7 @@ class _MiniStat extends StatelessWidget {
 }
 
 class _UpNextCard extends StatelessWidget {
-  const _UpNextCard({required this.w, required this.index, required this.units, required this.onTap});
+  const _UpNextCard({super.key, required this.w, required this.index, required this.units, required this.onTap});
   final ActiveGym w;
   final int index;
   final Units units;
@@ -343,7 +344,7 @@ class _UpNextCard extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: SupersetChip(
                           key: const ValueKey('upNextSuperset'),
-                          letter: e.group ?? 'A',
+                          letter: supersetLetterAt(w.exercises, index) ?? 'A',
                           position: group.indexOf(index),
                           count: group.length,
                         ),

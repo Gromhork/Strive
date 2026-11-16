@@ -19,6 +19,7 @@ import '../../services/load_prescription.dart';
 import '../../widgets/common.dart';
 import '../../widgets/effort_chips.dart';
 import '../../widgets/exercise_media.dart';
+import '../../services/supersets.dart';
 import '../../widgets/superset_group.dart';
 import '../../widgets/prescription.dart';
 import '../../widgets/term_info.dart';
@@ -121,6 +122,7 @@ class _ExerciseDots extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => onTap(i),
                 child: AnimatedContainer(
+                  key: ValueKey('focusDot-$i'),
                   duration: const Duration(milliseconds: 250),
                   height: 4,
                   // The members of a superset form one joined bar.
@@ -230,7 +232,7 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                       top: 10,
                       child: SupersetChip(
                         key: const ValueKey('focusSuperset'),
-                        letter: e.group ?? 'A',
+                        letter: supersetLetterAt(w.exercises, widget.index) ?? 'A',
                         position: group.indexOf(widget.index),
                         count: group.length,
                       ),
@@ -574,29 +576,35 @@ class _SetEditor extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (offersBodyweightMode(e.exId, e.name, info: ref.watch(exerciseDbProvider).value?.byId(e.exId), current: e.bw))
-                Row(
-                  children: [
-                    Tooltip(
-                      message: l.bodyweightHint,
-                      child: FilterChip(
-                        avatar: Icon(Icons.accessibility_new_rounded, size: 18, color: bw ? null : Theme.of(context).colorScheme.outline),
-                        showCheckmark: false,
-                        visualDensity: VisualDensity.compact,
-                        label: Text(l.bodyweight),
-                        selected: bw,
-                        onSelected: (on) {
-                          HapticFeedback.selectionClick();
-                          n.setBodyweight(index, on);
-                        },
+                // Switch left, total load right; the total wraps below on narrow phones with a large font.
+                SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    children: [
+                      Tooltip(
+                        message: l.bodyweightHint,
+                        child: FilterChip(
+                          avatar: Icon(Icons.accessibility_new_rounded, size: 18, color: bw ? null : Theme.of(context).colorScheme.outline),
+                          showCheckmark: false,
+                          visualDensity: VisualDensity.compact,
+                          label: Text(l.bodyweight),
+                          selected: bw,
+                          onSelected: (on) {
+                            HapticFeedback.selectionClick();
+                            n.setBodyweight(index, on);
+                          },
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    if (bw && e.bodyKg > 0)
-                      Text(
-                        '≈ ${units.weight(e.bodyKg + s.weight, digits: 0)} ${l.loadTotal}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                  ],
+                      if (bw && e.bodyKg > 0)
+                        Text(
+                          '≈ ${units.weight(e.bodyKg + s.weight, digits: 0)} ${l.loadTotal}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                    ],
+                  ),
                 ),
               const SizedBox(height: 8),
               Row(
@@ -1080,7 +1088,7 @@ class _RestOverlay extends ConsumerWidget {
                                     const SizedBox(width: 8),
                                     SupersetBadge(
                                       key: const ValueKey('restNextSuperset'),
-                                      letter: next.group ?? 'A',
+                                      letter: supersetLetterAt(w.exercises, w.focus) ?? 'A',
                                       number: nextGroup.indexOf(w.focus) + 1,
                                     ),
                                   ],

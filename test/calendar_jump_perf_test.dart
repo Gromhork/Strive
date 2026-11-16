@@ -197,9 +197,13 @@ void main() {
     await tester.pumpWidget(_app(const Scaffold(body: CalendarPage()), overrides: data(p: [planned], s: [s])));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('replacesLabel')), findsOneWidget);
-    expect(find.byKey(const ValueKey('doneElsewhere_m')), findsOneWidget);
-    // On a Monday "the day before" lies in last week, which the week list does not show.
-  }, skip: today.weekday == DateTime.monday);
+    // (On a Monday the planned day is the Sunday of the week before – above the fold of the lazy week list.)
+    final elsewhere = find.byKey(const ValueKey('doneElsewhere_m'));
+    if (today.weekday == DateTime.monday && elsewhere.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(elsewhere, -120, scrollable: find.byType(Scrollable).first);
+    }
+    expect(elsewhere, findsOneWidget);
+  });
 
   testWidgets("each day's add button keeps a 40 px target and its label", (tester) async {
     await phone(tester);

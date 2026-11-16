@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:strive/core/theme.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
+import 'package:strive/services/plan_exercises.dart';
 import 'package:strive/services/supersets.dart';
 import 'package:strive/widgets/superset_group.dart';
 import 'package:strive/widgets/term_info.dart';
@@ -159,8 +160,198 @@ void main() {
     expect(_sig(ex), 'a- b- c- dA eA');
   });
 
+  group('display letter and round flow', () {
+    test('supersetLetterAt is the letter of the frame, not the stored one', () {
+      // Stored "B" only (the program's superset A was filtered out / never normalised).
+      final ex = [_e('a'), _e('b', 'B'), _e('c', 'B'), _e('d'), _e('e', 'Q'), _e('f', 'Q'), _e('g', 'B')];
+      expect([for (var i = 0; i < ex.length; i++) supersetLetterAt(ex, i)], [null, 'A', 'A', null, 'B', 'B', null]);
+      expect(supersetLetterAt(ex, -1), isNull);
+      expect(supersetLetterAt(ex, 99), isNull);
+    });
+
+    test('nextInSupersetRound: the first later member with open sets, else the rest follows', () {
+      GymExercise m(String n, int sets, int done) =>
+          GymExercise(exId: n, name: n, group: 'A', sets: [for (var i = 0; i < sets; i++) GymSet(reps: 8, done: i < done)]);
+      // A1 3 sets, A2 2 sets, A3 3 sets – two rounds done.
+      final ex = [m('a', 3, 2), m('b', 2, 2), m('c', 3, 2), _e('x')];
+      expect(nextInSupersetRound(ex, 0), 2, reason: 'skips the finished A2');
+      expect(nextInSupersetRound(ex, 1), 2);
+      expect(nextInSupersetRound(ex, 2), isNull, reason: 'last member of the round');
+      expect(nextInSupersetRound(ex, 3), isNull, reason: 'no superset');
+      for (final s in ex[2].sets) {
+        s.done = true;
+      }
+      expect(nextInSupersetRound(ex, 0), isNull, reason: 'all partners finished: full rest');
+    });
+
+    test('applyGymMods: a program without its legs is lettered A, B … again', () {
+      GymExercise g(String name, String? group) => GymExercise(exId: 'x-$name', name: name, sets: [GymSet(reps: 10)])..group = group;
+      final program = [
+        g('barbell bench press', null),
+        g('leg extension', 'A'),
+        g('lying leg curl', 'A'),
+        g('dumbbell biceps curl', 'B'),
+        g('cable pushdown', 'B'),
+        g('barbell squat', 'C'),
+        g('dumbbell lateral raise', 'C'),
+      ];
+      final out = applyGymMods(program, [gymModNoLegs]);
+      expect(out.map((e) => '${e.name}:${e.group ?? '-'}').toList(), [
+        'barbell bench press:-',
+        'dumbbell biceps curl:A',
+        'cable pushdown:A',
+        // Its partner (squat) is gone: a straight set, not a lone "C".
+        'dumbbell lateral raise:-',
+      ]);
+      expect(program[3].group, 'B', reason: 'the program itself is untouched');
+      // Without modifications the letters are repaired as well (what the tracker starts with).
+      expect(applyGymMods(program, const []).map((e) => e.group).toList(), [null, 'A', 'A', 'B', 'B', 'C', 'C']);
+    });
+  });
+
+  group('editing a stored session (split: false)', () {
+    test('a longer chain stays linked; only its letters are tidied', () {
+      final ex = [_e('x'), _e('a', 'C'), _e('b', 'C'), _e('c', 'C'), _e('d', 'C'), _e('y', 'C')..group = null, _e('z', 'K')];
+      expect(normalizeSupersets(ex, split: false), isTrue);
+      expect(_sig(ex), 'x- aA bA cA dA y- z-');
+      // The default still splits (programs and running workouts: max. 3 per superset).
+      final split = [_e('a', 'C'), _e('b', 'C'), _e('c', 'C'), _e('d', 'C')];
+      normalizeSupersets(split);
+      expect(split.where((e) => e.group != null).length, lessThan(4));
+      expect(exerciseBlocks(split).every((b) => b.length <= maxSupersetSize), isTrue);
+    });
+
+    test('moving an exercise past a circuit does not split the circuit', () {
+      final ex = [_e('a', 'A'), _e('b', 'A'), _e('c', 'A'), _e('d', 'A'), _e('x')];
+      expect(stepExercise(ex, 4, -1, split: false), 0);
+      expect(_sig(ex), 'x- aA bA cA dA');
+      // A member at the edge leaves; the other three stay together.
+      expect(stepExercise(ex, 4, 1, split: false), 4);
+      expect(stepExercise(ex, 1, -1, split: false), 0);
+      expect(_sig(ex), 'a- x- bA cA dA');
+    });
+
+    test('removing the exercise between two namesakes links nothing once the letters are tidied', () {
+      // Old data: "A x A" – two straight sets that happen to share a letter.
+      final ex = [_e('a', 'A'), _e('x'), _e('b', 'A')];
+      normalizeSupersets(ex, split: false);
+      ex.removeAt(1);
+      normalizeSupersets(ex, split: false);
+      expect(_sig(ex), 'a- b-');
+    });
+
+    test('restoreExercise puts a removed member back into its superset', () {
+      final ex = [_e('x'), _e('a', 'A'), _e('b', 'A'), _e('y')];
+      final partners = supersetPartners(ex, 2);
+      expect(partners.map((e) => e.name), ['a']);
+      final removed = ex.removeAt(2);
+      normalizeSupersets(ex, split: false);
+      expect(_sig(ex), 'x- a- y-', reason: 'a lone member is a straight set');
+      expect(restoreExercise(ex, 2, removed, partners, split: false), 2);
+      expect(_sig(ex), 'x- aA bA y-');
+
+      // Middle of three: the outer two stay linked, the undo makes it three again.
+      final three = [_e('a', 'A'), _e('b', 'A'), _e('c', 'A')];
+      final p3 = supersetPartners(three, 1);
+      final mid = three.removeAt(1);
+      normalizeSupersets(three, split: false);
+      expect(_sig(three), 'aA cA');
+      restoreExercise(three, 1, mid, p3, split: false);
+      expect(_sig(three), 'aA bA cA');
+    });
+
+    test('restoreExercise never joins or tears another superset with a stale letter', () {
+      // "b" (A2) is removed, then its partner moves away and group B becomes the new "A".
+      final ex = [_e('a', 'A'), _e('b', 'A'), _e('c', 'B'), _e('d', 'B'), _e('e', 'B')];
+      final partners = supersetPartners(ex, 1);
+      final removed = ex.removeAt(1);
+      normalizeSupersets(ex, split: false);
+      expect(_sig(ex), 'a- cA dA eA');
+      expect(removed.group, 'A', reason: 'stale letter that now names the other superset');
+      // Old index 1 = right before the other superset: a straight set, not its fourth member.
+      final at = restoreExercise([...ex], 1, removed, const [], split: false);
+      expect(at, 1);
+      final list = [...ex];
+      removed.group = 'A';
+      restoreExercise(list, 1, removed, partners, split: false);
+      expect(_sig(list), 'aA bA cB dB eB', reason: 'next to its former partner: linked with it only');
+      // The partner is gone and the old index lies inside the other superset: behind it, unlinked.
+      final moved = [ex[1], ex[2], ex[3], ex[0]]; // c d e a
+      normalizeSupersets(moved, split: false);
+      removed.group = 'A';
+      expect(restoreExercise(moved, 1, removed, partners, split: false), 3);
+      expect(_sig(moved), 'cA dA eA bB aB');
+    });
+  });
+
+  group('colours', () {
+    test('every group colour carries its badge text at 4.5:1 or better', () {
+      for (var i = 0; i < supersetColorCount; i++) {
+        final c = supersetColor(supersetLetter(i));
+        expect(contrastRatio(c, supersetOnColor(c)), greaterThanOrEqualTo(4.5), reason: 'group ${supersetLetter(i)}');
+      }
+      // The palette repeats after its last entry and has no duplicates before.
+      expect({for (var i = 0; i < supersetColorCount; i++) supersetColor(supersetLetter(i))}.length, supersetColorCount);
+      expect(supersetColor(supersetLetter(supersetColorCount)), supersetColor('A'));
+      // Pink (D): white text had under 3:1.
+      expect(supersetOnColor(supersetColor('D')), Colors.black);
+    });
+
+    test('the frame outline is darker than the accent on light backgrounds', () {
+      for (var i = 0; i < supersetColorCount; i++) {
+        final l = supersetLetter(i);
+        final accent = supersetColor(l);
+        final light = supersetFrameColor(l, dark: false).withValues(alpha: 1);
+        expect(contrastRatio(light, Colors.white), greaterThan(contrastRatio(accent, Colors.white)), reason: 'group $l');
+        expect(supersetFrameColor(l, dark: true).withValues(alpha: 1), accent);
+      }
+    });
+  });
+
   group('SupersetGroup', () {
     final de = lookupAppLocalizations(const Locale('de'));
+
+    testWidgets('next-in-superset line follows the real state: finished partners are skipped', (t) async {
+      GymExercise m(String n, int sets, int done, {bool warmup = false}) => GymExercise(
+        exId: 'x-$n',
+        name: n,
+        group: 'A',
+        sets: [for (var i = 0; i < sets; i++) GymSet(reps: 8, done: i < done, type: warmup && i == 0 ? SetType.warmup : SetType.normal)],
+      );
+      Future<void> show(List<GymExercise> ex) => t.pumpWidget(
+        _app(
+          Scaffold(
+            body: Column(children: [for (var i = 0; i < ex.length; i++) SupersetNextLine(key: ValueKey('n$i'), exercises: ex, index: i)]),
+          ),
+        ),
+      );
+      Finder line(int i) => find.descendant(of: find.byKey(ValueKey('n$i')), matching: find.byType(Text));
+      String text(int i) => t.widget<Text>(line(i)).data!;
+
+      // A1 with 3 sets, A2 with 2 – two rounds done: after A1's last set the rest follows.
+      await show([m('Reverse Flys', 3, 2), m('Bizepscurl', 2, 2)]);
+      expect(text(0), de.supersetThenRest);
+      expect(find.text(de.supersetThen('Bizepscurl')), findsNothing);
+      expect(line(1), findsNothing, reason: 'a finished exercise has no "next"');
+      expect(find.descendant(of: find.byKey(const ValueKey('n0')), matching: find.byIcon(Icons.timer_outlined)), findsOneWidget);
+
+      // Three members, the middle one finished: A1 goes straight on to A3.
+      await show([m('Uno', 3, 1), m('Dos', 1, 1), m('Tres', 3, 1)]);
+      expect(text(0), de.supersetThen('Tres'));
+      expect(text(2), de.supersetThenRest);
+      expect(
+        find.descendant(of: find.byKey(const ValueKey('n0')), matching: find.byIcon(Icons.subdirectory_arrow_right_rounded)),
+        findsOneWidget,
+      );
+
+      // Before a warm-up set the tracker stays on the exercise: no promise of a switch.
+      await show([m('Uno', 3, 0, warmup: true), m('Dos', 2, 0)]);
+      expect(line(0), findsNothing);
+      expect(text(1), de.supersetThenRest);
+      // The warm-up done: the round starts.
+      await show([m('Uno', 3, 1, warmup: true), m('Dos', 2, 0)]);
+      expect(text(0), de.supersetThen('Dos'));
+    });
 
     testWidgets('frames the members, names the group and numbers every member', (t) async {
       final semantics = t.ensureSemantics();
