@@ -109,6 +109,7 @@ void main() {
     test('not without the time on the long day; a day between cap and maximum limits the extension', () {
       expect(PlanGenerator.longRunExtension(_p('m', dayMinutes: const {6: 180})), isNull);
       expect(PlanGenerator.longRunExtension(_p('m', dayMinutes: const {6: 185})), isNull);
+      expect(PlanGenerator.longRunExtension(_p('m', dayMinutes: const {6: 195})), isNull, reason: 'under 20 min: not worth it');
       expect(PlanGenerator.longRunExtension(_p('m', dayMinutes: const {6: 200})), (capMin: 180, maxMin: 200));
       final plan = gen(_p('m', dayMinutes: const {6: 200}, extend: true));
       expect(beyond(plan, 180), isNotEmpty);
@@ -254,12 +255,13 @@ void main() {
       expect(n.extendKm!, greaterThan(n.capKm + 1.5));
       final t = text(f);
       expect(t, contains('enden bei 3 h'));
-      expect(t, contains('Das liegt nicht an deiner Zeit (für Samstag hast du 5 h eingeplant)'));
+      expect(t, contains('Das liegt nicht an deiner Zeit (Samstag: 5 h)'));
       expect(t, contains('schrittweise bis 3:30 h'));
-      expect(t, contains('Einschalten kannst du das in den Planeinstellungen.'));
-      expect(t, contains('Ankommen ist das Ziel'));
+      expect(t, contains('In den Planeinstellungen kannst du erlauben'));
+      expect(t, contains('Ankommen ist deshalb das Ziel'));
       // Where the switch is right there, the note does not send the athlete elsewhere.
       expect(text(f, canSwitch: true), isNot(contains('Planeinstellungen')));
+      expect(text(f, canSwitch: true), contains('Auf Wunsch gehen die letzten langen Läufe vor dem Tapering schrittweise bis 3:30 h'));
     });
 
     test('with the option on: what is planned, with the km gained', () {
@@ -271,7 +273,7 @@ void main() {
       expect(t, contains('enden normalerweise bei 3 h'));
       expect(t, contains('Du hast längere Läufe erlaubt'));
       expect(t, contains('bis 3:30 h (etwa ${n.extendKm!.toStringAsFixed(1).replaceAll('.', ',').replaceAll(',0', '')} km)'));
-      expect(t, isNot(contains('Wenn du möchtest')));
+      expect(t, isNot(contains('Planeinstellungen')));
       // The same numbers as the offer promised.
       final off = feas(_p('m')).capNote!;
       expect((off.extendMin, off.extendKm, off.extendRuns), (n.extendMin, n.extendKm, n.extendRuns));
@@ -281,13 +283,13 @@ void main() {
       // 10 km in 75 min: 3:30 h is still far below 28 km.
       final slow = feas(_p('m', tenK: 75 * 60, extend: true));
       expect(slow.capNote!.reachesRace, isFalse);
-      expect(text(slow), contains('Ankommen ist das Ziel'));
+      expect(text(slow), contains('Ankommen ist deshalb das Ziel'));
       // 10 km in 62 min: 3 h ≈ 24 km (< 90 % of 28), 3:30 h reach ≥ 25.2 km.
       final close = feas(_p('m', tenK: 62 * 60, extend: true));
       expect(close.issues, contains('longRunTimeCap'));
       expect(close.capNote!.reachesRace, isTrue, reason: '${close.capNote!.extendKm}');
-      expect(text(close), isNot(contains('Ankommen ist das Ziel')));
-      expect(text(feas(_p('m', tenK: 62 * 60))), contains('Ankommen ist das Ziel'), reason: 'still true while the option is off');
+      expect(text(close), isNot(contains('Ankommen ist deshalb das Ziel')));
+      expect(text(feas(_p('m', tenK: 62 * 60))), contains('Ankommen ist deshalb das Ziel'), reason: 'still true while the option is off');
     });
 
     test('without the time: no offer, no "not your time" – the plain note', () {
@@ -298,7 +300,7 @@ void main() {
       expect(n.extendMaxMin, isNull);
       final t = text(f);
       expect(t, isNot(contains('nicht an deiner Zeit')));
-      expect(t, isNot(contains('Wenn du möchtest')));
+      expect(t, isNot(contains('schrittweise bis')));
       expect(t, contains('Länger am Stück bringt mehr Verletzungsrisiko'));
     });
 
@@ -307,7 +309,7 @@ void main() {
       final n = f.capNote!;
       expect(n.setDay, isNull);
       expect(n.extendMaxMin, 210);
-      expect(text(f), contains('Wenn du möchtest'));
+      expect(text(f), contains('schrittweise bis 3:30 h'));
     });
 
     test('ultra: 3:30 h cap, offer up to 4 h', () {
@@ -315,7 +317,7 @@ void main() {
       expect(f.issues, contains('longRunTimeCap'));
       final t = text(f);
       expect(t, contains('enden bei 3:30 h'));
-      expect(t, contains('für Samstag hast du 5 h eingeplant'));
+      expect(t, contains('Samstag: 5 h'));
       expect(t, contains('schrittweise bis 4 h'));
     });
 
@@ -339,7 +341,7 @@ void main() {
       expect(t, contains('enden bei 3 h'));
       expect(t, contains('Im Triathlon- und Duathlon-Training ist diese Grenze fest'));
       expect(t, contains('nicht an deiner Zeit'));
-      expect(t, isNot(contains('Wenn du möchtest')));
+      expect(t, isNot(contains('schrittweise bis')));
       expect(t, contains('Verpflegungsstelle'));
     });
 
@@ -348,7 +350,7 @@ void main() {
       final f = PlanGenerator.feasibility(_p('m'), start: _start, l: en);
       final t = f.extraIssueText(en, 'longRunTimeCap', dayName: (d) => 'Saturday')!.replaceAll(nbsp, ' ');
       expect(t, contains('Your long runs stop at 3 h'));
-      expect(t, contains('That is not about your time (you planned 5 h for Saturday)'));
+      expect(t, contains('That is not about your time (Saturday: 5 h)'));
       expect(t, contains('step by step up to 3:30 h'));
     });
   });

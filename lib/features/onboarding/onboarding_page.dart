@@ -1065,7 +1065,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final caps = PlanGenerator.longCapsBelowDayTime(profile);
     final ext = PlanGenerator.longRunExtension(profile);
     final extSpec = EventSpec.of(a.eventDistance);
-    final extShown = ext != null || (a.longRunExtend && (extSpec?.longRunExtraMin ?? 0) > 0);
+    // Shown where it does something: the plan with the extension really has runs beyond the cap
+    // ([LongRunCapNote.gains] – not when the week's volume or the weeks left keep the long run at or below the
+    // cap anyway, review 2026-11) – or it is on and can be taken back.
+    final gains = ext != null && a.eventDate != null && (_feasibility.of(profile, DateTime.now(), l).capNote?.gains ?? false);
+    final extShown = gains || (a.longRunExtend && (extSpec?.longRunExtraMin ?? 0) > 0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

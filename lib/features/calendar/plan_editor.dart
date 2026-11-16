@@ -420,6 +420,15 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
   bool _busy = false;
   final _feasibility = FeasibilityCache();
 
+  /// "Allow longer long runs" as switched in this sheet (null: as stored). Kept here until "Plan neu
+  /// aufsetzen" saves it with the new plan ([_run]): saved at once, a sheet closed without rebuilding left the
+  /// profile saying "on" next to a plan without those runs (review 2026-11).
+  bool? _extend;
+
+  /// The profile the sheet shows and builds: the stored one with [_extend].
+  UserProfile _withExtend(UserProfile p) =>
+      _extend == null || _extend == p.athlete.longRunExtend ? p : p.copyWith(athlete: p.athlete.merge({'longRunExtend': _extend}));
+
   static int? _eventWeeks(UserProfile p) {
     final d = p.athlete.eventDate;
     if (d == null) return null;
@@ -433,7 +442,7 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
     setState(() => _busy = true);
     final l = context.l10n;
     final repo = ref.read(repoProvider)!;
-    final profile = ref.read(profileOrDefaultProvider);
+    final profile = _withExtend(ref.read(profileOrDefaultProvider));
     final start = await confirmReplacePlan(context, ref.read(planListProvider));
     if (!mounted) return;
     if (start == null) {
@@ -451,6 +460,7 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
       weeks: _weeks,
       saveMeta: ref.read(profileProvider).value != null,
     );
+    // (The switch is part of the profile the new plan was built from – saved with the plan's meta above.)
     if (mounted) {
       Navigator.pop(context);
       if (count != null) toast(context, l.planCreated(count));
@@ -460,7 +470,8 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final p = ref.watch(profileOrDefaultProvider);
+    final stored = ref.watch(profileOrDefaultProvider);
+    final p = _withExtend(stored);
     final eventWeeks = _eventWeeks(p);
     final current = _currentLength(p.athlete);
     final options = [
@@ -509,12 +520,18 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
                   planAnyway: true,
                   showTargetOk: true,
                   onAdjustTarget: (sec) {
-                    ref.read(repoProvider)!.saveProfile(p.copyWith(athlete: p.athlete.merge({'targetTimeSec': sec})));
+                    ref.read(repoProvider)!.saveProfile(stored.copyWith(athlete: stored.athlete.merge({'targetTimeSec': sec})));
                     toast(context, l.targetAdjusted(clock(sec)));
                   },
-                  // Saved with the profile like the target; "Plan neu aufsetzen" below builds the plan with it.
-                  onExtendLongRun: (v) => ref.read(repoProvider)!.saveProfile(p.copyWith(athlete: p.athlete.merge({'longRunExtend': v}))),
+                  // Local until "Plan neu aufsetzen" below builds the plan with it ([_extend]).
+                  onExtendLongRun: (v) => setState(() => _extend = v),
                 ),
+                if (_extend != null && _extend != stored.athlete.longRunExtend)
+                  Padding(
+                    key: const ValueKey('extendRebuildHint'),
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(l.planRebuildExtendHint, style: Theme.of(context).textTheme.bodySmall),
+                  ),
               ],
               const SizedBox(height: 16),
               if (eventWeeks != null)

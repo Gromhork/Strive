@@ -136,7 +136,9 @@ class FeasibilityCard extends StatelessWidget {
     // long-run cap note read as a warning that contradicted the time the athlete had set).
     final note = f.onlyNotes;
     final cap = f.capNote;
-    final extendMax = issues.contains('longRunTimeCap') ? cap?.extendMaxMin : null;
+    // (Only where it does something: the plan with the extension has runs beyond the cap – or it is on and
+    // can be taken back.)
+    final extendMax = issues.contains('longRunTimeCap') && (cap?.showSwitch ?? false) ? cap?.extendMaxMin : null;
     final canSwitch = extendMax != null && onExtendLongRun != null;
     return Container(
       key: const ValueKey('feasibility'),

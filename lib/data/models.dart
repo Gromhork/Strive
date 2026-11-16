@@ -481,6 +481,11 @@ class AthleteData {
     for (final k in const ['gymPlanA', 'gymPlanB']) {
       if (c[k] is Map<int, String>) c[k] = {for (final e in (c[k] as Map<int, String>).entries) '${e.key}': e.value};
     }
+    // The consent to longer long runs ([longRunExtend]) was given for one event's maximum (marathon 3:30 h):
+    // another event (ultra: 4 h) asks again instead of silently planning its longer runs (review 2026-11).
+    if (c.containsKey('eventDistance') && c['eventDistance'] != eventDistance && !c.containsKey('longRunExtend')) {
+      c['longRunExtend'] = false;
+    }
     return AthleteData.fromMap({...m, ...c});
   }
 }

@@ -19,25 +19,41 @@
         'In triathlon and duathlon training this limit is fixed: the bike carries the endurance, and an even longer run would cost you the key sessions of the following days.',
         'Im Triathlon- und Duathlon-Training ist diese Grenze fest: Die Ausdauer kommt vom Rad, und ein noch längerer Lauf würde dich die wichtigen Einheiten der Folgetage kosten.',
     ],
-    'feasCapOffer': [
-        'If you like, the plan extends the last long runs before the taper step by step up to {time} (about {dist} km) – with walk breaks from the start and easier days afterwards.',
-        'Wenn du möchtest, verlängert der Plan die letzten langen Läufe vor dem Tapering schrittweise bis {time} (etwa {dist} km) – mit Gehpausen von Beginn an und leichteren Tagen danach.',
+    'feasCapWhySet': [
+        'That is not about your time ({day}: {set}) – longer single runs add more injury risk and recovery cost than fitness.',
+        'Das liegt nicht an deiner Zeit ({day}: {set}) – länger am Stück bringt mehr Verletzungsrisiko und Erholungsbedarf als Fitness.',
     ],
-    'feasCapOfferWhere': [
-        'You can switch this on in the plan settings.',
-        'Einschalten kannst du das in den Planeinstellungen.',
+    'feasCapOffer': [
+        'If you like, the last long runs before the taper go step by step up to {time} (about {dist} km), with walk breaks.',
+        'Auf Wunsch gehen die letzten langen Läufe vor dem Tapering schrittweise bis {time} (etwa {dist} km), mit Gehpausen.',
+    ],
+    'feasCapOfferSettings': [
+        'In the plan settings you can allow the last long runs before the taper to go step by step up to {time} (about {dist} km), with walk breaks.',
+        'In den Planeinstellungen kannst du erlauben, dass die letzten langen Läufe vor dem Tapering schrittweise bis {time} (etwa {dist} km) gehen, mit Gehpausen.',
     ],
     'feasCapExtended': [
-        'You allowed longer runs: the last long runs before the taper go step by step up to {time} (about {dist} km) – with walk breaks from the start and easier days afterwards.',
-        'Du hast längere Läufe erlaubt: Die letzten langen Läufe vor dem Tapering gehen schrittweise bis {time} (etwa {dist} km) – mit Gehpausen von Beginn an und leichteren Tagen danach.',
+        'You allowed longer runs: the last long runs before the taper go step by step up to {time} (about {dist} km), with walk breaks.',
+        'Du hast längere Läufe erlaubt: Die letzten langen Läufe vor dem Tapering gehen schrittweise bis {time} (etwa {dist} km), mit Gehpausen.',
     ],
     'feasCapExtendedNoGain': [
         'You allowed longer runs, but this plan cannot use them: there are too few weeks left to build beyond the limit safely.',
         'Du hast längere Läufe erlaubt, dieser Plan kann sie aber nicht nutzen: Es bleiben zu wenige Wochen, um sicher über die Grenze hinaus aufzubauen.',
     ],
+    'feasCapExtendedNoGainVolume': [
+        'You allowed longer runs, but this plan cannot use them: your weekly running volume does not carry a longer long run – that takes more or longer runs on the other days, not fewer weeks.',
+        'Du hast längere Läufe erlaubt, dieser Plan kann sie aber nicht nutzen: Dein Wochenumfang trägt keinen längeren langen Lauf – dafür braucht es mehr oder längere Läufe an den anderen Tagen, nicht mehr Wochen.',
+    ],
     'feasCapFinish': [
-        'So: finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).',
-        'Daher: Ankommen ist das Ziel – ruhig loslaufen und von Beginn an kurze Gehpausen einplanen (z. B. 1 min alle 10 min).',
+        'So finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).',
+        'Ankommen ist deshalb das Ziel – ruhig loslaufen und von Beginn an kurze Gehpausen einplanen (z. B. 1 min alle 10 min).',
+    ],
+    'feasRunFrequencyLong': [
+        'With these runs your longest long run reaches about {have} km ({time}); the race needs about {need} km. The runs per week set that limit, not your time.',
+        'Mit diesen Läufen erreicht dein längster langer Lauf etwa {have} km ({time}); das Rennen braucht etwa {need} km. Die Grenze setzen die Läufe pro Woche, nicht deine Zeit.',
+    ],
+    'planRebuildExtendHint': [
+        'Applied when you rebuild the plan below – your current plan stays as it is until then.',
+        'Gilt, sobald du den Plan unten neu aufsetzt – bis dahin bleibt dein aktueller Plan unverändert.',
     ],
     'feasCapFinishTri': [
         'For the run of your race that means: start easy and plan short walk breaks from the beginning, e.g. at every aid station.',

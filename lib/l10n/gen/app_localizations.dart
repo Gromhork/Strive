@@ -11216,19 +11216,13 @@ abstract class AppLocalizations {
   /// No description provided for @feasCapOffer.
   ///
   /// In en, this message translates to:
-  /// **'If you like, the plan extends the last long runs before the taper step by step up to {time} (about {dist} km) – with walk breaks from the start and easier days afterwards.'**
+  /// **'If you like, the last long runs before the taper go step by step up to {time} (about {dist} km), with walk breaks.'**
   String feasCapOffer(String time, String dist);
-
-  /// No description provided for @feasCapOfferWhere.
-  ///
-  /// In en, this message translates to:
-  /// **'You can switch this on in the plan settings.'**
-  String get feasCapOfferWhere;
 
   /// No description provided for @feasCapExtended.
   ///
   /// In en, this message translates to:
-  /// **'You allowed longer runs: the last long runs before the taper go step by step up to {time} (about {dist} km) – with walk breaks from the start and easier days afterwards.'**
+  /// **'You allowed longer runs: the last long runs before the taper go step by step up to {time} (about {dist} km), with walk breaks.'**
   String feasCapExtended(String time, String dist);
 
   /// No description provided for @feasCapExtendedNoGain.
@@ -11240,7 +11234,7 @@ abstract class AppLocalizations {
   /// No description provided for @feasCapFinish.
   ///
   /// In en, this message translates to:
-  /// **'So: finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).'**
+  /// **'So finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).'**
   String get feasCapFinish;
 
   /// No description provided for @feasCapFinishTri.
@@ -11290,6 +11284,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Longer long runs'**
   String get longRunExtendTitle;
+
+  /// No description provided for @feasCapWhySet.
+  ///
+  /// In en, this message translates to:
+  /// **'That is not about your time ({day}: {set}) – longer single runs add more injury risk and recovery cost than fitness.'**
+  String feasCapWhySet(String day, String set);
+
+  /// No description provided for @feasCapOfferSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'In the plan settings you can allow the last long runs before the taper to go step by step up to {time} (about {dist} km), with walk breaks.'**
+  String feasCapOfferSettings(String time, String dist);
+
+  /// No description provided for @feasCapExtendedNoGainVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'You allowed longer runs, but this plan cannot use them: your weekly running volume does not carry a longer long run – that takes more or longer runs on the other days, not fewer weeks.'**
+  String get feasCapExtendedNoGainVolume;
+
+  /// No description provided for @feasRunFrequencyLong.
+  ///
+  /// In en, this message translates to:
+  /// **'With these runs your longest long run reaches about {have} km ({time}); the race needs about {need} km. The runs per week set that limit, not your time.'**
+  String feasRunFrequencyLong(String have, String time, String need);
+
+  /// No description provided for @planRebuildExtendHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied when you rebuild the plan below – your current plan stays as it is until then.'**
+  String get planRebuildExtendHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

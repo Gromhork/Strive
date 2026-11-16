@@ -357,7 +357,7 @@ class PlanGenerator {
   /// * the cap already covers the race's long run at the athlete's long-run pace (3 h ≥ ~90 % of 28 km: no need);
   /// * beginners (≤ 150 min), run/walk starters, seniors (≥ 65) and joint problems keep the cap – the extra
   ///   time on the feet is impact load they should not add;
-  /// * the long-run day has no time for it: a day the athlete set themselves must hold at least 10 min more
+  /// * the long-run day has no time for it: a day the athlete set themselves must hold at least 20 min more
   ///   than the cap (the extension then ends at that time); a day left to the app's default
   ///   ([longDayDefault]) grows with the option.
   int get longRunExtraEligible {
@@ -371,7 +371,33 @@ class PlanGenerator {
     final set = a.dayMinutes[d];
     final avail = _longRunDayMin(dayMin: set ?? max(dayMinutesFor(profile, d), cap + s.longRunExtraMin)) ?? 0;
     final extra = min(s.longRunExtraMin, (avail - cap) ~/ 5 * 5);
-    return extra >= 10 ? extra : 0;
+    return extra >= longRunExtraFloor ? extra : 0;
+  }
+
+  /// Smallest extension worth offering (min): the walk breaks take 1 min in 11, so only from ~20 min on does
+  /// an extended run hold more running than the plain run at the cap (review 2026-11: a 10 min extension gave
+  /// two run/walk sessions with fewer running km than the capped run, while the note said the plan could not
+  /// use it).
+  static const longRunExtraFloor = 20;
+
+  /// Smallest first step (min) towards the full extension ([_longExtraWeeks]: half of it) – below it the
+  /// plan goes to the full extension in one run.
+  static const longRunExtraStepFloor = 15;
+
+  /// Distance (km) an extended long run must cover beyond the plain run at the cap to be planned at all
+  /// ([_extensionWorth]) – the one criterion of generator and note ([LongRunCapNote.gains]).
+  static const longRunExtraGainKm = 1.0;
+
+  /// The long run of [longKm] on a day of [capMin] minutes, extended by this week's [_longExtraNow], covers
+  /// at least [longRunExtraGainKm] more (walk breaks included) than the plain run at the cap would.
+  bool _extensionWorth(double longKm, int capMin) {
+    final fit = min(capMin, _longRunMaxMin + _longExtraNow) * 60 / _longPace * 10 / 11;
+    final km = min(_r1(longKm), (fit * 10 + 1e-9).floor() / 10);
+    final block = (600 / _longPace * 10).round() * 100.0;
+    final breaks = max(0, (km * 1000 / block).ceil() - 1);
+    final walkKm = breaks * timedRunStepM(_runStep('recovery', 'walk', sec: 60), pz.easySlow) / 1000;
+    final plain = min(_r1(longKm), _floorHalf(min(capMin, _longRunMaxMin) * 60 / _longPace));
+    return km + walkKm >= plain + longRunExtraGainKm;
   }
 
   /// [longRunExtraEligible] of an athlete who opted in, else 0.
@@ -386,26 +412,47 @@ class PlanGenerator {
   /// Days of the long runs that went beyond the cap ([generate]): the runs after them stay easy.
   final _extendedRuns = <DateTime>[];
 
-  /// This week's long run of [longKm] does not fit the cap and may use the extension ([_longExtraNow]).
-  bool _extendsNow(double longKm) => _longExtraNow > 0 && _r1(longKm) * _longPace / 60 > _longRunMaxMin;
+  /// Race day of the plan being generated ([generate]); an extended run is never closer than
+  /// [longRunExtraLeadDays] to it.
+  DateTime? _raceDayNow;
 
-  /// Weeks whose long run may go beyond the cap (week → extra minutes) and the lighter week between two of
-  /// them (−1) for an athlete who opted in ([_longExtraMax]): only the last loading weeks of the build / peak,
-  /// at least three weeks before race week – the last one gets the full extension, an earlier one half of it;
-  /// two extended runs never follow each other directly (a recovery week or a shorter long run lies between).
-  /// So at most two runs go beyond the cap (Galloway: the longest runs every 2–3 weeks; Pfitzinger: the
-  /// last long run ≥ 3 weeks out).
-  Map<int, int> _longExtraWeeks(List<String> phases, int total, int preWeeks) {
+  /// The plan had weeks for an extended long run ([_longExtraWeeks] not empty) – when it still planned none,
+  /// the week's volume, not the weeks left, was the limit ([LongRunCapNote.noGainByVolume]).
+  bool _extraWeeksFound = false;
+
+  /// An extended long run lies at least this many days before race day (Pfitzinger: the last long run
+  /// ≥ 3 weeks out) – counted from the run's own day, not by week index: a Sunday long run before a Saturday
+  /// race in "week −3" is only 20 days out (review 2026-11).
+  static const longRunExtraLeadDays = 21;
+
+  /// This week's long run of [longKm] does not fit the cap and may use the extension ([_longExtraNow]).
+  /// ([capMin]: the minutes the run has on its day.)
+  bool _extendsNow(double longKm, {int? capMin}) =>
+      _longExtraNow > 0 &&
+      _r1(longKm) * _longPace / 60 > _longRunMaxMin &&
+      _extensionWorth(longKm, capMin ?? _longRunMaxMin + _longExtraNow);
+
+  /// Weeks whose long run may go beyond the cap (week → extra minutes) and the lighter weeks around them (−1)
+  /// for an athlete who opted in ([_longExtraMax]): only the last loading weeks of the build / peak whose
+  /// long-run day lies at least [longRunExtraLeadDays] before race day – the last one gets the full extension,
+  /// an earlier one half of it (when that half is worth a run of its own, [longRunExtraStepFloor]); two extended
+  /// runs never follow each other directly (a recovery week or a shorter long run lies between), and a loading
+  /// week right after the last one gets the shorter long run too (short plans: no full marathon-pace long run
+  /// a week after the longest run). So at most two runs go beyond the cap (Galloway: the longest runs every
+  /// 2–3 weeks; Pfitzinger: the last long run ≥ 3 weeks out).
+  Map<int, int> _longExtraWeeks(List<String> phases, int total, int preWeeks, DateTime monday, DateTime? raceDay) {
     final extra = _longExtraMax;
-    if (extra <= 0 || weeksToEvent == null) return const {};
+    final d = longSessionDays(profile)[Sport.run];
+    if (extra <= 0 || weeksToEvent == null || raceDay == null || d == null) return const {};
+    bool loading(int w) => w < total && (phases[w] == 'build' || phases[w] == 'peak');
     final cand = [
       for (var w = preWeeks; w < total; w++)
-        if ((phases[w] == 'build' || phases[w] == 'peak') && total - 1 - w >= 3) w,
+        if (loading(w) && daysBetween(addDays(monday, w * 7 + d - 1), raceDay) >= longRunExtraLeadDays) w,
     ];
     if (cand.isEmpty) return const {};
     final out = <int, int>{cand.last: extra};
-    final half = max(10, (extra / 2 / 5).round() * 5);
-    if (cand.length >= 2) {
+    final half = (extra / 2 / 5).round() * 5;
+    if (cand.length >= 2 && half >= longRunExtraStepFloor) {
       final prev = cand[cand.length - 2];
       if (prev != cand.last - 1) {
         out[prev] = half;
@@ -415,6 +462,7 @@ class PlanGenerator {
         if (before == prev - 1) out[prev] = -1;
       }
     }
+    if (loading(cand.last + 1)) out[cand.last + 1] = -1;
     return out;
   }
 
@@ -441,6 +489,18 @@ class PlanGenerator {
       if (forRide > s.longRideCapMin) out.add((sport: Sport.ride, capMin: s.longRideCapMin, weekday: bd));
     }
     return out;
+  }
+
+  /// Default time cap (min) of [p]'s long session of [sport] – what the plan never exceeds on its own: the long
+  /// run's [_longRunMaxMin] (without the opt-in extension), the long ride's [EventSpec.longRideCapMin] of an
+  /// event plan. Null without one. The recalibration's "a little more volume" stops there.
+  static int? longSessionCapMin(UserProfile p, Sport sport) {
+    final g = PlanGenerator(lookupAppLocalizations(const Locale('en')), p, const [], () => '');
+    return switch (sport) {
+      Sport.run => g._longRunMaxMin,
+      Sport.ride => g.spec?.longRideMin == null ? null : g.spec!.longRideCapMin,
+      _ => null,
+    };
   }
 
   /// The long-run cap extension [p] could switch on ([longRunExtraEligible]): the cap and the cap with the
@@ -691,7 +751,9 @@ class PlanGenerator {
     }
 
     // Opt-in extension of the long run's time cap ([_longExtraWeeks]).
-    final extraAt = _longExtraWeeks(phases, total, prePlanWeeks);
+    _raceDayNow = raceDay;
+    final extraAt = _longExtraWeeks(phases, total, prePlanWeeks, monday, raceDay);
+    _extraWeeksFound = extraAt.values.any((v) => v > 0);
     var extendedPrev = false; // last week's long run went beyond the cap
     for (var w = 0; w < total; w++) {
       final phase = phases[w];
@@ -988,7 +1050,7 @@ class PlanGenerator {
             // Ultra back-to-back (Koop 2016): the day after the long run a medium-long easy run
             // (~55 % of it, 60 % in the peak) – time on tired legs without one 50 km training run.
             // (After a long run beyond the cap: a short easy run only – ≤ 60 min, ~35 % of it.)
-            final ext = _extendsNow(longKm);
+            final ext = _extendsNow(longKm, capMin: _longRunDayMin());
             week.add(_backToBack(day, phase, longKm * (ext ? 0.35 : (phase == 'peak' ? 0.6 : 0.55)), ext ? min(cap, 60) : cap));
             continue;
           }
@@ -2475,7 +2537,11 @@ class PlanGenerator {
       // beginners ≤ 150 min.
       // Opt-in ([AthleteData.longRunExtend], [_longExtraWeeks]): a long run that does not fit the cap may take
       // this week's extra minutes – run with a walk break every 10 min from the start (Galloway), plain easy.
-      final extended = phase != 'recovery' && phase != 'taper' && _extendsNow(longKm);
+      final extended =
+          phase != 'recovery' &&
+          phase != 'taper' &&
+          _extendsNow(longKm, capMin: capMin) &&
+          (_raceDayNow == null || daysBetween(dayOnly(day), _raceDayNow!) >= longRunExtraLeadDays);
       final maxMin = min(capMin, _longRunMaxMin + (extended ? _longExtraNow : 0));
       if (phase != 'recovery' && phase != 'taper') _longRunLimitKm = max(_longRunLimitKm, maxMin * 60 / _longPace);
       final walk = _walkBreaks || extended;
@@ -4477,6 +4543,7 @@ class PlanGenerator {
       minRides: c.minRides,
       minSwims: c.minSwims,
       planLongKm: c.planLongKm,
+      planLongMin: c.planLongMin,
       planLongTargetKm: c.planLongTargetKm,
       timeCapMin: c.timeCapMin,
       timeCapKm: c.timeCapKm,
@@ -4545,6 +4612,7 @@ class PlanGenerator {
     // (Run/walk starters: the recommended lengths assume 30 min of running – their weeks are the limit.)
     final weeksOk = (g.weeksToEvent ?? 0) >= recommendedWeeks(p).min && runWalkStartFor(p) == null;
     double? shortLongKm;
+    int? shortLongMin;
     // Long-run target: km, or its time at the long-run pace when that is shorter.
     final runKm = spec?.longRunKm;
     final runTarget = runKm == null ? null : (spec!.longRunMin == null ? runKm : min(runKm, g._r1(spec.longRunMin! * 60 / g._longPace)));
@@ -4584,6 +4652,7 @@ class PlanGenerator {
                 : (byShare ? 'longRunShare' : (!weeksOk ? 'tooShort' : (runFreq || g._longShort ? null : 'longRunRamp')));
         if (cause != null) issues.add(cause);
         shortLongKm = longRun;
+        shortLongMin = longMin;
         if (byShare) {
           final m = ev == 'm' || ev == 'ultra50';
           // The other runs of the week with the longest long run: the quality runs stay as they are, the
@@ -4623,22 +4692,31 @@ class PlanGenerator {
         }
       }
     }
-    // Time-capped long run (a note, not a blocker): at the athlete's easy pace the sensible longest run
-    // ([EventSpec.longRunMin], ≤ [_longRunMaxMin]: marathon 3 h) covers clearly less than the race's usual
-    // long run – the plan stops there on purpose (time on feet) instead of asking for 4 h runs, and says
+    // Time-capped long run (a note, not a blocker): the plan's longest long run stops at the generator's own
+    // cap ([_longRunMaxMin]: marathon 3 h, ultra 3:30 h, else 2:30 h) and covers clearly less than the race's
+    // usual long run – the plan stops there on purpose (time on feet) instead of asking for 4 h runs, and says
     // so honestly: a finish goal with walk breaks from the start (Galloway).
+    // (Cap and distance are the plan's own – review 2026-11: [EventSpec.longRunMin], the HM's 2 h time-on-feet
+    // target, was shown as "your long runs stop at 2 h / 12.5 km" while the plan ran 2:30 h / 15.5 km; and a
+    // long run the week's volume kept well below the cap got "stops at 3 h" with a switch that changed nothing
+    // – there [runFrequency] / [longRunShare] / [longRunRamp] name the real limit.)
     int? capMin;
     double? capKm;
     if (runs &&
         spec?.sport == EventSport.run &&
         runKm != null &&
-        runTarget != null &&
-        spec!.longRunMin != null &&
-        runTarget < runKm * 0.9 &&
         !issues.any(const {'longRunTime', 'longRunShare', 'tooShort', 'longRunRamp', 'runWalk'}.contains)) {
-      issues.add('longRunTimeCap');
-      capMin = spec.longRunMin;
-      capKm = runTarget;
+      final cap = g._longRunMaxMin;
+      // (Runs beyond the cap are the opt-in extension's – the note's cap is the default one.)
+      // At the cap: within one 0.5 km step of what the cap covers at the long-run pace (by distance – a
+      // race-pace long run covers the cap's km in less time).
+      final capped = plan.where((w) => w.sport == Sport.run && w.intensity == 'long' && w.durationMin <= cap + 2);
+      final topKm = capped.fold(0.0, (x, w) => max(x, runningKm(w)));
+      if (topKm >= g._floorHalf(cap * 60 / g._longPace) - 0.75 && topKm < runKm * 0.9) {
+        issues.add('longRunTimeCap');
+        capMin = cap;
+        capKm = topKm;
+      }
     }
     // The same note for the long run of a triathlon / duathlon plan (70.3, Ironman …): its cap
     // ([_longRunMaxMin]) is what the plan's longest run stops at, clearly short of the usual distance. A hard
@@ -4670,24 +4748,19 @@ class PlanGenerator {
       int? extMin;
       double? extKm;
       var extRuns = 0;
+      var byVolume = false;
       if (extra > 0) {
         // The plan with the option on: how far its long runs really go (R1, the week's volume and the
         // weeks left decide – not just the cap).
-        final planOn =
-            on
-                ? plan
-                : PlanGenerator(
-                  l,
-                  p.copyWith(athlete: p.athlete.merge({'longRunExtend': true})),
-                  const [],
-                  () => '',
-                ).generate(start: start);
+        final gOn = on ? g : PlanGenerator(l, p.copyWith(athlete: p.athlete.merge({'longRunExtend': true})), const [], () => '');
+        final planOn = on ? plan : gOn.generate(start: start);
         final beyond = planOn.where((w) => w.sport == Sport.run && w.intensity == 'long' && w.durationMin > capMin! + 2).toList();
         extRuns = beyond.length;
         if (beyond.isNotEmpty) {
           extMin = (beyond.fold(0, (x, w) => max(x, w.durationMin)) / 5).round() * 5;
           extKm = beyond.fold<double>(0, (x, w) => max(x, w.distanceKm ?? 0));
         }
+        byVolume = beyond.isEmpty && gOn._extraWeeksFound;
       }
       capNote = LongRunCapNote(
         capMin: capMin,
@@ -4701,6 +4774,7 @@ class PlanGenerator {
         extendKm: extKm,
         extendRuns: extRuns,
         extendOn: on,
+        noGainByVolume: byVolume,
       );
     }
     // The plan never reaches the race's long run: it plans the race as a finish goal without a time
@@ -4799,6 +4873,7 @@ class PlanGenerator {
           g._longShort
               ? plan.where((w) => w.sport == Sport.run && w.intensity == 'long').fold<double>(0, (x, w) => max(x, runningKm(w)))
               : shortLongKm,
+      planLongMin: shortLongMin,
       planLongTargetKm: g._longShort || shortLongKm != null ? g._runTargetKm : null,
       runsPerWeek: nRuns,
       ridesPerWeek: nRides,
@@ -4846,6 +4921,7 @@ class LongRunCapNote {
     this.extendKm,
     this.extendRuns = 0,
     this.extendOn = false,
+    this.noGainByVolume = false,
   });
 
   /// The cap (min), the distance it covers at the athlete's long-run pace, and the race's usual long run (km).
@@ -4874,24 +4950,36 @@ class LongRunCapNote {
   /// The extension is on and reaches the race's usual long run (≥ 90 %): no finish-goal advice any more.
   bool get reachesRace => extendOn && extendKm != null && extendKm! >= raceKm * 0.9;
 
-  /// The extension adds something worth offering (≥ 1 km beyond the cap's distance).
-  bool get gains => extendMin != null && extendKm != null && extendKm! >= capKm + 1;
+  /// The extension is on but the plan has no run beyond the cap ([gains] false) although it had the weeks for
+  /// one: the week's running volume keeps the long run at the cap (else: too few weeks before the race).
+  final bool noGainByVolume;
 
-  /// The note: cap → "not your time" (with the time set) / why → extension (offer or what is planned) →
-  /// honest finish-goal advice unless the extension reaches the race's long run.
+  /// The plan with the extension has runs beyond the cap. The generator only plans one that covers at least
+  /// [PlanGenerator.longRunExtraGainKm] more than the plain run at the cap ([PlanGenerator._extensionWorth]) –
+  /// one criterion for plan and note.
+  bool get gains => extendRuns > 0 && extendMin != null && extendKm != null;
+
+  /// The switch belongs next to the note: there is something to switch on, or it is on (and can be taken back).
+  bool get showSwitch => extendMaxMin != null && (gains || extendOn);
+
+  /// The note: cap → why ("not your time" with the time set) → honest finish-goal advice unless the extension
+  /// reaches the race's long run → the extension last (offer, or what is planned / why nothing is).
   String text(AppLocalizations l, {required String Function(int weekday) dayName, bool canSwitch = false}) {
     final cap = PlanFeasibility._dur(capMin);
     String km(double v) => PlanFeasibility._kmText(l, v);
     final ext = extendMin == null ? '' : PlanFeasibility._dur(extendMin!);
+    final set = setDay != null && setDayMin != null;
     return [
       extendOn && gains ? l.feasCapLineUsual(cap, km(capKm), km(raceKm)) : l.feasCapLine(cap, km(capKm), km(raceKm)),
-      if (setDay != null && setDayMin != null) l.feasCapNotYourTime(PlanFeasibility._dur(setDayMin!), dayName(setDay!)),
-      hard ? l.feasCapWhyTri : l.feasCapWhy,
-      if (gains && extendOn) l.feasCapExtended(ext, km(extendKm!)),
-      if (gains && !extendOn) l.feasCapOffer(ext, km(extendKm!)),
-      if (gains && !extendOn && !canSwitch) l.feasCapOfferWhere,
-      if (extendOn && !gains) l.feasCapExtendedNoGain,
+      if (hard) ...[
+        if (set) l.feasCapNotYourTime(PlanFeasibility._dur(setDayMin!), dayName(setDay!)),
+        l.feasCapWhyTri,
+      ] else
+        set ? l.feasCapWhySet(dayName(setDay!), PlanFeasibility._dur(setDayMin!)) : l.feasCapWhy,
       if (!reachesRace) hard ? l.feasCapFinishTri : l.feasCapFinish,
+      if (gains && extendOn) l.feasCapExtended(ext, km(extendKm!)),
+      if (gains && !extendOn) canSwitch ? l.feasCapOffer(ext, km(extendKm!)) : l.feasCapOfferSettings(ext, km(extendKm!)),
+      if (extendOn && !gains) noGainByVolume ? l.feasCapExtendedNoGainVolume : l.feasCapExtendedNoGain,
     ].join(' ');
   }
 }
@@ -4921,6 +5009,7 @@ class PlanFeasibility {
     this.longDayNeedMin,
     this.otherRunNeedMin,
     this.planLongKm,
+    this.planLongMin,
     this.planLongTargetKm,
     this.timeCapMin,
     this.timeCapKm,
@@ -4982,6 +5071,10 @@ class PlanFeasibility {
   /// `longRunFinish`: the longest long run the plan reaches (km) and the race's long run (km).
   final double? planLongKm, planLongTargetKm;
 
+  /// Time (min) of the plan's longest long run when it stays short of the race's ([planLongKm]) – `runFrequency`
+  /// names it: the runs a week, not the long run's time cap, keep it there.
+  final int? planLongMin;
+
   /// `longDayDefault`: the long session on [longDayWeekday] (1 = Monday) needs up to [longDayNeedMin]
   /// minutes (15-min steps) – ≥ 1.5 × the time the athlete set; the plan uses the event's long-day
   /// default ([PlanGenerator.longDayDefault]) there.
@@ -5002,7 +5095,13 @@ class PlanFeasibility {
           _dur(longDayNeedMin!),
         ),
         'longRunShare' => l.feasLongRunShare3(otherRunSharePct ?? 50, otherRunNeedMin ?? 0),
-        'runFrequency' => l.feasRunFrequency('${runsPerWeek ?? 0}', '${minRuns ?? 0}'),
+        'runFrequency' => [
+          l.feasRunFrequency('${runsPerWeek ?? 0}', '${minRuns ?? 0}'),
+          // What that means for the long run – its real limit and real numbers (review 2026-11: the time-cap
+          // note said "stops at 3 h / 21.5 km" for a plan whose long runs peaked at 19.5 km / 2:42 h).
+          if (planLongKm != null && planLongMin != null && planLongTargetKm != null && planLongKm! < planLongTargetKm! - 0.5)
+            l.feasRunFrequencyLong(_kmText(l, planLongKm!), _dur(planLongMin!), _kmText(l, planLongTargetKm!)),
+        ].join(' '),
         'rideFrequency' => l.feasRideFrequency('${ridesPerWeek ?? 0}', '${minRides ?? 0}'),
         'swimFrequency' => l.feasSwimFrequency('${swimsPerWeek ?? 0}', '${minSwims ?? 0}'),
         'longRunRamp' when planLongKm != null && planLongTargetKm != null => [

@@ -6249,22 +6249,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String feasCapOffer(String time, String dist) {
-    return 'If you like, the plan extends the last long runs before the taper step by step up to $time (about $dist km) – with walk breaks from the start and easier days afterwards.';
+    return 'If you like, the last long runs before the taper go step by step up to $time (about $dist km), with walk breaks.';
   }
 
   @override
-  String get feasCapOfferWhere => 'You can switch this on in the plan settings.';
-
-  @override
   String feasCapExtended(String time, String dist) {
-    return 'You allowed longer runs: the last long runs before the taper go step by step up to $time (about $dist km) – with walk breaks from the start and easier days afterwards.';
+    return 'You allowed longer runs: the last long runs before the taper go step by step up to $time (about $dist km), with walk breaks.';
   }
 
   @override
   String get feasCapExtendedNoGain => 'You allowed longer runs, but this plan cannot use them: there are too few weeks left to build beyond the limit safely.';
 
   @override
-  String get feasCapFinish => 'So: finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).';
+  String get feasCapFinish => 'So finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).';
 
   @override
   String get feasCapFinishTri => 'For the run of your race that means: start easy and plan short walk breaks from the beginning, e.g. at every aid station.';
@@ -6299,4 +6296,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get longRunExtendTitle => 'Longer long runs';
+
+  @override
+  String feasCapWhySet(String day, String set) {
+    return 'That is not about your time ($day: $set) – longer single runs add more injury risk and recovery cost than fitness.';
+  }
+
+  @override
+  String feasCapOfferSettings(String time, String dist) {
+    return 'In the plan settings you can allow the last long runs before the taper to go step by step up to $time (about $dist km), with walk breaks.';
+  }
+
+  @override
+  String get feasCapExtendedNoGainVolume => 'You allowed longer runs, but this plan cannot use them: your weekly running volume does not carry a longer long run – that takes more or longer runs on the other days, not fewer weeks.';
+
+  @override
+  String feasRunFrequencyLong(String have, String time, String need) {
+    return 'With these runs your longest long run reaches about $have km ($time); the race needs about $need km. The runs per week set that limit, not your time.';
+  }
+
+  @override
+  String get planRebuildExtendHint => 'Applied when you rebuild the plan below – your current plan stays as it is until then.';
 }

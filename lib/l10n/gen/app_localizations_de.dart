@@ -6249,22 +6249,19 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String feasCapOffer(String time, String dist) {
-    return 'Wenn du möchtest, verlängert der Plan die letzten langen Läufe vor dem Tapering schrittweise bis $time (etwa $dist km) – mit Gehpausen von Beginn an und leichteren Tagen danach.';
+    return 'Auf Wunsch gehen die letzten langen Läufe vor dem Tapering schrittweise bis $time (etwa $dist km), mit Gehpausen.';
   }
 
   @override
-  String get feasCapOfferWhere => 'Einschalten kannst du das in den Planeinstellungen.';
-
-  @override
   String feasCapExtended(String time, String dist) {
-    return 'Du hast längere Läufe erlaubt: Die letzten langen Läufe vor dem Tapering gehen schrittweise bis $time (etwa $dist km) – mit Gehpausen von Beginn an und leichteren Tagen danach.';
+    return 'Du hast längere Läufe erlaubt: Die letzten langen Läufe vor dem Tapering gehen schrittweise bis $time (etwa $dist km), mit Gehpausen.';
   }
 
   @override
   String get feasCapExtendedNoGain => 'Du hast längere Läufe erlaubt, dieser Plan kann sie aber nicht nutzen: Es bleiben zu wenige Wochen, um sicher über die Grenze hinaus aufzubauen.';
 
   @override
-  String get feasCapFinish => 'Daher: Ankommen ist das Ziel – ruhig loslaufen und von Beginn an kurze Gehpausen einplanen (z. B. 1 min alle 10 min).';
+  String get feasCapFinish => 'Ankommen ist deshalb das Ziel – ruhig loslaufen und von Beginn an kurze Gehpausen einplanen (z. B. 1 min alle 10 min).';
 
   @override
   String get feasCapFinishTri => 'Für den Lauf im Rennen heißt das: ruhig anlaufen und von Beginn an kurze Gehpausen einplanen, z. B. an jeder Verpflegungsstelle.';
@@ -6299,4 +6296,25 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get longRunExtendTitle => 'Längere lange Läufe';
+
+  @override
+  String feasCapWhySet(String day, String set) {
+    return 'Das liegt nicht an deiner Zeit ($day: $set) – länger am Stück bringt mehr Verletzungsrisiko und Erholungsbedarf als Fitness.';
+  }
+
+  @override
+  String feasCapOfferSettings(String time, String dist) {
+    return 'In den Planeinstellungen kannst du erlauben, dass die letzten langen Läufe vor dem Tapering schrittweise bis $time (etwa $dist km) gehen, mit Gehpausen.';
+  }
+
+  @override
+  String get feasCapExtendedNoGainVolume => 'Du hast längere Läufe erlaubt, dieser Plan kann sie aber nicht nutzen: Dein Wochenumfang trägt keinen längeren langen Lauf – dafür braucht es mehr oder längere Läufe an den anderen Tagen, nicht mehr Wochen.';
+
+  @override
+  String feasRunFrequencyLong(String have, String time, String need) {
+    return 'Mit diesen Läufen erreicht dein längster langer Lauf etwa $have km ($time); das Rennen braucht etwa $need km. Die Grenze setzen die Läufe pro Woche, nicht deine Zeit.';
+  }
+
+  @override
+  String get planRebuildExtendHint => 'Gilt, sobald du den Plan unten neu aufsetzt – bis dahin bleibt dein aktueller Plan unverändert.';
 }
