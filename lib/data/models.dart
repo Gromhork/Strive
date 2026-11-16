@@ -284,6 +284,11 @@ class AthleteData {
   final DateTime? cssStepAt;
   final int? cssBase;
 
+  /// Opt-in ("Längere lange Läufe erlauben"): the long run's time cap of the event may be extended in the last
+  /// weeks before the taper ([EventSpec.longRunExtraMin]: marathon 3 h → 3:30 h, 50 km ultra 3:30 → 4 h) when
+  /// the cap covers clearly less than the race's long run and the long day has the time. Default off.
+  final bool longRunExtend;
+
   const AthleteData({
     this.setupMode = 'simple',
     this.difficulty = 'balanced',
@@ -330,6 +335,7 @@ class AthleteData {
     this.ftpBase,
     this.cssStepAt,
     this.cssBase,
+    this.longRunExtend = false,
   });
 
   bool get advanced => setupMode == 'advanced';
@@ -396,6 +402,7 @@ class AthleteData {
     ftpBase: _in(m['ftpBase']),
     cssStepAt: m['cssStepAt'] == null ? null : _date(m['cssStepAt']),
     cssBase: _in(m['cssBase']),
+    longRunExtend: _b(m['longRunExtend']),
   );
 
   /// A swim test time within [swimTestBounds], else null.
@@ -452,6 +459,7 @@ class AthleteData {
     if (ftpBase != null) 'ftpBase': ftpBase,
     if (cssStepAt != null) 'cssStepAt': Timestamp.fromDate(cssStepAt!),
     if (cssBase != null) 'cssBase': cssBase,
+    if (longRunExtend) 'longRunExtend': true,
   };
 
   /// Copy with some fields replaced (keys as in [toMap]); `null` values clear a field.
@@ -472,6 +480,11 @@ class AthleteData {
     }
     for (final k in const ['gymPlanA', 'gymPlanB']) {
       if (c[k] is Map<int, String>) c[k] = {for (final e in (c[k] as Map<int, String>).entries) '${e.key}': e.value};
+    }
+    // The consent to longer long runs ([longRunExtend]) was given for one event's maximum (marathon 3:30 h):
+    // another event (ultra: 4 h) asks again instead of silently planning its longer runs (review 2026-11).
+    if (c.containsKey('eventDistance') && c['eventDistance'] != eventDistance && !c.containsKey('longRunExtend')) {
+      c['longRunExtend'] = false;
     }
     return AthleteData.fromMap({...m, ...c});
   }

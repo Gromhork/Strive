@@ -361,6 +361,43 @@ void main() {
       expect(f.signals.map((x) => x.kind), [SignalKind.rpe]);
     });
 
+    testWidgets('gym: supersets of the plan are framed in "Als erledigt eintragen" (320 dp, text scale 1.3)', (t) async {
+      final tpl = WorkoutTemplate(
+        id: 't1',
+        name: 'Pull',
+        sport: Sport.gym,
+        exercises: [
+          _ex('q1', 'Klimmzüge mit Zusatzgewicht'),
+          _ex('q2', 'Seitheben vorgebeugt am Kabelzug', kg: 12.5)..group = 'A',
+          _ex('q3', 'Bizepsbeuge mit der SZ-Stange', kg: 27.5)..group = 'A',
+          _ex('q4', 'Langhantelrudern vorgebeugt'),
+        ],
+      );
+      final repo = _FakeRepo();
+      final plan = _gymPlan();
+      t.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+      await _open(t, () => ManualEntryPage(plan: plan), await _overrides(repo, plans: [plan], templates: [tpl]));
+      t.view.physicalSize = const Size(320, 3200);
+      await t.pumpAndSettle();
+      expect(t.takeException(), isNull);
+      final card = find.byKey(const ValueKey('gymFromPlan'));
+      final group = find.descendant(of: card, matching: find.byKey(const ValueKey('supersetGroup-A')));
+      expect(group, findsOneWidget);
+      expect(find.descendant(of: group, matching: find.text('Supersatz A · 2 Übungen')), findsOneWidget);
+      expect(find.descendant(of: group, matching: find.text('Seitheben vorgebeugt am Kabelzug')), findsOneWidget);
+      expect(find.descendant(of: group, matching: find.text('Bizepsbeuge mit der SZ-Stange')), findsOneWidget);
+      expect(find.descendant(of: group, matching: find.text('Langhantelrudern vorgebeugt')), findsNothing);
+      expect(find.descendant(of: card, matching: find.text('Langhantelrudern vorgebeugt')), findsOneWidget);
+      expect(find.text('A1'), findsOneWidget);
+      expect(find.text('A2'), findsOneWidget);
+      // Stored with the superset.
+      await t.tap(find.byKey(const ValueKey('manualSave')));
+      await t.pumpAndSettle();
+      expect(repo.saved.single.exercises.map((e) => e.group).toList(), [null, 'A', 'A', null]);
+      expect(t.takeException(), isNull);
+    });
+
     testWidgets('gym: "Als erledigt eintragen" stores the workout with sets and weights', (t) async {
       final repo = _FakeRepo();
       final plan = _gymPlan();

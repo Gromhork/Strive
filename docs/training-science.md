@@ -133,6 +133,47 @@ estimated with), not at its slow end. Default time on the long day when the athl
 (§14, `EventSpec.longDayMin`) – marathon 180 min, HM and olympic 150, 70.3 240 (long ride + brick run), Ironman 360,
 ultra 240, 160 km ride 300, otherwise 120; the second long day (other sport / ultra back-to-back) 90–180 min.
 
+**Long-run cap and its opt-in extension (user report 2026-11: "I set 5 h for the long day, why do my long runs stop at
+3 h?").** The cap is a decision of the plan, not a lack of the athlete's time: a day's time is an upper limit, never a
+target. The cap stays the default (marathon 3 h, 50 km ultra 3:30 h, everything else 150 min; Ironman long run 3 h).
+For slower runners whose cap covers < 90 % of the race's usual long run (28 km marathon, 30 km ultra) the athlete may
+switch on `AthleteData.longRunExtend` ("Lange Läufe bis 3:30 h erlauben", `EventSpec.longRunExtraMin`):
+
+| Cap | Opt-in | Why |
+|---|---|---|
+| Marathon 3 h | up to 3:30 h | Galloway: run/walk long runs towards race distance; Higdon / Hanson cap at 3–3.5 h – beyond that recovery cost outgrows the gain at every pace |
+| Ultra 50 km 3:30 h | up to 4 h | Koop 2016: single runs of 4–5 h are the upper end; the back-to-back run carries the rest |
+| 70.3 / Ironman / duathlon long run | hard | the bike carries the endurance; a longer run costs the key rides of the following days (Friel) |
+| 5 km – HM long run (150 min) | hard | the cap already covers the race's long run |
+| Long rides (70.3 4 h, Ironman 6 h, 100 / 160 km 4:30 / 5:30 h), long swims | hard | no impact load – the caps already sit 20–50 % above the race's need; the day's time is their only real limit |
+
+Rules of the extension (`PlanGenerator._longExtraWeeks`, `longRunExtraEligible`): only non-beginners without joint
+problems, < 65, not on run/walk; the long-run day must hold ≥ 20 min more than the cap (`longRunExtraFloor` – the walk
+breaks take 1 min in 11, a smaller extension holds less running than the plain run at the cap; a day left to the app's
+default grows with the option); at most **two** runs go beyond the cap – half the extension (when ≥ 15 min), then all of
+it – in the last build / peak weeks; each lies ≥ 21 days before race day **counted from the run's own day**
+(`longRunExtraLeadDays` – a Sunday long run before a Saturday race is one week earlier than the week index suggests);
+never in consecutive weeks (a recovery week or a long run of ~80 % of the cap lies between), and a loading week right
+after the last one gets that shorter plain long run too (short plans: no race-pace long run a week after the longest
+run); they are plain easy runs with a 1 min walk break every 10 min from the start (no race-pace finish), R1 (+≤ 10 %)
+still applies to their running km; the run of the next day is ≤ ~40 min (ultra back-to-back ≤ 60 min), no quality run
+for two days. A run is only extended when it covers ≥ 1 km more (walk breaks included) than the plain run at the cap
+(`_extensionWorth`) – the note's `gains` is simply "the plan has such runs", one rule for both. The consent belongs to
+one event: `AthleteData.merge` resets `longRunExtend` when `eventDistance` changes (marathon 3:30 h is not a yes to the
+ultra's 4 h). "Plan neu aufsetzen" keeps the switch local and saves it with the rebuilt plan. The recalibration's
+"a little more volume" (+5 %) never raises a long session beyond its default cap (`PlanGenerator.longSessionCapMin`)
+and never raises an extended run.
+
+The feasibility note (`LongRunCapNote`) is an info card. It is raised from the **plan's own** long runs: only when the
+longest one sits at the generator's cap (`_longRunMaxMin`, within a 0.5 km step) and covers < 90 % of the usual
+distance – so an HM plan that runs 2:30 h / 15 km gets no note (the 2 h of `EventSpec.longRunMin` is a time-on-feet
+target, not the cap), and a long run the week's volume keeps below the cap (three runs a week) is explained by
+`runFrequency` / `longRunShare` / `longRunRamp` with its real km and time instead. The note names the time the athlete
+set ("that is not about your time"), gives the finish-goal advice while even the extended run stays < 90 % of the usual
+distance, and ends with the extension: what it reaches in *this* plan (time and km), or – switched on without effect –
+why (too few weeks / weekly volume). The switch is shown only where the plan with it has runs beyond the cap, or to
+take it back.
+
 **Day split (fix/plan-pro, user report "4 h a day and still only 120 min").** Two sessions on one day share its time
 evenly – except when one of them is the long session: the short one (swim, easy run, strength) gets a third of the day,
 30–60 min (30 min on the long-ride day of a plan with bricks), the long session the rest. The even split had capped

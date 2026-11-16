@@ -651,9 +651,16 @@ void main() {
         ),
       );
       await t.pumpAndSettle();
-      expect(find.byKey(const ValueKey('plannedSuperset-A')), findsOneWidget);
-      expect(find.text('${de.superset} A'), findsOneWidget);
-      expect(find.textContaining('A · '), findsNWidgets(2));
+      // One frame with header and rail around exactly the two members (not just a letter prefix).
+      final group = find.byKey(const ValueKey('supersetGroup-A'));
+      expect(group, findsOneWidget);
+      expect(find.text('${de.superset} A · 2 ${de.exercises}'), findsOneWidget);
+      expect(find.text('A1'), findsOneWidget);
+      expect(find.text('A2'), findsOneWidget);
+      expect(find.descendant(of: group, matching: find.byType(ListTile)), findsNWidgets(2));
+      expect(find.descendant(of: group, matching: find.byKey(const ValueKey('plannedExercise-0'))), findsNothing);
+      expect(find.textContaining('A · push'), findsNothing);
+      expect(find.textContaining('A · Liege'), findsNothing);
       expect(t.takeException(), isNull);
     });
   });

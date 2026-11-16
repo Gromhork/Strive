@@ -23,6 +23,7 @@ class EventSpec {
     this.longRunGoalKm,
     this.longRunCapKm = 21,
     this.longRunCapMin = 150,
+    this.longRunExtraMin = 0,
     this.runKm = const [],
     this.longRideMin,
     this.longRideCapMin = 180,
@@ -70,6 +71,19 @@ class EventSpec {
   /// Longest long run the plan builds to (km) and the most time one run may take (min).
   final double longRunCapKm;
   final int longRunCapMin;
+
+  /// Opt-in extension of [longRunCapMin] (min; [AthleteData.longRunExtend]) for the last long runs before the
+  /// taper, run with walk breaks. Only where time on the feet is the race's own demand and the cap can stay
+  /// far below the usual long run:
+  /// * marathon 3 h → 3:30 h (Galloway: run/walk long runs up to race distance; Higdon / Hanson cap at
+  ///   3–3.5 h – beyond ~3.5 h the recovery cost outweighs the gain for every pace);
+  /// * 50 km ultra 3:30 → 4 h (Koop 2016: single runs of 4–5 h are the upper end, the back-to-back run carries
+  ///   the rest).
+  /// Hard caps (0): the long run of 70.3 / Ironman / duathlon plans (≤ 2.5–3 h – the bike carries the endurance
+  /// and the run must not cost the week's key rides, Friel) and of 5 km – HM plans (their caps already cover
+  /// the race). Long rides and swims have no such switch: without impact their caps sit 20–50 % above the
+  /// race's need and the day's time is their only real limit.
+  final int longRunExtraMin;
 
   /// Weekly volume ceilings novice / intermediate / advanced (R5): run km, bike hours, swim km.
   final List<double> runKm, rideH, swimKm;
@@ -186,6 +200,7 @@ class EventSpec {
       longRunMin: 180,
       longRunCapKm: 35,
       longRunCapMin: 180,
+      longRunExtraMin: 30,
       runKm: [45, 65, 90],
       longDayMin: 180,
       shorter: ['hm', '10k', '5k'],
@@ -203,6 +218,7 @@ class EventSpec {
       longRunMin: 210,
       longRunCapKm: 38,
       longRunCapMin: 210,
+      longRunExtraMin: 30,
       runKm: [55, 75, 100],
       longDayMin: 240,
       secondLongMin: 120,

@@ -5096,7 +5096,7 @@ abstract class AppLocalizations {
   /// No description provided for @supersetLinked.
   ///
   /// In en, this message translates to:
-  /// **'Superset – tap to unlink'**
+  /// **'Linked – tap to split here'**
   String get supersetLinked;
 
   /// No description provided for @repRange.
@@ -11182,6 +11182,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start empty'**
   String get startEmptyWorkout;
+
+  /// No description provided for @feasCapLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Your long runs stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km).'**
+  String feasCapLine(String time, String have, String race);
+
+  /// No description provided for @feasCapLineUsual.
+  ///
+  /// In en, this message translates to:
+  /// **'Your long runs usually stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km).'**
+  String feasCapLineUsual(String time, String have, String race);
+
+  /// No description provided for @feasCapNotYourTime.
+  ///
+  /// In en, this message translates to:
+  /// **'That is not about your time (you planned {set} for {day}) – the limit is set on purpose.'**
+  String feasCapNotYourTime(String set, String day);
+
+  /// No description provided for @feasCapWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Longer single runs add more injury risk and recovery cost than fitness.'**
+  String get feasCapWhy;
+
+  /// No description provided for @feasCapWhyTri.
+  ///
+  /// In en, this message translates to:
+  /// **'In triathlon and duathlon training this limit is fixed: the bike carries the endurance, and an even longer run would cost you the key sessions of the following days.'**
+  String get feasCapWhyTri;
+
+  /// No description provided for @feasCapOffer.
+  ///
+  /// In en, this message translates to:
+  /// **'If you like, the last long runs before the taper go step by step up to {time} (about {dist} km), with walk breaks.'**
+  String feasCapOffer(String time, String dist);
+
+  /// No description provided for @feasCapExtended.
+  ///
+  /// In en, this message translates to:
+  /// **'You allowed longer runs: the last long runs before the taper go step by step up to {time} (about {dist} km), with walk breaks.'**
+  String feasCapExtended(String time, String dist);
+
+  /// No description provided for @feasCapExtendedNoGain.
+  ///
+  /// In en, this message translates to:
+  /// **'You allowed longer runs, but this plan cannot use them: there are too few weeks left to build beyond the limit safely.'**
+  String get feasCapExtendedNoGain;
+
+  /// No description provided for @feasCapFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'So finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).'**
+  String get feasCapFinish;
+
+  /// No description provided for @feasCapFinishTri.
+  ///
+  /// In en, this message translates to:
+  /// **'For the run of your race that means: start easy and plan short walk breaks from the beginning, e.g. at every aid station.'**
+  String get feasCapFinishTri;
+
+  /// No description provided for @longRunExtendSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow long runs up to {time}'**
+  String longRunExtendSwitch(String time);
+
+  /// No description provided for @longRunExtendSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Default: at most {time} in one run. With this option only the last long runs before the taper get longer – step by step, with walk breaks and easier days afterwards.'**
+  String longRunExtendSub(String time);
+
+  /// No description provided for @timeLongCapRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Your day time is an upper limit, not a target: for this goal Strive plans long runs of at most {time} in one go, even when the day has more time.'**
+  String timeLongCapRun(String time);
+
+  /// No description provided for @timeLongCapRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Your day time is an upper limit, not a target: for this goal Strive plans long rides of at most {time}, even when the day has more time.'**
+  String timeLongCapRide(String time);
+
+  /// No description provided for @wLongRunExtendedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended long run (beyond your usual {time}): walk 1 min after every 10 min of running from the very start, eat and drink early. Stop if something hurts – the minutes matter less than staying healthy. Keep the next two days easy or free.'**
+  String wLongRunExtendedNote(String time);
+
+  /// No description provided for @wAfterExtendedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept easy on purpose: your legs are still recovering from the extended long run.'**
+  String get wAfterExtendedNote;
+
+  /// No description provided for @longRunExtendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Longer long runs'**
+  String get longRunExtendTitle;
+
+  /// No description provided for @feasCapWhySet.
+  ///
+  /// In en, this message translates to:
+  /// **'That is not about your time ({day}: {set}) – longer single runs add more injury risk and recovery cost than fitness.'**
+  String feasCapWhySet(String day, String set);
+
+  /// No description provided for @feasCapOfferSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'In the plan settings you can allow the last long runs before the taper to go step by step up to {time} (about {dist} km), with walk breaks.'**
+  String feasCapOfferSettings(String time, String dist);
+
+  /// No description provided for @feasCapExtendedNoGainVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'You allowed longer runs, but this plan cannot use them: your weekly running volume does not carry a longer long run – that takes more or longer runs on the other days, not fewer weeks.'**
+  String get feasCapExtendedNoGainVolume;
+
+  /// No description provided for @feasRunFrequencyLong.
+  ///
+  /// In en, this message translates to:
+  /// **'With these runs your longest long run reaches about {have} km ({time}); the race needs about {need} km. The runs per week set that limit, not your time.'**
+  String feasRunFrequencyLong(String have, String time, String need);
+
+  /// No description provided for @planRebuildExtendHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied when you rebuild the plan below – your current plan stays as it is until then.'**
+  String get planRebuildExtendHint;
+
+  /// No description provided for @circuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Circuit'**
+  String get circuit;
+
+  /// No description provided for @supersetGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} {letter} · {count} exercises'**
+  String supersetGroupTitle(String kind, String letter, int count);
+
+  /// No description provided for @supersetGroupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Alternate · rest after each round'**
+  String get supersetGroupHint;
+
+  /// No description provided for @supersetMemberOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} {letter}, exercise {x} of {y}'**
+  String supersetMemberOf(String kind, String letter, int x, int y);
+
+  /// No description provided for @supersetPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} {letter} · {x}/{y}'**
+  String supersetPosition(String kind, String letter, int x, int y);
+
+  /// No description provided for @supersetThen.
+  ///
+  /// In en, this message translates to:
+  /// **'Then straight on to: {name}'**
+  String supersetThen(String name);
+
+  /// No description provided for @supersetThenRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Last exercise of the round – rest afterwards'**
+  String get supersetThenRest;
+
+  /// No description provided for @supersetDissolve.
+  ///
+  /// In en, this message translates to:
+  /// **'Dissolve'**
+  String get supersetDissolve;
+
+  /// No description provided for @supersetDissolveTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Dissolve superset'**
+  String get supersetDissolveTip;
+
+  /// No description provided for @supersetFullMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'This superset is full (max. 3 exercises) – the exercise was placed after it.'**
+  String get supersetFullMoved;
+
+  /// No description provided for @supersetJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to superset {letter}.'**
+  String supersetJoined(String letter);
+
+  /// No description provided for @supersetEditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: link two exercises with the chain button between them to do them alternately as a superset.'**
+  String get supersetEditHint;
 
   /// No description provided for @duplicateFolder.
   ///

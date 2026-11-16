@@ -1215,7 +1215,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get linkSuperset => 'Als Supersatz verbinden';
 
   @override
-  String get unlinkSuperset => 'Aus Superset lösen';
+  String get unlinkSuperset => 'Aus Supersatz lösen';
 
   @override
   String get replaceExercise => 'Übung ersetzen';
@@ -2636,7 +2636,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get freeWorkoutSub => 'Nur ein Zeit- oder Distanzziel, ohne Abschnitte.';
 
   @override
-  String get supersetLinked => 'Supersatz – tippen zum Lösen';
+  String get supersetLinked => 'Verbunden – hier tippen zum Trennen';
 
   @override
   String get repRange => 'Wiederholungsbereich';
@@ -6225,6 +6225,144 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get startEmptyWorkout => 'Leer starten';
+
+  @override
+  String feasCapLine(String time, String have, String race) {
+    return 'Deine langen Läufe enden bei $time – bei deinem lockeren Tempo sind das etwa $have km (viele Pläne gehen bis $race km).';
+  }
+
+  @override
+  String feasCapLineUsual(String time, String have, String race) {
+    return 'Deine langen Läufe enden normalerweise bei $time – bei deinem lockeren Tempo sind das etwa $have km (viele Pläne gehen bis $race km).';
+  }
+
+  @override
+  String feasCapNotYourTime(String set, String day) {
+    return 'Das liegt nicht an deiner Zeit (für $day hast du $set eingeplant) – die Grenze ist bewusst gesetzt.';
+  }
+
+  @override
+  String get feasCapWhy => 'Länger am Stück bringt mehr Verletzungsrisiko und Erholungsbedarf als Fitness.';
+
+  @override
+  String get feasCapWhyTri => 'Im Triathlon- und Duathlon-Training ist diese Grenze fest: Die Ausdauer kommt vom Rad, und ein noch längerer Lauf würde dich die wichtigen Einheiten der Folgetage kosten.';
+
+  @override
+  String feasCapOffer(String time, String dist) {
+    return 'Auf Wunsch gehen die letzten langen Läufe vor dem Tapering schrittweise bis $time (etwa $dist km), mit Gehpausen.';
+  }
+
+  @override
+  String feasCapExtended(String time, String dist) {
+    return 'Du hast längere Läufe erlaubt: Die letzten langen Läufe vor dem Tapering gehen schrittweise bis $time (etwa $dist km), mit Gehpausen.';
+  }
+
+  @override
+  String get feasCapExtendedNoGain => 'Du hast längere Läufe erlaubt, dieser Plan kann sie aber nicht nutzen: Es bleiben zu wenige Wochen, um sicher über die Grenze hinaus aufzubauen.';
+
+  @override
+  String get feasCapFinish => 'Ankommen ist deshalb das Ziel – ruhig loslaufen und von Beginn an kurze Gehpausen einplanen (z. B. 1 min alle 10 min).';
+
+  @override
+  String get feasCapFinishTri => 'Für den Lauf im Rennen heißt das: ruhig anlaufen und von Beginn an kurze Gehpausen einplanen, z. B. an jeder Verpflegungsstelle.';
+
+  @override
+  String longRunExtendSwitch(String time) {
+    return 'Lange Läufe bis $time erlauben';
+  }
+
+  @override
+  String longRunExtendSub(String time) {
+    return 'Standard: höchstens $time am Stück. Mit dieser Option werden nur die letzten langen Läufe vor dem Tapering länger – schrittweise, mit Gehpausen und leichteren Tagen danach.';
+  }
+
+  @override
+  String timeLongCapRun(String time) {
+    return 'Deine Tageszeit ist eine Obergrenze, kein Soll: Lange Läufe plant Strive für dieses Ziel höchstens $time am Stück, auch wenn der Tag mehr Zeit hat.';
+  }
+
+  @override
+  String timeLongCapRide(String time) {
+    return 'Deine Tageszeit ist eine Obergrenze, kein Soll: Lange Ausfahrten plant Strive für dieses Ziel höchstens $time, auch wenn der Tag mehr Zeit hat.';
+  }
+
+  @override
+  String wLongRunExtendedNote(String time) {
+    return 'Verlängerter langer Lauf (über deine üblichen $time hinaus): von Beginn an nach je 10 min Laufen 1 min gehen, früh essen und trinken. Brich ab, wenn etwas schmerzt – gesund bleiben zählt mehr als die Minuten. Die nächsten zwei Tage locker oder frei halten.';
+  }
+
+  @override
+  String get wAfterExtendedNote => 'Bewusst locker gehalten: Deine Beine erholen sich noch vom verlängerten langen Lauf.';
+
+  @override
+  String get longRunExtendTitle => 'Längere lange Läufe';
+
+  @override
+  String feasCapWhySet(String day, String set) {
+    return 'Das liegt nicht an deiner Zeit ($day: $set) – länger am Stück bringt mehr Verletzungsrisiko und Erholungsbedarf als Fitness.';
+  }
+
+  @override
+  String feasCapOfferSettings(String time, String dist) {
+    return 'In den Planeinstellungen kannst du erlauben, dass die letzten langen Läufe vor dem Tapering schrittweise bis $time (etwa $dist km) gehen, mit Gehpausen.';
+  }
+
+  @override
+  String get feasCapExtendedNoGainVolume => 'Du hast längere Läufe erlaubt, dieser Plan kann sie aber nicht nutzen: Dein Wochenumfang trägt keinen längeren langen Lauf – dafür braucht es mehr oder längere Läufe an den anderen Tagen, nicht mehr Wochen.';
+
+  @override
+  String feasRunFrequencyLong(String have, String time, String need) {
+    return 'Mit diesen Läufen erreicht dein längster langer Lauf etwa $have km ($time); das Rennen braucht etwa $need km. Die Grenze setzen die Läufe pro Woche, nicht deine Zeit.';
+  }
+
+  @override
+  String get planRebuildExtendHint => 'Gilt, sobald du den Plan unten neu aufsetzt – bis dahin bleibt dein aktueller Plan unverändert.';
+
+  @override
+  String get circuit => 'Zirkel';
+
+  @override
+  String supersetGroupTitle(String kind, String letter, int count) {
+    return '$kind $letter · $count Übungen';
+  }
+
+  @override
+  String get supersetGroupHint => 'Abwechselnd · Pause nach jeder Runde';
+
+  @override
+  String supersetMemberOf(String kind, String letter, int x, int y) {
+    return '$kind $letter, Übung $x von $y';
+  }
+
+  @override
+  String supersetPosition(String kind, String letter, int x, int y) {
+    return '$kind $letter · $x/$y';
+  }
+
+  @override
+  String supersetThen(String name) {
+    return 'Danach direkt: $name';
+  }
+
+  @override
+  String get supersetThenRest => 'Letzte Übung der Runde – danach Pause';
+
+  @override
+  String get supersetDissolve => 'Auflösen';
+
+  @override
+  String get supersetDissolveTip => 'Supersatz auflösen';
+
+  @override
+  String get supersetFullMoved => 'Dieser Supersatz ist voll (max. 3 Übungen) – die Übung steht jetzt dahinter.';
+
+  @override
+  String supersetJoined(String letter) {
+    return 'Zu Supersatz $letter hinzugefügt.';
+  }
+
+  @override
+  String get supersetEditHint => 'Tipp: Verbinde zwei Übungen über den Ketten-Button dazwischen, um sie abwechselnd als Supersatz zu trainieren.';
 
   @override
   String get duplicateFolder => 'Ordner duplizieren';

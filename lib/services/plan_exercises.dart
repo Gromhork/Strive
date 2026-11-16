@@ -5,6 +5,7 @@ import '../data/builtin_upgrade.dart' show builtinKeysNamed;
 import '../data/default_programs.dart';
 import '../data/models.dart';
 import 'exercise_class.dart';
+import 'supersets.dart';
 
 /// [PlannedWorkout.gymMods]: beginner regressions of the technically demanding lifts
 /// (lat pulldown for pull-ups, a dumbbell RDL for the barbell deadlift, reverse crunches for
@@ -135,6 +136,9 @@ List<GymExercise> applyGymMods(List<GymExercise> exercises, List<String> mods, {
     if (upper.isNotEmpty) out = upper;
   }
   if (mods.contains(gymModRegress)) out = [for (final e in out) regressedExercise(e, gymGoal)];
+  // A superset that lost a member (or all but one) is no superset any more, and the remaining
+  // groups are lettered A, B, … again – the same in the plan, the preview and the tracker.
+  normalizeSupersets(out);
   return out;
 }
 

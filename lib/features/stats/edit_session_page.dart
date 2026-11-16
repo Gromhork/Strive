@@ -12,6 +12,8 @@ import '../../data/models.dart';
 import '../../data/exercise_names_de.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
+import '../../services/supersets.dart';
+import '../../widgets/superset_group.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
 import '../../widgets/duration_picker.dart';
@@ -84,6 +86,10 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   @override
   void initState() {
     super.initState();
+    // Letters as every list shows them (one letter per run of adjacent members, A, B, … – stored
+    // sessions were never normalised), so removing the exercise between two namesakes links
+    // nothing by accident. A longer chain stays what was trained – editing rewrites no history.
+    normalizeSupersets(_exercises, split: false);
     _initial = _snapshot();
     _initialPerformance = _performance();
     _fromPlanKeys; // the sets as loaded, before any edit
@@ -180,22 +186,28 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   void _removeExercise(int i) {
     final l = context.l10n;
     final removed = _exercises[i];
-    setState(() => _exercises.removeAt(i));
+    final partners = supersetPartners(_exercises, i);
+    setState(() {
+      _exercises.removeAt(i);
+      // A superset that lost its second member is a straight set again.
+      normalizeSupersets(_exercises, split: false);
+    });
     undoToast(
       ScaffoldMessenger.of(context),
       text: l.exerciseRemoved(exName(context, removed.exId, removed.name)),
       undoLabel: l.undo,
       onUndo: () {
         if (!mounted) return;
-        setState(() => _exercises.insert(i.clamp(0, _exercises.length), removed));
+        // Back into its superset (only next to its former partners, see [restoreExercise]).
+        setState(() => restoreExercise(_exercises, i, removed, partners, split: false));
       },
     );
   }
 
   void _move(int i, int by) {
-    final j = i + by;
-    if (j < 0 || j >= _exercises.length) return;
-    setState(() => _exercises.insert(j, _exercises.removeAt(i)));
+    // One step; a superset of the session is jumped over as a whole instead of being torn apart
+    // (and a longer circuit of an old session is not split up by a mere reorder).
+    setState(() => stepExercise(_exercises, i, by, split: false));
   }
 
   @override
@@ -337,8 +349,12 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
             TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(hintText: l.notesHint)),
             if (!cardio) ...[
               const SizedBox(height: 16),
-              for (var i = 0; i < _exercises.length; i++)
-                Padding(
+              ...groupedExerciseWidgets(
+                _exercises,
+                hint: false,
+                bottomInset: 12,
+                badgeTop: 26, // next to the card's title row
+                (i) => Padding(
                   key: ObjectKey(_exercises[i]),
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _ExerciseEditor(
@@ -351,6 +367,7 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
                     onRemove: () => _removeExercise(i),
                   ),
                 ),
+              ),
               OutlinedButton.icon(
                 key: const ValueKey('editAddExercise'),
                 onPressed: _addExercises,
@@ -387,62 +404,83 @@ class _ExerciseEditor extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback? onMoveUp, onMoveDown;
 
+  /// Whether the weight / reps fields of a set row would get too narrow for a number like "102,5"
+  /// with its unit: from the width this card gets (screen minus the list's padding and, in a
+  /// superset, the frame's rail) and the font size.
+  bool _compactRows(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final inFrame = context.findAncestorWidgetOfExactType<SupersetSegment>() != null;
+    // Screen – list padding (2 × 16) – card padding (16 + 8) – rail – number, gap, checkbox, delete.
+    final fields = mq.size.width - 32 - 24 - (inFrame ? supersetRailWidth + 6 : 0) - 110;
+    return fields / 2 < 76 * mq.textScaler.scale(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final e = exercise;
     final bw = e.bw == true;
     final timed = e.isTimed;
+    // Narrow card (small phone, large font, inside a superset's frame): the set rows drop their
+    // number and the unit moves into the label, so weight and reps stay readable.
+    final compact = _compactRows(context);
+    const tight = EdgeInsets.symmetric(horizontal: 8, vertical: 14);
     return SectionCard(
       title: exName(context, e.exId, e.name),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // A hold's weight is always added load – no bodyweight switch for timed exercises.
-          if (e.exId != 'manual' && !timed)
-            FilterChip(
-              key: const ValueKey('edit-bw'),
-              avatar: const Icon(Icons.accessibility_new_rounded, size: 16),
-              showCheckmark: false,
-              visualDensity: VisualDensity.compact,
-              label: Text(l.bodyweightShort),
-              tooltip: l.bodyweightHint,
-              selected: bw,
-              onSelected: onBodyweight,
-            ),
-          PopupMenuButton<String>(
-            key: ValueKey('editExerciseMenu-${e.exId}'),
-            tooltip: l.moreActions,
-            icon: const Icon(Icons.more_vert, size: 20),
-            onSelected:
-                (v) => switch (v) {
-                  'up' => onMoveUp?.call(),
-                  'down' => onMoveDown?.call(),
-                  _ => onRemove(),
-                },
-            itemBuilder:
-                (_) => [
-                  PopupMenuItem(
-                    value: 'up',
-                    enabled: onMoveUp != null,
-                    child: ListTile(leading: const Icon(Icons.arrow_upward_rounded), title: Text(l.moveUp)),
-                  ),
-                  PopupMenuItem(
-                    value: 'down',
-                    enabled: onMoveDown != null,
-                    child: ListTile(leading: const Icon(Icons.arrow_downward_rounded), title: Text(l.moveDown)),
-                  ),
-                  PopupMenuItem(
-                    key: const ValueKey('editRemoveExercise'),
-                    value: 'remove',
-                    child: ListTile(leading: const Icon(Icons.delete_outline), title: Text(l.removeExercise)),
-                  ),
-                ],
-          ),
-        ],
+      // Tighter on the right (the row's buttons bring their own padding): room for the weight and
+      // reps fields on narrow phones, where a superset's rail takes another 40 dp.
+      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+      // Only the menu sits next to the name: with the bodyweight switch in the same row a long
+      // name had no room left on narrow phones (least of all inside a superset's frame).
+      trailing: PopupMenuButton<String>(
+        key: ValueKey('editExerciseMenu-${e.exId}'),
+        tooltip: l.moreActions,
+        icon: const Icon(Icons.more_vert, size: 20),
+        onSelected:
+            (v) => switch (v) {
+              'up' => onMoveUp?.call(),
+              'down' => onMoveDown?.call(),
+              _ => onRemove(),
+            },
+        itemBuilder:
+            (_) => [
+              PopupMenuItem(
+                value: 'up',
+                enabled: onMoveUp != null,
+                child: ListTile(leading: const Icon(Icons.arrow_upward_rounded), title: Text(l.moveUp)),
+              ),
+              PopupMenuItem(
+                value: 'down',
+                enabled: onMoveDown != null,
+                child: ListTile(leading: const Icon(Icons.arrow_downward_rounded), title: Text(l.moveDown)),
+              ),
+              PopupMenuItem(
+                key: const ValueKey('editRemoveExercise'),
+                value: 'remove',
+                child: ListTile(leading: const Icon(Icons.delete_outline), title: Text(l.removeExercise)),
+              ),
+            ],
       ),
       child: Column(
         children: [
+          // A hold's weight is always added load – no bodyweight switch for timed exercises.
+          if (e.exId != 'manual' && !timed)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: FilterChip(
+                  key: const ValueKey('edit-bw'),
+                  avatar: const Icon(Icons.accessibility_new_rounded, size: 16),
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                  label: Text(l.bodyweightShort),
+                  tooltip: l.bodyweightHint,
+                  selected: bw,
+                  onSelected: onBodyweight,
+                ),
+              ),
+            ),
           for (var i = 0; i < e.sets.length; i++)
             Padding(
               // The mode is part of the key: switching it rebuilds the fields with the
@@ -451,22 +489,24 @@ class _ExerciseEditor extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
                 children: [
-                  SizedBox(width: 28, child: Text('${i + 1}', style: Theme.of(context).textTheme.labelLarge)),
+                  if (!compact) SizedBox(width: 22, child: Text('${i + 1}', style: Theme.of(context).textTheme.labelLarge)),
                   Expanded(
                     child: TextFormField(
+                      key: ValueKey('edit-weight-$i'),
                       initialValue: e.sets[i].weight == 0 ? '' : Units.num(units.weightOut(e.sets[i].weight)),
                       keyboardType: TextInputType.numberWithOptions(decimal: true, signed: bw),
                       decoration: InputDecoration(
                         isDense: true,
                         // Short label so it fits next to the reps on phones ("BW ± kg").
+                        contentPadding: compact ? tight : null,
                         labelText:
                             timed
                                 ? '+ ${units.weightUnit}'
                                 : bw
-                                ? '${l.bodyweightShort} ± ${units.weightUnit}'
-                                : l.weight,
+                                ? (compact ? '± ${units.weightUnit}' : '${l.bodyweightShort} ± ${units.weightUnit}')
+                                : (compact ? units.weightUnit : l.weight),
                         hintText: bw || timed ? '0' : null,
-                        suffixText: bw || timed ? null : units.weightUnit,
+                        suffixText: bw || timed || compact ? null : units.weightUnit,
                         floatingLabelBehavior: FloatingLabelBehavior.always,
                       ),
                       onChanged: (v) {
@@ -503,6 +543,7 @@ class _ExerciseEditor extends StatelessWidget {
                               keyboardType: TextInputType.number,
                               decoration: InputDecoration(
                                 isDense: true,
+                                contentPadding: compact ? tight : null,
                                 labelText: l.reps,
                                 floatingLabelBehavior: FloatingLabelBehavior.always,
                               ),
@@ -513,6 +554,7 @@ class _ExerciseEditor extends StatelessWidget {
                             ),
                   ),
                   Checkbox(
+                    visualDensity: VisualDensity.compact,
                     value: e.sets[i].done,
                     onChanged: (v) {
                       e.sets[i].done = v ?? false;
@@ -521,6 +563,7 @@ class _ExerciseEditor extends StatelessWidget {
                   ),
                   IconButton(
                     tooltip: l.delete,
+                    visualDensity: VisualDensity.compact,
                     icon: const Icon(Icons.delete_outline, size: 20),
                     onPressed: () {
                       e.sets.removeAt(i);

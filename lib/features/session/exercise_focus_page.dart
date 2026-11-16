@@ -19,6 +19,8 @@ import '../../services/load_prescription.dart';
 import '../../widgets/common.dart';
 import '../../widgets/effort_chips.dart';
 import '../../widgets/exercise_media.dart';
+import '../../services/supersets.dart';
+import '../../widgets/superset_group.dart';
 import '../../widgets/prescription.dart';
 import '../../widgets/term_info.dart';
 import '../train/exercise_detail_page.dart';
@@ -120,11 +122,16 @@ class _ExerciseDots extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => onTap(i),
                 child: AnimatedContainer(
+                  key: ValueKey('focusDot-$i'),
                   duration: const Duration(milliseconds: 250),
                   height: 4,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  // The members of a superset form one joined bar.
+                  margin: EdgeInsets.only(left: i > 0 && w.groupOf(i).contains(i - 1) ? 0 : 2, right: w.groupOf(i).contains(i + 1) ? 0 : 2),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.horizontal(
+                      left: Radius.circular(i > 0 && w.groupOf(i).contains(i - 1) ? 0 : 2),
+                      right: Radius.circular(w.groupOf(i).contains(i + 1) ? 0 : 2),
+                    ),
                     color:
                         w.exercises[i].allDone
                             ? AppColors.success
@@ -223,19 +230,19 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                     Positioned(
                       left: 10,
                       top: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(color: AppColors.brand, borderRadius: BorderRadius.circular(20)),
-                        child: Text(
-                          '${l.superset} ${e.group} · ${group.indexOf(widget.index) + 1}/${group.length}',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-                        ),
+                      child: SupersetChip(
+                        key: const ValueKey('focusSuperset'),
+                        letter: supersetLetterAt(w.exercises, widget.index) ?? 'A',
+                        position: group.indexOf(widget.index),
+                        count: group.length,
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 14),
               Text(exName(context, e.exId, e.name), style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w700, height: 1.15)),
+              // Superset: what follows this exercise without a rest (or that the rest comes now).
+              if (group.length > 1) ...[const SizedBox(height: 6), SupersetNextLine(exercises: w.exercises, index: widget.index)],
               if (info != null) ...[
                 const SizedBox(height: 4),
                 Text(
@@ -298,7 +305,8 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                 EffortChips(value: e.effort, onChanged: (v) => n.setEffort(widget.index, v)),
                 const SizedBox(height: 4),
               ],
-              Row(
+              // Wraps instead of overflowing on narrow screens with a large font.
+              Wrap(
                 children: [
                   TextButton.icon(onPressed: () => n.addSet(widget.index), icon: const Icon(Icons.add, size: 18), label: Text(l.addSet)),
                   if (!e.isTimed)
@@ -568,29 +576,35 @@ class _SetEditor extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (offersBodyweightMode(e.exId, e.name, info: ref.watch(exerciseDbProvider).value?.byId(e.exId), current: e.bw))
-                Row(
-                  children: [
-                    Tooltip(
-                      message: l.bodyweightHint,
-                      child: FilterChip(
-                        avatar: Icon(Icons.accessibility_new_rounded, size: 18, color: bw ? null : Theme.of(context).colorScheme.outline),
-                        showCheckmark: false,
-                        visualDensity: VisualDensity.compact,
-                        label: Text(l.bodyweight),
-                        selected: bw,
-                        onSelected: (on) {
-                          HapticFeedback.selectionClick();
-                          n.setBodyweight(index, on);
-                        },
+                // Switch left, total load right; the total wraps below on narrow phones with a large font.
+                SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    children: [
+                      Tooltip(
+                        message: l.bodyweightHint,
+                        child: FilterChip(
+                          avatar: Icon(Icons.accessibility_new_rounded, size: 18, color: bw ? null : Theme.of(context).colorScheme.outline),
+                          showCheckmark: false,
+                          visualDensity: VisualDensity.compact,
+                          label: Text(l.bodyweight),
+                          selected: bw,
+                          onSelected: (on) {
+                            HapticFeedback.selectionClick();
+                            n.setBodyweight(index, on);
+                          },
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    if (bw && e.bodyKg > 0)
-                      Text(
-                        '≈ ${units.weight(e.bodyKg + s.weight, digits: 0)} ${l.loadTotal}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                  ],
+                      if (bw && e.bodyKg > 0)
+                        Text(
+                          '≈ ${units.weight(e.bodyKg + s.weight, digits: 0)} ${l.loadTotal}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                    ],
+                  ),
                 ),
               const SizedBox(height: 8),
               Row(
@@ -946,6 +960,7 @@ class _RestOverlay extends ConsumerWidget {
     final n = ref.read(activeGymProvider.notifier);
     final u = ref.watch(profileOrDefaultProvider).units;
     final next = w!.exercises[w.focus];
+    final nextGroup = w.groupOf(w.focus);
     final nextSetIdx = next.sets.indexWhere((s) => !s.done);
     final nextSet = nextSetIdx < 0 ? null : next.sets[nextSetIdx];
     // Optional effort rating of the exercise that was just finished.
@@ -1060,7 +1075,25 @@ class _RestOverlay extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(l.upNext, style: const TextStyle(fontSize: 12, color: AppColors.gym, fontWeight: FontWeight.w700)),
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      l.upNext,
+                                      style: const TextStyle(fontSize: 12, color: AppColors.gym, fontWeight: FontWeight.w700),
+                                    ),
+                                  ),
+                                  // Next member of the superset: its "A2" badge.
+                                  if (nextGroup.length > 1) ...[
+                                    const SizedBox(width: 8),
+                                    SupersetBadge(
+                                      key: const ValueKey('restNextSuperset'),
+                                      letter: supersetLetterAt(w.exercises, w.focus) ?? 'A',
+                                      number: nextGroup.indexOf(w.focus) + 1,
+                                    ),
+                                  ],
+                                ],
+                              ),
                               Text(
                                 exName(context, next.exId, next.name),
                                 maxLines: 1,

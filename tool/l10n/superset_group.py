@@ -1,0 +1,16 @@
+{
+  'circuit': ['Circuit', 'Zirkel'],
+  'supersetGroupTitle': ['{kind} {letter} · {count} exercises', '{kind} {letter} · {count} Übungen'],
+  'supersetGroupHint': ['Alternate · rest after each round', 'Abwechselnd · Pause nach jeder Runde'],
+  'supersetMemberOf': ['{kind} {letter}, exercise {x} of {y}', '{kind} {letter}, Übung {x} von {y}'],
+  'supersetPosition': ['{kind} {letter} · {x}/{y}', '{kind} {letter} · {x}/{y}'],
+  'supersetThen': ['Then straight on to: {name}', 'Danach direkt: {name}'],
+  'supersetThenRest': ['Last exercise of the round – rest afterwards', 'Letzte Übung der Runde – danach Pause'],
+  'supersetDissolve': ['Dissolve', 'Auflösen'],
+  'supersetDissolveTip': ['Dissolve superset', 'Supersatz auflösen'],
+  'supersetFullMoved': ['This superset is full (max. 3 exercises) – the exercise was placed after it.', 'Dieser Supersatz ist voll (max. 3 Übungen) – die Übung steht jetzt dahinter.'],
+  'supersetJoined': ['Added to superset {letter}.', 'Zu Supersatz {letter} hinzugefügt.'],
+  'unlinkSuperset': ['Remove from superset', 'Aus Supersatz lösen'],
+  'supersetEditHint': ['Tip: link two exercises with the chain button between them to do them alternately as a superset.', 'Tipp: Verbinde zwei Übungen über den Ketten-Button dazwischen, um sie abwechselnd als Supersatz zu trainieren.'],
+  'supersetLinked': ['Linked – tap to split here', 'Verbunden – hier tippen zum Trennen'],
+}

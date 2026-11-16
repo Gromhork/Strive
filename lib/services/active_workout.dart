@@ -9,6 +9,7 @@ import '../core/sport.dart';
 import '../data/models.dart';
 import '../providers.dart';
 import 'supersets.dart';
+import 'supersets.dart' as supersets;
 import 'workout_alerts.dart';
 
 /// Lead-in of the hold timer: "3, 2, 1" to get into position before the hold time runs.
@@ -226,6 +227,8 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
   /// still running keeps its end time; an expired one is cleared.
   void restore(ActiveGym g) {
     _restTimer?.cancel();
+    // Like [start]: a workout stored by an older version may carry superset data that was never repaired.
+    normalizeSupersets(g.exercises);
     final left = g.restEnd?.difference(DateTime.now());
     if (left == null || left.isNegative) {
       state = g.copyWith(clearRest: true);
@@ -254,15 +257,42 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
     _touch();
   }
 
-  /// Moves an exercise; a superset member that is moved away leaves its superset.
-  void moveExercise(int from, int to) {
+  /// Moves an exercise to index [to] (as in a reorderable list: the index *before* removal).
+  /// Supersets stay contiguous, see [supersets.moveExercise].
+  SupersetMove moveExercise(int from, int to) {
+    final list = state?.exercises;
+    if (list == null) return SupersetMove.moved;
+    cancelHold();
+    final focused = _focused(list);
+    final r = supersets.moveExercise(list, from, to > from ? to - 1 : to);
+    _refocus(list, focused);
+    _touch();
+    return r;
+  }
+
+  /// "Move up / down": one step, jumping over a whole superset instead of entering it
+  /// ([supersets.stepExercise]).
+  void stepExercise(int i, int dir) {
     final list = state?.exercises;
     if (list == null) return;
     cancelHold();
-    final e = list.removeAt(from);
-    list.insert(to > from ? to - 1 : to, e);
-    normalizeSupersets(list);
+    final focused = _focused(list);
+    supersets.stepExercise(list, i, dir);
+    _refocus(list, focused);
     _touch();
+  }
+
+  GymExercise? _focused(List<GymExercise> list) {
+    final f = state?.focus ?? -1;
+    return f >= 0 && f < list.length ? list[f] : null;
+  }
+
+  /// The focus view keeps showing the same exercise after a reorder.
+  void _refocus(List<GymExercise> list, GymExercise? focused) {
+    final w = state;
+    if (w == null || focused == null) return;
+    final i = list.indexWhere((x) => identical(x, focused));
+    if (i >= 0 && i != w.focus) state = w.copyWith(focus: i);
   }
 
   void addSet(int ex) {
@@ -341,11 +371,10 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
       return;
     }
     final group = w.groupOf(ex);
-    final pos = group.indexOf(ex);
     // Next member of the superset in this round that still has open sets.
-    final laterInRound = group.skip(pos + 1).where((i) => !w.exercises[i].allDone);
-    if (group.length > 1 && laterInRound.isNotEmpty) {
-      state = w.copyWith(focus: laterInRound.first, clearRest: true);
+    final laterInRound = nextInSupersetRound(w.exercises, ex);
+    if (laterInRound != null) {
+      state = w.copyWith(focus: laterInRound, clearRest: true);
       if (s.type != SetType.drop) startRest(supersetTransitionSec, transition: true, effortFor: rate);
       return;
     }
