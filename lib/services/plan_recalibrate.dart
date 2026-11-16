@@ -571,6 +571,11 @@ class Recalibrator {
         } else if (progress && days < 7 && !rest && !_autoReducedRecently(p)) {
           // A workout the AutoAdjuster just reduced (e.g. easy run too fast) is not raised.
           g = 1.05;
+          // A long session never grows beyond its time cap ([PlanGenerator.longSessionCapMin]: marathon long run
+          // 3 h …) – and a long run already beyond it (the opt-in extension, agreed up to 3:30 h / 4 h) is not
+          // raised at all (review 2026-11: only R1 limited the +5 %).
+          final capMin = p.intensity == 'long' ? (_longCapMin[p.sport] ??= PlanGenerator.longSessionCapMin(profile, p.sport) ?? 0) : 0;
+          if (capMin > 0) g = p.durationMin >= capMin ? 1.0 : min(g, capMin / p.durationMin);
         }
         // Floors (C4 / I15): a reduction never takes a run below 25 min and 4 km (beginners
         // 20 min) – 15-minute returns and 2.7 km "easy runs" are no training.
@@ -1099,6 +1104,9 @@ class Recalibrator {
   /// A long session the AutoAdjuster capped in the last 14 days after a long run was cut short at a
   /// high effort ("longCutShort": achieved + 10 %): that is the evidence-based cap – the
   /// recalibration does not lower it again (C3: the cap kept ratcheting below the last cut).
+  /// Time caps of the long sessions by sport ([PlanGenerator.longSessionCapMin]; 0: none), looked up once.
+  final _longCapMin = <Sport, int>{};
+
   bool _longCapped(PlannedWorkout p) {
     final o = p.auto;
     return o != null && o.reason == 'longCutShort' && daysBetween(o.at, now) <= 14;

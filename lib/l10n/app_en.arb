@@ -4386,5 +4386,151 @@
   "planProgramMissing": "The program of this workout was deleted",
   "planProgramMissingSub": "Choose a program or exercises for it – or start an empty workout.",
   "planProgramChoose": "Choose program",
-  "startEmptyWorkout": "Start empty"
+  "startEmptyWorkout": "Start empty",
+  "feasCapLine": "Your long runs stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km).",
+  "@feasCapLine": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "have": {
+        "type": "String"
+      },
+      "race": {
+        "type": "String"
+      }
+    }
+  },
+  "feasCapLineUsual": "Your long runs usually stop at {time} – at your easy pace that is about {have} km (many plans go up to {race} km).",
+  "@feasCapLineUsual": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "have": {
+        "type": "String"
+      },
+      "race": {
+        "type": "String"
+      }
+    }
+  },
+  "feasCapNotYourTime": "That is not about your time (you planned {set} for {day}) – the limit is set on purpose.",
+  "@feasCapNotYourTime": {
+    "placeholders": {
+      "set": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "feasCapWhy": "Longer single runs add more injury risk and recovery cost than fitness.",
+  "feasCapWhyTri": "In triathlon and duathlon training this limit is fixed: the bike carries the endurance, and an even longer run would cost you the key sessions of the following days.",
+  "feasCapOffer": "If you like, the last long runs before the taper go step by step up to {time} (about {dist} km), with walk breaks.",
+  "@feasCapOffer": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "dist": {
+        "type": "String"
+      }
+    }
+  },
+  "feasCapExtended": "You allowed longer runs: the last long runs before the taper go step by step up to {time} (about {dist} km), with walk breaks.",
+  "@feasCapExtended": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "dist": {
+        "type": "String"
+      }
+    }
+  },
+  "feasCapExtendedNoGain": "You allowed longer runs, but this plan cannot use them: there are too few weeks left to build beyond the limit safely.",
+  "feasCapFinish": "So finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).",
+  "feasCapFinishTri": "For the run of your race that means: start easy and plan short walk breaks from the beginning, e.g. at every aid station.",
+  "longRunExtendSwitch": "Allow long runs up to {time}",
+  "@longRunExtendSwitch": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "longRunExtendSub": "Default: at most {time} in one run. With this option only the last long runs before the taper get longer – step by step, with walk breaks and easier days afterwards.",
+  "@longRunExtendSub": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLongCapRun": "Your day time is an upper limit, not a target: for this goal Strive plans long runs of at most {time} in one go, even when the day has more time.",
+  "@timeLongCapRun": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "timeLongCapRide": "Your day time is an upper limit, not a target: for this goal Strive plans long rides of at most {time}, even when the day has more time.",
+  "@timeLongCapRide": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wLongRunExtendedNote": "Extended long run (beyond your usual {time}): walk 1 min after every 10 min of running from the very start, eat and drink early. Stop if something hurts – the minutes matter less than staying healthy. Keep the next two days easy or free.",
+  "@wLongRunExtendedNote": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wAfterExtendedNote": "Kept easy on purpose: your legs are still recovering from the extended long run.",
+  "longRunExtendTitle": "Longer long runs",
+  "feasCapWhySet": "That is not about your time ({day}: {set}) – longer single runs add more injury risk and recovery cost than fitness.",
+  "@feasCapWhySet": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "set": {
+        "type": "String"
+      }
+    }
+  },
+  "feasCapOfferSettings": "In the plan settings you can allow the last long runs before the taper to go step by step up to {time} (about {dist} km), with walk breaks.",
+  "@feasCapOfferSettings": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "dist": {
+        "type": "String"
+      }
+    }
+  },
+  "feasCapExtendedNoGainVolume": "You allowed longer runs, but this plan cannot use them: your weekly running volume does not carry a longer long run – that takes more or longer runs on the other days, not fewer weeks.",
+  "feasRunFrequencyLong": "With these runs your longest long run reaches about {have} km ({time}); the race needs about {need} km. The runs per week set that limit, not your time.",
+  "@feasRunFrequencyLong": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "planRebuildExtendHint": "Applied when you rebuild the plan below – your current plan stays as it is until then."
 }
