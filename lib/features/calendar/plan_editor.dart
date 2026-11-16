@@ -23,6 +23,7 @@ import '../onboarding/onboarding_page.dart';
 import '../goals/goal_mismatch_card.dart';
 import 'feasibility_card.dart';
 import 'replace_plan_dialog.dart';
+import '../train/program_duplicate.dart';
 import '../train/gym_exercise_editor.dart';
 import '../../services/plan_exercises.dart';
 
@@ -223,6 +224,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final templates = ref.watch(templateListProvider).where((t) => t.sport == _sport).toList();
+    final labels = programLabels(templates, l.noFolder);
     final profile = ref.watch(profileOrDefaultProvider);
     final ex = widget.existing;
     return DiscardGuard(
@@ -272,7 +274,8 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
                 decoration: InputDecoration(labelText: l.program, prefixIcon: const Icon(Icons.folder_copy_outlined)),
                 items: [
                   DropdownMenuItem(value: null, child: Text(l.none)),
-                  for (final t in templates) DropdownMenuItem(value: t.id, child: Text(t.name, overflow: TextOverflow.ellipsis)),
+                  // Same-named programs (a duplicated folder, "Beine" of two splits) show their folder.
+                  for (final t in templates) DropdownMenuItem(value: t.id, child: Text(labels[t.id]!, overflow: TextOverflow.ellipsis)),
                 ],
                 onChanged: (v) {
                   final t = templates.where((t) => t.id == v).firstOrNull;

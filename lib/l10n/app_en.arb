@@ -4603,5 +4603,42 @@
       }
     }
   },
-  "supersetEditHint": "Tip: link two exercises with the chain button between them to do them alternately as a superset."
+  "supersetEditHint": "Tip: link two exercises with the chain button between them to do them alternately as a superset.",
+  "duplicateFolder": "Duplicate folder",
+  "duplicateToFolder": "Duplicate to folder",
+  "programDuplicated": "Created “{name}”.",
+  "@programDuplicated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "programDuplicatedTo": "Created “{name}” in {folder}.",
+  "@programDuplicatedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "folderDuplicated": "{n, plural, =0{Empty folder duplicated.} =1{Folder duplicated (1 program).} other{Folder duplicated ({n} programs).}}",
+  "@folderDuplicated": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "folderDuplicatedHidden": "{n} hidden by the sport filter.",
+  "@folderDuplicatedHidden": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -6363,4 +6363,37 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get supersetEditHint => 'Tipp: Verbinde zwei Übungen über den Ketten-Button dazwischen, um sie abwechselnd als Supersatz zu trainieren.';
+
+  @override
+  String get duplicateFolder => 'Ordner duplizieren';
+
+  @override
+  String get duplicateToFolder => 'In Ordner duplizieren';
+
+  @override
+  String programDuplicated(String name) {
+    return '„$name“ erstellt.';
+  }
+
+  @override
+  String programDuplicatedTo(String name, String folder) {
+    return '„$name“ in $folder erstellt.';
+  }
+
+  @override
+  String folderDuplicated(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Ordner dupliziert ($n Programme).',
+      one: 'Ordner dupliziert (1 Programm).',
+      zero: 'Leeren Ordner dupliziert.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String folderDuplicatedHidden(int n) {
+    return '$n davon blendet der Sportfilter aus.';
+  }
 }

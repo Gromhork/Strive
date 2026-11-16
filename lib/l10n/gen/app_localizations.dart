@@ -11386,6 +11386,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tip: link two exercises with the chain button between them to do them alternately as a superset.'**
   String get supersetEditHint;
+
+  /// No description provided for @duplicateFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate folder'**
+  String get duplicateFolder;
+
+  /// No description provided for @duplicateToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate to folder'**
+  String get duplicateToFolder;
+
+  /// No description provided for @programDuplicated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created “{name}”.'**
+  String programDuplicated(String name);
+
+  /// No description provided for @programDuplicatedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Created “{name}” in {folder}.'**
+  String programDuplicatedTo(String name, String folder);
+
+  /// No description provided for @folderDuplicated.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =0{Empty folder duplicated.} =1{Folder duplicated (1 program).} other{Folder duplicated ({n} programs).}}'**
+  String folderDuplicated(int n);
+
+  /// No description provided for @folderDuplicatedHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} hidden by the sport filter.'**
+  String folderDuplicatedHidden(int n);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

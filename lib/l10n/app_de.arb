@@ -1881,5 +1881,11 @@
   "supersetDissolveTip": "Supersatz auflösen",
   "supersetFullMoved": "Dieser Supersatz ist voll (max. 3 Übungen) – die Übung steht jetzt dahinter.",
   "supersetJoined": "Zu Supersatz {letter} hinzugefügt.",
-  "supersetEditHint": "Tipp: Verbinde zwei Übungen über den Ketten-Button dazwischen, um sie abwechselnd als Supersatz zu trainieren."
+  "supersetEditHint": "Tipp: Verbinde zwei Übungen über den Ketten-Button dazwischen, um sie abwechselnd als Supersatz zu trainieren.",
+  "duplicateFolder": "Ordner duplizieren",
+  "duplicateToFolder": "In Ordner duplizieren",
+  "programDuplicated": "„{name}“ erstellt.",
+  "programDuplicatedTo": "„{name}“ in {folder} erstellt.",
+  "folderDuplicated": "{n, plural, =0{Leeren Ordner dupliziert.} =1{Ordner dupliziert (1 Programm).} other{Ordner dupliziert ({n} Programme).}}",
+  "folderDuplicatedHidden": "{n} davon blendet der Sportfilter aus."
 }

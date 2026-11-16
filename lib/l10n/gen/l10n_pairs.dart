@@ -1827,4 +1827,9 @@ const l10nPairs = <(String, String)>[
   ('This superset is full (max. 3 exercises) – the exercise was placed after it.', 'Dieser Supersatz ist voll (max. 3 Übungen) – die Übung steht jetzt dahinter.'),
   ('Added to superset {letter}.', 'Zu Supersatz {letter} hinzugefügt.'),
   ('Tip: link two exercises with the chain button between them to do them alternately as a superset.', 'Tipp: Verbinde zwei Übungen über den Ketten-Button dazwischen, um sie abwechselnd als Supersatz zu trainieren.'),
+  ('Duplicate folder', 'Ordner duplizieren'),
+  ('Duplicate to folder', 'In Ordner duplizieren'),
+  ('Created “{name}”.', '„{name}“ erstellt.'),
+  ('Created “{name}” in {folder}.', '„{name}“ in {folder} erstellt.'),
+  ('{n} hidden by the sport filter.', '{n} davon blendet der Sportfilter aus.'),
 ];
