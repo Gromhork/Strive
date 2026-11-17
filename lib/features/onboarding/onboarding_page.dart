@@ -335,6 +335,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       await _doFinish();
     } finally {
       _finishing = false;
+      PlanService.creating.value = false;
     }
   }
 
@@ -393,6 +394,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       // A long day that is no longer a training day would be silently ignored – store "automatic".
       'longDay': longDays.contains(p.longDay) ? p.longDay : null,
     });
+    if (_generatePlan && widget.mode == SetupMode.setup) PlanService.creating.value = true;
     repo.saveProfile(profile);
     final now = DateTime.now();
 

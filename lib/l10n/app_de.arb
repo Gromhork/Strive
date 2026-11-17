@@ -1975,5 +1975,6 @@
   "feasCapFinishTarget": "Plane deshalb im Rennen von Beginn an kurze Gehpausen ein (z. B. 1 min alle 10 min) – deine Zielzeit bleibt, aber starte ruhig: Ankommen geht vor.",
   "feasRunFrequencyFinish": "Der Plan behandelt das Rennen deshalb als Finish-Ziel, ohne Zielzeit – hast du eine eigene, trage sie ein.",
   "wRaceRealisticPace": "Dein Renntempo ist das realistische deines Leistungsstands: {time} ({pace}). Den ersten km im Zieltempo, dann in dieses Tempo finden – nicht schneller.",
-  "stepRaceFinishNote": "Ankommenstempo – locker starten, gleichmäßig einteilen"
+  "stepRaceFinishNote": "Ankommenstempo – locker starten, gleichmäßig einteilen",
+  "planCreating": "Dein Plan wird erstellt …"
 }

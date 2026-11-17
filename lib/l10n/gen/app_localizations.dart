@@ -11950,6 +11950,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finish pace – start easy, keep it even'**
   String get stepRaceFinishNote;
+
+  /// No description provided for @planCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating your plan …'**
+  String get planCreating;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

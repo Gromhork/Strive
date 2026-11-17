@@ -6810,4 +6810,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stepRaceFinishNote => 'Finish pace – start easy, keep it even';
+
+  @override
+  String get planCreating => 'Creating your plan …';
 }

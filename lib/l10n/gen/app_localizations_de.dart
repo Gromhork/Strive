@@ -6810,4 +6810,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get stepRaceFinishNote => 'Ankommenstempo – locker starten, gleichmäßig einteilen';
+
+  @override
+  String get planCreating => 'Dein Plan wird erstellt …';
 }

@@ -36,6 +36,7 @@ import '../onboarding/onboarding_page.dart';
 import '../session/start_helpers.dart';
 import '../stats/body_page.dart';
 import '../../services/plan_text.dart';
+import '../../services/plan_service.dart';
 import '../stats/session_detail_page.dart';
 
 class HomePage extends ConsumerWidget {
@@ -199,8 +200,13 @@ class TodayCard extends ConsumerStatefulWidget {
 class _TodayCardState extends ConsumerState<TodayCard> {
   int _i = 0;
 
+  // While the first setup still creates the plan (the profile is saved first and opens this page),
+  // the card says so instead of offering "Plan erstellen" for a plan that is on its way.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<bool>(valueListenable: PlanService.creating, builder: (context, creating, _) => _build(context, creating));
+
+  Widget _build(BuildContext context, bool creating) {
     ref.watch(todayProvider); // "today" changes at midnight
     final l = context.l10n;
     final filter = ref.watch(sportFilterProvider);
@@ -226,6 +232,8 @@ class _TodayCardState extends ConsumerState<TodayCard> {
               ? (Icons.filter_alt_outlined, AppColors.brand, l.todayHiddenByFilter(hidden), l.todayHiddenByFilterSub)
               : doneToday.isNotEmpty
               ? (Icons.check_circle_rounded, AppColors.success, l.doneToday(doneToday.length), doneToday.map((s) => s.title).join(', '))
+              : noPlan && creating
+              ? (Icons.hourglass_top_rounded, AppColors.brand, l.planCreating, l.noPlanYetSub)
               : noPlan
               ? (Icons.event_note_rounded, AppColors.brand, l.noPlanYet, l.noPlanYetSub)
               : (Icons.self_improvement_rounded, AppColors.brand, l.restDay, l.restDaySub);
@@ -280,6 +288,12 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                         style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
                         onPressed: () => ref.read(sportFilterProvider.notifier).set(null),
                         child: Text(l.showAllSports),
+                      )
+                      : noPlan && creating
+                      ? const Padding(
+                        key: ValueKey('todayPlanCreating'),
+                        padding: EdgeInsets.all(8),
+                        child: SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 3)),
                       )
                       : noPlan
                       ? FilledButton.icon(

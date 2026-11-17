@@ -255,7 +255,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
               spacing: 8,
               children: [
                 Text(l.exercises, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                if (!p.isDone)
+                if (!done)
                   TextButton.icon(
                     icon: const Icon(Icons.tune_rounded, size: 18),
                     label: Text(l.adjustExercises),
@@ -309,7 +309,8 @@ class PlannedWorkoutPage extends ConsumerWidget {
                 title: Text(exName(context, e.exId, e.name)),
                 subtitle: Builder(
                   builder: (_) {
-                    final rx = p.isDone ? null : prescriber.forExercise(e, phase: gymLoadPhase(p));
+                    // (A start too short to count leaves the workout open – it keeps today's weights.)
+                    final rx = done ? null : prescriber.forExercise(e, phase: gymLoadPhase(p));
                     final reps =
                         e.repMin != null && e.repMax != null
                             ? '${e.repMin}–${e.repMax}'

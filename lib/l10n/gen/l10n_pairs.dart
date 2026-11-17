@@ -1905,4 +1905,5 @@ const l10nPairs = <(String, String)>[
   ('The plan therefore treats the race as a finish goal, without a target time – set one of your own if you have it.', 'Der Plan behandelt das Rennen deshalb als Finish-Ziel, ohne Zielzeit – hast du eine eigene, trage sie ein.'),
   ('Your race pace is the realistic one on your fitness: {time} ({pace}). Start the first km at goal pace, then settle into it – no faster.', 'Dein Renntempo ist das realistische deines Leistungsstands: {time} ({pace}). Den ersten km im Zieltempo, dann in dieses Tempo finden – nicht schneller.'),
   ('Finish pace – start easy, keep it even', 'Ankommenstempo – locker starten, gleichmäßig einteilen'),
+  ('Creating your plan …', 'Dein Plan wird erstellt …'),
 ];

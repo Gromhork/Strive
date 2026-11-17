@@ -5019,5 +5019,6 @@
       }
     }
   },
-  "stepRaceFinishNote": "Finish pace – start easy, keep it even"
+  "stepRaceFinishNote": "Finish pace – start easy, keep it even",
+  "planCreating": "Creating your plan …"
 }

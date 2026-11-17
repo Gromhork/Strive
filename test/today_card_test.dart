@@ -9,6 +9,7 @@ import 'package:strive/data/models.dart';
 import 'package:strive/features/home/home_page.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
+import 'package:strive/services/plan_service.dart';
 
 void main() {
   final today = dayOnly(DateTime.now());
@@ -61,6 +62,19 @@ void main() {
       expect(find.text(l.noPlanYet), findsOneWidget);
       expect(find.byKey(const ValueKey('todayCreatePlan')), findsOneWidget);
       expect(find.text(l.restDay), findsNothing);
+      expect(errors, isEmpty);
+    });
+
+    testWidgets('first setup still creating the plan: no "create plan" button ($lang)', (tester) async {
+      PlanService.creating.value = true;
+      addTearDown(() => PlanService.creating.value = false);
+      final errors = await pump(tester, lang, const []);
+      expect(find.text(l.planCreating), findsOneWidget);
+      expect(find.byKey(const ValueKey('todayPlanCreating')), findsOneWidget);
+      expect(find.byKey(const ValueKey('todayCreatePlan')), findsNothing);
+      PlanService.creating.value = false;
+      await tester.pump();
+      expect(find.byKey(const ValueKey('todayCreatePlan')), findsOneWidget);
       expect(errors, isEmpty);
     });
 
