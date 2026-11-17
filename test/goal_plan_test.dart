@@ -320,15 +320,15 @@ void main() {
       final u = GoalForecast.retarget(m, plan, 3 * 3600 + 45 * 60, now: start, l: l);
       expect(u, isNotEmpty);
       // Review round 2, C3: within reach → race-pace work at the faster of target and realistic time
-      // (3:45 is conservative for this runner: realistic ≈ 3:27), the race itself at the target.
+      // (3:45 is conservative for this runner: realistic ≈ 3:27) – the race paces the same (audit RUN-9), the
+      // target stays in the text with the realistic pacing.
       final t = GoalModel.check(m.copyWith(athlete: m.athlete.merge({'targetTimeSec': 3 * 3600 + 45 * 60})), start: start)!;
       expect(t.status, TargetStatus.ok);
       final pace = (t.ambitionSec / 42.195).round();
       final raceId = plan.firstWhere((w) => w.intensity == 'race').id;
       expect(u[raceId]!['description'], contains('3:45:00'));
-      final targetPace = ((3 * 3600 + 45 * 60) / 42.195).round();
       final raceStep = (u[raceId]!['steps'] as List).map((x) => WorkoutStep.fromMap(x as Map)).firstWhere((s) => s.isWork);
-      expect((raceStep.paceMin! + raceStep.paceMax!) / 2, closeTo(targetPace, 1));
+      expect((raceStep.paceMin! + raceStep.paceMax!) / 2, closeTo(pace, 1));
       expect(u[raceId]!['description'], contains(clock(GoalModel.roundTarget(t.realisticSec))));
       for (final e in u.entries.where((e) => e.key != raceId && e.value.containsKey('steps'))) {
         for (final s in (e.value['steps'] as List).map((x) => WorkoutStep.fromMap(x as Map)).where((s) => s.isWork && s.zone == 'M')) {

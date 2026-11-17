@@ -6396,4 +6396,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String folderDuplicatedHidden(int n) {
     return '$n hidden by the sport filter.';
   }
+
+  @override
+  String get planToEventRaceWeek => 'Your race is already this week – the plan is just the race week: easy sessions, a short opener and the race. For a build-up, pick a later race.';
+
+  @override
+  String get summaryPlanLengthRaceWeek => 'Length: race week only';
+
+  @override
+  String wRaceGoalBehind(String goal, String pace, String realistic) {
+    return 'Your goal $goal is out of reach for now – race at the realistic $pace (≈ $realistic). Start controlled; if you feel good after halfway, pick it up.';
+  }
+
+  @override
+  String get wRunContinuousDesc => 'Run easy without stopping – walk only if you need to. If it feels too hard, repeat last week.';
+
+  @override
+  String get wLongRunWalkContDesc => 'Long session with walk breaks: run 10 min, walk 1 min – time on your feet for the race. Your other runs are continuous now; the breaks keep the long one safe. Talking pace. Grows about 10 min a week.';
 }

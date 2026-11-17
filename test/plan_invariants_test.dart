@@ -9,6 +9,7 @@ import 'package:strive/core/sport.dart';
 import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
+import 'package:strive/services/event_spec.dart';
 import 'package:strive/services/plan_generator.dart';
 import 'package:strive/services/schedule_advisor.dart';
 
@@ -231,7 +232,8 @@ void main() {
         final tag = '${e.key}: ${w.title} ${w.date}';
         expect(w.title.trim(), isNotEmpty, reason: tag);
         expect(w.description.trim(), isNotEmpty, reason: tag);
-        expect(w.durationMin, inInclusiveRange(15, w.intensity == 'race' ? 720 : 240), reason: tag);
+        // (A brick run shows its own minutes – 10 min off the bike, audit FUZZ-5.)
+        expect(w.durationMin, inInclusiveRange(w.intensity == 'moderate' ? 5 : 15, w.intensity == 'race' ? 720 : 240), reason: tag);
         if (w.distanceKm != null) expect(w.distanceKm!.isFinite && w.distanceKm! >= 0, isTrue, reason: tag);
         if (w.sport != Sport.gym && w.intensity != 'race') expect(w.steps, isNotEmpty, reason: tag);
         for (final s in w.steps) {
@@ -301,7 +303,7 @@ void main() {
     }
   });
 
-  test('taper is 1–3 weeks and at most a third of short plans', () {
+  test('taper is 1–3 weeks and at most a third of short plans – a plan within its taper (+1 week) of race day is taper only', () {
     for (final weeks in [3, 5, 6, 9, 14]) {
       for (final ev in ['5k', 'hm', 'm', 'olympic', '70.3']) {
         final p = UserProfile(
@@ -314,7 +316,13 @@ void main() {
         final plan = PlanGenerator(l, p, templates, id).generate(start: start);
         final taperWeeks = byWeek(plan.where((w) => w.phase == 'taper').toList()).length;
         expect(taperWeeks, inInclusiveRange(1, 3), reason: '$ev $weeks weeks');
-        expect(taperWeeks, lessThanOrEqualTo(max(1, weeks ~/ 3)), reason: '$ev $weeks weeks: $taperWeeks taper weeks');
+        // (Anchored to race day, audit adapt-1: weeks ≤ the event's taper + 1 → that taper, else ≤ a third.)
+        final full = EventSpec.of(ev)!.taperFor('intermediate');
+        expect(
+          taperWeeks,
+          lessThanOrEqualTo(weeks <= full + 1 ? min(weeks, full) : max(1, weeks ~/ 3)),
+          reason: '$ev $weeks weeks: $taperWeeks taper weeks',
+        );
       }
     }
   });
@@ -570,7 +578,7 @@ void main() {
         final plan = PlanGenerator(l, p, templates, id).generate(start: start, weeks: 8);
         final perDay = <DateTime, List<PlannedWorkout>>{};
         for (final w in plan.where((w) => w.intensity != 'race')) {
-          expect(w.durationMin, inInclusiveRange(15, 240), reason: '${e.key}: ${w.title}');
+          expect(w.durationMin, inInclusiveRange(w.intensity == 'moderate' ? 5 : 15, 240), reason: '${e.key}: ${w.title}');
           perDay.putIfAbsent(dayOnly(w.date), () => []).add(w);
         }
         for (final d in perDay.entries) {

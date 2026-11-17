@@ -436,7 +436,7 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
     final d = p.athlete.eventDate;
     if (d == null) return null;
     final w = GoalModel.weeksUntil(d, DateTime.now());
-    return w >= 2 && w <= GoalModel.maxEventWeeks ? w : null;
+    return w >= 1 && w <= GoalModel.maxEventWeeks ? w : null;
   }
 
   Future<void> _run() async {
@@ -546,7 +546,12 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
                     children: [
                       const Icon(Icons.event_available_rounded, color: AppColors.brand),
                       const SizedBox(width: 10),
-                      Expanded(child: Text(l.planUntilRace(eventWeeks), style: const TextStyle(fontSize: 13))),
+                      Expanded(
+                        child: Text(
+                          eventWeeks == 1 ? l.planToEventRaceWeek : l.planUntilRace(eventWeeks),
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
                     ],
                   ),
                 )

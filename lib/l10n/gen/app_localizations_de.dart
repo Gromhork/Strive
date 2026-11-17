@@ -6396,4 +6396,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String folderDuplicatedHidden(int n) {
     return '$n davon blendet der Sportfilter aus.';
   }
+
+  @override
+  String get planToEventRaceWeek => 'Dein Wettkampf ist schon diese Woche – der Plan ist nur die Wettkampfwoche: lockere Einheiten, ein kurzer Wachmacher und der Wettkampf. Für einen Aufbau wähle einen späteren Wettkampf.';
+
+  @override
+  String get summaryPlanLengthRaceWeek => 'Länge: nur die Wettkampfwoche';
+
+  @override
+  String wRaceGoalBehind(String goal, String pace, String realistic) {
+    return 'Dein Ziel $goal ist bis heute außer Reichweite – laufe im realistischen Tempo $pace (≈ $realistic). Kontrolliert starten; fühlst du dich nach der Hälfte gut, steigere.';
+  }
+
+  @override
+  String get wRunContinuousDesc => 'Ganz locker am Stück laufen – Gehpausen nur bei Bedarf. Ist es zu schwer, wiederhole die Vorwoche.';
+
+  @override
+  String get wLongRunWalkContDesc => 'Lange Einheit mit Gehpausen: 10 min laufen, 1 min gehen – Zeit auf den Beinen für den Wettkampf. Deine anderen Läufe sind jetzt am Stück; die Pausen halten die lange Einheit sicher. Plaudertempo. Wächst etwa 10 min pro Woche.';
 }

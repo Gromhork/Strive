@@ -11422,6 +11422,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} hidden by the sport filter.'**
   String folderDuplicatedHidden(int n);
+
+  /// No description provided for @planToEventRaceWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Your race is already this week – the plan is just the race week: easy sessions, a short opener and the race. For a build-up, pick a later race.'**
+  String get planToEventRaceWeek;
+
+  /// No description provided for @summaryPlanLengthRaceWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Length: race week only'**
+  String get summaryPlanLengthRaceWeek;
+
+  /// No description provided for @wRaceGoalBehind.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goal {goal} is out of reach for now – race at the realistic {pace} (≈ {realistic}). Start controlled; if you feel good after halfway, pick it up.'**
+  String wRaceGoalBehind(String goal, String pace, String realistic);
+
+  /// No description provided for @wRunContinuousDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Run easy without stopping – walk only if you need to. If it feels too hard, repeat last week.'**
+  String get wRunContinuousDesc;
+
+  /// No description provided for @wLongRunWalkContDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Long session with walk breaks: run 10 min, walk 1 min – time on your feet for the race. Your other runs are continuous now; the breaks keep the long one safe. Talking pace. Grows about 10 min a week.'**
+  String get wLongRunWalkContDesc;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

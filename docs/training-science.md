@@ -240,6 +240,18 @@ long session in the taper (vs. the last loading week): 3 weeks 0.75 / 0.60, 2 we
   recovery week 0.80 – the longest run / ride is the last loading week (marathon / ultra / Ironman ~3 weeks out,
   HM / 70.3 ~2), never repeated in the taper (Pfitzinger; Mujika & Padilla 2003 [20])
 run/walk and swim-novice sessions taper too: fewer repeats (taper 70 %, race week 45 %), same stage
+taper anchored to race day (audit 2026-11, adapt-1 / FUZZ-1):
+  a plan (re-)created ≤ taper + 1 weeks before the race is taper only (no base / peak week before a marathon);
+  a race on Mon–Wed: its calendar week is a stub – the week before is the race week (one taper week more, race-week factor);
+  race window = the 6 days before the race, whatever the calendar week: no long session (long run → easy run ≤ 40 min,
+  long races ≤ 50; long ride → easy ≤ 60 min; long swim → easy ~60 %), no brick, ≤ 1 quality session per sport ≥ 3 days
+  out in its race-week form (a run quality session 2 days out moves to the latest easy run 3–5 days out); 2 days out easy
+  only (run ≤ 40 min, ride / swim ≤ 45 min); every session there is a taper session
+  shake-out only on a training day (else the day before is rest); taper weeks ≤ factor + 5 % of the last loading week
+one race pace (audit RUN-1 / RUN-9 / T1): race-pace work and the race session share the race-day time – target within
+  reach → the faster of target and realistic time, out of reach → the realistic time ("your goal is out of reach for
+  now"); a target slower than that pace stays in the text with the realistic pacing
+heart / joint limits (§9.1): 5 / 10 km goal-pace reps (≈ I pace) become threshold cruise intervals
 ```
 
 **Race-specific intensity in the taper** (coach review 3, Bosquet 2007 [18], Mujika & Padilla 2003 [20]): the taper's

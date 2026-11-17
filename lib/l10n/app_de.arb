@@ -1887,5 +1887,10 @@
   "programDuplicated": "„{name}“ erstellt.",
   "programDuplicatedTo": "„{name}“ in {folder} erstellt.",
   "folderDuplicated": "{n, plural, =0{Leeren Ordner dupliziert.} =1{Ordner dupliziert (1 Programm).} other{Ordner dupliziert ({n} Programme).}}",
-  "folderDuplicatedHidden": "{n} davon blendet der Sportfilter aus."
+  "folderDuplicatedHidden": "{n} davon blendet der Sportfilter aus.",
+  "planToEventRaceWeek": "Dein Wettkampf ist schon diese Woche – der Plan ist nur die Wettkampfwoche: lockere Einheiten, ein kurzer Wachmacher und der Wettkampf. Für einen Aufbau wähle einen späteren Wettkampf.",
+  "summaryPlanLengthRaceWeek": "Länge: nur die Wettkampfwoche",
+  "wRaceGoalBehind": "Dein Ziel {goal} ist bis heute außer Reichweite – laufe im realistischen Tempo {pace} (≈ {realistic}). Kontrolliert starten; fühlst du dich nach der Hälfte gut, steigere.",
+  "wRunContinuousDesc": "Ganz locker am Stück laufen – Gehpausen nur bei Bedarf. Ist es zu schwer, wiederhole die Vorwoche.",
+  "wLongRunWalkContDesc": "Lange Einheit mit Gehpausen: 10 min laufen, 1 min gehen – Zeit auf den Beinen für den Wettkampf. Deine anderen Läufe sind jetzt am Stück; die Pausen halten die lange Einheit sicher. Plaudertempo. Wächst etwa 10 min pro Woche."
 }

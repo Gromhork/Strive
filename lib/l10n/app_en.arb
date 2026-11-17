@@ -4640,5 +4640,23 @@
         "type": "int"
       }
     }
-  }
+  },
+  "planToEventRaceWeek": "Your race is already this week – the plan is just the race week: easy sessions, a short opener and the race. For a build-up, pick a later race.",
+  "summaryPlanLengthRaceWeek": "Length: race week only",
+  "wRaceGoalBehind": "Your goal {goal} is out of reach for now – race at the realistic {pace} (≈ {realistic}). Start controlled; if you feel good after halfway, pick it up.",
+  "@wRaceGoalBehind": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      },
+      "realistic": {
+        "type": "String"
+      }
+    }
+  },
+  "wRunContinuousDesc": "Run easy without stopping – walk only if you need to. If it feels too hard, repeat last week.",
+  "wLongRunWalkContDesc": "Long session with walk breaks: run 10 min, walk 1 min – time on your feet for the race. Your other runs are continuous now; the breaks keep the long one safe. Talking pace. Grows about 10 min a week."
 }

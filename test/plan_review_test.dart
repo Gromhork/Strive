@@ -282,7 +282,8 @@ void main() {
           expect(b.phase, isIn(['build', 'peak']));
           expect(plan.any((w) => w.sport == Sport.ride && w.intensity == 'long' && sameDay(w.date, b.date)), isTrue);
           expect(b.isKey, isFalse);
-          expect(b.durationMin, inInclusiveRange(15, maxMin + 5));
+          // (Its own minutes – from 10 off the bike, audit FUZZ-5.)
+          expect(b.durationMin, inInclusiveRange(10, maxMin + 5));
         }
         // Every 1–2 weeks once it starts (weekly in the peak phase).
         final weeks = bricks.map((b) => startOfWeek(b.date)).toList();
