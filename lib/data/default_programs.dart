@@ -61,10 +61,13 @@ const splitRotation = {
   'bro': ['bro_chest', 'bro_back', 'bro_shoulders', 'bro_legs', 'bro_arms'],
   'home': ['home_a', 'home_b'],
   'bodyweight': ['bw_a', 'bw_b'],
+  // 4+ strength days at home / with body weight: upper and lower body alternate.
+  'home_ul': ['home_upper', 'home_lower'],
+  'bodyweight_ul': ['bw_upper', 'bw_lower'],
 };
 
 /// Programs that load the legs heavily (avoided the day before a key endurance session).
-const legHeavyKeys = {'ul_lower_a', 'ul_lower_b', 'ppl_legs', 'bro_legs'};
+const legHeavyKeys = {'ul_lower_a', 'ul_lower_b', 'ppl_legs', 'bro_legs', 'home_lower', 'bw_lower'};
 
 /// Recommended split for a number of gym days per week (and concurrent endurance load).
 ///
@@ -411,13 +414,47 @@ List<WorkoutTemplate> _templates(String Function() id, bool de) => [
     _e('1373', 'bodyweight standing calf raise', 2, lo: 15, hi: 25, rest: 45, g: 'B'),
     _deadBug(3, g: 'B'),
   ]),
+  // (No equipment – review 2026-11 GYM-3: the dumbbell split squat, chin-ups and hanging leg raises needed
+  // dumbbells and a bar. Pulling: a towel row on a door; the earlier version is [previousBuiltinVersions].)
   _gym(id(), 'bw_b', 'bodyweight', 'Bodyweight B', 'Eigengewicht B', de, order: 1, [
     _e('0514', 'jump squat', 3, lo: 8, hi: 12, rest: 75),
-    _e('1326', 'chin-up', 3, lo: 3, hi: 10, rest: 120, g: 'A'),
+    _e('3165', 'bodyweight standing row (with towel)', 3, rest: 75, g: 'A'),
     _e('0129', 'bench dip (knees bent)', 3, rest: 60, g: 'A'),
-    _e('0410', 'dumbbell single leg split squat', 3, rest: 60),
+    _e('2368', 'split squats', 3, rest: 60),
     _e('0630', 'mountain climber', 3, lo: 20, hi: 40, rest: 45),
-    _legRaise(2),
+    _e('0872', 'reverse crunch', 2, rest: 60),
+  ]),
+
+  // ── Home and bodyweight with 4+ strength days (review 2026-11 GYM-4: full body A/B on consecutive
+  // days loaded every muscle two days in a row): upper / lower alternating, each 2–3×/week.
+  _gym(id(), 'home_upper', 'home', 'Home Upper', 'Zuhause Oberkörper', de, order: 2, [
+    _dbBench(3),
+    _e('0293', 'dumbbell bent over row', 3, g: 'A'),
+    _dbOhp(3, g: 'A'),
+    _rearFly(2, g: 'B'),
+    _e('0430', 'dumbbell standing triceps extension', 2, rest: 60, g: 'B'),
+    _hammer(2),
+  ]),
+  _gym(id(), 'home_lower', 'home', 'Home Lower', 'Zuhause Unterkörper', de, order: 3, [
+    _e('1760', 'dumbbell goblet squat', 3),
+    _e('1459', 'dumbbell romanian deadlift', 3),
+    _e('0381', 'dumbbell rear lunge', 2),
+    _e('0409', 'dumbbell single leg calf raise', 3, rest: 45, g: 'A'),
+    _deadBug(3, g: 'A'),
+  ]),
+  _gym(id(), 'bw_upper', 'bodyweight', 'Bodyweight Upper', 'Eigengewicht Oberkörper', de, order: 2, [
+    _pushUp(3),
+    _invRow(3, g: 'A'),
+    _e('0129', 'bench dip (knees bent)', 3, rest: 60, g: 'A'),
+    _e('3165', 'bodyweight standing row (with towel)', 3, rest: 60, g: 'B'),
+    _e('0872', 'reverse crunch', 2, rest: 45, g: 'B'),
+  ]),
+  _gym(id(), 'bw_lower', 'bodyweight', 'Bodyweight Lower', 'Eigengewicht Unterkörper', de, order: 3, [
+    _e('3533', 'bodyweight squat', 3, rest: 60),
+    _e('2368', 'split squats', 3, rest: 60),
+    _e('3561', 'glute bridge march', 3, rest: 45, g: 'A'),
+    _e('1373', 'bodyweight standing calf raise', 3, lo: 15, hi: 25, rest: 45, g: 'A'),
+    _deadBug(3),
   ]),
 
   // ── Running (structured, zones only).
@@ -630,6 +667,27 @@ List<WorkoutTemplate> _templates(String Function() id, bool de) => [
     descDe: 'Gleichmäßiges Grundlagenschwimmen – konstantes Tempo, ruhige Atmung.',
   ),
 ];
+
+/// Earlier shipped versions of built-in gym programs for [goal] (key → exercise lists): an untouched copy
+/// of one still counts as the original, so it is upgraded to the current version
+/// ([upgradedBuiltinExercises]) and restoring the originals treats it as unchanged.
+Map<String, List<List<GymExercise>>> previousBuiltinVersions(String goal) {
+  List<GymExercise> ranged(List<GymExercise> ex) =>
+      _withRanges(WorkoutTemplate(id: '', name: '', sport: Sport.gym, exercises: ex), goal).exercises;
+  return {
+    // Before review 2026-11 GYM-3 (dumbbell split squat, chin-ups and hanging leg raises in a no-equipment program).
+    'bw_b': [
+      ranged([
+        _e('0514', 'jump squat', 3, lo: 8, hi: 12, rest: 75),
+        _e('1326', 'chin-up', 3, lo: 3, hi: 10, rest: 120, g: 'A'),
+        _e('0129', 'bench dip (knees bent)', 3, rest: 60, g: 'A'),
+        _e('0410', 'dumbbell single leg split squat', 3, rest: 60),
+        _e('0630', 'mountain climber', 3, lo: 20, hi: 40, rest: 45),
+        _legRaise(2),
+      ]),
+    ],
+  };
+}
 
 /// Built-in folder keys in display order ('fullbody' … 'swim').
 List<String> get builtinFolderKeys => _folders.keys.toList();

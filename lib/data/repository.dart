@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import '../core/collation.dart';
+import '../services/guest_merge.dart';
 import 'models.dart';
 import 'plan_log.dart';
 
@@ -16,8 +17,11 @@ import 'plan_log.dart';
 /// data) is reported through [onWriteError] – the app shows a notice instead of silently
 /// losing the change.
 class Repository {
-  Repository(this.uid);
+  /// [db]: another Firebase app's Firestore (the guest data transfer writes into the target
+  /// account through a second app while the guest stays signed in here).
+  Repository(this.uid, [FirebaseFirestore? db]) : _dbOverride = db;
   final String uid;
+  final FirebaseFirestore? _dbOverride;
 
   /// Called when a write fails (set by the app: shows a snackbar).
   static void Function(Object error)? onWriteError;
@@ -26,7 +30,7 @@ class Repository {
   static const batchLimit = 450;
 
   // Lazy, so a test double (subclass) can be created without Firebase.
-  late final _db = FirebaseFirestore.instance;
+  late final _db = _dbOverride ?? FirebaseFirestore.instance;
 
   DocumentReference<Map<String, dynamic>> get _user => _db.collection('users').doc(uid);
   CollectionReference<Map<String, dynamic>> get _sessions => _user.collection('sessions');
@@ -83,6 +87,29 @@ class Repository {
     }
     return out;
   }
+
+  /// The query's documents, parsed – each document only when it is new or changed. Firestore sends
+  /// the whole result set again on every change; parsing all of it (a year of sessions with GPS
+  /// routes: ~0.5 s) after each single edit made the UI hang. One cache per listener.
+  static Stream<List<T>> parsedSnapshots<T>(Query<Map<String, dynamic>> q, T? Function(String id, Map<String, dynamic> m) parse) =>
+      Stream.multi((out) {
+        final cache = IncrementalDocs<T>(parse);
+        final sub = q.snapshots().listen(
+          (snap) => out.add(
+            cache.apply(
+              [
+                for (final c in snap.docChanges)
+                  if (c.type == DocumentChangeType.removed) (c.doc.id, null) else (c.doc.id, c.doc.data() ?? const <String, dynamic>{}),
+              ],
+              [for (final d in snap.docs) d.id],
+              (id) => snap.docs.firstWhere((d) => d.id == id).data(),
+            ),
+          ),
+          onError: out.addError,
+          onDone: out.close,
+        );
+        out.onCancel = sub.cancel;
+      });
 
   // ── Profile
   /// The profile; `null` only when the server confirmed there is none. A missing document in
@@ -142,8 +169,7 @@ class Repository {
   }
 
   // ── Sessions
-  Stream<List<Session>> sessions() =>
-      _sessions.orderBy('start', descending: true).snapshots().map((q) => parseDocs(q.docs, (id, m) => Session.tryFromMap(id, m)));
+  Stream<List<Session>> sessions() => parsedSnapshots(_sessions.orderBy('start', descending: true), Session.tryFromMap);
   void saveSession(Session s) => _fire(_sessions.doc(s.id).set(s.toMap()));
   void updateSession(String id, Map<String, dynamic> data) => _fire(_sessions.doc(id).update(data));
 
@@ -171,11 +197,12 @@ class Repository {
   }
 
   // ── Templates
-  Stream<List<WorkoutTemplate>> templates() => _templates.snapshots().map(
-    (q) => parseDocs(q.docs, WorkoutTemplate.tryFromMap)..sort((a, b) {
-      final o = a.order.compareTo(b.order);
-      return o != 0 ? o : compareNames(a.name, b.name);
-    }),
+  Stream<List<WorkoutTemplate>> templates() => parsedSnapshots(_templates, WorkoutTemplate.tryFromMap).map(
+    (list) =>
+        list..sort((a, b) {
+          final o = a.order.compareTo(b.order);
+          return o != 0 ? o : compareNames(a.name, b.name);
+        }),
   );
 
   /// The programs on the server (null when it cannot be reached) – the setup only adds the
@@ -216,7 +243,7 @@ class Repository {
 
   // ── Plans
   Stream<List<PlannedWorkout>> plans() =>
-      _plans.snapshots().map((q) => parseDocs(q.docs, PlannedWorkout.tryFromMap)..sort(PlannedWorkout.compareByDay));
+      parsedSnapshots(_plans, PlannedWorkout.tryFromMap).map((list) => list..sort(PlannedWorkout.compareByDay));
 
   /// Current plans straight from the server (not a possibly incomplete local cache) – used
   /// by the calendar sync, which deletes events of plans that no longer exist.
@@ -228,6 +255,9 @@ class Repository {
   void savePlan(PlannedWorkout p) => _fire(_plans.doc(p.id).set(p.toMap()));
   void updatePlan(String id, Map<String, dynamic> data) => _fire(_plans.doc(id).update(data));
   void deletePlan(String id) => _fire(_plans.doc(id).delete());
+
+  /// Deletes the planned workouts [ids] (batched).
+  Future<void> deletePlans(Iterable<String> ids) => _batched([for (final id in ids) (b) => b.delete(_plans.doc(id))]);
   Future<void> savePlans(List<PlannedWorkout> list) => _batched([for (final p in list) (b) => b.set(_plans.doc(p.id), p.toMap())]);
 
   Future<void> deletePlansFrom(List<PlannedWorkout> all, DateTime from) =>
@@ -251,8 +281,7 @@ class Repository {
   static const planLogMax = 300;
   static const planLogDays = 180;
 
-  Stream<List<PlanLogEntry>> planLog() =>
-      _planLog.orderBy('at', descending: true).limit(200).snapshots().map((q) => parseDocs(q.docs, (id, m) => PlanLogEntry.fromMap(id, m)));
+  Stream<List<PlanLogEntry>> planLog() => parsedSnapshots(_planLog.orderBy('at', descending: true).limit(200), PlanLogEntry.fromMap);
 
   bool _logPruned = false;
 
@@ -292,29 +321,37 @@ class Repository {
   }
 
   // ── Body
-  Stream<List<BodyEntry>> body() => _body.orderBy('date').snapshots().map((q) => parseDocs(q.docs, BodyEntry.fromMap));
+  Stream<List<BodyEntry>> body() => parsedSnapshots(_body.orderBy('date'), BodyEntry.fromMap);
   void saveBody(BodyEntry e) => _fire(_body.doc(e.id).set(e.toMap()));
   void deleteBody(String id) => _fire(_body.doc(id).delete());
 
   // ── Goals
-  Stream<List<Goal>> goals() => _goals.snapshots().map((q) => parseDocs(q.docs, Goal.fromMap));
+  Stream<List<Goal>> goals() => parsedSnapshots(_goals, Goal.fromMap);
   void saveGoal(Goal g) => _fire(_goals.doc(g.id).set(g.toMap()));
   void deleteGoal(String id) => _fire(_goals.doc(id).delete());
 
   // ── Sharing: a template is copied into `shared/{code}`; importing creates a new copy.
   static const _alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
-  Future<String> shareTemplate(WorkoutTemplate t, String ownerName) async {
+  Future<String> shareTemplate(WorkoutTemplate t) async {
     final r = Random.secure();
     final code = List.generate(6, (_) => _alphabet[r.nextInt(_alphabet.length)]).join();
-    await _db.collection('shared').doc(code).set({
-      ...t.toMap(),
-      'owner': uid,
-      'ownerName': ownerName,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    // Offline the write would wait in the local queue (no code for the user, a share nobody knows
+    // about later): fail instead – the caller says "needs a connection".
+    await ensureServerReachable();
+    await _db.collection('shared').doc(code).set(sharedTemplateDoc(t, uid)).timeout(const Duration(seconds: 15));
     return code;
   }
+
+  /// The document of a shared program: the program and its owner's uid (the owner deletes it with
+  /// the account; firestore.rules lets only the owner list them). No name of the owner: anyone
+  /// with the code reads the document, and the app never showed it (an older version stored the
+  /// profile name as 'ownerName').
+  static Map<String, dynamic> sharedTemplateDoc(WorkoutTemplate t, String owner) => {
+    ...t.toMap(),
+    'owner': owner,
+    'createdAt': FieldValue.serverTimestamp(),
+  };
 
   Future<WorkoutTemplate?> importTemplate(String code) async {
     final d = await _db.collection('shared').doc(code.trim().toUpperCase()).get();
@@ -332,6 +369,41 @@ class Repository {
   Future<void> deleteTemplates(Iterable<String> ids) => _batched([for (final id in ids) (b) => b.delete(_templates.doc(id))]);
 
   void saveFolderOrder(List<String> folders) => _fire(_user.set({'folderOrder': folders}, SetOptions(merge: true)));
+
+  // ── Guest data transfer (a guest whose Google account already has Strive data)
+  /// Throws unless the server answers (a step that must not start offline and stop halfway).
+  Future<void> ensureServerReachable({Duration timeout = const Duration(seconds: 10)}) =>
+      _user.get(const GetOptions(source: Source.server)).timeout(timeout);
+
+  /// Every stored document of the user, straight from the server after the local queue was
+  /// sent (nothing recorded offline is missed). Throws when the server cannot be reached.
+  Future<AccountData> exportAll({Duration timeout = const Duration(seconds: 20)}) async {
+    await _db.waitForPendingWrites().timeout(timeout);
+    const server = GetOptions(source: Source.server);
+    final user = await _user.get(server).timeout(timeout);
+    final collections = <String, List<Doc>>{};
+    for (final c in subcollections) {
+      final q = await _user.collection(c).get(server).timeout(timeout);
+      collections[c] = [for (final d in q.docs) (d.id, d.data())];
+    }
+    return AccountData(user: user.data(), collections: collections);
+  }
+
+  /// Writes [writes] (see guestTransfer) and waits until the server accepted every batch. The
+  /// user document ('' collection) is merged, so fields written separately stay.
+  Future<void> importAll(List<DocWrite> writes, {Duration timeout = const Duration(seconds: 30)}) async {
+    for (var i = 0; i < writes.length; i += batchLimit) {
+      final batch = _db.batch();
+      for (final (c, id, data) in writes.skip(i).take(batchLimit)) {
+        if (c.isEmpty) {
+          batch.set(_user, data, SetOptions(merge: true));
+        } else {
+          batch.set(_user.collection(c).doc(id), data);
+        }
+      }
+      await batch.commit().timeout(timeout);
+    }
+  }
 
   // ── Account deletion (GDPR / Play policy)
   /// Deletes everything the user stored: every subcollection below `users/{uid}` (in
@@ -359,6 +431,46 @@ class Repository {
     }
     await deleteQuery(_db.collection('shared').where('owner', isEqualTo: uid));
     await _user.delete();
+  }
+}
+
+/// Parsed documents of one query listener, updated from each snapshot's changes (see
+/// [Repository.parsedSnapshots]): only added / modified documents are parsed, unchanged ones keep
+/// their parsed object. A corrupt document is skipped (logged), as with [Repository.parseDocs].
+class IncrementalDocs<T> {
+  IncrementalDocs(this._parse);
+  final T? Function(String id, Map<String, dynamic> m) _parse;
+  final _byId = <String, T?>{};
+
+  /// Number of documents parsed so far (tests).
+  int parsed = 0;
+
+  T? _tryParse(String id, Map<String, dynamic> m) {
+    parsed++;
+    try {
+      return _parse(id, m);
+    } catch (e) {
+      debugPrint('Skipping corrupt document $id: $e');
+      return null;
+    }
+  }
+
+  /// [changes]: (id, data) per changed document, data null = removed. [order]: the ids of the
+  /// snapshot in query order. [dataOf] reads a document the cache does not know (never expected).
+  List<T> apply(List<(String, Map<String, dynamic>?)> changes, List<String> order, Map<String, dynamic>? Function(String id) dataOf) {
+    for (final (id, data) in changes) {
+      if (data == null) {
+        _byId.remove(id);
+      } else {
+        _byId[id] = _tryParse(id, data);
+      }
+    }
+    final out = <T>[];
+    for (final id in order) {
+      final v = _byId.containsKey(id) ? _byId[id] : (_byId[id] = _tryParse(id, dataOf(id) ?? const {}));
+      if (v != null) out.add(v);
+    }
+    return out;
   }
 }
 

@@ -17,13 +17,16 @@ String planDescription(String description, AppLocalizations l) {
     if (load != null) {
       final rir = int.tryParse(load.group(1) ?? load.group(2) ?? load.group(3) ?? '') ?? 2;
       out
-        ..add(l.wGymLoadDesc(rir))
+        ..add(gymLoadNote(l, rir))
         ..add(l.wGymProgressNote);
     } else if (_oldDeload.hasMatch(line) ||
         _isAny(line, l, (x) => [x.wGymDeloadNote, x.wGymDeloadNote2, x.wGymDeloadNote3, x.wGymDeloadNote4])) {
       // Deload weeks no longer drop sets (the plan never changes the program's set counts); bodyweight
       // exercises get fewer reps (review r7 S5).
       out.add(l.wGymDeloadNote5);
+    } else if (_oldLoadNote(line, l) case (final rir, final deloadAhead)?) {
+      // "… about 1 reps in the tank … until the next deload" (audit T9 / T14): today's wording.
+      out.add(gymLoadNote(l, rir, deloadAhead: deloadAhead));
     } else if (_isAny(line, l, (x) => [x.wRecoveryWeekNote])) {
       // Stored as "Deload week: …" in English – shown with today's term "Recovery week".
       out.add(l.wRecoveryWeekNote2);
@@ -34,6 +37,24 @@ String planDescription(String description, AppLocalizations l) {
     }
   }
   return out.join('\n');
+}
+
+/// The loading-week effort note for [rir] reps in reserve: "1 rep" (not "1 reps"), and the lighter week
+/// called "recovery week" like everywhere else ([deloadAhead]: one still follows in this block).
+String gymLoadNote(AppLocalizations l, int rir, {bool deloadAhead = true}) => switch ((rir, deloadAhead)) {
+  (1, true) => l.wGymLoadDescOneRep,
+  (_, true) => l.wGymLoadDesc2(rir),
+  (1, false) => l.wGymLoadDescNoDeloadOneRep,
+  (_, false) => l.wGymLoadDescNoDeload(rir),
+};
+
+/// RIR and kind of a stored loading-week note in an older wording ("deload", "1 reps"), in either language.
+(int, bool)? _oldLoadNote(String line, AppLocalizations l) {
+  for (var rir = 0; rir <= 5; rir++) {
+    if (_isAny(line, l, (x) => [x.wGymLoadDesc(rir)]) && gymLoadNote(l, rir) != line) return (rir, true);
+    if (rir == 1 && _isAny(line, l, (x) => [x.wGymLoadDescNoDeload(1)]) && gymLoadNote(l, 1, deloadAhead: false) != line) return (1, false);
+  }
+  return null;
 }
 
 final _oldLoad = RegExp(

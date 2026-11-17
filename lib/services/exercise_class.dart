@@ -296,6 +296,8 @@ const _antagonists = {
 bool areAntagonists(LiftProfile a, LiftProfile b) => _antagonists.contains((a.move, b.move)) || _antagonists.contains((b.move, a.move));
 
 /// Muscles mainly loaded by a movement (coarse; for "do these two compete?").
+Set<String> liftMuscles(Movement m) => _muscles(m);
+
 Set<String> _muscles(Movement m) => switch (m) {
   Movement.squat || Movement.lunge => {'quads', 'glutes'},
   Movement.hinge || Movement.hipExtension => {'glutes', 'hamstrings', 'lowback'},

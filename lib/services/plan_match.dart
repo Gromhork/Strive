@@ -55,3 +55,32 @@ int? rpeFromHr(int? avgHr, UserProfile p) {
   const base = {1: 2, 2: 3, 3: 5, 4: 7, 5: 8};
   return (base[zone]! + (frac >= 0.5 ? 1 : 0)).clamp(1, 10);
 }
+
+/// What correcting the start of session [s] to [start] ("Einheit bearbeiten") does to its plan link (review
+/// 2026-11 data-4): a workout the session fulfilled as the workout of its day (within [linkDays]) but that is now
+/// further away is open again – it was not trained on its day – and an open workout of the same sport on the new
+/// day is ticked off instead (closest planned duration first). A confirmed replacement (already days away) and a
+/// session still within [linkDays] of its workout keep their link. [changes]: the workouts before / after;
+/// [planId]: the session's new plan reference ([relink] false: unchanged).
+({List<(PlannedWorkout, PlannedWorkout)> changes, bool relink, String? planId}) relinkOnRedate(
+  Session s,
+  DateTime start,
+  List<PlannedWorkout> plans,
+) {
+  const none = (changes: <(PlannedWorkout, PlannedWorkout)>[], relink: false, planId: null);
+  final old =
+      plans.where((p) => p.sessionId == s.id).firstOrNull ?? (s.planId == null ? null : plans.where((p) => p.id == s.planId).firstOrNull);
+  if (old == null || !withinLinkDays(old.date, s.start) || withinLinkDays(old.date, start)) return none;
+  PlannedWorkout with_(PlannedWorkout p, Map<String, dynamic> m) => PlannedWorkout.fromMap(p.id, {...p.toMap(), ...m});
+  final changes = <(PlannedWorkout, PlannedWorkout)>[
+    if (old.sessionId == s.id) (old, with_(old, {'status': 'planned', 'sessionId': null})),
+  ];
+  final open =
+      plans
+          .where((p) => p.id != old.id && p.status == 'planned' && p.sessionId == null && p.sport == s.sport && sameDay(p.date, start))
+          .toList()
+        ..sort((a, b) => (a.durationMin - s.minutes).abs().compareTo((b.durationMin - s.minutes).abs()));
+  final now = open.firstOrNull;
+  if (now != null) changes.add((now, with_(now, {'status': 'done', 'sessionId': s.id})));
+  return (changes: changes, relink: true, planId: now?.id);
+}

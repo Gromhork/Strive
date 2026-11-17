@@ -5,9 +5,13 @@ service cloud.firestore {
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
-    // Shared programs (import by code). Anyone signed in can read; only the owner can create/delete.
+    // Shared programs (import by code). The 6-character code is the secret: anyone signed in may
+    // fetch a program by its code (get), but only the owner may list programs – their own (the
+    // account deletion finds them with where('owner', '==', uid)). A plain `allow read` would
+    // also allow listing the whole collection, i.e. every shared program with its owner's uid.
     match /shared/{code} {
-      allow read: if request.auth != null;
+      allow get: if request.auth != null;
+      allow list: if request.auth != null && resource.data.owner == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.owner == request.auth.uid
                     && code.size() == 6;
       allow delete: if request.auth != null && resource.data.owner == request.auth.uid;

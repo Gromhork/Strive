@@ -39,8 +39,14 @@ class Relocalizer {
         if (t != null) templates.add(t);
       }
     }
-    // Most specific (longest literal text) first.
-    templates.sort((a, b) => b.literalLength.compareTo(a.literalLength));
+    // Most specific (longest literal text) first; on a tie the later pair – a newer wording of the same source text
+    // (e.g. "… until the next recovery week" after "… deload", both "… Entlastungswoche" in German) – wins.
+    // (List.sort is not stable: without the tie-break the pick depended on the list's length.)
+    final order = {for (var i = 0; i < templates.length; i++) templates[i]: i};
+    templates.sort((a, b) {
+      final c = b.literalLength.compareTo(a.literalLength);
+      return c != 0 ? c : order[b]!.compareTo(order[a]!);
+    });
     return Relocalizer._(exact, templates, toGerman);
   }
 

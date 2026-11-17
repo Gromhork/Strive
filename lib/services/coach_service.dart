@@ -6,6 +6,7 @@ import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/exercise_names_de.dart';
 import '../data/models.dart';
+import 'app_check.dart';
 import 'goal_alignment.dart';
 import 'goal_forecast.dart';
 import 'insights.dart';
@@ -130,11 +131,18 @@ class CoachService {
     final ready = baselineReady(sessions, now);
     // Lifts with an e1RM only (holds and partial-bodyweight exercises have no strength estimate).
     final prs = exerciseRecords(sessions).values.where((r) => r.bestE1rm > 0).toList()..sort((a, b) => b.bestE1rm.compareTo(a.bestE1rm));
-    final upcoming = plans
-        .where((x) => x.status == 'planned' && !x.date.isBefore(dayOnly(now)))
-        .take(7)
-        .map((x) => '- ${dayKey(x.date)}: ${x.sport.name} "${x.title}" ${x.durationMin} min')
+    // Every workout with its weekday, kind and key flag (audit UX-6: from bare ISO dates the model worked out
+    // the weekdays itself and put Saturday's long run "on Friday"), the current week in full (done ones too),
+    // then the planned ones up to the end of next week.
+    final today = dayOnly(now);
+    final monday = startOfWeek(today);
+    final sorted = [...plans]..sort((x, y) => x.date.compareTo(y.date));
+    final thisWeek = sorted.where((x) => !x.date.isBefore(monday) && x.date.isBefore(addDays(monday, 7)) && x.status != 'skipped').toList();
+    final upcoming = sorted
+        .where((x) => x.status == 'planned' && !x.date.isBefore(addDays(monday, 7)) && x.date.isBefore(addDays(monday, 14)))
+        .map(_planLine)
         .join('\n');
+    final weekDays = {for (final x in thisWeek) _weekday(x.date)};
     // Thresholds, event, fitness/form and adherence – so answers account for race timing,
     // current fatigue and what was actually done.
     final a = p.athlete;
@@ -174,7 +182,7 @@ class CoachService {
 Athlete profile:
 - name: ${p.name}, age: ${p.age ?? 'unknown'}, gender: ${p.gender}, height ${p.heightCm} cm, weight ${p.weightKg} kg${p.fatPct != null ? ', body fat ${p.fatPct}%' : ''}
 - level: ${p.level}, training focus: ${p.focus.name}
-- training days per week: ${p.weeklyTarget}
+- training days this week (from the plan): ${weekDays.length}${weekDays.isEmpty ? '' : ' (${weekDays.join(', ')})'}
 Goal:
 ${_goalText(now)}
 Last 28 days:
@@ -184,10 +192,21 @@ Consecutive training days: ${rec.daysSinceRest}
 ${prs.isEmpty ? '' : 'Top strength estimates (e1RM): ${prs.take(5).map((r) => '${exerciseName(r.exId, r.name, lang)} ${r.bestE1rm.round()} kg').join('; ')}\n'}Thresholds: $thresholds
 Target event: $event
 Plan adherence last 14 days: $done of ${past.length} planned workouts done${missed.isEmpty ? '' : '; missed: $missed'}
-Upcoming plan:
+This week (Mon-Sun, as planned now - use these weekdays, never work them out from the dates):
+${thisWeek.isEmpty ? '- nothing planned' : thisWeek.map(_planLine).join('\n')}
+Next week:
 ${upcoming.isEmpty ? '- nothing planned' : upcoming}
-Today: ${dayKey(now)}''';
+Today: ${_weekday(today)} ${dayKey(today)}''';
   }
+
+  static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static String _weekday(DateTime d) => _weekdays[d.weekday - 1];
+
+  /// "- Sat 2026-11-21: run "Langer Lauf" 73 min, 12.0 km (long, key)" – plus "done" for a done one.
+  static String _planLine(PlannedWorkout x) =>
+      '- ${_weekday(x.date)} ${dayKey(x.date)}: ${x.sport.name} "${x.title}" ${x.durationMin} min'
+      '${(x.distanceKm ?? 0) > 0 ? ', ${x.distanceKm!.toStringAsFixed(1)} km' : ''}'
+      ' (${[x.intensity, if (x.isKey) 'key', if (x.isDone) 'done'].join(', ')})';
 
   /// Abbreviations the app explains in its glossary (lib/widgets/term_info.dart) - the
   /// only ones the coach may use, each explained on first use.
@@ -202,14 +221,13 @@ You are "Strive Coach", an evidence-based personal coach for strength training, 
 - The only abbreviations allowed are the ones the app explains in its glossary: ${glossaryTerms.join(', ')}. Explain each one in a few words the first time you use it (e.g. ${lang == 'de' ? '"RPE (wie anstrengend, 1-10)"' : '"RPE (how hard, 1-10)"'}).
 - You ARE the coach of this app: always speak in the first person (${lang == 'de' ? '"ich", e.g. "Ich lerne deine Grundlage noch kennen"' : '"I", e.g. "I\'m still getting to know your baseline"'}) and address the athlete directly. Never talk about the app or the coach in the third person (${lang == 'de' ? 'never "Deine App lernt …", "Der Plan von Strive …"' : 'never "Your app is learning …"'}).
 - Never invent reasons for how the plan looks (e.g. "before we add more cycling"). Explain the plan only with facts from the data below; if the data does not say why, say that plainly. If the data reports a DATA MISMATCH, name it honestly and point to the fix it names.
-- Never contradict the data: if the baseline is not ready, say you are still getting to know the athlete's baseline. Use the app's words ${lang == 'de' ? '"Einheit", "Schlüsseleinheit", "Entlastungswoche", "Plan überprüfen"' : '"session", "key session", "deload week", "Review plan"'}.
+- Never contradict the data: if the baseline is not ready, say you are still getting to know the athlete's baseline. Use the app's words ${lang == 'de' ? '"Einheit", "Schlüsseleinheit", "Entlastungswoche", "Plan überprüfen"' : '"session", "key session", "recovery week", "Review plan"'}.
 - You are not a doctor: for pain, injuries or medical conditions recommend seeing a professional.
 - Answer in ${lang == 'de' ? 'German (du-form)' : 'English'}.
 
 ${_context(now)}''';
 
-  GenerativeModel _model() =>
-      FirebaseAI.googleAI().generativeModel(model: model, systemInstruction: Content.system(_systemFor(DateTime.now())));
+  GenerativeModel _model() => striveAI().generativeModel(model: model, systemInstruction: Content.system(_systemFor(DateTime.now())));
 
   Stream<String> ask(String message) async* {
     _chat ??= _model().startChat();

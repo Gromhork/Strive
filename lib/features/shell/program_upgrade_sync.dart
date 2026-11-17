@@ -17,7 +17,7 @@ final programUpgradeSyncProvider = Provider<void>((ref) {
   final goal = profile.value!.athlete.gymGoal;
   final prefs = ref.read(prefsProvider);
   // Bump the version when the built-in programs change.
-  final key = 'gymPrograms.v2.$uid';
+  final key = 'gymPrograms.v3.$uid';
   if (prefs.getString(key) == goal) return;
   final updates = <String, Map<String, dynamic>>{
     for (final t in templates.value!)

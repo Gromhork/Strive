@@ -72,7 +72,7 @@
   "goalRace": "Race",
   "scheduleTitle": "Training days",
   "scheduleSub": "On which days do you want to train?",
-  "daysPerWeek": "{count} days per week",
+  "daysPerWeek": "{count, plural, =1{1 day per week} other{{count} days per week}}",
   "@daysPerWeek": {
     "placeholders": {
       "count": {
@@ -328,7 +328,7 @@
   "none": "None",
   "markSkipped": "Mark as skipped",
   "generatePlan": "Create plan",
-  "generatePlanSub": "Focus: {focus} · {days} days/week (change in plan settings)",
+  "generatePlanSub": "Focus: {focus} · {days, plural, =1{1 day/week} other{{days} days/week}} (change in plan settings)",
   "@generatePlanSub": {
     "placeholders": {
       "focus": {
@@ -340,7 +340,7 @@
     }
   },
   "planLocalDesc": "Periodised plan based on sports science (80/20, progressive overload, a recovery week every 3–5 weeks depending on difficulty). Works offline.",
-  "planCreated": "{count} workouts planned",
+  "planCreated": "{count, plural, =1{1 workout planned} other{{count} workouts planned}}",
   "@planCreated": {
     "placeholders": {
       "count": {
@@ -432,7 +432,7 @@
       }
     }
   },
-  "daysLeft": "{days} days left",
+  "daysLeft": "{days, plural, =1{1 day left} other{{days} days left}}",
   "@daysLeft": {
     "placeholders": {
       "days": {
@@ -812,7 +812,7 @@
   "weekPlanSub": "Tap which sport you want to do on which day. Your plan follows this structure.",
   "oncePerDay": "1× per day",
   "twicePerDay": "Up to 2× per day",
-  "sessionsPerWeekN": "{n} sessions / week",
+  "sessionsPerWeekN": "{n, plural, =1{1 session / week} other{{n} sessions / week}}",
   "@sessionsPerWeekN": {
     "placeholders": {
       "n": {
@@ -900,9 +900,9 @@
   "difficultyTitle": "Difficulty",
   "difficultyHint": "Compared to what you do now.",
   "diffEasy": "Easy",
-  "diffEasySub": "+5 % volume/week, a deload week every 3rd week, mostly easy sessions.",
+  "diffEasySub": "+5 % volume/week, a recovery week every 3rd week, mostly easy sessions.",
   "diffBalanced": "Balanced",
-  "diffBalancedSub": "+8 % volume/week, a deload week every 4th week, ~80/20 easy/hard.",
+  "diffBalancedSub": "+8 % volume/week, a recovery week every 4th week, ~80/20 easy/hard.",
   "diffChallenging": "Challenging",
   "diffChallengingSub": "+10 % volume/week, more key workouts – for experienced athletes.",
   "planLength": "Plan length",
@@ -1148,7 +1148,7 @@
   "gcalLastSync": "Last sync",
   "gcalEvents": "Events",
   "gcalAutoInfo": "Automatic sync is on – changes to your plan show up in Google Calendar a few seconds later.",
-  "gcalSynced": "{count} workouts synced",
+  "gcalSynced": "{count, plural, =1{1 workout synced} other{{count} workouts synced}}",
   "@gcalSynced": {
     "placeholders": {
       "count": {
@@ -1199,7 +1199,7 @@
   "timeHint": "The most time you have on a training day – including warm-up and cool-down. Every session is planned to fit.",
   "timeLongDayHint": "On your long-session day (★) Strive plans up to 2 h unless you set that day yourself.",
   "timePerDay": "Set per day (optional)",
-  "timeCustomDays": "{count} days set individually",
+  "timeCustomDays": "{count, plural, =1{1 day set individually} other{{count} days set individually}}",
   "@timeCustomDays": {
     "placeholders": {
       "count": {
@@ -1486,7 +1486,7 @@
   "daysInARow": "Days in a row",
   "recoveryHowTitle": "How this works",
   "recoveryHowText": "Every workout gets a load score (duration × intensity, from RPE or heart rate). Strive compares the last 7 days with your average week of the last 28 days (acute:chronic workload ratio, Gabbett 2016). Between 0.8 and 1.3 you build fitness with a low injury risk; above 1.5 the risk rises clearly – plan an easy day. Fitness, fatigue and form follow the Banister model: form = fitness − fatigue.",
-  "nWorkouts": "{count} workouts",
+  "nWorkouts": "{count, plural, =1{1 workout} other{{count} workouts}}",
   "@nWorkouts": {
     "placeholders": {
       "count": {
@@ -1787,7 +1787,7 @@
   },
   "adjustDropped": "Dropped – no need to make it up",
   "adjustNoRoom": "Dropped – no free day this week without a key session next to it",
-  "adjustProtected": "Dropped – deload/taper week stays easy",
+  "adjustProtected": "Dropped – recovery/taper week stays easy",
   "adjustDone": "Week adjusted",
   "notNow": "Not now",
   "wTriLegs": "Swim {swim} km · Bike {bike} km · Run {run} km",
@@ -2404,7 +2404,7 @@
       }
     }
   },
-  "planToEventPre": "{weeks} weeks to race day: {n} weeks of base building first, then the {x}-week race plan.",
+  "planToEventPre": "{weeks} weeks to race day: {n, plural, =1{1 week} other{{n} weeks}} of base building first, then the {x}-week race plan.",
   "@planToEventPre": {
     "placeholders": {
       "weeks": {
@@ -2431,7 +2431,7 @@
   "alignPlanToEvent": "Align training plan to this race",
   "alignPlanToEventSub": "The plan runs until race day; completed workouts are kept.",
   "alignNeedsDistance": "Choose a race distance to align the plan.",
-  "planAligned": "Plan aligned: {weeks} weeks to race day",
+  "planAligned": "Plan aligned: {weeks, plural, =1{1 week} other{{weeks} weeks}} to race day",
   "@planAligned": {
     "placeholders": {
       "weeks": {
@@ -2451,7 +2451,7 @@
       }
     }
   },
-  "goalCountdownDays": "{days} days",
+  "goalCountdownDays": "{days, plural, =1{1 day} other{{days} days}}",
   "@goalCountdownDays": {
     "placeholders": {
       "days": {
@@ -3510,9 +3510,9 @@
   "termKeyBody": "The one or two sessions of a week that move your fitness forward most – e.g. intervals, a tempo run or the long run. The other sessions are easy and help you recover for them.",
   "termKeyTip": "Missed one? “Adjust week” moves it to a free day – never right next to another key session.",
   "termLoadWeekTitle": "Loading week",
-  "termLoadWeekBody": "A normal training week in which volume or intensity rises a little. Two to four loading weeks are followed by a deload week.",
-  "termLoadWeekTip": "Feeling tired at the end of a loading week is normal – the deload week turns it into fitness.",
-  "termDeloadTitle": "Deload week",
+  "termLoadWeekBody": "A normal training week in which volume or intensity rises a little. Two to four loading weeks are followed by a recovery week.",
+  "termLoadWeekTip": "Feeling tired at the end of a loading week is normal – the recovery week turns it into fitness.",
+  "termDeloadTitle": "Recovery week",
   "termDeloadBody": "Every 3–5 weeks a lighter week (about 60–70 % of the volume, little intensity). Your body adapts to the training in this time.",
   "termDeloadTip": "Don’t make up the missing volume – the week is meant to feel easy.",
   "termStridesTitle": "Strides",
@@ -3524,7 +3524,7 @@
   "termAcwrTitle": "ACWR – acute:chronic workload ratio",
   "termAcwrBody": "Your load of the last 7 days (acute, ATL) compared with your average week of the last 28 days (chronic, CTL). Between 0.8 and 1.3 you build fitness at a low injury risk; above 1.5 the risk rises clearly.",
   "termAcwrTip": "A high value? Plan an easy day instead of adding more.",
-  "daysLeftInline": "{days} days left",
+  "daysLeftInline": "{days, plural, =1{1 day left} other{{days} days left}}",
   "@daysLeftInline": {
     "placeholders": {
       "days": {
@@ -4157,7 +4157,7 @@
   "yourSwimZones": "Your swim zones",
   "swimCssEstimated": "Estimated from your 400 m – add the 200 m for an exact CSS.",
   "swimTestOnly200": "The CSS test needs the 400 m time too – the 200 m alone is not enough.",
-  "swimTestImplausible": "These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.",
+  "swimTestImplausible": "These two times don’t fit together: usually the 400 m takes a little more than twice as long as the 200 m (about 2.0–2.4 ×). Please check them – until then the CSS is estimated from the 400 m.",
   "calJumpCurrentWeek": "Back to the current week",
   "calJumpTodayMonth": "Back to today's month",
   "progHoldLonger": "every set held – a little longer",
@@ -4641,6 +4641,184 @@
       }
     }
   },
+  "signOutWorkoutTitle": "A workout is running",
+  "signOutWorkoutBody": "Logging out ends it without saving it.",
+  "signOutSyncing": "Syncing your changes …",
+  "signOutUnsyncedTitle": "Changes not synced yet",
+  "signOutUnsyncedBody": "Some changes – e.g. workouts recorded offline – have not reached the server yet. If you log out now, they are lost. Go online and wait a moment to keep them.",
+  "signOutAnyway": "Log out anyway",
+  "guestExistsTitle": "This account already has Strive data",
+  "guestExistsBody": "Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.",
+  "guestExistsMergeInfo": "Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.",
+  "guestExistsMerge": "Take data along",
+  "guestExistsDiscard": "Discard guest data",
+  "guestSwitchRunning": "Switching account …",
+  "guestSwitchMerged": "Switched to your account – workouts taken along: {count}",
+  "@guestSwitchMerged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "guestSwitchDiscarded": "Switched to your account. The guest data was deleted.",
+  "guestSwitchFailed": "Switching failed – nothing was changed. Check your internet connection and try again.",
+  "guestSwitchSignInAgain": "Please sign in again to continue.",
+  "wGymRegressionNote2": "First weeks: easier variations of the technically demanding exercises – the full exercises follow once the technique is solid.",
+  "wGymProgressNoteLinear": "Progression: on the main lifts the weight goes up in small steps as long as you make every rep; on the other exercises first build the reps to the top of the range, then add weight.",
+  "wGymProgressNoteBw": "Progression: first more reps – also beyond the range – then a harder variation (pull-ups and dips: added weight).",
+  "healthGymBackSwapNote": "Back: squats, deadlifts, bent-over rows and standing presses are replaced by leg press, glute bridges and supported variations – no heavy axial load, neutral spine.",
+  "healthGymShoulderSwapNote": "Shoulder: overhead pressing, overhead triceps work and dips are replaced by incline and close-grip variations – stay pain-free.",
+  "healthGymNoJumpNote": "No jumps: jump squats are replaced by squats without a jump.",
+  "splitHomeNote2": "For training at home or with body weight Strive uses full-body programs (2 alternating); from 4 strength days a week upper and lower body alternate.",
+  "equipBodyweightSub2": "No equipment – a sturdy table, a chair and a door are enough",
+  "splitFullbodyWarning": "Full body on 4 or more days loads every muscle on consecutive days – from 4 days upper / lower is the better choice.",
+  "gymAssignUneven": "{n} programs cannot be spread evenly over {days} strength days a week – one of them comes up a little more often. That is as even as it gets.",
+  "@gymAssignUneven": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "healthGymBackSwapNoteHome": "Back: deadlift variations, bent-over rows, standing presses and jumps are replaced by glute bridges, chest-supported rows, seated presses and squats without a jump – no heavy axial load, neutral spine.",
+  "wGymProgressNoteBw2": "Progression: first more reps – also beyond the range – then a harder variation (e.g. feet raised, single-leg or a slower lowering).",
+  "wGymShortNote": "Shortened to the {min} min planned for this day: the last accessory exercises are left out – add them when you have more time.",
+  "@wGymShortNote": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "eventGymNoRace": "A pure strength plan trains for no race. For a running race choose the Hybrid focus (strength + running) or Running – here you set how long the plan runs.",
+  "feasNoRuns": "Your week has no run day yet – this race needs {n, plural, =1{at least 1 run} other{at least {n} runs}} a week. Add run days.",
+  "@feasNoRuns": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "feasNoRides": "Your week has no bike day yet – this race needs {n, plural, =1{at least 1 ride} other{at least {n} rides}} a week. Add bike days.",
+  "@feasNoRides": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "feasNoSwims": "Your week has no swim session yet – this race needs {n, plural, =1{at least 1 swim} other{at least {n} swims}} a week. Add swim days.",
+  "@feasNoSwims": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "feasLongRideRamp": "From where you are now, your long ride grows safely only to about {have} in {weeks} weeks – this race needs long rides of about {need}.",
+  "@feasLongRideRamp": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "weeks": {
+        "type": "int"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "feasAddRunDays": "Add run days",
+  "feasAddRideDays": "Add bike days",
+  "feasAddSwimDays": "Add swim days",
+  "feasRaiseTwoDays": "Increase the time on {day} to {time} and on {day2} to {time2}",
+  "@feasRaiseTwoDays": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "day2": {
+        "type": "String"
+      },
+      "time2": {
+        "type": "String"
+      }
+    }
+  },
+  "feasShowDetails": "Details and options",
+  "goalCountdownToday": "Race day today",
+  "wGymLoadDesc2": "Loading week: end every work set with about {rir} reps in the tank – the reserve shrinks week by week until the next recovery week. Sets, rep range and suggested weight are shown for each exercise.",
+  "@wGymLoadDesc2": {
+    "placeholders": {
+      "rir": {
+        "type": "int"
+      }
+    }
+  },
+  "wGymLoadDescOneRep": "Loading week: end every work set with about 1 rep in the tank – the reserve shrinks week by week until the next recovery week. Sets, rep range and suggested weight are shown for each exercise.",
+  "wGymLoadDescNoDeloadOneRep": "Finish every work set with about 1 rep in reserve. Sets, rep range and suggested weight are shown with each exercise.",
+  "legacyRecalWhyFatigueRecovery": "Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.",
+  "legacyRecalWhyFatigueCheck": "Still harder than intended after the recovery week: check sleep, illness and stress – and consider a slower target time. Quality stays, with fewer repeats.",
+  "planMoveBeforeLong": "The next day holds “{title}” – a hard session right before makes it harder. Better leave an easy day in between.",
+  "@planMoveBeforeLong": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "planMoveSameDay": "“{title}” is already planned on this day.",
+  "@planMoveSameDay": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "calJumpRace": "Go to race day",
+  "recMinNoFit": "This race needs at least {n} sessions a week – more than {days} days with one session each. Choose “Up to 2× per day”.",
+  "@recMinNoFit": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "feasLongRunLayout": "In your week as it is, your long run reaches only about {km} km – this race needs long runs of {x} km. More time on one day alone does not change that here: check which days carry your runs and which one is your long-session day.",
+  "@feasLongRunLayout": {
+    "placeholders": {
+      "km": {
+        "type": "int"
+      },
+      "x": {
+        "type": "int"
+      }
+    }
+  },
+  "feasLongRideLayout": "In your week as it is, your long ride reaches only {min} min – this race needs long rides of at least {target} min. More time on one day alone does not change that here: check which days carry your rides and which one is your long-session day.",
+  "@feasLongRideLayout": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "planLogRedate": "Session date corrected",
+  "planLogRedateReason": "A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off.",
   "feasLongDayDefault2": "The long sessions on {day} and {day2} need up to {time} and {time2} – far more than your other sessions. The plan schedules them like that; set those days’ times yourself if they do not fit.",
   "@feasLongDayDefault2": {
     "placeholders": {

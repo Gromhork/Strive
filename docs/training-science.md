@@ -648,6 +648,10 @@ weeklyTargetSets per muscle (per difficulty & level):
   BALANCED    6–10        10–14         12–16
   CHALLENGING 8–12        12–18         14–22
 progress volume +1–2 sets/muscle/week per mesocycle week; reset at deload        [M/P]
+// Generator (implemented): the plan never changes a program's set counts (athlete's decision) – the built-in
+// programs carry the weekly volume (~9–12 sets/muscle full body, ~12–18 UL / PPL, §5); the plan periodises
+// through load and reps in reserve only (RIR wave 3 → 2 → 1, beginners 3 → 3 → 2, heart limitation ≥ 2).
+// Difficulty does not change strength volume.
 perSessionCap: ≤ 8–10 effective sets per muscle per session (spread above this)  [P]
 ```
 
@@ -748,7 +752,9 @@ order of rules (first match wins); w = last top weight, total = w + body load (b
            when the lifter chose it – not the app's own lighter prescription; a session with every target met is
            never "worse")
            → ≥ 2 reps/set lost or limit: −7.5 % of total (reactive deload, Bell 2023 [74]); else hold w, repeat reps
-2b. linear (BEGINNER, compound lifts, targets stored, until the first stall = targets missed twice in a row):
+2b. linear (BEGINNER, compound lifts, targets stored, one increment ≤ 10 % of the load – a 2 kg step on a 10 kg dumbbell
+           goes through double progression / microloading instead –, until the first stall = targets missed twice in
+           a row, or a missed session followed by a lighter one; review 2026-11 GYM-1):
            all targets hit and not hard → +1 increment, same reps (§2.4 linear model); hard → hold;
            narrowly missed once → same weight and targets again; then double progression
 3. top:    all sets ≥ top of range
@@ -770,8 +776,10 @@ AMRAP recalibration: AMRAP set ≥ 2 reps above its target → load = e1RM(AMRAP
 e1RM floor: no reps missed in the last 4 weeks → never more than 15 % below the load the best e1RM of those 4 weeks
            supports (RIR 2) – limit ratings and holds alone cannot spiral the load down
 breaks (unchanged): 3–6 wk → last weight × 0.95/0.9; > 6 wk → e1RM × 0.9 (× 0.85 beyond 12 wk) [68]
-deload / taper week: load × 0.9 of the loading-week prescription, deload keeps about half the work sets
-           (max(n/2, 2) of n ≥ 3, 1 of 2; no drop sets) – Bell 2023 [74]: ~50 % volume. Deload/taper sessions are
+deload / taper week: load × 0.9 of the last loading session (a pending step is undone: its load and target reps;
+           bodyweight: ~10 % less total load, else ~20 % fewer reps), the program's sets (the athlete's decision –
+           the plan never changes set counts), RIR 4, no AMRAP. Lifts done on 'legs easy' days only (the day before a key
+           run / ride) have that as their loading level: the deload goes 10 % below it (review 2026-11 GYM-5). Deload/taper sessions are
            tagged and skipped by progression, trend and e1RM, so the second deload session is again 90 % of the loading
            level and the next loading week resumes at the last loading level (§1.9) instead of "regressing" from it
 ```
@@ -831,15 +839,23 @@ Volume was cut (fewer reps and sets) while frequency was kept. No RCT shows the 
 
 ```text
 deloadEvery: BEGINNER none planned for the first 8–12 wk (only a reactive deload) · INTERMEDIATE every 4–6 wk · ADVANCED every 4–5 wk
-deloadWeek: sets × 0.5, load × 0.9 (or RIR +2–3), frequency unchanged
+deloadWeek: sets × 0.5, load × 0.9 (or RIR +2–3), frequency unchanged   // literature; the generator keeps the
+            // program's sets and lightens load (~90 %) and effort (RIR 4) only – the athlete's decision
 reactiveDeload trigger: e1RM down ≥ 5% for 2 sessions, or RPE ≥ 2 above target on ≥ 2 lifts
 hybrid athletes: put the strength deload in the same week as the endurance recovery week
 ```
 
 Generator: beginners' strength sessions in endurance recovery weeks of the first 10 weeks keep the loading phase (no set
-cut); from week 11 they deload with the endurance recovery week. The day before a key endurance session (C3/C4), a
-full-body / home / bodyweight program keeps half of its leg work sets (at least 1); the planned workout carries that
-adjusted exercise list, which the session start uses.
+cut); from week 11 they deload with the endurance recovery week. The day before a key run or ride (C3/C4; not before a
+swim – the kick barely loads the legs) a program keeps all its sets, its leg exercises go ~12.5 % lighter at RIR ~4
+('legs easy', no AMRAP); leg-heavy programs move to another day where possible. In the last 10 days before an endurance
+race no leg-heavy program is chosen while another exists (absolute), the others drop their leg exercises.
+
+Progression note in the workout (what LoadPrescriber does): bodyweight programs – more reps, then a harder variation;
+beginners – the main lifts add load in small steps at the same reps, the rest double progression; everyone else –
+double progression. Beginners' first 6 weeks use regressions (lat pulldown or band-assisted pull-ups, dumbbell RDL,
+reverse crunches; bodyweight: incline push-ups, bent-knee inverted rows, squats instead of jump squats) – never the same
+exercise twice in one session.
 
 ### 2.8 Split by days per week [P] (all keep ≥ 2×/week per muscle)
 
@@ -851,6 +867,12 @@ adjusted exercise list, which the session start uses.
 | 4 | Upper / Lower × 2 | |
 | 5 | Upper / Lower / Push / Pull / Legs, or U/L + 1 weak-point day | |
 | 6 | Push / Pull / Legs × 2 | ADVANCED only |
+
+Generator: pure strength plans use at most 4 days (beginner), 5 (intermediate) or 6 (advanced) – at least one full rest
+day (review 2026-11 GYM-8). Home and bodyweight training: full body A / B up to 3 days, upper / lower alternating from 4
+days (GYM-4); the full-body split card warns at 4+ days. The rotation avoids shared muscle groups on consecutive days
+(chest, delts, triceps, back, biceps, legs; a press also loads delts and triceps) and looks ahead over the rest of the
+week (bro split: Chest → Back → Shoulders, not Chest → Shoulders).
 
 Exercise order within a session: compound → accessory → isolation. Big lower-body lifts first. Core work last [P].
 
@@ -1347,15 +1369,19 @@ knee | hip -> strength note: pain-free range of motion, reduce depth or load
 knee | hip -> cycling: no seated low-cadence (60–70 rpm) climbing repeats – the sweet spot stays at a normal cadence;
               every ride notes high cadence (85–95 rpm), easy gears on climbs, saddle height, stop with pain (high
               pedal torque raises patellofemoral / tibiofemoral load)
-back       -> avoidAxialLoading: strength note (no heavy back squat / deadlift; leg press, split squat,
-              hip thrust; lumbar compression in squats reaches several times body weight [64]);
-              the strength programs may read the flag – the generator does not rewrite them
+knee | hip | ankle -> no jump squats in strength sessions (gymMod 'noJump': squats without a jump)
+back       -> avoidAxialLoading: the workouts swap the lifts (gymMod 'noAxial'): back squat → leg press / split
+              squat, deadlift / RDL → barbell glute bridge (hip extension), bent-over rows → cable / chest-supported
+              rows, standing press → seated, standing calf raise → seated, jump squat → squat, hanging leg raise →
+              dead bug; note says so (lumbar compression in squats reaches several times body weight [64])
 shoulder   -> avoidOverhead: swims ~20 % shorter, CSS sets become technique sessions, note "no paddles,
               bilateral breathing" (paddles and volume are the main loads in swimmer's shoulder [63]);
-              strength note: no heavy overhead pressing
+              strength: overhead presses → incline presses, overhead triceps extensions and dips → pushdowns /
+              lying extensions / close-grip push-ups (gymMod 'noOverhead')
 heart      -> capIntensity: nothing above threshold – no I/R runs, no Z5 rides (VO2 sets become threshold),
               no strides in the shake-out, ≤ 1 quality session per sport and week; note on quality sessions;
-              strength note: 2–3 reps in reserve, exhale on effort, no breath holding (Valsalva drives
+              strength: RIR ≥ 2 in every week (the wave's RIR-1 week becomes 2), no AMRAP calibration sets (the effort
+              chip calibrates); note: 2–3 reps in reserve, exhale on effort, no breath holding (Valsalva drives
               systolic pressure far above 200 mmHg in heavy lifts [65]). Moderate continuous and threshold
               work stays – it is what exercise guidelines for hypertension recommend [60]; medical clearance first.
 ```

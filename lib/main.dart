@@ -21,6 +21,7 @@ import 'features/shell/account.dart';
 import 'features/shell/dst_repair_sync.dart';
 import 'features/shell/gym_plan_upgrade_sync.dart';
 import 'features/shell/link_cleanup_sync.dart';
+import 'features/shell/plan_gen_cleanup_sync.dart';
 import 'features/shell/gcal_sync.dart';
 import 'features/shell/program_upgrade_sync.dart';
 import 'features/shell/relocalize_sync.dart';
@@ -29,11 +30,14 @@ import 'features/shell/reminder_sync.dart';
 import 'firebase_options.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'providers.dart';
+import 'services/app_check.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kDebugMode) HttpOverrides.global = _DevTlsInspectionOverrides();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Before the first Firestore / Gemini request, so every request carries a token.
+  await activateAppCheck();
   // Offline mode: everything is cached locally and synced when online.
   FirebaseFirestore.instance.settings = firestoreSettings;
   WriteErrorNotifier.install();
@@ -91,6 +95,7 @@ class _SyncHost extends ConsumerWidget {
     ref.watch(dstRepairSyncProvider);
     ref.watch(gymPlanUpgradeSyncProvider);
     ref.watch(linkCleanupSyncProvider);
+    ref.watch(planGenCleanupSyncProvider);
     return child;
   }
 }

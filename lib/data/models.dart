@@ -107,7 +107,19 @@ class UserProfile {
 
   /// Training days the generated plan uses at most (quick setup): beginners keep ≥ 2
   /// rest days (pure strength ≤ 4 days), athletes ≥ 60 one – see PlanGenerator.
-  int get maxPlanDays => level == 'beginner' ? (focus == TrainingFocus.gym ? 4 : 5) : ((age ?? 0) >= 60 ? 6 : 7);
+  /// Pure strength (review 2026-11 GYM-8): beginners 4, intermediates 5, advanced 6 days – at least one full rest day,
+  /// the 6-day PPL only for advanced lifters (docs §2.8).
+  int get maxPlanDays {
+    if (focus == TrainingFocus.gym) {
+      return switch (level) {
+        'beginner' => 4,
+        'advanced' => 6,
+        _ => 5,
+      };
+    }
+    return level == 'beginner' ? 5 : ((age ?? 0) >= 60 ? 6 : 7);
+  }
+
   int get weeklyTarget => trainingDays.isEmpty ? 3 : (trainingDays.length < maxPlanDays ? trainingDays.length : maxPlanDays);
   double get bmi => heightCm <= 0 ? 0 : weightKg / ((heightCm / 100) * (heightCm / 100));
 
@@ -266,6 +278,11 @@ class AthleteData {
   final DateTime? planStart;
   final int? planLength;
 
+  /// Generation id of the current plan (written with [planStart]; every workout it generated carries it as
+  /// [PlannedWorkout.planGen]): planned workouts of another generation from [planStart] on are left over from a
+  /// replacement on another device with a stale cache and are removed (review 2026-11 data-9).
+  final String? planGen;
+
   /// Name of the target event (e.g. taken over from the race search); optional.
   final String? eventName;
 
@@ -288,6 +305,9 @@ class AthleteData {
   /// weeks before the taper ([EventSpec.longRunExtraMin]: marathon 3 h → 3:30 h, 50 km ultra 3:30 → 4 h) when
   /// the cap covers clearly less than the race's long run and the long day has the time. Default off.
   final bool longRunExtend;
+
+  /// Where the current plan continues a plan it replaced mid-way ([PlanCarry]); null for a fresh plan.
+  final PlanCarry? planCarry;
 
   const AthleteData({
     this.setupMode = 'simple',
@@ -327,6 +347,7 @@ class AthleteData {
     this.targetTimeSec,
     this.planStart,
     this.planLength,
+    this.planGen,
     this.eventName,
     this.vdotEstimate,
     this.vdotEstimateAt,
@@ -336,6 +357,7 @@ class AthleteData {
     this.cssStepAt,
     this.cssBase,
     this.longRunExtend = false,
+    this.planCarry,
   });
 
   bool get advanced => setupMode == 'advanced';
@@ -394,6 +416,7 @@ class AthleteData {
     },
     planStart: m['planStart'] == null ? null : _date(m['planStart']),
     planLength: _in(m['planLength']),
+    planGen: _sn(m['planGen']),
     eventName: _sn(m['eventName']),
     vdotEstimate: _dn(m['vdotEstimate']),
     vdotEstimateAt: m['vdotEstimateAt'] == null ? null : _date(m['vdotEstimateAt']),
@@ -403,6 +426,7 @@ class AthleteData {
     cssStepAt: m['cssStepAt'] == null ? null : _date(m['cssStepAt']),
     cssBase: _in(m['cssBase']),
     longRunExtend: _b(m['longRunExtend']),
+    planCarry: PlanCarry.fromMap(m['planCarry']),
   );
 
   /// A swim test time within [swimTestBounds], else null.
@@ -451,6 +475,7 @@ class AthleteData {
     'targetTimeSec': targetTimeSec,
     if (planStart != null) 'planStart': Timestamp.fromDate(planStart!),
     if (planLength != null) 'planLength': planLength,
+    if (planGen != null) 'planGen': planGen,
     'eventName': eventName,
     if (vdotEstimate != null) 'vdotEstimate': vdotEstimate,
     if (vdotEstimateAt != null) 'vdotEstimateAt': Timestamp.fromDate(vdotEstimateAt!),
@@ -460,6 +485,7 @@ class AthleteData {
     if (cssStepAt != null) 'cssStepAt': Timestamp.fromDate(cssStepAt!),
     if (cssBase != null) 'cssBase': cssBase,
     if (longRunExtend) 'longRunExtend': true,
+    if (planCarry != null) 'planCarry': planCarry!.toMap(),
   };
 
   /// Copy with some fields replaced (keys as in [toMap]); `null` values clear a field.
@@ -472,6 +498,7 @@ class AthleteData {
     for (final k in const ['ftpStepAt', 'cssStepAt']) {
       if (c[k] is DateTime) c[k] = Timestamp.fromDate(c[k]);
     }
+    if (c['planCarry'] is PlanCarry) c['planCarry'] = (c['planCarry'] as PlanCarry).toMap();
     if (c['dayPlan'] is Map<int, List<Sport>>) {
       c['dayPlan'] = {for (final e in (c['dayPlan'] as Map<int, List<Sport>>).entries) '${e.key}': e.value.map((s) => s.name).toList()};
     }
@@ -488,6 +515,91 @@ class AthleteData {
     }
     return AthleteData.fromMap({...m, ...c});
   }
+}
+
+/// A plan re-created mid-plan ("Plan neu aufsetzen", "align plan with goal") continues the one it
+/// replaced instead of starting over (review 2026-11 adapt-2 / -6 / -7): written by withReachedVolume,
+/// read by the plan generator for the plan that starts on [start] (also when the plan review rebuilds it)
+/// and by the fitness model.
+class PlanCarry {
+  const PlanCarry({
+    required this.start,
+    this.loadWeeks = 0,
+    this.recovery = false,
+    this.phase,
+    this.phases,
+    this.runWalkStage,
+    this.runWalkLongSec = 0,
+    this.runWalkLongKm = 0,
+    this.fitnessStart,
+    this.baseRunKm,
+    this.baseRideH,
+    this.baseSwimKm,
+  });
+
+  /// First day of the plan this carry belongs to (the re-created plan's start).
+  final DateTime start;
+
+  /// Loading weeks in a row right before the week of [start] (the 3:1 / 2:1 cycle continues).
+  final int loadWeeks;
+
+  /// The week of [start] was a planned recovery week: it stays one.
+  final bool recovery;
+
+  /// Phase reached (base / build / peak): the new plan does not fall back to an earlier one.
+  final String? phase;
+
+  /// Same race: the replaced plan's phase of every week from the week of [start] to race week – the new plan keeps
+  /// them (its taper, recovery weeks and build / peak), so only volumes and sessions are planned anew.
+  final List<String>? phases;
+
+  /// Run/walk stage the ladder continues at (index into the generator's run/walk table; past its end:
+  /// the ladder is done), its long run/walk's main set (s) and running km reached.
+  final int? runWalkStage;
+  final int runWalkLongSec;
+  final double runWalkLongKm;
+
+  /// First day of the training block the fitness model counts from (the first plan's start).
+  final DateTime? fitnessStart;
+
+  /// Weekly volume the training block started with (stated in the setup: run km, bike hours, swim km): the volume
+  /// ceilings that count from the athlete's volume (run ≤ 1.5 × it, plans without a goal) keep counting from it – a
+  /// re-created plan starts at the volume reached, but its peak does not grow with every re-creation. Only for the same
+  /// race without a break; a new goal, a plan without a race or a break starts a new block (null).
+  final double? baseRunKm, baseRideH, baseSwimKm;
+
+  static PlanCarry? fromMap(dynamic v) {
+    if (v is! Map || v['start'] == null) return null;
+    return PlanCarry(
+      start: dayOnly(_date(v['start'])),
+      loadWeeks: _i(v['loadWeeks']),
+      recovery: _b(v['recovery']),
+      phase: _sn(v['phase']),
+      phases: v['phases'] is List ? _strings(v['phases']) : null,
+      runWalkStage: _in(v['runWalkStage']),
+      runWalkLongSec: _i(v['runWalkLongSec']),
+      runWalkLongKm: _d(v['runWalkLongKm']),
+      fitnessStart: v['fitnessStart'] == null ? null : dayOnly(_date(v['fitnessStart'])),
+      baseRunKm: _dn(v['baseRunKm']),
+      baseRideH: _dn(v['baseRideH']),
+      baseSwimKm: _dn(v['baseSwimKm']),
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+    'start': Timestamp.fromDate(start),
+    if (loadWeeks > 0) 'loadWeeks': loadWeeks,
+    if (recovery) 'recovery': true,
+    if (phase != null) 'phase': phase,
+    if (phases != null) 'phases': phases,
+    if (runWalkStage != null) 'runWalkStage': runWalkStage,
+    if (runWalkLongSec > 0) 'runWalkLongSec': runWalkLongSec,
+    if (runWalkLongKm > 0) 'runWalkLongKm': runWalkLongKm,
+    if (fitnessStart != null) 'fitnessStart': Timestamp.fromDate(fitnessStart!),
+    if (baseRunKm != null) 'baseRunKm': baseRunKm,
+    if (baseRideH != null) 'baseRideH': baseRideH,
+    if (baseSwimKm != null) 'baseSwimKm': baseSwimKm,
+  };
 }
 
 // ───────────────────────────── Gym ─────────────────────────────
@@ -1173,6 +1285,10 @@ class PlannedWorkout {
     return d != 0 ? d : a.slot.compareTo(b.slot);
   }
 
+  /// Generation of the plan that created this workout ([AthleteData.planGen]); null for workouts the athlete
+  /// added and for plans from before it was stored.
+  final String? planGen;
+
   PlannedWorkout({
     required this.id,
     required this.date,
@@ -1192,6 +1308,7 @@ class PlannedWorkout {
     this.gymMods = const [],
     this.auto,
     this.slot = 0,
+    this.planGen,
   });
 
   /// A copy with the given fields replaced – every other field (also ones added later, e.g.
@@ -1231,6 +1348,7 @@ class PlannedWorkout {
     gymMods: gymMods ?? this.gymMods,
     auto: clearAuto ? null : (auto ?? this.auto),
     slot: slot ?? this.slot,
+    planGen: planGen,
   );
 
   bool get isDone => status == 'done';
@@ -1267,6 +1385,7 @@ class PlannedWorkout {
     gymMods: _strings(m['gymMods']),
     auto: m['auto'] is Map ? AutoAdjustment.fromMap(m['auto'] as Map) : null,
     slot: _i(m['slot'], 0),
+    planGen: _sn(m['planGen']),
   );
 
   Map<String, dynamic> toMap() => {
@@ -1287,6 +1406,7 @@ class PlannedWorkout {
     if (gymMods.isNotEmpty) 'gymMods': gymMods,
     if (auto != null) 'auto': auto!.toMap(),
     if (slot != 0) 'slot': slot,
+    if (planGen != null) 'planGen': planGen,
   };
 }
 

@@ -114,7 +114,7 @@ Color phaseColor(String phase) => switch (phase) {
 String deltaText(int sec) => '${sec > 0 ? '+' : (sec < 0 ? '−' : '±')}${clock(sec.abs())}';
 
 String countdownText(AppLocalizations l, int daysLeft) =>
-    daysLeft < 14 ? l.goalCountdownDays(daysLeft) : l.goalCountdown(daysLeft ~/ 7, daysLeft % 7);
+    daysLeft <= 0 ? l.goalCountdownToday : (daysLeft < 14 ? l.goalCountdownDays(daysLeft) : l.goalCountdown(daysLeft ~/ 7, daysLeft % 7));
 
 String eventLabel(AppLocalizations l, String event) => eventDistanceName(l, event);
 
@@ -292,6 +292,21 @@ class PhaseTimeline extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, c) {
         final x = (position.clamp(0.0, 1.0) * c.maxWidth).clamp(5.0, max(5.0, c.maxWidth - 5));
+        const labelStyle = TextStyle(fontSize: 10, fontWeight: FontWeight.w600);
+        // A phase label only where it fits whole (audit UX-12: "Spitz" / "Taper" clipped side by side, also
+        // at a larger font scale) – measured, never cut off.
+        bool fits(String text, int weeks) {
+          final tp = TextPainter(
+            text: TextSpan(text: text, style: labelStyle),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+            maxLines: 1,
+          )..layout();
+          final ok = tp.width <= c.maxWidth * weeks / total - 2;
+          tp.dispose();
+          return ok;
+        }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -346,11 +361,11 @@ class PhaseTimeline extends StatelessWidget {
                     Expanded(
                       flex: s.$2,
                       child: Text(
-                        s.$2 * 6 >= total || segments.length <= 4 ? phaseShort(l, s.$1) : '',
+                        fits(phaseShort(l, s.$1), s.$2) ? phaseShort(l, s.$1) : '',
                         maxLines: 1,
                         overflow: TextOverflow.clip,
                         softWrap: false,
-                        style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+                        style: labelStyle.copyWith(color: scheme.onSurfaceVariant),
                       ),
                     ),
                 ],
