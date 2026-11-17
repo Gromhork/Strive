@@ -1504,7 +1504,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _choiceCard(
           selected: a.equipment == 'bodyweight',
           title: l.equipBodyweight,
-          sub: l.equipBodyweightSub,
+          sub: l.equipBodyweightSub2,
           icon: Icons.accessibility_new_rounded,
           color: AppColors.gym,
           onTap: () => _setA({'equipment': 'bodyweight'}),
@@ -1559,7 +1559,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final days = _gymDays;
     final rec = recommendedSplit(days, enduranceSessions: _enduranceSessions);
     if (a.equipment != 'gym') {
-      return Padding(padding: const EdgeInsets.only(top: 16), child: Text(l.splitHomeNote, style: Theme.of(context).textTheme.bodySmall));
+      return Padding(padding: const EdgeInsets.only(top: 16), child: Text(l.splitHomeNote2, style: Theme.of(context).textTheme.bodySmall));
     }
     String freq(String s) => l.splitFreq(NumberFormat('0.#', context.localeName).format(splitFrequency(s, days)));
     Widget card(String key, IconData icon, String sub) => _choiceCard(
@@ -1582,6 +1582,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         card('ulppl', Icons.dashboard_customize_rounded, l.splitUlpplSub),
         card('bro', Icons.calendar_view_week_rounded, l.splitBroSub),
         if (a.gymSplit == 'bro') Text(l.splitBroWarning, style: const TextStyle(color: AppColors.warning, fontSize: 12)),
+        // Full body chosen for 4+ days: every muscle on consecutive days (review 2026-11 GYM-4).
+        if (a.gymSplit == 'fullbody' && days >= 4)
+          Text(l.splitFullbodyWarning, style: const TextStyle(color: AppColors.warning, fontSize: 12)),
       ],
     );
   }

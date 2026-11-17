@@ -6,6 +6,7 @@ import '../data/exercise_measure.dart';
 import '../data/models.dart';
 import 'exercise_class.dart';
 import 'gym_tools.dart';
+import 'health_limits.dart';
 import 'smart_progression.dart';
 
 /// Where a prescribed load comes from.
@@ -259,13 +260,19 @@ class LoadPrescriber {
     if (!light) {
       // AMRAP on the last set while calibrating (first sessions of an exercise) and when
       // the targets are at the top of the range (how much reserve is left decides the
-      // next jump). Loaded exercises only.
+      // next jump). Loaded exercises only – never with a heart / blood-pressure limitation
+      // (review 2026-11 GYM-2: a set "1 rep before failure" is where breath holding drives the
+      // blood pressure up; the effort chip calibrates instead).
       final atTop = p.setReps.isNotEmpty ? p.setReps.every((r) => r >= hi) : p.reps >= hi;
-      final amrap = !p.bodyweight && p.weight > 0 && (hist.length < 3 || atTop);
+      final amrap = !_noStraining && !p.bodyweight && p.weight > 0 && (hist.length < 3 || atTop);
       return amrap ? p._copy(amrap: true) : p;
     }
-    return _lighter(p, e, info, phase);
+    // (A step's base is the last loading session: [_lighter].)
+    return _lighter(p, e, info, phase, last: planned == null ? hist.firstOrNull : null);
   }
+
+  /// Heart / blood-pressure limitation ([HealthFlags.noStraining]): no AMRAP sets.
+  late final bool _noStraining = HealthFlags.of(profile).noStraining;
 
   /// [p] (the loading prescription) for a lighter phase ([lighterFor]): no step up, no AMRAP, the
   /// program's sets. The plan keeps the set counts (the athlete's decision), so the week is
@@ -279,26 +286,35 @@ class LoadPrescriber {
   /// by: [_fromLighter]).
   /// [factor]: the load relative to [p] (default [lighterLoadFactor]); [cutReps]: false when [p]
   /// is already at a lighter level (its reps were cut then – [_fromLighter]).
-  Prescription _lighter(Prescription p, GymExercise e, _Info info, String? phase, {double? factor, bool cutReps = true}) {
+  /// [last]: the session [p] was progressed from – a step is undone to its load and reps (review
+  /// 2026-11 GYM-11: pull-ups done 3 × 10 stepped to +2.5 kg × 6, and the deload cut those 6 reps to
+  /// 4 – 60 % less volume than the week before instead of ~10 %).
+  Prescription _lighter(Prescription p, GymExercise e, _Info info, String? phase, {double? factor, bool cutReps = true, _Entry? last}) {
     final increase = p.progression == ProgressionKind.increase;
     final step = increase || p.progression == ProgressionKind.addReps;
-    // The loading level the step started from: one rep less after an "add reps" step.
-    final baseReps = p.progression == ProgressionKind.addReps ? max(1, p.reps - 1) : p.reps;
+    // The loading level the step started from: the last loading session's load and (target) reps, else
+    // one rep less after an "add reps" step.
+    final fromLast = step && last != null && last.phase == null && last.sets.isNotEmpty;
+    final baseW = fromLast ? last.sets.map((s) => s.weight).reduce(max) : p.weight;
+    final baseReps =
+        fromLast
+            ? max(1, last.sets.map((s) => min(s.reps, s.target ?? s.reps)).reduce(min))
+            : (p.progression == ProgressionKind.addReps ? max(1, p.reps - 1) : p.reps);
     final cut = cutReps ? max(1, (baseReps * lighterRepFactor).floor()) : baseReps;
     factor ??= lighterLoadFactor(phase);
-    var weight = p.weight, reps = p.reps;
+    var weight = baseW, reps = p.reps;
     if (p.bodyweight) {
       final body = e.bodyKg > 0 ? e.bodyKg : bodyLoad(e);
-      final total = body + p.weight;
+      final total = body + baseW;
       var added = ((total * factor - body) / 2.5 + 1e-6).floorToDouble() * 2.5;
       // A weighted lift goes down to no added load at most (not into assistance).
-      if (p.weight >= 0 && added < 0) added = 0;
-      final removed = p.weight - added;
+      if (baseW >= 0 && added < 0) added = 0;
+      final removed = baseW - added;
       weight = added;
       // Less than half of the intended reduction came off the load: fewer reps.
       reps = body <= 0 || removed < total * (1 - factor) / 2 ? cut : baseReps;
-    } else if (p.weight > 0) {
-      weight = _floorStep(p.weight * factor, info);
+    } else if (baseW > 0) {
+      weight = _floorStep(baseW * factor, info);
       reps = step ? baseReps : p.reps;
     } else {
       reps = cut;
@@ -322,11 +338,22 @@ class LoadPrescriber {
   /// one: the lower-body lift progresses at that level (no AMRAP – the effort stays easy). Any
   /// other pair (a deload / taper / race week): the last lighter load ([last]) at [to]'s share of
   /// [from]'s level, no step up, never a second cut of the reps.
+  /// A lift done on 'legsEasy' days only has that as its loading level – it is what the athlete
+  /// trains every week – so a deload / taper / race week goes [lighterLoadFactor] below it (review
+  /// 2026-11 GYM-5: 0.9 / 0.875 made the recovery week's squat heavier than the week before, with
+  /// the pending rep step on top).
   Prescription _fromLighter(Prescription p, GymExercise e, _Info info, String from, String? to, _Entry last) {
     if (from == 'legsEasy' && to == 'legsEasy') return p._copy(amrap: false, phaseAdjusted: true, phase: to);
-    // The level the step started from (a load step is undone here, a rep step by [_lighter]).
-    final base = p.progression == ProgressionKind.increase ? p._copy(weight: min(p.weight, last.sets.map((s) => s.weight).reduce(max))) : p;
-    return _lighter(base, e, info, to, factor: lighterLoadFactor(to) / lighterLoadFactor(from), cutReps: false);
+    // The level the step started from: the last session's load and (target) reps.
+    final stepped = p.progression == ProgressionKind.increase || p.progression == ProgressionKind.addReps;
+    final lastW = last.sets.map((s) => s.weight).reduce(max);
+    final lastReps = max(1, last.sets.map((s) => min(s.reps, s.target ?? s.reps)).reduce(min));
+    final base =
+        stepped
+            ? p._copy(weight: min(p.weight, lastW), reps: lastReps, progression: ProgressionKind.hold, setReps: const [], clearReason: true)
+            : p;
+    final factor = from == 'legsEasy' ? lighterLoadFactor(to) : lighterLoadFactor(to) / lighterLoadFactor(from);
+    return _lighter(base, e, info, to, factor: factor, cutReps: from == 'legsEasy');
   }
 
   /// [p], prescribed from lighter sessions only (phase [from]), back at the loading level: the
@@ -723,7 +750,11 @@ class LoadPrescriber {
       );
       (deload ? lighter : (age <= recentWindow ? recent : old)).add(entry);
     }
-    final pool = recent.isNotEmpty ? recent : (old.isNotEmpty ? old : lighter);
+    // Lighter sessions only: the 'legs easy' ones are the lift's recurring level – a deload / taper / race week in
+    // between is temporary and no base (review 2026-11 GYM-5: each recovery week took the legs-easy squat another
+    // ~15 % down for good).
+    final level = lighter.where((h) => h.phase == 'legsEasy').toList();
+    final pool = recent.isNotEmpty ? recent : (old.isNotEmpty ? old : (level.isNotEmpty ? level : lighter));
     if (!loaded || pool.length < 2) return pool;
     return _dropOutliers(pool);
   }
@@ -957,10 +988,15 @@ class LoadPrescriber {
     );
   }
 
-  /// Targets missed in two sessions in a row somewhere in [hist] (newest first).
+  /// Linear progression is over (newest first in [hist]): targets missed in two sessions in a row
+  /// somewhere in [hist], or a missed session followed by a lighter one – the load had to come back
+  /// down (review 2026-11 GYM-1: dumbbell presses went 10 → 12 → 10 → 12 kg for 14 weeks, as the
+  /// session after each reduction succeeded and two misses in a row never happened).
   static bool _stalledOnce(List<_Entry> hist, int bottom) {
+    double top(_Entry h) => h.sets.map((s) => s.weight).reduce(max);
     for (var i = 0; i + 1 < hist.length; i++) {
-      if (_missed(hist[i], bottom) && _missed(hist[i + 1], bottom)) return true;
+      if (!_missed(hist[i + 1], bottom)) continue;
+      if (_missed(hist[i], bottom) || top(hist[i]) < top(hist[i + 1]) - 1e-6) return true;
     }
     return false;
   }
@@ -1126,6 +1162,18 @@ class LoadPrescriber {
     '1373': _Info(_Kind.bodyweight, true), // bodyweight calf raise
     '3561': _Info(_Kind.bodyweight, true), // glute bridge march
     '0630': _Info(_Kind.bodyweight, false), // mountain climber
+    // Bodyweight programs, regressions and health swaps (plan_exercises.dart).
+    '2368': _Info(_Kind.bodyweight, true), // split squats
+    '3533': _Info(_Kind.bodyweight, true), // bodyweight squat
+    '3523': _Info(_Kind.bodyweight, true), // glute bridge (feet on bench)
+    '3165': _Info(_Kind.bodyweight, false), // towel row
+    '0872': _Info(_Kind.bodyweight, false), // reverse crunch
+    '0493': _Info(_Kind.bodyweight, false), // incline push-up
+    '0259': _Info(_Kind.bodyweight, false), // close-grip push-up
+    '2300': _Info(_Kind.bodyweight, false), // inverted row, knees bent
+    '0970': _Info(_Kind.bodyweight, false), // band-assisted pull-up
+    '1409': _Info(_Kind.barbell, true, anchor: Anchor.squat, ratio: 0.8), // barbell glute bridge (conservative)
+    '0327': _Info(_Kind.dumbbell, false, anchor: Anchor.bench, ratio: 0.3), // chest-supported dumbbell row
   };
 
   /// Name patterns for all other exercises (first match wins). Ratios per equipment family:

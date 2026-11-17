@@ -1903,5 +1903,18 @@
   "guestSwitchMerged": "Zu deinem Konto gewechselt – übernommene Einheiten: {count}",
   "guestSwitchDiscarded": "Zu deinem Konto gewechselt. Die Gast-Daten wurden gelöscht.",
   "guestSwitchFailed": "Wechsel fehlgeschlagen – es wurde nichts geändert. Prüf deine Internetverbindung und versuch es noch einmal.",
-  "guestSwitchSignInAgain": "Bitte melde dich noch einmal an, um weiterzumachen."
+  "guestSwitchSignInAgain": "Bitte melde dich noch einmal an, um weiterzumachen.",
+  "wGymRegressionNote2": "Erste Wochen: leichtere Varianten der technisch anspruchsvollen Übungen – die vollen Übungen folgen, sobald die Technik sitzt.",
+  "wGymProgressNoteLinear": "Steigerung: Bei den Grundübungen steigt das Gewicht in kleinen Schritten, solange du alle Wiederholungen schaffst; bei den übrigen Übungen erst die Wiederholungen bis zum oberen Ende aufbauen, dann Gewicht erhöhen.",
+  "wGymProgressNoteBw": "Steigerung: Erst mehr Wiederholungen – auch über den Bereich hinaus –, dann eine schwerere Variante (Klimmzüge und Dips: Zusatzgewicht).",
+  "healthGymBackSwapNote": "Rücken: Kniebeugen, Kreuzheben, vorgebeugtes Rudern und Drücken im Stehen sind durch Beinpresse, Glute Bridges und gestützte Varianten ersetzt – keine schwere axiale Last, neutrale Wirbelsäule.",
+  "healthGymShoulderSwapNote": "Schulter: Drücken über Kopf, Trizeps über Kopf und Dips sind durch Schrägbank- und enge Varianten ersetzt – schmerzfrei bleiben.",
+  "healthGymNoJumpNote": "Keine Sprünge: Sprungkniebeugen sind durch Kniebeugen ohne Sprung ersetzt.",
+  "splitHomeNote2": "Bei Training zuhause oder mit Eigengewicht nutzt Strive Ganzkörper-Programme (2 im Wechsel); ab 4 Krafttagen pro Woche wechseln sich Ober- und Unterkörper ab.",
+  "equipBodyweightSub2": "Keine Geräte – ein stabiler Tisch, ein Stuhl und eine Tür reichen",
+  "splitFullbodyWarning": "Ganzkörper an 4 oder mehr Tagen belastet jeden Muskel an aufeinanderfolgenden Tagen – ab 4 Tagen ist Ober-/Unterkörper die bessere Wahl.",
+  "gymAssignUneven": "{n} Programme lassen sich nicht gleichmäßig auf {days} Krafttage pro Woche verteilen – eines kommt etwas öfter dran. Gleichmäßiger geht es nicht.",
+  "healthGymBackSwapNoteHome": "Rücken: Kreuzheben-Varianten, vorgebeugtes Rudern, Drücken im Stehen und Sprünge sind durch Glute Bridges, gestütztes Rudern, Drücken im Sitzen und Kniebeugen ohne Sprung ersetzt – keine schwere axiale Last, neutrale Wirbelsäule.",
+  "wGymProgressNoteBw2": "Steigerung: Erst mehr Wiederholungen – auch über den Bereich hinaus –, dann eine schwerere Variante (z. B. Füße erhöht, einbeinig oder langsamer absenken).",
+  "wGymShortNote": "Gekürzt auf die {min} min, die für diesen Tag eingeplant sind: Die letzten Ergänzungsübungen entfallen – häng sie an, wenn du mehr Zeit hast."
 }

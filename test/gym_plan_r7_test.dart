@@ -512,7 +512,12 @@ void main() {
       final up = applyUpdate(w, GymPlanUpgrade.upgrade(w, t));
       expect(up.exercises, isEmpty);
       expect(up.gymMods, [gymModRegress]);
-      expect(plannedGymExercises(up, t).map((e) => e.exId), [for (final e in t.exercises) gymRegressions[e.exId]?.$1 ?? e.exId]);
+      final ids = plannedGymExercises(up, t).map((e) => e.exId).toList();
+      expect(ids, [
+        for (final e in applyGymMods(t.exercises, const [gymModRegress])) e.exId,
+      ]);
+      // Never the same exercise twice (review 2026-11 GYM-7: Pull's pull-ups became a second lat pulldown).
+      expect(ids.toSet().length, ids.length);
     });
 
     test('halved leg sets before a key session: lighter legs instead, the note follows', () {
@@ -591,7 +596,7 @@ void main() {
       // A regressed copy whose reps the athlete changed stays too.
       final t = pull.exercises.any((e) => gymRegressions.containsKey(e.exId)) ? pull : fb;
       final reg = [for (final e in t.exercises) regressedExercise(e, 'strength')];
-      final r = reg.firstWhere((e) => gymRegressions.values.any((v) => v.$1 == e.exId));
+      final r = reg.firstWhere((e) => gymRegressions.values.any((v) => v.any((o) => o.$1 == e.exId)));
       r.workSets.first.reps += 3;
       expect(GymPlanUpgrade.upgrade(old(t, reg, desc: de.wGymRegressionNote), t).containsKey('exercises'), isFalse);
       // The unedited copies (exact, +1 set, halved) are still upgraded.

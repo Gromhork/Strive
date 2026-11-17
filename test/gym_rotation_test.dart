@@ -407,7 +407,8 @@ void main() {
       expect(s.b, {1: 'key:ppl_push', 3: 'key:ppl_pull', 5: 'key:ppl_legs'});
       final s2 = PlanGenerator.suggestedGymWeeks(profile(days: [1, 4], split: 'ppl'), templates);
       expect(s2.a, {1: 'key:ppl_push', 4: 'key:ppl_pull'});
-      expect(s2.b, {1: 'key:ppl_legs', 4: 'key:ppl_push'});
+      // (Week B must not end with week A's first program – A → B → A would repeat Push; review 2026-11 UX-10.)
+      expect(s2.b, {1: 'key:ppl_legs', 4: 'key:ppl_pull'});
     });
   });
 }
