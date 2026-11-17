@@ -226,7 +226,13 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   late final bool _planAligned = _isPlanAligned();
   late bool _align = widget.existing == null || _planAligned;
   late int? _targetSec = _initialTarget();
-  final _feasibility = FeasibilityCache();
+
+  /// (Checked in the background – the page rebuilds when a check is done.)
+  late final _feasibility = FeasibilityCache(
+    onUpdate: () {
+      if (mounted) setState(() {});
+    },
+  );
 
   /// The plan settings point at this (existing) race: same day and distance.
   bool _isPlanAligned() {

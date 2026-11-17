@@ -4730,5 +4730,38 @@
       }
     }
   },
-  "calJumpRace": "Go to race day"
+  "calJumpRace": "Go to race day",
+  "recMinNoFit": "This race needs at least {n} sessions a week – more than {days} days with one session each. Choose “Up to 2× per day”.",
+  "@recMinNoFit": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "feasLongRunLayout": "In your week as it is, your long run reaches only about {km} km – this race needs long runs of {x} km. More time on one day alone does not change that here: check which days carry your runs and which one is your long-session day.",
+  "@feasLongRunLayout": {
+    "placeholders": {
+      "km": {
+        "type": "int"
+      },
+      "x": {
+        "type": "int"
+      }
+    }
+  },
+  "feasLongRideLayout": "In your week as it is, your long ride reaches only {min} min – this race needs long rides of at least {target} min. More time on one day alone does not change that here: check which days carry your rides and which one is your long-session day.",
+  "@feasLongRideLayout": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  }
 }

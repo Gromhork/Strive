@@ -6559,4 +6559,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calJumpRace => 'Go to race day';
+
+  @override
+  String recMinNoFit(int n, int days) {
+    return 'This race needs at least $n sessions a week – more than $days days with one session each. Choose “Up to 2× per day”.';
+  }
+
+  @override
+  String feasLongRunLayout(int km, int x) {
+    return 'In your week as it is, your long run reaches only about $km km – this race needs long runs of $x km. More time on one day alone does not change that here: check which days carry your runs and which one is your long-session day.';
+  }
+
+  @override
+  String feasLongRideLayout(int min, int target) {
+    return 'In your week as it is, your long ride reaches only $min min – this race needs long rides of at least $target min. More time on one day alone does not change that here: check which days carry your rides and which one is your long-session day.';
+  }
 }

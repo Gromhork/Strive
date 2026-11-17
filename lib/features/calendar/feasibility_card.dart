@@ -1,3 +1,7 @@
+import 'dart:io' show Platform;
+import 'dart:isolate';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -34,11 +38,52 @@ class FeasibilityCache {
     return v;
   }
 
+  /// [onUpdate]: checks run in a background isolate and this is called when one is done (the page rebuilds) –
+  /// an Ironman check with its option verification took ~1.7 s on an emulator (audit eng-4), every tap on the plan
+  /// step froze the UI that long. Without it (or under test) the check runs synchronously.
+  FeasibilityCache({this.onUpdate});
+  final VoidCallback? onUpdate;
+
+  /// The result shown last: shown again while the next check runs.
+  PlanFeasibility? _last;
+  final _running = <String>{};
+
+  static bool get _underTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
   /// [fitness]: the running plan's fitness model – mid-plan the target check uses the forecast's values.
   PlanFeasibility of(UserProfile p, DateTime start, AppLocalizations l, {FitnessState? fitness}) {
     final fk = fitness == null ? '' : '${fitness.current.toStringAsFixed(2)}/${fitness.futureFactor.toStringAsFixed(2)}/${fitness.today}';
-    return _memo(_values, _keyOf(p, start, l, fk), () => PlanGenerator.feasibility(p, start: start, l: l, fitness: fitness));
+    final key = _keyOf(p, start, l, fk);
+    PlanFeasibility now() => PlanGenerator.feasibility(p, start: start, l: l, fitness: fitness);
+    if (onUpdate == null || _underTest || _values.containsKey(key)) {
+      final v = _memo(_values, key, now);
+      _last = v;
+      return v;
+    }
+    if (_running.add(key)) {
+      _background(p, start, l.localeName, fitness).then(
+        (v) {
+          _running.remove(key);
+          _memo(_values, key, () => v);
+          onUpdate!();
+        },
+        // (Anything that cannot cross to the isolate: checked here after all.)
+        onError: (Object _) {
+          _running.remove(key);
+          _memo(_values, key, now);
+          onUpdate!();
+        },
+      );
+    }
+    return _last ?? const PlanFeasibility();
   }
+
+  /// The check in an isolate – a function of its own, so the closure sent there holds only these values (not the
+  /// page's state).
+  static Future<PlanFeasibility> _background(UserProfile p, DateTime start, String locale, FitnessState? fitness) => Isolate.run(
+    () => PlanGenerator.feasibility(p, start: start, l: lookupAppLocalizations(Locale(locale)), fitness: fitness),
+    debugName: 'feasibility',
+  );
 
   /// The long-run cap note alone ([PlanGenerator.longRunCapNote]) – cheap enough for every minute tap.
   LongRunCapNote? capNote(UserProfile p, DateTime start, AppLocalizations l) =>
@@ -136,8 +181,14 @@ class FeasibilityCard extends StatelessWidget {
           : l.feasLongSwim((f.longSwimM ?? 0).round(), (f.longSwimTargetM ?? 0).round()),
     'runWalkLong' => l.feasRunWalkLong,
     'runWalk' => l.feasRunWalk,
-    'longRunTime' => l.feasLongRunTime((f.longRunKm ?? 0).floor(), (f.longRunTargetKm ?? 0).round()),
-    'longRideTime' => l.feasLongRideTime(f.longRideMin ?? 0, f.longRideTargetMin ?? 0),
+    'longRunTime' =>
+      f.timeUnresolved
+          ? l.feasLongRunLayout((f.longRunKm ?? 0).floor(), (f.longRunTargetKm ?? 0).round())
+          : l.feasLongRunTime((f.longRunKm ?? 0).floor(), (f.longRunTargetKm ?? 0).round()),
+    'longRideTime' =>
+      f.timeUnresolved
+          ? l.feasLongRideLayout(f.longRideMin ?? 0, f.longRideTargetMin ?? 0)
+          : l.feasLongRideTime(f.longRideMin ?? 0, f.longRideTargetMin ?? 0),
     'targetAmbitious' => l.feasTargetAmbitious(clock(f.target!.targetSec), clock(f.target!.currentSec), clock(f.target!.realisticSec)),
     'targetUnrealistic' => l.feasTargetUnrealistic(clock(f.target!.targetSec), clock(f.target!.currentSec), clock(f.target!.realisticSec)),
     // New issues (review 2026-11: long-day default, long-run share, conservative target) carry their own text.

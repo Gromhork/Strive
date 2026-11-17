@@ -11536,6 +11536,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Go to race day'**
   String get calJumpRace;
+
+  /// No description provided for @recMinNoFit.
+  ///
+  /// In en, this message translates to:
+  /// **'This race needs at least {n} sessions a week – more than {days} days with one session each. Choose “Up to 2× per day”.'**
+  String recMinNoFit(int n, int days);
+
+  /// No description provided for @feasLongRunLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'In your week as it is, your long run reaches only about {km} km – this race needs long runs of {x} km. More time on one day alone does not change that here: check which days carry your runs and which one is your long-session day.'**
+  String feasLongRunLayout(int km, int x);
+
+  /// No description provided for @feasLongRideLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'In your week as it is, your long ride reaches only {min} min – this race needs long rides of at least {target} min. More time on one day alone does not change that here: check which days carry your rides and which one is your long-session day.'**
+  String feasLongRideLayout(int min, int target);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

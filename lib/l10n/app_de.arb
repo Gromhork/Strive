@@ -1906,5 +1906,8 @@
   "legacyRecalWhyFatigueCheck": "Auch nach der Erholungswoche noch härter als geplant: Prüfe Schlaf, Krankheit und Stress – und überlege eine langsamere Zielzeit. Die Qualitätseinheiten bleiben, mit weniger Wiederholungen.",
   "planMoveBeforeLong": "Am Tag danach steht „{title}“ – eine harte Einheit direkt davor macht sie schwerer. Besser einen lockeren Tag dazwischen lassen.",
   "planMoveSameDay": "An diesem Tag steht schon „{title}“.",
-  "calJumpRace": "Zum Wettkampf"
+  "calJumpRace": "Zum Wettkampf",
+  "recMinNoFit": "Dieser Wettkampf braucht mindestens {n} Einheiten pro Woche – mehr als {days} Tage mit je einer Einheit. Wähle „Bis zu 2× pro Tag“.",
+  "feasLongRunLayout": "In deiner Woche, wie sie jetzt ist, erreicht dein langer Lauf nur etwa {km} km – dieses Rennen braucht lange Läufe über {x} km. Mehr Zeit an einem einzelnen Tag ändert das hier nicht: Prüfe, an welchen Tagen deine Läufe liegen und welcher dein Tag für die lange Einheit ist.",
+  "feasLongRideLayout": "In deiner Woche, wie sie jetzt ist, erreicht deine lange Ausfahrt nur {min} min – dieses Rennen braucht lange Ausfahrten von mindestens {target} min. Mehr Zeit an einem einzelnen Tag ändert das hier nicht: Prüfe, an welchen Tagen deine Radeinheiten liegen und welcher dein Tag für die lange Einheit ist."
 }

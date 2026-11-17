@@ -459,7 +459,13 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
   /// the preselected chip must match "Woche 2/14", not the stored default of 12.
   static int _currentLength(AthleteData a) => (a.planLength ?? 0) > 0 ? a.planLength! : a.planWeeks;
   bool _busy = false;
-  final _feasibility = FeasibilityCache();
+
+  /// (Checked in the background – the page rebuilds when a check is done.)
+  late final _feasibility = FeasibilityCache(
+    onUpdate: () {
+      if (mounted) setState(() {});
+    },
+  );
 
   /// "Allow longer long runs" as switched in this sheet (null: as stored). Kept here until "Plan neu
   /// aufsetzen" saves it with the new plan ([_run]): saved at once, a sheet closed without rebuilding left the

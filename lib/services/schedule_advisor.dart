@@ -82,6 +82,10 @@ class ScheduleAdvisor {
     return res;
   }
 
+  /// Sessions a week the race needs at least over all chosen sports – more than [maxDays] with one session a day
+  /// cannot be recommended (a 70.3 beginner: 6 sessions, 5 days) – the setup says so (audit UX-4).
+  int get raceMinSessions => sports.fold(0, (n, s) => n + _minFor(s));
+
   /// Sessions a week of [s] the race of the plan needs at least (0 without a race of this focus).
   int _minFor(Sport s) {
     final spec = EventSpec.of(a.eventDistance);

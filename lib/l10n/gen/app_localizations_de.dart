@@ -6559,4 +6559,19 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get calJumpRace => 'Zum Wettkampf';
+
+  @override
+  String recMinNoFit(int n, int days) {
+    return 'Dieser Wettkampf braucht mindestens $n Einheiten pro Woche – mehr als $days Tage mit je einer Einheit. Wähle „Bis zu 2× pro Tag“.';
+  }
+
+  @override
+  String feasLongRunLayout(int km, int x) {
+    return 'In deiner Woche, wie sie jetzt ist, erreicht dein langer Lauf nur etwa $km km – dieses Rennen braucht lange Läufe über $x km. Mehr Zeit an einem einzelnen Tag ändert das hier nicht: Prüfe, an welchen Tagen deine Läufe liegen und welcher dein Tag für die lange Einheit ist.';
+  }
+
+  @override
+  String feasLongRideLayout(int min, int target) {
+    return 'In deiner Woche, wie sie jetzt ist, erreicht deine lange Ausfahrt nur $min min – dieses Rennen braucht lange Ausfahrten von mindestens $target min. Mehr Zeit an einem einzelnen Tag ändert das hier nicht: Prüfe, an welchen Tagen deine Radeinheiten liegen und welcher dein Tag für die lange Einheit ist.';
+  }
 }

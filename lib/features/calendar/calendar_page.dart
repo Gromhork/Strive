@@ -16,6 +16,7 @@ import '../../data/plan_log.dart';
 import '../../providers.dart';
 import '../../services/compliance.dart';
 import '../../services/plan_generator.dart';
+import '../../services/plan_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/plan_amount.dart';
 import '../stats/session_detail_page.dart';
@@ -39,7 +40,13 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   bool _month = false;
   DateTime _focused = dayOnly(DateTime.now());
   DateTime _selected = dayOnly(DateTime.now());
-  final _feasibility = FeasibilityCache();
+
+  /// (Checked in the background – the page rebuilds when a check is done.)
+  late final _feasibility = FeasibilityCache(
+    onUpdate: () {
+      if (mounted) setState(() {});
+    },
+  );
   bool _hideFeasibility = false;
 
   /// Scroll controller of the week list and the month view: the tab's primary one (tapping the
@@ -59,7 +66,26 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   final _todayCellKey = GlobalKey();
 
   @override
+  void initState() {
+    super.initState();
+    PlanService.replaced.addListener(_onPlanReplaced);
+  }
+
+  /// A new plan (audit UX-16): back to the current week – the old scroll position pointed into the old plan.
+  void _onPlanReplaced() {
+    if (!mounted) return;
+    final today = dayOnly(DateTime.now());
+    setState(() {
+      _selected = today;
+      _focused = today;
+    });
+    final c = _scroll;
+    if (c.hasClients && c.positions.length == 1) c.jumpTo(0);
+  }
+
+  @override
   void dispose() {
+    PlanService.replaced.removeListener(_onPlanReplaced);
     _ownScroll.dispose();
     _jumpDir.dispose();
     super.dispose();

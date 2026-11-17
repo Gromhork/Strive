@@ -13,6 +13,7 @@ import 'goal_model.dart';
 import 'health_limits.dart';
 import 'plan_exercises.dart';
 import 'plan_text.dart';
+import 'schedule_advisor.dart';
 import 'target_suggestion.dart';
 import 'zones.dart';
 
@@ -206,6 +207,23 @@ class PlanGenerator {
   /// Requirements of the race distance ([EventSpec]); null without an event or when the plan's
   /// sports do not train for it (e.g. a cycling event on a running plan).
   late final EventSpec? spec = _specOf(profile);
+
+  /// Sports of a race of [spec] (a triathlon's swim, ride and run …); empty without one.
+  static List<Sport> raceSportsOf(EventSpec? spec) => switch (spec?.sport) {
+    EventSport.run => const [Sport.run],
+    EventSport.triathlon => const [Sport.swim, Sport.ride, Sport.run],
+    EventSport.duathlon => const [Sport.run, Sport.ride],
+    EventSport.ride => const [Sport.ride],
+    EventSport.swim => const [Sport.swim],
+    null => const <Sport>[],
+  };
+
+  /// Sports the plan's week holds (after a run/walk ladder – its fourth run day is back by race day).
+  late final Set<Sport> _weekSports = {for (final v in scheduleOf(profile, afterRunWalk: true).values) ...v};
+
+  /// The week holds at least one sport of the race: else no race, no shake-out and no race window are placed
+  /// (audit UX-1: a hybrid week of gym days only got a shake-out run and a 10 km race after 0 runs).
+  bool get _raceInWeek => raceSportsOf(spec).any(_weekSports.contains);
 
   static EventSpec? _specOf(UserProfile p) {
     final s = EventSpec.of(p.athlete.eventDistance);
@@ -580,8 +598,9 @@ class PlanGenerator {
     }
     final out = <PlannedWorkout>[];
     final monday = startOfWeek(start);
-    // (Only a race the plan's sports train for – [spec]: a 10 km on a pure gym plan is no race day, audit UX-1.)
-    final raceDay = weeksToEvent != null && spec != null ? dayOnly(a.eventDate!) : null;
+    // (Only a race the plan's sports train for – [spec]: a 10 km on a pure gym plan is no race day, audit UX-1 –
+    // and the week holds: a hybrid week of gym days only has no run to race, [_raceInWeek].)
+    final raceDay = weeksToEvent != null && spec != null && _raceInWeek ? dayOnly(a.eventDate!) : null;
     // Base pre-plan of a far-away event (> [GoalModel.specificWeeks]): general endurance – the
     // race-specific long runs belong to the specific block; before it the long run stays at
     // ~70 % of their cap (marathon ~24.5 km, HM ~15 km) and the volume at ≤ 85 % of the ceiling.
@@ -1772,14 +1791,60 @@ class PlanGenerator {
   /// the athlete cannot swim 400 m yet. Duathlon / hybrid: the main sport (run) gets the
   /// extra session; hybrid keeps strength at ≤ 3×/week.
   static Map<Sport, int> _multiCounts(UserProfile p, int days, {bool afterRunWalk = false}) {
-    final gym = extraGymDays(p, days);
-    final n = days - gym;
-    final counts = p.focus.sports.length == 1 ? {p.focus.sports.first: n} : _enduranceCounts(p, n);
+    var gym = extraGymDays(p, days);
+    var counts = <Sport, int>{};
+    while (true) {
+      final n = days - gym;
+      counts = p.focus.sports.length == 1 ? {p.focus.sports.first: n} : _enduranceCounts(p, n);
+      // The strength goal's extra day gives way to the race's minimum sessions when the week cannot get another
+      // day that keeps its rest days ([ScheduleAdvisor.maxDays]: beginners 5, others 6) – endurance keeps priority
+      // ([extraGymDays]; audit UX-4: a triathlon beginner's 5 days with a half marathon had 2 runs). (A second swim
+      // that [deriveSchedule] adds as a double day – 70.3 / Ironman, swim novices, beginners – needs no day of its own.)
+      final short = _raceMinimumsFirst(p, counts);
+      final cap = min(maxTrainingDays(p), ScheduleAdvisor(p, const {}).maxDays);
+      final ev = p.athlete.eventDistance;
+      final swimDouble =
+          short == Sport.swim &&
+          p.focus == TrainingFocus.triathlon &&
+          counts[Sport.swim] == 1 &&
+          (_specOf(p)?.minSwims ?? 0) <= 2 &&
+          (ev == '70.3' || ev == 'ironman' || swimNoviceOf(p) || p.level == 'beginner');
+      if (short == null || swimDouble || gym == 0 || days < cap) break;
+      gym--;
+    }
     // Beginners: at most 4 runs (3 on run/walk) also when strength takes the other days.
     if (counts.containsKey(Sport.run) && p.focus == TrainingFocus.run) {
       counts[Sport.run] = min(counts[Sport.run]!, maxRuns(p, afterRunWalk: afterRunWalk));
     }
     return {...counts, if (gym > 0) Sport.gym: gym};
+  }
+
+  /// The race's minimum sessions of each discipline ([EventSpec.minRuns] …) come first while the week has days for
+  /// them: a session moves from the sport with the most to spare (each sport of the focus keeps at least one). A
+  /// duathlon week of 6 days with a marathon had 3 runs and the plan check's "needs at least 4 runs" right after
+  /// following the setup's recommendation (audit UX-4). Returns a sport still below its minimum (null: all met).
+  static Sport? _raceMinimumsFirst(UserProfile p, Map<Sport, int> counts) {
+    final spec = _specOf(p);
+    if (spec == null) return null;
+    int minOf(Sport s) => switch (s) {
+      Sport.run => spec.minRuns,
+      Sport.ride => spec.minRides,
+      Sport.swim => spec.minSwims,
+      _ => 0,
+    };
+    // Ties: strength gives first, then the swim, the ride, the run.
+    const order = [Sport.gym, Sport.swim, Sport.ride, Sport.run];
+    for (var guard = 0; guard < 7; guard++) {
+      final short = counts.keys.where((s) => counts[s]! < minOf(s)).firstOrNull;
+      if (short == null) return null;
+      int spare(Sport s) => counts[s]! - max(minOf(s), 1);
+      final donors = counts.keys.where((s) => s != short && spare(s) > 0).toList();
+      if (donors.isEmpty) return short;
+      donors.sort((x, y) => spare(x) != spare(y) ? spare(y).compareTo(spare(x)) : order.indexOf(x).compareTo(order.indexOf(y)));
+      counts[donors.first] = counts[donors.first]! - 1;
+      counts[short] = counts[short]! + 1;
+    }
+    return counts.keys.where((s) => counts[s]! < minOf(s)).firstOrNull;
   }
 
   static Map<Sport, int> _enduranceCounts(UserProfile p, int n) => switch (p.focus) {
@@ -3948,7 +4013,8 @@ class PlanGenerator {
     final d = a.eventDate;
     // A race of a sport the plan does not train (a 10 km on a pure gym plan, [spec] null) is never placed –
     // no race, no shake-out run in a plan without a single run (audit UX-1).
-    if (d == null || weeksToEvent == null || a.eventDistance == null || spec == null) return;
+    // Nor a race whose sport the week does not hold (a hybrid week of gym days only and a 10 km – audit UX-1).
+    if (d == null || weeksToEvent == null || a.eventDistance == null || spec == null || !_raceInWeek) return;
     final race = dayOnly(d);
     if (race.isBefore(dayOnly(start))) return;
     final before = addDays(race, -1);
@@ -3967,10 +4033,15 @@ class PlanGenerator {
       EventSport.swim => Sport.swim,
       _ => Sport.run,
     };
-    if (!before.isBefore(dayOnly(start)) && raceSport != Sport.run && !tri) {
+    // The shake-out only in a sport the week trains: a multisport race's run, else its ride, else its swim.
+    final week = _weekSports;
+    final shakeSport = tri ? const [Sport.run, Sport.ride, Sport.swim].where(week.contains).firstOrNull : raceSport;
+    if (shakeSport == null || before.isBefore(dayOnly(start))) {
+      // No shake-out (no discipline of the race in the week, or the plan starts on race day).
+    } else if (shakeSport != Sport.run) {
       // Cycling / open water: a short spin / swim with a few pick-ups the day before.
       out.add(
-        raceSport == Sport.ride
+        shakeSport == Sport.ride
             ? _plan(
               before,
               Sport.ride,
@@ -4002,7 +4073,7 @@ class PlanGenerator {
               false,
             ),
       );
-    } else if (!before.isBefore(dayOnly(start))) {
+    } else {
       out.add(_shakeoutRun(before));
     }
     final meters = Vdot.distances[a.eventDistance];
@@ -4561,13 +4632,16 @@ class PlanGenerator {
     // "N weeks are not enough" with no later date that is long enough (audit T6): the weeks are not the limit –
     // the safe build-up from today's level is (or the finish goal already says how far the long run gets); say
     // that instead.
+    // Too few runs / rides a week already name the limit of that long session – no second cause for the same
+    // number (audit T6-ramp-dup; [_check] leaves the ramp out there too).
     final finishNote = c.issues.contains('longRunFinish');
+    final runFreq = c.issues.contains('runFrequency'), rideFreq = c.issues.contains('rideFrequency');
     final issues = [
       for (final i in c.issues)
         if (i == 'tooShort' && later == null) ...[
-          if (c.planLongKm != null && c.planLongTargetKm != null && !finishNote) 'longRunRamp',
-          if (c.planLongRideMin != null && c.planLongRideTargetMin != null) 'longRideRamp',
-          if (c.planLongKm == null && c.planLongRideMin == null && !finishNote) i,
+          if (c.planLongKm != null && c.planLongTargetKm != null && !finishNote && !runFreq) 'longRunRamp',
+          if (c.planLongRideMin != null && c.planLongRideTargetMin != null && !rideFreq) 'longRideRamp',
+          if (c.planLongKm == null && c.planLongRideMin == null && !finishNote && !runFreq && !rideFreq) i,
         ] else
           i,
     ];
@@ -4607,6 +4681,7 @@ class PlanGenerator {
       planLongTargetKm: c.planLongTargetKm,
       planLongRideMin: c.planLongRideMin,
       planLongRideTargetMin: c.planLongRideTargetMin,
+      timeUnresolved: c.timeUnresolved,
       timeCapMin: c.timeCapMin,
       timeCapKm: c.timeCapKm,
       timeCapRaceKm: c.timeCapRaceKm,
@@ -4679,14 +4754,7 @@ class PlanGenerator {
     final peakRunKm = weekRunKm.values.fold(0.0, max);
     // A discipline of the race without a single session in the week (a sprint triathlon week without a run
     // day) – always an issue, also where the race names no minimum (audit UX-1 / FUZZ-10).
-    final raceSports = switch (spec?.sport) {
-      EventSport.run => const [Sport.run],
-      EventSport.triathlon => const [Sport.swim, Sport.ride, Sport.run],
-      EventSport.duathlon => const [Sport.run, Sport.ride],
-      EventSport.ride => const [Sport.ride],
-      EventSport.swim => const [Sport.swim],
-      null => const <Sport>[],
-    };
+    final raceSports = raceSportsOf(spec);
     bool none(Sport s) => raceSports.contains(s) && p.focus.sports.contains(s) && perWeek(s) == 0;
     final runFreq =
         spec != null &&
@@ -4721,11 +4789,14 @@ class PlanGenerator {
         // (No continuous long run in a loading week at all: the weeks again.)
         // (Only when the day's time binds, not the run's own time cap [_longRunMaxMin] – more time on the
         // day changes nothing then.)
+        // (… and only when the long run reaches that limit: one the volume / ramp keeps clearly below it gains
+        // nothing from more time – like the long ride, audit FUZZ-4.)
         final byTime =
             g._rwAtRace == null &&
             g._longRunLimitKm > 0 &&
             g._longRunLimitKm < runTarget - 0.5 &&
-            g._longRunLimitKm * g._longPace / 60 < g._longRunMaxMin - 1;
+            g._longRunLimitKm * g._longPace / 60 < g._longRunMaxMin - 1 &&
+            longRun >= g._longRunLimitKm - 1;
         // The other runs are too short to carry the long run (≤ 50 % of the week, ≤ 2 × the next-longest
         // run): more weeks do not help, longer runs on the other days do.
         // … also when R1's weekly step alone would have gone further ([_rampMaxKm]): the week's volume and its
@@ -4877,7 +4948,9 @@ class PlanGenerator {
     if (rideTarget != null && p.focus.sports.contains(Sport.ride) && nRides > 0) {
       final longRide = plan.where((w) => w.sport == Sport.ride && w.intensity == 'long').fold(0, (x, w) => max(x, w.durationMin));
       if (longRide < rideTarget * 0.9) {
-        final byTime = g._longRideLimitMin < rideTarget * 0.9;
+        // (Only when the day's time binds: a long ride the bike volume / few rides keep far below the day's cap
+        // gains nothing from more time – audit FUZZ-4: "the day allows only 195 min" next to 80 min long rides.)
+        final byTime = g._longRideLimitMin < rideTarget * 0.9 && longRide >= g._longRideLimitMin - 5;
         // Like the long run: "N weeks are not enough" only below the recommended plan length – from it on the
         // start level and the safe weekly step are the limit ([longRideRamp]), and too few rides a week
         // ([rideFrequency]) already say why (audit T6: "30 Wochen reichen nicht" for an Ironman at its
@@ -4941,6 +5014,8 @@ class PlanGenerator {
     const timeIssues = {'longRunTime', 'longRideTime'};
     bool fixes(UserProfile q) => !_check(l, q, start, probe: true).issues.any(timeIssues.contains);
     if (!probe && !options) raiseDay = raiseMin = raiseDay2 = raiseMin2 = null;
+    // (The move is looked for also when no raise works – the day to move from and the time the long session needs.)
+    final moveFrom = raiseDay, moveNeedMin = moveNeed ?? raiseMin, oneShort = raiseDay2 == null;
     if (!probe && raiseDay != null && raiseMin != null) {
       // The day time that really fixes it: the suggestion, else a few 15-min steps more (the day's other
       // sessions take their share too); none found – no raise option rather than one that changes nothing.
@@ -4954,6 +5029,28 @@ class PlanGenerator {
         final m1 = raiseMin + 15 * i, m2 = raiseMin2 == null ? null : raiseMin2 + 15 * i;
         if (fixes(raised(m1, m2))) (ok1, ok2) = (m1, m2);
       }
+      // More time on a day that is not the long day makes it the long day ([_longDayFrom]: most time) – the long
+      // sessions swap days and the other one is short then (audit FUZZ-4: raising Friday's long ride moved it to
+      // Sunday). The long day keeps at least as much time as the raised day, so it stays the long day.
+      final ld = longDayOf(p);
+      if (ok1 == null && raiseDay2 == null && p.longDay == null && ld != null && ld != raiseDay) {
+        for (var i = 0; i < 6 && ok1 == null; i++) {
+          final m1 = raiseMin + 15 * i;
+          // (Ties: the later day is the long day.)
+          final m2 = max(dayMinutesFor(p, ld), ld > raiseDay ? m1 : m1 + 15);
+          final q = raised(m1, null);
+          if (fixes(
+            q.copyWith(
+              athlete: q.athlete.merge({
+                'dayMinutes': {...q.athlete.dayMinutes, ld: m2},
+              }),
+            ),
+          )) {
+            (ok1, ok2) = (m1, m2);
+            raiseDay2 = ld;
+          }
+        }
+      }
       if (ok1 == null) {
         raiseDay = raiseMin = raiseDay2 = raiseMin2 = null;
       } else {
@@ -4961,11 +5058,11 @@ class PlanGenerator {
         raiseMin2 = ok2;
       }
     }
-    if (!probe && raiseDay != null && raiseMin != null && raiseDay2 == null) {
+    if (!probe && moveFrom != null && moveNeedMin != null && oneShort) {
       // Days with time enough for the long session alone (other sessions move with the long day), most time
       // first – the first one whose plan really puts the long session there and gives it its time.
       final days =
-          scheduleOf(p).keys.where((d) => d != raiseDay && dayMinutesFor(p, d) >= (moveNeed ?? raiseMin!)).toList()
+          scheduleOf(p).keys.where((d) => d != moveFrom && dayMinutesFor(p, d) >= moveNeedMin).toList()
             ..sort((x, y) => dayMinutesFor(p, y).compareTo(dayMinutesFor(p, x)));
       for (final d in days.take(3)) {
         if (fixes(p.copyWith(longDay: d))) {
@@ -4975,6 +5072,9 @@ class PlanGenerator {
         }
       }
     }
+    // A time-limited long session no raise and no move resolves (the week's layout puts it on another day than the
+    // one raised): the day's time is not the whole story – the text must not blame it alone (audit FUZZ-4).
+    final timeUnresolved = !probe && options && issues.any(timeIssues.contains) && raiseDay == null && moveDay == null;
     // The long-day default ([dayMinutesFor] / [longDayDefault]) gives the long session more time than
     // the athlete set for that day – say so instead of silently overriding it (review C9: a 3 × 30 min
     // athlete got 120' long runs).
@@ -5035,6 +5135,7 @@ class PlanGenerator {
       raiseDay2Min: raiseMin2,
       planLongRideMin: rideShortMin,
       planLongRideTargetMin: rideShortMin == null ? null : rideTarget,
+      timeUnresolved: timeUnresolved,
     );
   }
 }
@@ -5160,7 +5261,12 @@ class PlanFeasibility {
     this.longestRunKnown = true,
     this.planLongRideMin,
     this.planLongRideTargetMin,
+    this.timeUnresolved = false,
   });
+
+  /// `longRunTime` / `longRideTime` that no raise of a day and no move of the long day resolves: the text names
+  /// the week's layout, not the day's time alone (audit FUZZ-4).
+  final bool timeUnresolved;
 
   /// `longRideRamp`: the longest long ride (min) the plan builds by race day, and what the race needs.
   final int? planLongRideMin, planLongRideTargetMin;

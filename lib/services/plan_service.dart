@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/default_programs.dart';
@@ -20,6 +22,10 @@ class PlanService {
 
   static bool _busy = false;
   static DateTime? _last;
+
+  /// Counts the plans replaced ([replacePlan]): the calendar goes back to the current week when it changes
+  /// (audit UX-16: after "Plan neu aufsetzen" the list stayed weeks into the old plan).
+  static final replaced = ValueNotifier<int>(0);
 
   /// Time after a replacement in which another one is refused.
   static const cooldown = Duration(seconds: 3);
@@ -71,6 +77,7 @@ class PlanService {
       // Plan start / length: lets the plan review rebuild the plan to find gaps.
       if (saveMeta) repo.saveProfile(withPlanMeta(p, day, weeks));
       write.ignore();
+      replaced.value++;
       return plan.length;
     } finally {
       _busy = false;

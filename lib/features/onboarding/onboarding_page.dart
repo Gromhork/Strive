@@ -89,7 +89,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   // Event
   final _eventName = TextEditingController();
   bool _generatePlan = true;
-  final _feasibility = FeasibilityCache();
+
+  /// (Checked in the background – the page rebuilds when a check is done.)
+  late final _feasibility = FeasibilityCache(
+    onUpdate: () {
+      if (mounted) setState(() {});
+    },
+  );
 
   @override
   void initState() {
@@ -1226,6 +1232,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             return _RecommendationCard(
               freq: freq,
               current: perSport,
+              // The race's minimum sessions do not fit in one session a day on the days a week leaves (audit UX-4).
+              note: a.sessionsPerDay == 1 && adv.raceMinSessions > adv.maxDays ? l.recMinNoFit(adv.raceMinSessions, adv.maxDays) : null,
               title: l.recTitle,
               action: l.recAuto,
               applied: freq.entries.every((e) => perSport[e.key] == e.value),
@@ -2321,9 +2329,13 @@ class _RecommendationCard extends StatelessWidget {
     required this.onApply,
     this.current,
     this.applied = false,
+    this.note,
   });
   final Map<Sport, int> freq;
   final Map<Sport, int>? current;
+
+  /// A warning below the sessions (the race needs more than the week can hold).
+  final String? note;
   final String title;
   final String action;
   final VoidCallback onApply;
@@ -2381,6 +2393,18 @@ class _RecommendationCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (note != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              key: const ValueKey('recMinNoFit'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.warning),
+                const SizedBox(width: 6),
+                Expanded(child: Text(note!, style: Theme.of(context).textTheme.bodySmall)),
+              ],
+            ),
+          ],
           const SizedBox(height: 6),
           Text(l.recSub, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 4),
