@@ -33,6 +33,14 @@ import 'plan_exercises.dart';
 ///
 /// Idempotent: an upgraded workout produces no further update.
 class GymPlanUpgrade {
+  /// The beginner regressions the old generator copied into the workouts (exercise id → (id, name)) –
+  /// [gymRegressions] has more since; stored copies only ever carry these.
+  static const _v1Regressions = {
+    '0652': ('2330', 'cable lat pulldown full range of motion'),
+    '0032': ('1459', 'dumbbell romanian deadlift'),
+    '0472': ('0872', 'reverse crunch'),
+  };
+
   GymPlanUpgrade._();
 
   /// Plan id → fields to update (`exercises`, `gymMods`, `description`, `durationMin`); empty when
@@ -95,7 +103,7 @@ class GymPlanUpgrade {
         j++;
       }
       if (j >= program.length || !_same(s, program[j])) return null;
-      final r = gymRegressions[program[j].exId];
+      final r = _v1Regressions[program[j].exId];
       final isRegression = r != null && s.exId == r.$1;
       if (r != null) {
         if (isRegression) {
@@ -119,7 +127,7 @@ class GymPlanUpgrade {
   }
 
   /// [s] is [p] or its beginner regression.
-  static bool _same(GymExercise s, GymExercise p) => s.exId == p.exId || gymRegressions[p.exId]?.$1 == s.exId;
+  static bool _same(GymExercise s, GymExercise p) => s.exId == p.exId || _v1Regressions[p.exId]?.$1 == s.exId;
 
   /// Stored copy [s] is program exercise [p] with only the old generator's changes (review r7 R4:
   /// a day whose rep range and note the athlete had changed was reset to the program): the same

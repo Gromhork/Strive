@@ -6470,6 +6470,99 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get signOutWorkoutTitle => 'A workout is running';
+
+  @override
+  String get signOutWorkoutBody => 'Logging out ends it without saving it.';
+
+  @override
+  String get signOutSyncing => 'Syncing your changes …';
+
+  @override
+  String get signOutUnsyncedTitle => 'Changes not synced yet';
+
+  @override
+  String get signOutUnsyncedBody => 'Some changes – e.g. workouts recorded offline – have not reached the server yet. If you log out now, they are lost. Go online and wait a moment to keep them.';
+
+  @override
+  String get signOutAnyway => 'Log out anyway';
+
+  @override
+  String get guestExistsTitle => 'This account already has Strive data';
+
+  @override
+  String get guestExistsBody => 'Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.';
+
+  @override
+  String get guestExistsMergeInfo => 'Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.';
+
+  @override
+  String get guestExistsMerge => 'Take data along';
+
+  @override
+  String get guestExistsDiscard => 'Discard guest data';
+
+  @override
+  String get guestSwitchRunning => 'Switching account …';
+
+  @override
+  String guestSwitchMerged(int count) {
+    return 'Switched to your account – workouts taken along: $count';
+  }
+
+  @override
+  String get guestSwitchDiscarded => 'Switched to your account. The guest data was deleted.';
+
+  @override
+  String get guestSwitchFailed => 'Switching failed – nothing was changed. Check your internet connection and try again.';
+
+  @override
+  String get guestSwitchSignInAgain => 'Please sign in again to continue.';
+
+  @override
+  String get wGymRegressionNote2 => 'First weeks: easier variations of the technically demanding exercises – the full exercises follow once the technique is solid.';
+
+  @override
+  String get wGymProgressNoteLinear => 'Progression: on the main lifts the weight goes up in small steps as long as you make every rep; on the other exercises first build the reps to the top of the range, then add weight.';
+
+  @override
+  String get wGymProgressNoteBw => 'Progression: first more reps – also beyond the range – then a harder variation (pull-ups and dips: added weight).';
+
+  @override
+  String get healthGymBackSwapNote => 'Back: squats, deadlifts, bent-over rows and standing presses are replaced by leg press, glute bridges and supported variations – no heavy axial load, neutral spine.';
+
+  @override
+  String get healthGymShoulderSwapNote => 'Shoulder: overhead pressing, overhead triceps work and dips are replaced by incline and close-grip variations – stay pain-free.';
+
+  @override
+  String get healthGymNoJumpNote => 'No jumps: jump squats are replaced by squats without a jump.';
+
+  @override
+  String get splitHomeNote2 => 'For training at home or with body weight Strive uses full-body programs (2 alternating); from 4 strength days a week upper and lower body alternate.';
+
+  @override
+  String get equipBodyweightSub2 => 'No equipment – a sturdy table, a chair and a door are enough';
+
+  @override
+  String get splitFullbodyWarning => 'Full body on 4 or more days loads every muscle on consecutive days – from 4 days upper / lower is the better choice.';
+
+  @override
+  String gymAssignUneven(int n, int days) {
+    return '$n programs cannot be spread evenly over $days strength days a week – one of them comes up a little more often. That is as even as it gets.';
+  }
+
+  @override
+  String get healthGymBackSwapNoteHome => 'Back: deadlift variations, bent-over rows, standing presses and jumps are replaced by glute bridges, chest-supported rows, seated presses and squats without a jump – no heavy axial load, neutral spine.';
+
+  @override
+  String get wGymProgressNoteBw2 => 'Progression: first more reps – also beyond the range – then a harder variation (e.g. feet raised, single-leg or a slower lowering).';
+
+  @override
+  String wGymShortNote(int min) {
+    return 'Shortened to the $min min planned for this day: the last accessory exercises are left out – add them when you have more time.';
+  }
+
+  @override
   String get eventGymNoRace => 'A pure strength plan trains for no race. For a running race choose the Hybrid focus (strength + running) or Running – here you set how long the plan runs.';
 
   @override

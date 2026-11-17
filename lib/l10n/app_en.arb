@@ -4641,6 +4641,59 @@
       }
     }
   },
+  "signOutWorkoutTitle": "A workout is running",
+  "signOutWorkoutBody": "Logging out ends it without saving it.",
+  "signOutSyncing": "Syncing your changes …",
+  "signOutUnsyncedTitle": "Changes not synced yet",
+  "signOutUnsyncedBody": "Some changes – e.g. workouts recorded offline – have not reached the server yet. If you log out now, they are lost. Go online and wait a moment to keep them.",
+  "signOutAnyway": "Log out anyway",
+  "guestExistsTitle": "This account already has Strive data",
+  "guestExistsBody": "Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.",
+  "guestExistsMergeInfo": "Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.",
+  "guestExistsMerge": "Take data along",
+  "guestExistsDiscard": "Discard guest data",
+  "guestSwitchRunning": "Switching account …",
+  "guestSwitchMerged": "Switched to your account – workouts taken along: {count}",
+  "@guestSwitchMerged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "guestSwitchDiscarded": "Switched to your account. The guest data was deleted.",
+  "guestSwitchFailed": "Switching failed – nothing was changed. Check your internet connection and try again.",
+  "guestSwitchSignInAgain": "Please sign in again to continue.",
+  "wGymRegressionNote2": "First weeks: easier variations of the technically demanding exercises – the full exercises follow once the technique is solid.",
+  "wGymProgressNoteLinear": "Progression: on the main lifts the weight goes up in small steps as long as you make every rep; on the other exercises first build the reps to the top of the range, then add weight.",
+  "wGymProgressNoteBw": "Progression: first more reps – also beyond the range – then a harder variation (pull-ups and dips: added weight).",
+  "healthGymBackSwapNote": "Back: squats, deadlifts, bent-over rows and standing presses are replaced by leg press, glute bridges and supported variations – no heavy axial load, neutral spine.",
+  "healthGymShoulderSwapNote": "Shoulder: overhead pressing, overhead triceps work and dips are replaced by incline and close-grip variations – stay pain-free.",
+  "healthGymNoJumpNote": "No jumps: jump squats are replaced by squats without a jump.",
+  "splitHomeNote2": "For training at home or with body weight Strive uses full-body programs (2 alternating); from 4 strength days a week upper and lower body alternate.",
+  "equipBodyweightSub2": "No equipment – a sturdy table, a chair and a door are enough",
+  "splitFullbodyWarning": "Full body on 4 or more days loads every muscle on consecutive days – from 4 days upper / lower is the better choice.",
+  "gymAssignUneven": "{n} programs cannot be spread evenly over {days} strength days a week – one of them comes up a little more often. That is as even as it gets.",
+  "@gymAssignUneven": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "healthGymBackSwapNoteHome": "Back: deadlift variations, bent-over rows, standing presses and jumps are replaced by glute bridges, chest-supported rows, seated presses and squats without a jump – no heavy axial load, neutral spine.",
+  "wGymProgressNoteBw2": "Progression: first more reps – also beyond the range – then a harder variation (e.g. feet raised, single-leg or a slower lowering).",
+  "wGymShortNote": "Shortened to the {min} min planned for this day: the last accessory exercises are left out – add them when you have more time.",
+  "@wGymShortNote": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
   "eventGymNoRace": "A pure strength plan trains for no race. For a running race choose the Hybrid focus (strength + running) or Running – here you set how long the plan runs.",
   "feasNoRuns": "Your week has no run day yet – this race needs {n, plural, =1{at least 1 run} other{at least {n} runs}} a week. Add run days.",
   "@feasNoRuns": {

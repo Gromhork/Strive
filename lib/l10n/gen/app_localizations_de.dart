@@ -6470,6 +6470,99 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get signOutWorkoutTitle => 'Ein Training läuft noch';
+
+  @override
+  String get signOutWorkoutBody => 'Abmelden beendet es, ohne es zu speichern.';
+
+  @override
+  String get signOutSyncing => 'Deine Änderungen werden synchronisiert …';
+
+  @override
+  String get signOutUnsyncedTitle => 'Noch nicht synchronisiert';
+
+  @override
+  String get signOutUnsyncedBody => 'Einige Änderungen – z. B. offline erfasste Einheiten – sind noch nicht auf dem Server. Wenn du dich jetzt abmeldest, gehen sie verloren. Geh online und warte kurz, dann bleiben sie erhalten.';
+
+  @override
+  String get signOutAnyway => 'Trotzdem abmelden';
+
+  @override
+  String get guestExistsTitle => 'Dieses Konto hat schon Strive-Daten';
+
+  @override
+  String get guestExistsBody => 'Dein Gastkonto lässt sich nicht damit verknüpfen. Du kannst zu diesem Konto wechseln und deine Gast-Daten mitnehmen – oder wechseln und die Gast-Daten verwerfen.';
+
+  @override
+  String get guestExistsMergeInfo => 'Mitgenommen werden deine Einheiten, Körperwerte, eigenen Programme und Ziele. Profil und Trainingsplan des Kontos bleiben.';
+
+  @override
+  String get guestExistsMerge => 'Daten mitnehmen';
+
+  @override
+  String get guestExistsDiscard => 'Gast-Daten verwerfen';
+
+  @override
+  String get guestSwitchRunning => 'Konto wird gewechselt …';
+
+  @override
+  String guestSwitchMerged(int count) {
+    return 'Zu deinem Konto gewechselt – übernommene Einheiten: $count';
+  }
+
+  @override
+  String get guestSwitchDiscarded => 'Zu deinem Konto gewechselt. Die Gast-Daten wurden gelöscht.';
+
+  @override
+  String get guestSwitchFailed => 'Wechsel fehlgeschlagen – es wurde nichts geändert. Prüf deine Internetverbindung und versuch es noch einmal.';
+
+  @override
+  String get guestSwitchSignInAgain => 'Bitte melde dich noch einmal an, um weiterzumachen.';
+
+  @override
+  String get wGymRegressionNote2 => 'Erste Wochen: leichtere Varianten der technisch anspruchsvollen Übungen – die vollen Übungen folgen, sobald die Technik sitzt.';
+
+  @override
+  String get wGymProgressNoteLinear => 'Steigerung: Bei den Grundübungen steigt das Gewicht in kleinen Schritten, solange du alle Wiederholungen schaffst; bei den übrigen Übungen erst die Wiederholungen bis zum oberen Ende aufbauen, dann Gewicht erhöhen.';
+
+  @override
+  String get wGymProgressNoteBw => 'Steigerung: Erst mehr Wiederholungen – auch über den Bereich hinaus –, dann eine schwerere Variante (Klimmzüge und Dips: Zusatzgewicht).';
+
+  @override
+  String get healthGymBackSwapNote => 'Rücken: Kniebeugen, Kreuzheben, vorgebeugtes Rudern und Drücken im Stehen sind durch Beinpresse, Glute Bridges und gestützte Varianten ersetzt – keine schwere axiale Last, neutrale Wirbelsäule.';
+
+  @override
+  String get healthGymShoulderSwapNote => 'Schulter: Drücken über Kopf, Trizeps über Kopf und Dips sind durch Schrägbank- und enge Varianten ersetzt – schmerzfrei bleiben.';
+
+  @override
+  String get healthGymNoJumpNote => 'Keine Sprünge: Sprungkniebeugen sind durch Kniebeugen ohne Sprung ersetzt.';
+
+  @override
+  String get splitHomeNote2 => 'Bei Training zuhause oder mit Eigengewicht nutzt Strive Ganzkörper-Programme (2 im Wechsel); ab 4 Krafttagen pro Woche wechseln sich Ober- und Unterkörper ab.';
+
+  @override
+  String get equipBodyweightSub2 => 'Keine Geräte – ein stabiler Tisch, ein Stuhl und eine Tür reichen';
+
+  @override
+  String get splitFullbodyWarning => 'Ganzkörper an 4 oder mehr Tagen belastet jeden Muskel an aufeinanderfolgenden Tagen – ab 4 Tagen ist Ober-/Unterkörper die bessere Wahl.';
+
+  @override
+  String gymAssignUneven(int n, int days) {
+    return '$n Programme lassen sich nicht gleichmäßig auf $days Krafttage pro Woche verteilen – eines kommt etwas öfter dran. Gleichmäßiger geht es nicht.';
+  }
+
+  @override
+  String get healthGymBackSwapNoteHome => 'Rücken: Kreuzheben-Varianten, vorgebeugtes Rudern, Drücken im Stehen und Sprünge sind durch Glute Bridges, gestütztes Rudern, Drücken im Sitzen und Kniebeugen ohne Sprung ersetzt – keine schwere axiale Last, neutrale Wirbelsäule.';
+
+  @override
+  String get wGymProgressNoteBw2 => 'Steigerung: Erst mehr Wiederholungen – auch über den Bereich hinaus –, dann eine schwerere Variante (z. B. Füße erhöht, einbeinig oder langsamer absenken).';
+
+  @override
+  String wGymShortNote(int min) {
+    return 'Gekürzt auf die $min min, die für diesen Tag eingeplant sind: Die letzten Ergänzungsübungen entfallen – häng sie an, wenn du mehr Zeit hast.';
+  }
+
+  @override
   String get eventGymNoRace => 'Ein reiner Kraftplan bereitet auf keinen Wettkampf vor. Für einen Lauf-Wettkampf wähle den Fokus Hybrid (Kraft + Laufen) oder Laufen – hier legst du fest, wie lange der Plan läuft.';
 
   @override

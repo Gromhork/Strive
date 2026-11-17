@@ -11423,6 +11423,180 @@ abstract class AppLocalizations {
   /// **'{n} hidden by the sport filter.'**
   String folderDuplicatedHidden(int n);
 
+  /// No description provided for @signOutWorkoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A workout is running'**
+  String get signOutWorkoutTitle;
+
+  /// No description provided for @signOutWorkoutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging out ends it without saving it.'**
+  String get signOutWorkoutBody;
+
+  /// No description provided for @signOutSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing your changes …'**
+  String get signOutSyncing;
+
+  /// No description provided for @signOutUnsyncedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes not synced yet'**
+  String get signOutUnsyncedTitle;
+
+  /// No description provided for @signOutUnsyncedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some changes – e.g. workouts recorded offline – have not reached the server yet. If you log out now, they are lost. Go online and wait a moment to keep them.'**
+  String get signOutUnsyncedBody;
+
+  /// No description provided for @signOutAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out anyway'**
+  String get signOutAnyway;
+
+  /// No description provided for @guestExistsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has Strive data'**
+  String get guestExistsTitle;
+
+  /// No description provided for @guestExistsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.'**
+  String get guestExistsBody;
+
+  /// No description provided for @guestExistsMergeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.'**
+  String get guestExistsMergeInfo;
+
+  /// No description provided for @guestExistsMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Take data along'**
+  String get guestExistsMerge;
+
+  /// No description provided for @guestExistsDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard guest data'**
+  String get guestExistsDiscard;
+
+  /// No description provided for @guestSwitchRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching account …'**
+  String get guestSwitchRunning;
+
+  /// No description provided for @guestSwitchMerged.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to your account – workouts taken along: {count}'**
+  String guestSwitchMerged(int count);
+
+  /// No description provided for @guestSwitchDiscarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to your account. The guest data was deleted.'**
+  String get guestSwitchDiscarded;
+
+  /// No description provided for @guestSwitchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching failed – nothing was changed. Check your internet connection and try again.'**
+  String get guestSwitchFailed;
+
+  /// No description provided for @guestSwitchSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again to continue.'**
+  String get guestSwitchSignInAgain;
+
+  /// No description provided for @wGymRegressionNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'First weeks: easier variations of the technically demanding exercises – the full exercises follow once the technique is solid.'**
+  String get wGymRegressionNote2;
+
+  /// No description provided for @wGymProgressNoteLinear.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression: on the main lifts the weight goes up in small steps as long as you make every rep; on the other exercises first build the reps to the top of the range, then add weight.'**
+  String get wGymProgressNoteLinear;
+
+  /// No description provided for @wGymProgressNoteBw.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression: first more reps – also beyond the range – then a harder variation (pull-ups and dips: added weight).'**
+  String get wGymProgressNoteBw;
+
+  /// No description provided for @healthGymBackSwapNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Back: squats, deadlifts, bent-over rows and standing presses are replaced by leg press, glute bridges and supported variations – no heavy axial load, neutral spine.'**
+  String get healthGymBackSwapNote;
+
+  /// No description provided for @healthGymShoulderSwapNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulder: overhead pressing, overhead triceps work and dips are replaced by incline and close-grip variations – stay pain-free.'**
+  String get healthGymShoulderSwapNote;
+
+  /// No description provided for @healthGymNoJumpNote.
+  ///
+  /// In en, this message translates to:
+  /// **'No jumps: jump squats are replaced by squats without a jump.'**
+  String get healthGymNoJumpNote;
+
+  /// No description provided for @splitHomeNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'For training at home or with body weight Strive uses full-body programs (2 alternating); from 4 strength days a week upper and lower body alternate.'**
+  String get splitHomeNote2;
+
+  /// No description provided for @equipBodyweightSub2.
+  ///
+  /// In en, this message translates to:
+  /// **'No equipment – a sturdy table, a chair and a door are enough'**
+  String get equipBodyweightSub2;
+
+  /// No description provided for @splitFullbodyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Full body on 4 or more days loads every muscle on consecutive days – from 4 days upper / lower is the better choice.'**
+  String get splitFullbodyWarning;
+
+  /// No description provided for @gymAssignUneven.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} programs cannot be spread evenly over {days} strength days a week – one of them comes up a little more often. That is as even as it gets.'**
+  String gymAssignUneven(int n, int days);
+
+  /// No description provided for @healthGymBackSwapNoteHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Back: deadlift variations, bent-over rows, standing presses and jumps are replaced by glute bridges, chest-supported rows, seated presses and squats without a jump – no heavy axial load, neutral spine.'**
+  String get healthGymBackSwapNoteHome;
+
+  /// No description provided for @wGymProgressNoteBw2.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression: first more reps – also beyond the range – then a harder variation (e.g. feet raised, single-leg or a slower lowering).'**
+  String get wGymProgressNoteBw2;
+
+  /// No description provided for @wGymShortNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortened to the {min} min planned for this day: the last accessory exercises are left out – add them when you have more time.'**
+  String wGymShortNote(int min);
+
   /// No description provided for @eventGymNoRace.
   ///
   /// In en, this message translates to:

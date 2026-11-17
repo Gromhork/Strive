@@ -6,6 +6,7 @@ import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/exercise_names_de.dart';
 import '../data/models.dart';
+import 'app_check.dart';
 import 'goal_alignment.dart';
 import 'goal_forecast.dart';
 import 'insights.dart';
@@ -226,8 +227,7 @@ You are "Strive Coach", an evidence-based personal coach for strength training, 
 
 ${_context(now)}''';
 
-  GenerativeModel _model() =>
-      FirebaseAI.googleAI().generativeModel(model: model, systemInstruction: Content.system(_systemFor(DateTime.now())));
+  GenerativeModel _model() => striveAI().generativeModel(model: model, systemInstruction: Content.system(_systemFor(DateTime.now())));
 
   Stream<String> ask(String message) async* {
     _chat ??= _model().startChat();
