@@ -10,6 +10,7 @@ import '../../providers.dart';
 import '../../services/compliance.dart' show planCompliance;
 import '../../services/gym_tools.dart' show ProgressionKind;
 import '../../services/plan_text.dart';
+import '../../widgets/whole_words_text.dart';
 import '../../widgets/common.dart';
 import '../../data/models.dart';
 import '../../data/exercise_measure.dart' show formatHold, holdPerSide;
@@ -99,7 +100,8 @@ class PlannedWorkoutPage extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(glueTitle(p.title), style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                          // Never "Technikschwimm-en" at large text sizes.
+                          WholeWordsText(glueTitle(p.title), maxLines: 3, style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                           const SizedBox(height: 2),
                           Text(
                             [

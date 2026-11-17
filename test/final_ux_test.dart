@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +17,7 @@ import 'package:strive/features/onboarding/onboarding_page.dart';
 import 'package:strive/features/profile/profile_page.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
+import 'package:strive/widgets/whole_words_text.dart';
 
 final l = lookupAppLocalizations(const Locale('en'));
 
@@ -144,5 +146,29 @@ void main() {
       expect(find.text('Easy run · $text'), findsOneWidget);
       expect(find.byIcon(icon), findsOneWidget);
     }
+  });
+
+  testWidgets('long German titles never break inside a word at text scale 1.3', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(1.3)),
+          child: Center(
+            child: SizedBox(
+              width: 180,
+              child: WholeWordsText('Technikschwimmen', textKey: const ValueKey('t'), style: const TextStyle(fontSize: 22)),
+            ),
+          ),
+        ),
+      ),
+    );
+    final para = tester.renderObject<RenderParagraph>(
+      find.descendant(of: find.byKey(const ValueKey('t')), matching: find.byType(RichText)),
+    );
+    expect(
+      para.getBoxesForSelection(const TextSelection(baseOffset: 0, extentOffset: 16)).map((b) => b.top).toSet().length,
+      1,
+      reason: 'shrunk to fit instead of "Technikschwimm-en"',
+    );
   });
 }
