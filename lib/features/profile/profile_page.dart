@@ -364,7 +364,16 @@ Future<void> linkGuestWithEmail(BuildContext context) async {
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l.cancel)),
-            FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(l.save)),
+            // Empty fields reached Firebase as a raw "channel-error" – save needs both.
+            ListenableBuilder(
+              listenable: Listenable.merge([email, pw]),
+              builder:
+                  (_, _) => FilledButton(
+                    key: const ValueKey('linkEmailSave'),
+                    onPressed: email.text.trim().isEmpty || pw.text.isEmpty ? null : () => Navigator.pop(c, true),
+                    child: Text(l.save),
+                  ),
+            ),
           ],
         ),
   );

@@ -11944,6 +11944,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your race pace is the realistic one on your fitness: {time} ({pace}). Start the first km at goal pace, then settle into it – no faster.'**
   String wRaceRealisticPace(String time, String pace);
+
+  /// No description provided for @stepRaceFinishNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish pace – start easy, keep it even'**
+  String get stepRaceFinishNote;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

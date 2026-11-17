@@ -5365,7 +5365,7 @@ class PlanGenerator {
                 zone: finish || byFeel ? 'E' : (pace != null && a.eventDistance == 'hm' ? _zoneForPace(pace) : _raceZone),
                 paceMin: pace == null ? null : pace - 3,
                 paceMax: pace == null ? null : pace + 3,
-                note: l.stepRaceNote,
+                note: finish || byFeel ? l.stepRaceFinishNote : l.stepRaceNote,
               ),
             ];
     // (Localised like the legs' step notes – review 2026-11 T4: "Schwimmen 0.75 km" in German.)

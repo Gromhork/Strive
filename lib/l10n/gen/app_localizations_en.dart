@@ -6807,4 +6807,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String wRaceRealisticPace(String time, String pace) {
     return 'Your race pace is the realistic one on your fitness: $time ($pace). Start the first km at goal pace, then settle into it – no faster.';
   }
+
+  @override
+  String get stepRaceFinishNote => 'Finish pace – start easy, keep it even';
 }

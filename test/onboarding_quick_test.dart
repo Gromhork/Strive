@@ -222,6 +222,22 @@ void main() {
     expect(used.difference({1, 2, 3, 4, 5}), isEmpty);
   });
 
+  testWidgets('quick start: "can run 30 min" shows what the plan does and is honoured when switched on', (tester) async {
+    final repo = await _pump(tester);
+    await _toSchedule(tester); // beginner without running experience → run/walk
+    SwitchListTile sw() => tester.widget<SwitchListTile>(find.byKey(const ValueKey('quickCanRun30')));
+    expect(sw().value, isFalse, reason: 'the plan starts on run/walk – the switch must not say "yes"');
+    await _tap(tester, find.byKey(const ValueKey('quickCanRun30')));
+    expect(sw().value, isTrue);
+    await _finish(tester);
+    expect(repo.savedProfile!.experience, contains(Sport.run));
+    expect(
+      repo.savedPlans.where((w) => w.title.startsWith('Run/walk') || w.title.startsWith('Laufen/Gehen')),
+      isEmpty,
+      reason: 'no run/walk sessions',
+    );
+  });
+
   testWidgets('quick start: a strength goal adds strength days and the gym step', (tester) async {
     final repo = await _pump(tester);
     await _toSchedule(tester, level: 'intermediate', goal: l.goalStrength);

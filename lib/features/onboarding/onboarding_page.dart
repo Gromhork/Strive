@@ -1079,8 +1079,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               contentPadding: EdgeInsets.zero,
               title: Text(l.canRun30),
               subtitle: Text(l.canRun30Sub),
-              value: a.canRun30,
-              onChanged: (v) => _setA({'canRun30': v}),
+              // A beginner without running experience starts on run/walk whatever the default answer
+              // said – the switch shows what the plan does, and "yes" counts as running experience.
+              value: a.canRun30 && PlanGenerator.runWalkStartFor(_quickProfile) != 0,
+              onChanged: (v) {
+                if (v && !p.experience.contains(Sport.run)) setState(() => p = p.copyWith(experience: {...p.experience, Sport.run}));
+                _setA({'canRun30': v});
+              },
             ),
           if (_sports.contains(Sport.swim))
             SwitchListTile(

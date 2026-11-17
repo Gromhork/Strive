@@ -6807,4 +6807,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String wRaceRealisticPace(String time, String pace) {
     return 'Dein Renntempo ist das realistische deines Leistungsstands: $time ($pace). Den ersten km im Zieltempo, dann in dieses Tempo finden – nicht schneller.';
   }
+
+  @override
+  String get stepRaceFinishNote => 'Ankommenstempo – locker starten, gleichmäßig einteilen';
 }
