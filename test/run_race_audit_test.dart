@@ -7,6 +7,7 @@ import 'package:strive/core/sport.dart';
 import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
+import 'package:strive/services/goal_forecast.dart';
 import 'package:strive/services/plan_gaps.dart';
 import 'package:strive/services/plan_generator.dart';
 import 'package:strive/services/zones.dart';
@@ -19,6 +20,8 @@ String _id() => 'r${_n++}';
 final _templates = defaultTemplates(_id);
 
 List<PlannedWorkout> gen(UserProfile p, DateTime start) => PlanGenerator(l, p, _templates, _id).generate(start: start);
+List<PlannedWorkout> gen0(UserProfile p, DateTime start, int? weeks) =>
+    PlanGenerator(l, p, _templates, _id).generate(start: start, weeks: weeks);
 
 UserProfile prof(TrainingFocus f, String level, List<int> days, {Map<String, dynamic> a = const {}, int age = 35, int? longDay}) =>
     UserProfile(
@@ -604,6 +607,256 @@ void main() {
         final q = p.copyWith(athlete: p.athlete.merge({'eventDate': PlanGenerator.raceDayForWeeks(p, start, rec.def)}));
         final f = PlanGenerator.feasibility(q, start: start, l: l);
         expect(f.issues.where(const {'tooShort', 'runWalk'}.contains), isEmpty, reason: '$ev ${rec.def} weeks: ${f.issues}');
+      }
+    });
+  });
+
+  group('verifier round (G1-V1 … G1-V6)', () {
+    // Advanced, 62, three runs a week (Mo / We / Fr): long runs short of the marathon's at too few runs a week.
+    UserProfile threeRuns({int? target}) => prof(
+      TrainingFocus.run,
+      'advanced',
+      [1, 3, 5],
+      age: 62,
+      a: {
+        'eventDistance': 'm',
+        'eventDate': addDays(start, 18 * 7 + 6),
+        'raceTimes': {'hm': 6300},
+        'runWeeklyKm': 55.0,
+        if (target != null) 'targetTimeSec': target,
+      },
+    );
+    // Intermediate 10 km 58:00, 300 min on Sunday: long runs stopped by the 3 h cap.
+    UserProfile capped({int? target}) => prof(
+      TrainingFocus.run,
+      'intermediate',
+      [1, 2, 4, 6, 7],
+      a: {
+        'eventDistance': 'm',
+        'eventDate': addDays(start, 18 * 7 + 6),
+        'raceTimes': {'10k': 3480},
+        'setupMode': 'advanced',
+        'sessionMinutes': 75,
+        'dayMinutes': {7: 300},
+        if (target != null) 'targetTimeSec': target,
+      },
+    );
+    String dayName(int d) => '$d';
+
+    test('G1-V1: the athlete\'s own target stays the race\'s goal – capped long runs add walk breaks', () {
+      for (final (what, p, walk) in [
+        ('3 runs, target 3:50', threeRuns(target: 230 * 60), false),
+        ('3 h cap, target 4:50', capped(target: 290 * 60), true),
+      ]) {
+        final f = PlanGenerator.feasibility(p, start: start, l: l);
+        expect(f.issues, isNot(contains('longRunFinish')), reason: what);
+        expect(PlanGenerator.finishOnly(p, start: start), isFalse, reason: what);
+        final r = gen(p, start).singleWhere((w) => w.intensity == 'race');
+        expect(r.description, isNot(contains(l.wRaceFinishDesc)), reason: '$what: ${r.description}');
+        expect(r.description, contains(l.wRaceGoalDesc(clock(p.athlete.targetTimeSec!))), reason: '$what: ${r.description}');
+        expect(r.steps.single.paceMin, isNotNull, reason: what);
+        expect(r.description.contains(l.wRaceRunWalk(10)), walk, reason: '$what: ${r.description}');
+        if (walk) {
+          // The cap note keeps the target: walk breaks, not "finishing is the goal".
+          final note = f.extraIssueText(l, 'longRunTimeCap', dayName: dayName)!;
+          expect(note, contains(l.feasCapFinishTarget), reason: what);
+          expect(note, isNot(contains(l.feasCapFinish)), reason: what);
+        }
+      }
+    });
+
+    test('G1-V1: without a target the capped plan stays a finish goal with walk breaks (RUN-7)', () {
+      final p = capped();
+      final r = gen(p, start).singleWhere((w) => w.intensity == 'race');
+      expect(r.description, contains(l.wRaceFinishDesc));
+      expect(r.description, contains(l.wRaceRunWalk(10)));
+      final note = PlanGenerator.feasibility(p, start: start, l: l).extraIssueText(l, 'longRunTimeCap', dayName: dayName)!;
+      expect(note, contains(l.feasCapFinish));
+    });
+
+    test('G1-V3: too few runs a week, no target – a finish goal the runFrequency note announces, no forced walk breaks', () {
+      final p = threeRuns();
+      final f = PlanGenerator.feasibility(p, start: start, l: l);
+      expect(f.issues, contains('runFrequency'));
+      expect(f.issues, isNot(contains('longRunTimeCap')));
+      final r = gen(p, start).singleWhere((w) => w.intensity == 'race');
+      expect(r.description, contains(l.wRaceFinishDesc));
+      expect(r.description, isNot(contains(l.wRaceRunWalk(10))));
+      expect(f.extraIssueText(l, 'runFrequency', dayName: dayName), contains(l.feasRunFrequencyFinish));
+      // With a target the note does not claim a finish goal.
+      final ft = PlanGenerator.feasibility(threeRuns(target: 230 * 60), start: start, l: l);
+      expect(ft.extraIssueText(l, 'runFrequency', dayName: dayName), isNot(contains(l.feasRunFrequencyFinish)));
+    });
+
+    test('G1-V2: walking-pace race times – no jump where the run/walk ladder ends', () {
+      for (final (what, p, weeks) in [
+        (
+          '10 km 2:22:39, 16 weeks',
+          prof(
+            TrainingFocus.run,
+            'beginner',
+            [2, 4, 5],
+            age: 75,
+            a: {
+              'raceTimes': {'10k': 8559},
+              'runWeeklyKm': 2.0,
+              'limitations': ['heart'],
+            },
+          ),
+          16,
+        ),
+        (
+          'HM 5:32:17, HM in 20 weeks',
+          prof(
+            TrainingFocus.run,
+            'beginner',
+            [2, 4, 5],
+            age: 75,
+            a: {
+              'raceTimes': {'hm': 19937},
+              'runWeeklyKm': 2.0,
+              'limitations': ['heart'],
+              'eventDistance': 'hm',
+              'eventDate': addDays(start, 20 * 7 - 1),
+            },
+          ),
+          null,
+        ),
+        (
+          '5 km 1:05:00, 5 km in 16 weeks',
+          prof(
+            TrainingFocus.run,
+            'beginner',
+            [1, 3, 6],
+            a: {
+              'raceTimes': {'5k': 3900},
+              'eventDistance': '5k',
+              'eventDate': addDays(start, 16 * 7 - 1),
+            },
+          ),
+          null,
+        ),
+      ]) {
+        expect(PlanGenerator.runWalkStartFor(p), isNotNull, reason: what);
+        final plan = gen0(p, start, weeks);
+        final runs = plan.where((w) => w.sport == Sport.run && w.intensity != 'race').toList();
+        final n = runs.map((w) => daysBetween(start, w.date) ~/ 7).fold(0, max) + 1;
+        final km = List.filled(n, 0.0), most = List.filled(n, 0);
+        for (final w in runs) {
+          final i = daysBetween(start, w.date) ~/ 7;
+          km[i] += runningKm(w);
+          most[i] = max(most[i], w.durationMin);
+        }
+        for (var i = 2; i < n; i++) {
+          final before = max(km[i - 1], km[i - 2]);
+          expect(km[i], lessThanOrEqualTo(before * 1.2 + 3), reason: '$what W${i + 1}: run km $before → ${km[i]}');
+          // The longest session of the week (run/walk or run, warm-up walk included) grows ≤ ~15 %.
+          final m = max(most[i - 1], most[i - 2]);
+          expect(most[i], lessThanOrEqualTo(m * 1.15 + 2), reason: '$what W${i + 1}: longest session $m\' → ${most[i]}\'');
+        }
+      }
+    });
+
+    test('G1-V4: re-created mid-week shortly before the race – the taper keeps the athlete\'s long runs', () {
+      final s0 = DateTime(2026, 11, 16);
+      final race = DateTime(2027, 3, 21);
+      final p = prof(
+        TrainingFocus.run,
+        'intermediate',
+        [2, 4, 6, 7],
+        a: {
+          'eventDistance': 'm',
+          'eventDate': race,
+          'raceTimes': {'hm': 6600},
+          'runWeeklyKm': 35.0,
+          'longestRunKm': 16.0,
+        },
+      );
+      final orig = gen(p, s0);
+      final origLong = {for (final w in orig.where((w) => w.intensity == 'long')) startOfWeek(w.date): runningKm(w)};
+      final origWeeks = runWeeks(orig);
+      for (final d in [26, 25, 24, 23, 22, 18, 17]) {
+        final day = addDays(race, -d);
+        final sessions = [
+          for (final w in orig.where((w) => w.date.isBefore(day) && w.intensity != 'race'))
+            Session(
+              id: 's${w.id}',
+              sport: w.sport,
+              title: w.title,
+              start: DateTime(w.date.year, w.date.month, w.date.day, 18),
+              durationSec: w.durationMin * 60,
+              distanceM: (w.distanceKm ?? 0) * 1000,
+              planId: w.id,
+            ),
+        ];
+        final re = gen(withReachedVolume(p, plans: orig, sessions: sessions, start: day), day);
+        final weeks = runWeeks(re);
+        for (final w in re.where((w) => w.intensity == 'long' && w.phase == 'taper' && out(w, race) >= 7)) {
+          final o = origLong[startOfWeek(w.date)] ?? 0;
+          expect(runningKm(w), greaterThanOrEqualTo(o * 0.6), reason: 're-created $d days before: ${show(w)} vs $o km');
+        }
+        for (final e in weeks.entries.where((e) => daysBetween(e.key, race) <= 20 && daysBetween(e.key, race) >= 7)) {
+          expect(e.value, greaterThanOrEqualTo((origWeeks[e.key] ?? 0) * 0.6), reason: 're-created $d days before: week ${dayKey(e.key)}');
+        }
+      }
+    });
+
+    test('G1-V5: a target slightly slower than realistic – paced at the realistic time, no "pick it up" beyond it', () {
+      final p = prof(
+        TrainingFocus.run,
+        'advanced',
+        [1, 2, 4, 6, 7],
+        a: {
+          'eventDistance': 'm',
+          'eventDate': DateTime(2027, 6, 20),
+          'raceTimes': {'hm': 5700},
+          'runWeeklyKm': 55.0,
+          'longestRunKm': 24.0,
+          'targetTimeSec': 195 * 60,
+        },
+      );
+      final r = gen(p, start).singleWhere((w) => w.intensity == 'race');
+      final pace = mid(r.steps.single);
+      expect(pace * 42.195, lessThan(195 * 60 - 30));
+      String head(String t) => t.split('#').first;
+      expect(r.description, contains(head(l.wRaceRealisticPace('#', '#'))));
+      expect(r.description, isNot(contains(head(l.wRaceRealistic('#', '#')))));
+      // The goal editor's rewrite of the race (GoalForecast.raceDescription) says the same.
+      final d = GoalForecast.raceDescription(
+        l,
+        r.description,
+        target: 196 * 60,
+        realisticSec: 193 * 60,
+        behind: false,
+        raceSec: 193 * 60,
+        km: 42.195,
+      );
+      expect(d, isNot(contains(head(l.wRaceRealistic('#', '#')))));
+      expect(d.split('\n').where((x) => x.startsWith(head(l.wRaceRealisticPace('#', '#')))).length, 1);
+    });
+
+    test('G1-V6: Thursday / Friday marathon – a goal-pace opener 3–5 days out', () {
+      for (final race in [DateTime(2027, 6, 17), DateTime(2027, 6, 18)]) {
+        final p = prof(
+          TrainingFocus.run,
+          'advanced',
+          [1, 2, 4, 6, 7],
+          a: {
+            'eventDistance': 'm',
+            'eventDate': race,
+            'raceTimes': {'hm': 5700},
+            'runWeeklyKm': 55.0,
+            'longestRunKm': 24.0,
+          },
+        );
+        final plan = gen(p, start);
+        expectRaceWindow(plan, race, '$race');
+        final opener = plan.where((w) => w.sport == Sport.run && hard(w) && out(w, race) >= 3 && out(w, race) <= 5).toList();
+        expect(opener, hasLength(1), reason: '$race: ${plan.where((w) => out(w, race) >= 0 && out(w, race) <= 8).map(show).join('\n')}');
+        // ≥ 3 days after the quality run before it.
+        for (final w in plan.where((w) => w.sport == Sport.run && hard(w) && out(w, race) > out(opener.single, race))) {
+          expect(out(w, race) - out(opener.single, race), greaterThanOrEqualTo(3), reason: show(w));
+        }
       }
     });
   });

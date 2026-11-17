@@ -11452,6 +11452,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Long session with walk breaks: run 10 min, walk 1 min – time on your feet for the race. Your other runs are continuous now; the breaks keep the long one safe. Talking pace. Grows about 10 min a week.'**
   String get wLongRunWalkContDesc;
+
+  /// No description provided for @feasCapFinishTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'So plan short walk breaks from the beginning of the race (e.g. 1 min every 10 min) – your target time stays, but start easy: finishing comes first.'**
+  String get feasCapFinishTarget;
+
+  /// No description provided for @feasRunFrequencyFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'The plan therefore treats the race as a finish goal, without a target time – set one of your own if you have it.'**
+  String get feasRunFrequencyFinish;
+
+  /// No description provided for @wRaceRealisticPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Your race pace is the realistic one on your fitness: {time} ({pace}). Start the first km at goal pace, then settle into it – no faster.'**
+  String wRaceRealisticPace(String time, String pace);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

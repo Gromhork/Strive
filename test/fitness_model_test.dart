@@ -427,7 +427,7 @@ void main() {
     // (Paced like the race-pace work – the realistic time, audit RUN-9; the target stays in the text.)
     expect(race.durationMin, (tc.realisticSec / 60).round());
     expect(race.description, contains(clock(3 * 3600 + 55 * 60)));
-    expect(race.description, contains(l.wRaceRealistic(clock(tc.suggestedSec), '${clock((tc.realisticSec / 42.195).round())}/km')));
+    expect(race.description, contains(l.wRaceRealisticPace(clock(tc.suggestedSec), '${clock((tc.realisticSec / 42.195).round())}/km')));
   });
 
   test('the profile-only model: a plan stored on the profile counts as trained (C4)', () {

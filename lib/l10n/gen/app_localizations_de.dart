@@ -6413,4 +6413,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wLongRunWalkContDesc => 'Lange Einheit mit Gehpausen: 10 min laufen, 1 min gehen – Zeit auf den Beinen für den Wettkampf. Deine anderen Läufe sind jetzt am Stück; die Pausen halten die lange Einheit sicher. Plaudertempo. Wächst etwa 10 min pro Woche.';
+
+  @override
+  String get feasCapFinishTarget => 'Plane deshalb im Rennen von Beginn an kurze Gehpausen ein (z. B. 1 min alle 10 min) – deine Zielzeit bleibt, aber starte ruhig: Ankommen geht vor.';
+
+  @override
+  String get feasRunFrequencyFinish => 'Der Plan behandelt das Rennen deshalb als Finish-Ziel, ohne Zielzeit – hast du eine eigene, trage sie ein.';
+
+  @override
+  String wRaceRealisticPace(String time, String pace) {
+    return 'Dein Renntempo ist das realistische deines Leistungsstands: $time ($pace). Den ersten km im Zieltempo, dann in dieses Tempo finden – nicht schneller.';
+  }
 }

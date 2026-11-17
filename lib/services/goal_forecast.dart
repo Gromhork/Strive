@@ -568,6 +568,7 @@ class GoalForecast {
       l.wRaceGoalStart(mark, mark),
       l.wRaceGoalBehind(mark, mark, mark),
       l.wRaceRealistic(mark, mark),
+      l.wRaceRealisticPace(mark, mark),
     ];
     final lines = description.isEmpty ? <String>[] : description.split('\n');
     var at = lines.indexWhere((x) => templates.any((t) => like(x, t)));
@@ -579,7 +580,8 @@ class GoalForecast {
         l.wRaceGoalBehind(clock(target), perKm(realisticSec), clock(GoalModel.roundTarget(realisticSec)))
       else
         l.wRaceGoalDesc(clock(target)),
-      if (!behind && raceSec < target - 30) l.wRaceRealistic(clock(GoalModel.roundTarget(raceSec)), perKm(raceSec)),
+      // (The race is paced at [raceSec], the most the fitness gives – no "pick it up" beyond it: verifier G1-V5.)
+      if (!behind && raceSec < target - 30) l.wRaceRealisticPace(clock(GoalModel.roundTarget(raceSec)), perKm(raceSec)),
     ];
     lines.insertAll(at, goal);
     return lines.join('\n');
