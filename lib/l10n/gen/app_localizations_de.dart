@@ -226,7 +226,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String daysPerWeek(int count) {
-    return '$count Tage pro Woche';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Tage pro Woche',
+      one: '1 Tag pro Woche',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -814,7 +820,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String generatePlanSub(String focus, int days) {
-    return 'Fokus: $focus · $days Tage/Woche (in den Planeinstellungen änderbar)';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days Tage/Woche',
+      one: '1 Tag/Woche',
+    );
+    return 'Fokus: $focus · $_temp0 (in den Planeinstellungen änderbar)';
   }
 
   @override
@@ -822,7 +834,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String planCreated(int count) {
-    return '$count Einheiten geplant';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Einheiten geplant',
+      one: '1 Einheit geplant',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1051,7 +1069,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String daysLeft(int days) {
-    return 'Noch $days Tage';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Noch $days Tage',
+      one: 'Noch 1 Tag',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1674,7 +1698,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String sessionsPerWeekN(int n) {
-    return '$n Einheiten / Woche';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n Einheiten / Woche',
+      one: '1 Einheit / Woche',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2343,7 +2373,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String gcalSynced(int count) {
-    return '$count Einheiten synchronisiert';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Einheiten synchronisiert',
+      one: '1 Einheit synchronisiert',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2439,7 +2475,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String timeCustomDays(int count) {
-    return '$count Tage individuell festgelegt';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Tage individuell festgelegt',
+      one: '1 Tag individuell festgelegt',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2798,7 +2840,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String nWorkouts(int count) {
-    return '$count Einheiten';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Einheiten',
+      one: '1 Einheit',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3991,7 +4039,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String planToEventPre(int weeks, int n, int x) {
-    return '$weeks Wochen bis zum Wettkampf: zuerst $n Wochen Grundlagenaufbau, dann der $x-wöchige Wettkampfplan.';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n Wochen',
+      one: '1 Woche',
+    );
+    return '$weeks Wochen bis zum Wettkampf: zuerst $_temp0 Grundlagenaufbau, dann der $x-wöchige Wettkampfplan.';
   }
 
   @override
@@ -4016,7 +4070,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String planAligned(int weeks) {
-    return 'Plan ausgerichtet: $weeks Wochen bis zum Wettkampf';
+    String _temp0 = intl.Intl.pluralLogic(
+      weeks,
+      locale: localeName,
+      other: '$weeks Wochen',
+      one: '1 Woche',
+    );
+    return 'Plan ausgerichtet: $_temp0 bis zum Wettkampf';
   }
 
   @override
@@ -4029,7 +4089,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String goalCountdownDays(int days) {
-    return '$days Tage';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days Tage',
+      one: '1 Tag',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5076,10 +5142,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wGymRegressionNote => 'Erste Wochen: leichtere Varianten der technisch anspruchsvollen Übungen (Latziehen statt Klimmzügen, Rumänisches Kreuzheben mit Kurzhanteln statt Kreuzheben mit der Langhantel, Reverse Crunches statt hängendem Beinheben) – die vollen Übungen folgen, sobald die Technik sitzt.';
 
   @override
-  String get recalWhyFatigueRecovery => 'Seit zwei Wochen fühlen sich die Einheiten härter an als geplant: Die nächsten 7 Tage sind eine Erholungswoche (weniger Umfang, keine Intensität). Danach kommen die Qualitätseinheiten mit weniger Wiederholungen zurück.';
+  String get recalWhyFatigueRecovery => 'Seit zwei Wochen fühlen sich die Einheiten härter an als geplant: Die nächsten 7 Tage sind eine Entlastungswoche (weniger Umfang, keine Intensität). Danach kommen die Qualitätseinheiten mit weniger Wiederholungen zurück.';
 
   @override
-  String get recalWhyFatigueCheck => 'Auch nach der Erholungswoche noch härter als geplant: Prüfe Schlaf, Krankheit und Stress – und überlege eine langsamere Zielzeit. Die Qualitätseinheiten bleiben, mit weniger Wiederholungen.';
+  String get recalWhyFatigueCheck => 'Auch nach der Entlastungswoche noch härter als geplant: Prüfe Schlaf, Krankheit und Stress – und überlege eine langsamere Zielzeit. Die Qualitätseinheiten bleiben, mit weniger Wiederholungen.';
 
   @override
   String get recalWhyGoalAtRisk => 'Mit dem Training der letzten Wochen ist das Wettkampfziel schwer erreichbar (lange Läufe oder Wochenumfang weit von dem, was der Wettkampf braucht) – überlege einen späteren Wettkampf oder eine kürzere Distanz.';
@@ -5445,7 +5511,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String daysLeftInline(int days) {
-    return 'noch $days Tage';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'noch $days Tage',
+      one: 'noch 1 Tag',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5949,7 +6021,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get swimTestOnly200 => 'Für den CSS-Test brauchst du auch die 400-m-Zeit – die 200 m allein reichen nicht.';
 
   @override
-  String get swimTestImplausible => 'Die beiden Zeiten passen nicht zusammen (die 400 m dauern etwas mehr als doppelt so lange wie die 200 m). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.';
+  String get swimTestImplausible => 'Die beiden Zeiten passen nicht zusammen: Normalerweise dauern die 400 m etwas mehr als doppelt so lange wie die 200 m (etwa das 2,0- bis 2,4-Fache). Bitte prüfe sie – bis dahin wird die CSS aus den 400 m geschätzt.';
 
   @override
   String get calJumpCurrentWeek => 'Zurück zur aktuellen Woche';
@@ -6395,6 +6467,205 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String folderDuplicatedHidden(int n) {
     return '$n davon blendet der Sportfilter aus.';
+  }
+
+  @override
+  String get signOutWorkoutTitle => 'Ein Training läuft noch';
+
+  @override
+  String get signOutWorkoutBody => 'Abmelden beendet es, ohne es zu speichern.';
+
+  @override
+  String get signOutSyncing => 'Deine Änderungen werden synchronisiert …';
+
+  @override
+  String get signOutUnsyncedTitle => 'Noch nicht synchronisiert';
+
+  @override
+  String get signOutUnsyncedBody => 'Einige Änderungen – z. B. offline erfasste Einheiten – sind noch nicht auf dem Server. Wenn du dich jetzt abmeldest, gehen sie verloren. Geh online und warte kurz, dann bleiben sie erhalten.';
+
+  @override
+  String get signOutAnyway => 'Trotzdem abmelden';
+
+  @override
+  String get guestExistsTitle => 'Dieses Konto hat schon Strive-Daten';
+
+  @override
+  String get guestExistsBody => 'Dein Gastkonto lässt sich nicht damit verknüpfen. Du kannst zu diesem Konto wechseln und deine Gast-Daten mitnehmen – oder wechseln und die Gast-Daten verwerfen.';
+
+  @override
+  String get guestExistsMergeInfo => 'Mitgenommen werden deine Einheiten, Körperwerte, eigenen Programme und Ziele. Profil und Trainingsplan des Kontos bleiben.';
+
+  @override
+  String get guestExistsMerge => 'Daten mitnehmen';
+
+  @override
+  String get guestExistsDiscard => 'Gast-Daten verwerfen';
+
+  @override
+  String get guestSwitchRunning => 'Konto wird gewechselt …';
+
+  @override
+  String guestSwitchMerged(int count) {
+    return 'Zu deinem Konto gewechselt – übernommene Einheiten: $count';
+  }
+
+  @override
+  String get guestSwitchDiscarded => 'Zu deinem Konto gewechselt. Die Gast-Daten wurden gelöscht.';
+
+  @override
+  String get guestSwitchFailed => 'Wechsel fehlgeschlagen – es wurde nichts geändert. Prüf deine Internetverbindung und versuch es noch einmal.';
+
+  @override
+  String get guestSwitchSignInAgain => 'Bitte melde dich noch einmal an, um weiterzumachen.';
+
+  @override
+  String get wGymRegressionNote2 => 'Erste Wochen: leichtere Varianten der technisch anspruchsvollen Übungen – die vollen Übungen folgen, sobald die Technik sitzt.';
+
+  @override
+  String get wGymProgressNoteLinear => 'Steigerung: Bei den Grundübungen steigt das Gewicht in kleinen Schritten, solange du alle Wiederholungen schaffst; bei den übrigen Übungen erst die Wiederholungen bis zum oberen Ende aufbauen, dann Gewicht erhöhen.';
+
+  @override
+  String get wGymProgressNoteBw => 'Steigerung: Erst mehr Wiederholungen – auch über den Bereich hinaus –, dann eine schwerere Variante (Klimmzüge und Dips: Zusatzgewicht).';
+
+  @override
+  String get healthGymBackSwapNote => 'Rücken: Kniebeugen, Kreuzheben, vorgebeugtes Rudern und Drücken im Stehen sind durch Beinpresse, Glute Bridges und gestützte Varianten ersetzt – keine schwere axiale Last, neutrale Wirbelsäule.';
+
+  @override
+  String get healthGymShoulderSwapNote => 'Schulter: Drücken über Kopf, Trizeps über Kopf und Dips sind durch Schrägbank- und enge Varianten ersetzt – schmerzfrei bleiben.';
+
+  @override
+  String get healthGymNoJumpNote => 'Keine Sprünge: Sprungkniebeugen sind durch Kniebeugen ohne Sprung ersetzt.';
+
+  @override
+  String get splitHomeNote2 => 'Bei Training zuhause oder mit Eigengewicht nutzt Strive Ganzkörper-Programme (2 im Wechsel); ab 4 Krafttagen pro Woche wechseln sich Ober- und Unterkörper ab.';
+
+  @override
+  String get equipBodyweightSub2 => 'Keine Geräte – ein stabiler Tisch, ein Stuhl und eine Tür reichen';
+
+  @override
+  String get splitFullbodyWarning => 'Ganzkörper an 4 oder mehr Tagen belastet jeden Muskel an aufeinanderfolgenden Tagen – ab 4 Tagen ist Ober-/Unterkörper die bessere Wahl.';
+
+  @override
+  String gymAssignUneven(int n, int days) {
+    return '$n Programme lassen sich nicht gleichmäßig auf $days Krafttage pro Woche verteilen – eines kommt etwas öfter dran. Gleichmäßiger geht es nicht.';
+  }
+
+  @override
+  String get healthGymBackSwapNoteHome => 'Rücken: Kreuzheben-Varianten, vorgebeugtes Rudern, Drücken im Stehen und Sprünge sind durch Glute Bridges, gestütztes Rudern, Drücken im Sitzen und Kniebeugen ohne Sprung ersetzt – keine schwere axiale Last, neutrale Wirbelsäule.';
+
+  @override
+  String get wGymProgressNoteBw2 => 'Steigerung: Erst mehr Wiederholungen – auch über den Bereich hinaus –, dann eine schwerere Variante (z. B. Füße erhöht, einbeinig oder langsamer absenken).';
+
+  @override
+  String wGymShortNote(int min) {
+    return 'Gekürzt auf die $min min, die für diesen Tag eingeplant sind: Die letzten Ergänzungsübungen entfallen – häng sie an, wenn du mehr Zeit hast.';
+  }
+
+  @override
+  String get eventGymNoRace => 'Ein reiner Kraftplan bereitet auf keinen Wettkampf vor. Für einen Lauf-Wettkampf wähle den Fokus Hybrid (Kraft + Laufen) oder Laufen – hier legst du fest, wie lange der Plan läuft.';
+
+  @override
+  String feasNoRuns(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'mindestens $n Läufe',
+      one: 'mindestens 1 Lauf',
+    );
+    return 'Deine Woche hat noch keinen Lauftag – dieses Rennen braucht $_temp0 pro Woche. Plane Lauftage ein.';
+  }
+
+  @override
+  String feasNoRides(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'mindestens $n Radeinheiten',
+      one: 'mindestens 1 Radeinheit',
+    );
+    return 'Deine Woche hat noch keinen Radtag – dieses Rennen braucht $_temp0 pro Woche. Plane Radtage ein.';
+  }
+
+  @override
+  String feasNoSwims(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'mindestens $n Schwimmeinheiten',
+      one: 'mindestens 1 Schwimmeinheit',
+    );
+    return 'Deine Woche hat noch keine Schwimmeinheit – dieses Rennen braucht $_temp0 pro Woche. Plane Schwimmtage ein.';
+  }
+
+  @override
+  String feasLongRideRamp(String have, int weeks, String need) {
+    return 'Von deinem jetzigen Stand aus wächst deine lange Ausfahrt bei sicherer Steigerung in $weeks Wochen nur auf etwa $have – dieses Rennen braucht lange Ausfahrten von etwa $need.';
+  }
+
+  @override
+  String get feasAddRunDays => 'Lauftage hinzufügen';
+
+  @override
+  String get feasAddRideDays => 'Radtage hinzufügen';
+
+  @override
+  String get feasAddSwimDays => 'Schwimmtage hinzufügen';
+
+  @override
+  String feasRaiseTwoDays(String day, String time, String day2, String time2) {
+    return 'Erhöhe die Zeit am $day auf $time und am $day2 auf $time2';
+  }
+
+  @override
+  String get feasShowDetails => 'Details und Möglichkeiten';
+
+  @override
+  String get goalCountdownToday => 'Heute Wettkampf';
+
+  @override
+  String wGymLoadDesc2(int rir) {
+    return 'Belastungswoche: Beende jeden Arbeitssatz mit etwa $rir Wdh. im Tank – die Reserve wird von Woche zu Woche kleiner, bis zur nächsten Entlastungswoche. Sätze, Wiederholungsbereich und Gewichtsvorschlag stehen bei jeder Übung.';
+  }
+
+  @override
+  String get wGymLoadDescOneRep => 'Belastungswoche: Beende jeden Arbeitssatz mit etwa 1 Wdh. im Tank – die Reserve wird von Woche zu Woche kleiner, bis zur nächsten Entlastungswoche. Sätze, Wiederholungsbereich und Gewichtsvorschlag stehen bei jeder Übung.';
+
+  @override
+  String get wGymLoadDescNoDeloadOneRep => 'Beende jeden Arbeitssatz mit etwa 1 Wdh. im Tank. Sätze, Wiederholungsbereich und Gewichtsvorschlag stehen bei jeder Übung.';
+
+  @override
+  String get legacyRecalWhyFatigueRecovery => 'Seit zwei Wochen fühlen sich die Einheiten härter an als geplant: Die nächsten 7 Tage sind eine Erholungswoche (weniger Umfang, keine Intensität). Danach kommen die Qualitätseinheiten mit weniger Wiederholungen zurück.';
+
+  @override
+  String get legacyRecalWhyFatigueCheck => 'Auch nach der Erholungswoche noch härter als geplant: Prüfe Schlaf, Krankheit und Stress – und überlege eine langsamere Zielzeit. Die Qualitätseinheiten bleiben, mit weniger Wiederholungen.';
+
+  @override
+  String planMoveBeforeLong(String title) {
+    return 'Am Tag danach steht „$title“ – eine harte Einheit direkt davor macht sie schwerer. Besser einen lockeren Tag dazwischen lassen.';
+  }
+
+  @override
+  String planMoveSameDay(String title) {
+    return 'An diesem Tag steht schon „$title“.';
+  }
+
+  @override
+  String get calJumpRace => 'Zum Wettkampf';
+
+  @override
+  String recMinNoFit(int n, int days) {
+    return 'Dieser Wettkampf braucht mindestens $n Einheiten pro Woche – mehr als $days Tage mit je einer Einheit. Wähle „Bis zu 2× pro Tag“.';
+  }
+
+  @override
+  String feasLongRunLayout(int km, int x) {
+    return 'In deiner Woche, wie sie jetzt ist, erreicht dein langer Lauf nur etwa $km km – dieses Rennen braucht lange Läufe über $x km. Mehr Zeit an einem einzelnen Tag ändert das hier nicht: Prüfe, an welchen Tagen deine Läufe liegen und welcher dein Tag für die lange Einheit ist.';
+  }
+
+  @override
+  String feasLongRideLayout(int min, int target) {
+    return 'In deiner Woche, wie sie jetzt ist, erreicht deine lange Ausfahrt nur $min min – dieses Rennen braucht lange Ausfahrten von mindestens $target min. Mehr Zeit an einem einzelnen Tag ändert das hier nicht: Prüfe, an welchen Tagen deine Radeinheiten liegen und welcher dein Tag für die lange Einheit ist.';
   }
 
   @override

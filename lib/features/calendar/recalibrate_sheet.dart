@@ -55,6 +55,8 @@ Future<void> showRecalibration(BuildContext context, WidgetRef ref) {
             if (r.updates.isNotEmpty) repo.updateMany(plans: r.updates);
             // Refilled gaps the athlete kept ticked.
             if (r.additions.isNotEmpty) repo.savePlans(r.additions);
+            // … and the built-in programs they use that the athlete's list lacks.
+            if (r.templatesToSave.isNotEmpty) repo.saveTemplates(r.templatesToSave);
             // Plan history: what changed, with the findings as they were shown.
             repo.logPlanChange(
               PlanLogEntry.of('recal', [

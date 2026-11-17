@@ -9,10 +9,10 @@ void main() {
   final en = lookupAppLocalizations(const Locale('en'));
 
   test('old gym notes with a global set count are rewritten', () {
-    expect(planDescription(de.wGymDescRange(3, 1), de), '${de.wGymLoadDesc(1)}\n${de.wGymProgressNote}');
-    expect(planDescription(en.wGymDescRange(4, 3), de), '${de.wGymLoadDesc(3)}\n${de.wGymProgressNote}');
-    expect(planDescription(de.wGymDesc(3, 8, 12, 2), de), '${de.wGymLoadDesc(2)}\n${de.wGymProgressNote}');
-    expect(planDescription(en.wGymDesc(3, 8, 12, 2), en), '${en.wGymLoadDesc(2)}\n${en.wGymProgressNote}');
+    expect(planDescription(de.wGymDescRange(3, 1), de), '${gymLoadNote(de, 1)}\n${de.wGymProgressNote}');
+    expect(planDescription(en.wGymDescRange(4, 3), de), '${gymLoadNote(de, 3)}\n${de.wGymProgressNote}');
+    expect(planDescription(de.wGymDesc(3, 8, 12, 2), de), '${gymLoadNote(de, 2)}\n${de.wGymProgressNote}');
+    expect(planDescription(en.wGymDesc(3, 8, 12, 2), en), '${gymLoadNote(en, 2)}\n${en.wGymProgressNote}');
     expect(planDescription(de.wGymDeloadDesc(2), de), de.wGymDeloadNote5);
     expect(planDescription('${de.wGymDeloadDesc(2)}\n${de.wGymTimeCapNote(30)}', de), '${de.wGymDeloadNote5}\n${de.wGymTimeCapNote2(30)}');
   });

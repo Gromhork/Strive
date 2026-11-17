@@ -30,11 +30,14 @@ import 'features/shell/reminder_sync.dart';
 import 'firebase_options.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'providers.dart';
+import 'services/app_check.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kDebugMode) HttpOverrides.global = _DevTlsInspectionOverrides();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Before the first Firestore / Gemini request, so every request carries a token.
+  await activateAppCheck();
   // Offline mode: everything is cached locally and synced when online.
   FirebaseFirestore.instance.settings = firestoreSettings;
   WriteErrorNotifier.install();

@@ -107,7 +107,19 @@ class UserProfile {
 
   /// Training days the generated plan uses at most (quick setup): beginners keep ≥ 2
   /// rest days (pure strength ≤ 4 days), athletes ≥ 60 one – see PlanGenerator.
-  int get maxPlanDays => level == 'beginner' ? (focus == TrainingFocus.gym ? 4 : 5) : ((age ?? 0) >= 60 ? 6 : 7);
+  /// Pure strength (review 2026-11 GYM-8): beginners 4, intermediates 5, advanced 6 days – at least one full rest day,
+  /// the 6-day PPL only for advanced lifters (docs §2.8).
+  int get maxPlanDays {
+    if (focus == TrainingFocus.gym) {
+      return switch (level) {
+        'beginner' => 4,
+        'advanced' => 6,
+        _ => 5,
+      };
+    }
+    return level == 'beginner' ? 5 : ((age ?? 0) >= 60 ? 6 : 7);
+  }
+
   int get weeklyTarget => trainingDays.isEmpty ? 3 : (trainingDays.length < maxPlanDays ? trainingDays.length : maxPlanDays);
   double get bmi => heightCm <= 0 ? 0 : weightKg / ((heightCm / 100) * (heightCm / 100));
 

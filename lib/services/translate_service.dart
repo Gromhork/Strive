@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_check.dart';
 import 'coach_service.dart';
 
 /// Translates exercise instructions with Gemini and caches the result locally,
@@ -26,7 +27,7 @@ class TranslateService {
   Future<List<String>> instructions(String id, String name, List<String> steps, String lang) async {
     final c = cached(id, lang);
     if (c != null) return c;
-    final model = FirebaseAI.googleAI().generativeModel(
+    final model = striveAI().generativeModel(
       model: CoachService.model,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',

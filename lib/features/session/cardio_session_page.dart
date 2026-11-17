@@ -11,6 +11,7 @@ import 'package:latlong2/latlong.dart' hide Path;
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../services/session_checks.dart';
 import '../../data/models.dart';
 import '../../providers.dart';
 import '../../services/step_progress.dart';
@@ -96,6 +97,13 @@ class _CardioSessionPageState extends ConsumerState<CardioSessionPage> {
         suffix: u.distUnit,
         noneLabel: l.withoutDistance,
         hint: l.enterDistanceHint,
+        // The same check as the edit page (audit UX-14: 0.5 km after 19 s was saved as "Ø 0:38 /km").
+        warn: (v) {
+          final m = u.distIn(v);
+          return SessionCheck.paceIsPlausible(s.sport, s.elapsed, m)
+              ? null
+              : l.sessionPaceImplausible(u.paceOrSpeed(s.sport, m, s.elapsed));
+        },
       );
       if (v == null) return;
       manual = v.value == null ? null : u.distIn(v.value!);

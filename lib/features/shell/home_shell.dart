@@ -35,6 +35,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   /// tab again scrolls that tab to the top (the calendar: to the current week).
   final _scroll = List.generate(5, (_) => ScrollController());
 
+  /// Index of [CalendarPage] in the tabs.
+  static const _calendarTab = 2;
+
   @override
   void dispose() {
     for (final c in _scroll) {
@@ -49,6 +52,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       if (c.hasClients) c.animateTo(0, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
       return;
     }
+    // The calendar opens at the current week again (audit UX-16: it kept a scroll position weeks away) –
+    // its list is anchored there (offset 0; the month view: its top).
+    final c = _scroll[i];
+    if (i == _calendarTab && c.hasClients && c.positions.length == 1) c.jumpTo(0);
     ref.read(navIndexProvider.notifier).set(i);
   }
 

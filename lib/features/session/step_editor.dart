@@ -9,6 +9,7 @@ import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../services/zones.dart';
 import '../../widgets/discard_guard.dart';
+import '../../widgets/plan_amount.dart';
 import '../../widgets/segments.dart';
 import 'step_list.dart';
 import 'step_text.dart';
@@ -169,6 +170,12 @@ class _StepEditorState extends State<StepEditor> {
     return withTargets(step, sport, widget.profile);
   }
 
+  String? _distance(List<WorkoutStep> flat, Units u) {
+    final km = stepsKm(flat, widget.sport, widget.profile);
+    if (km == null) return null;
+    return widget.sport == Sport.swim ? u.swimDist(km * 1000) : u.dist(km * 1000, digits: 1);
+  }
+
   Future<void> _edit(StepBlock b, int k) async {
     final res = await showModalBottomSheet<WorkoutStep?>(
       context: context,
@@ -201,7 +208,9 @@ class _StepEditorState extends State<StepEditor> {
                 const SizedBox(height: 8),
                 Text(
                   // Distance says more than a section count (a swim set easily has 30 sections).
-                  '≈ ${humanDuration(sec)} · ${stepsDistance(flat, u, widget.sport) ?? l.stepsCount(flat.length)}',
+                  // The calendar's estimate ([stepsKm]: timed steps at their pace too) – "≈ 35 min · 3,5 km" here next
+                  // to "6,1 km" in the calendar counted the distance steps only (audit UX-13).
+                  '≈ ${humanDuration(sec)} · ${_distance(flat, u) ?? l.stepsCount(flat.length)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

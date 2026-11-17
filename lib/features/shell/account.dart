@@ -2,11 +2,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/format.dart';
 import '../../data/repository.dart';
 import '../../providers.dart';
+import '../../services/active_workout.dart';
 import '../../services/google_auth.dart';
+import '../../services/tracker.dart';
+import '../../services/workout_store.dart';
 import '../../widgets/common.dart';
 import '../calendar/auto_adjust.dart' show rootMessengerKey;
 import '../auth/login_page.dart' show loginNotice;
@@ -15,18 +19,134 @@ import 'health_sync.dart';
 /// Firestore settings of the app (offline mode: everything cached locally).
 const firestoreSettings = Settings(persistenceEnabled: true, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED);
 
-/// Signs out and removes the account's data from this device: the Firestore cache (the next
-/// account on this phone must not see it, even offline) and the user-scoped providers.
-Future<void> signOutAndClear(BuildContext context) async {
-  // The container, not the widget's ref: the calling page is gone once signed out.
+/// Waits until the server has every local change (writes are queued locally first – offline
+/// mode). Replaceable in tests.
+@visibleForTesting
+Future<void> Function() pendingWritesFlush = () => FirebaseFirestore.instance.waitForPendingWrites();
+
+/// How long sign-out waits for the local changes to reach the server.
+@visibleForTesting
+Duration pendingWritesTimeout = const Duration(seconds: 10);
+
+/// The signed-in Firebase user. Replaceable in tests.
+@visibleForTesting
+User? Function() signedInUser = () => FirebaseAuth.instance.currentUser;
+
+/// The questions before signing out; true = go ahead.
+///
+/// - A workout is running: signing out ends it without saving it.
+/// - Registered account: local changes not on the server yet (workouts recorded offline, plan
+///   entries ticked off) are sent first. Signing out clears the local Firestore cache – and with
+///   it the queue of unsent writes – so when they cannot be sent (offline) the user decides.
+///   A guest was already told that signing out deletes everything ([confirmGuestLogout]).
+Future<bool> readyToSignOut(BuildContext context) async {
+  final l = context.l10n;
   final container = ProviderScope.containerOf(context, listen: false);
-  await GoogleAuth.signOut();
-  await FirebaseAuth.instance.signOut();
-  _invalidateUserScoped(container);
-  await clearLocalCache();
+  if (workoutInProgress(container) &&
+      !await confirm(context, l.signOutWorkoutTitle, body: l.signOutWorkoutBody, ok: l.logout, danger: true)) {
+    return false;
+  }
+  final user = signedInUser();
+  if (user == null || user.isAnonymous) return true;
+  if (!context.mounted) return false;
+  if (await syncPendingWrites(context)) return true;
+  if (!context.mounted) return false;
+  return confirm(context, l.signOutUnsyncedTitle, body: l.signOutUnsyncedBody, ok: l.signOutAnyway, danger: true);
 }
 
-void _invalidateUserScoped(ProviderContainer ref) {
+/// Sends the queued local writes to the server (with a progress dialog); false when that did not
+/// finish within [pendingWritesTimeout] (offline).
+Future<bool> syncPendingWrites(BuildContext context) async {
+  final nav = Navigator.of(context, rootNavigator: true);
+  var open = true;
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => PopScope(canPop: false, child: _ProgressDialog(text: context.l10n.signOutSyncing)),
+  ).whenComplete(() => open = false);
+  try {
+    await pendingWritesFlush().timeout(pendingWritesTimeout);
+    return true;
+  } catch (e) {
+    debugPrint('pending writes not sent: $e');
+    return false;
+  } finally {
+    if (open && nav.mounted) nav.pop();
+  }
+}
+
+class _ProgressDialog extends StatelessWidget {
+  const _ProgressDialog({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) =>
+      AlertDialog(content: Row(children: [const CircularProgressIndicator(), const SizedBox(width: 20), Expanded(child: Text(text))]));
+}
+
+/// Whether a gym workout or a cardio recording is running.
+bool workoutInProgress(ProviderContainer c) => c.read(activeGymProvider) != null || c.read(trackerProvider) != null;
+
+/// Ends the workout in progress without saving it (GPS recording stops) and deletes the stored
+/// copy of it and of an unsaved summary – they belong to the account that is signed out.
+Future<void> discardLocalWorkout(ProviderContainer c) async {
+  c.invalidate(activeGymProvider);
+  c.invalidate(trackerProvider);
+  final store = c.read(workoutStoreProvider);
+  await store.clearActive();
+  await store.clearSummary();
+}
+
+/// Signs out and removes the account's data from this device: the Firestore cache (the next
+/// account on this phone must not see it, even offline), the workout in progress and the
+/// user-scoped providers. [checked]: [readyToSignOut] was already asked. A guest's server data
+/// is deleted as well: nobody can ever sign in to an anonymous account again, so it would stay
+/// in Firestore forever. Returns false when the user cancelled.
+Future<bool> signOutAndClear(BuildContext context, {bool checked = false}) async {
+  // The container, not the widget's ref: the calling page is gone once signed out.
+  final container = ProviderScope.containerOf(context, listen: false);
+  if (!checked && !await readyToSignOut(context)) return false;
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null && user.isAnonymous) {
+    final uid = user.uid;
+    await deleteGuestAccount(user);
+    await removeAccountPrefs(container.read(prefsProvider), uid);
+  }
+  await GoogleAuth.signOut();
+  await FirebaseAuth.instance.signOut();
+  await discardLocalWorkout(container);
+  invalidateUserScoped(container);
+  await clearLocalCache();
+  return true;
+}
+
+/// Deletes a guest's server data and the anonymous account. Best effort: offline, the data
+/// stays (the guest was told signing out deletes it; there is nothing else to do with it).
+/// The data deleted, `guest.delete()` can still fail (e.g. `requires-recent-login` for a guest
+/// signed in long ago – an anonymous account cannot sign in again): an empty anonymous auth
+/// record remains, without any data and unreachable. Accepted; Firebase's automatic clean-up of
+/// anonymous accounts (Identity Platform) removes such records if enabled.
+Future<bool> deleteGuestAccount(User guest, {Duration timeout = const Duration(seconds: 10)}) async {
+  try {
+    await Repository(guest.uid).deleteAllData().timeout(timeout);
+    await guest.delete().timeout(timeout);
+    return true;
+  } catch (e) {
+    debugPrint('guest data not deleted: $e');
+    return false;
+  }
+}
+
+/// Removes the settings stored per account (keys carry the uid, e.g. the calendar sync's).
+Future<void> removeAccountPrefs(SharedPreferences prefs, String uid) async {
+  if (uid.isEmpty) return;
+  for (final k in prefs.getKeys().where((k) => k.contains(uid)).toList()) {
+    await prefs.remove(k);
+  }
+}
+
+/// Forgets every provider that holds data of the signed-in account.
+void invalidateUserScoped(ProviderContainer ref) {
   ref.invalidate(repoProvider);
   ref.invalidate(profileProvider);
   ref.invalidate(sessionsProvider);
@@ -96,11 +216,10 @@ Future<void> deleteAccountFlow(BuildContext context, WidgetRef ref) async {
       if (!await _reauthenticate(context, user)) rethrow;
       await user.delete();
     }
-    for (final k in prefs.getKeys().where((k) => k.contains(user.uid)).toList()) {
-      await prefs.remove(k);
-    }
+    await removeAccountPrefs(prefs, user.uid);
     await GoogleAuth.signOut();
-    _invalidateUserScoped(container);
+    await discardLocalWorkout(container);
+    invalidateUserScoped(container);
     nav.popUntil((r) => r.isFirst);
     await clearLocalCache();
     // On the login page the app shows next (a snackbar of the page that started this got lost).
