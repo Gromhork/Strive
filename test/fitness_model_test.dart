@@ -244,9 +244,9 @@ void main() {
       final sugs = r.days.map((d) => d.suggestion!.sec!).toSet();
       expect(sugs.length, 1, reason: '$sugs');
       // The race session of the generated plan shows the same race-day pacing: a 3:40 target is within
-      // reach (realistic ≈ 3:36) → the race runs at the target.
+      // reach (realistic ≈ 3:36) → the race runs at the pace the race-pace work practised (audit RUN-9).
       final race = r.plans.firstWhere((w) => w.intensity == 'race');
-      expect(race.durationMin, 220);
+      expect(race.durationMin, closeTo(r.days.first.check!.ambitionSec / 60, 1));
       expect(r.days.every((d) => d.check!.status == TargetStatus.ok), isTrue);
     });
 
@@ -315,19 +315,28 @@ void main() {
         if (tc.status == TargetStatus.ok) {
           // 4:00 is conservative: race at the target, race-pace work at the faster realistic pace, and the
           // race says what is realistic (IMPORTANT 5).
-          expect(racePace, closeTo(target / 42.195, 1));
+          expect(racePace, closeTo(tc.ambitionSec / 42.195, 1));
           for (final m in mp) {
             expect(m, closeTo(tc.ambitionSec / 42.195, 1));
           }
           expect(race.description, contains(clock(GoalModel.roundTarget(tc.realisticSec))));
-          expect(race.durationMin, (target / 60).round());
+          expect(race.durationMin, (tc.ambitionSec / 60).round());
         } else {
-          // 3:25 is out of reach: race and race-pace work at the realistic time, "Ziel 3:25 – starte mit …".
+          // 3:25 is out of reach: race and race-pace work at the realistic time, "Dein Ziel 3:25 ist außer Reichweite …".
           expect(racePace, closeTo(tc.realisticSec / 42.195, 1));
           for (final m in mp) {
             expect(m, closeTo(tc.realisticSec / 42.195, 1));
           }
-          expect(race.description, contains(l.wRaceGoalStart(clock(target), '${clock((tc.realisticSec / 42.195).round())}/km')));
+          expect(
+            race.description,
+            contains(
+              l.wRaceGoalBehind(
+                clock(target),
+                '${clock((tc.realisticSec / 42.195).round())}/km',
+                clock(GoalModel.roundTarget(tc.realisticSec)),
+              ),
+            ),
+          );
         }
       }
       expect(fast.days.firstWhere((d) => d.week == 6).check!.status, isNot(TargetStatus.ok));
@@ -415,8 +424,10 @@ void main() {
     final tc = GoalModel.check(p, start: h.simStart)!;
     expect(tc.conservative, isTrue);
     final race = PlanGenerator(l, p, templates, id).generate(start: h.simStart).firstWhere((w) => w.intensity == 'race');
-    expect(race.durationMin, 235);
-    expect(race.description, contains(l.wRaceRealistic(clock(tc.suggestedSec), '${clock((tc.realisticSec / 42.195).round())}/km')));
+    // (Paced like the race-pace work – the realistic time, audit RUN-9; the target stays in the text.)
+    expect(race.durationMin, (tc.realisticSec / 60).round());
+    expect(race.description, contains(clock(3 * 3600 + 55 * 60)));
+    expect(race.description, contains(l.wRaceRealisticPace(clock(tc.suggestedSec), '${clock((tc.realisticSec / 42.195).round())}/km')));
   });
 
   test('the profile-only model: a plan stored on the profile counts as trained (C4)', () {

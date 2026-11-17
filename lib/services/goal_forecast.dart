@@ -468,10 +468,10 @@ class GoalForecast {
   /// Planned workouts to update when the target changes to [newTarget]: race-pace steps of
   /// upcoming peak / taper workouts and the race itself follow the new goal – with the generator's
   /// rule (C3; [PlanGenerator] `_goalPace`): the target check from today on the one fitness model
-  /// ([FitnessState] from [plans] and [sessions]) – within reach → race-pace work at the faster of
-  /// target and realistic time, the race at the target; out of reach → both at the realistic time and
-  /// the race says "Ziel X – starte mit Y". A conservative target (> 5 % slower than realistic) adds
-  /// the realistic pacing to the race (IMPORTANT 5). With [l] the race's description is rebuilt
+  /// ([FitnessState] from [plans] and [sessions]) – within reach → race-pace work and the race at the faster of
+  /// target and realistic time; out of reach → both at the realistic time and the race says the goal is out of
+  /// reach for now (audit RUN-9 / T1: the race paces what the goal-pace work practised). A target slower than
+  /// that pace adds the realistic pacing to the race (IMPORTANT 5). With [l] the race's description is rebuilt
   /// (else the old target's time is replaced in it).
   static Map<String, Map<String, dynamic>> retarget(
     UserProfile p,
@@ -491,8 +491,8 @@ class GoalForecast {
     // Race-pace work: the faster of target and realistic within reach, else the realistic time.
     final goal = t == null ? newTarget : (behind ? t.realisticSec : t.ambitionSec);
     final pace = (goal / (meters / 1000)).round();
-    final raceSec = behind ? t.realisticSec : newTarget;
-    final racePace = (raceSec / (meters / 1000)).round();
+    final raceSec = goal;
+    final racePace = pace;
     final km = meters / 1000;
     final out = <String, Map<String, dynamic>>{};
     for (final x in plans) {
@@ -533,7 +533,7 @@ class GoalForecast {
           target: newTarget,
           realisticSec: t?.realisticSec,
           behind: behind,
-          conservative: t?.conservative ?? false,
+          raceSec: raceSec,
           km: km,
         );
       } else if (race && old != null) {
@@ -549,15 +549,16 @@ class GoalForecast {
   }
 
   /// [description] of a running race session with its goal lines (the generator's: "Zielzeit X …",
-  /// "Ziel X – starte mit Y" + the race text, or the plain race text) replaced for [target]; other
-  /// lines (fuelling, run/walk) stay. [conservative]: the realistic time and pace follow the goal line.
+  /// "Ziel X ist außer Reichweite …" / the older "Ziel X – starte mit Y" + the race text, or the plain race text)
+  /// replaced for [target]; other lines (fuelling, run/walk) stay. [raceSec]: the time the race is paced at –
+  /// faster than [target]: the realistic time and pace follow the goal line.
   static String raceDescription(
     AppLocalizations l,
     String description, {
     required int target,
     required int? realisticSec,
     required bool behind,
-    required bool conservative,
+    required int raceSec,
     required double km,
   }) {
     // A line matches a template when it starts and ends like it around the placeholders.
@@ -567,20 +568,26 @@ class GoalForecast {
       return line.startsWith(parts.first) && line.endsWith(parts.last) && line.length >= parts.first.length + parts.last.length;
     }
 
-    final templates = [l.wRaceDesc, l.wRaceGoalDesc(mark), l.wRaceGoalStart(mark, mark), l.wRaceRealistic(mark, mark)];
+    final templates = [
+      l.wRaceDesc,
+      l.wRaceGoalDesc(mark),
+      l.wRaceGoalStart(mark, mark),
+      l.wRaceGoalBehind(mark, mark, mark),
+      l.wRaceRealistic(mark, mark),
+      l.wRaceRealisticPace(mark, mark),
+    ];
     final lines = description.isEmpty ? <String>[] : description.split('\n');
     var at = lines.indexWhere((x) => templates.any((t) => like(x, t)));
     lines.removeWhere((x) => templates.any((t) => like(x, t)));
     if (at < 0 || at > lines.length) at = lines.length;
     String perKm(int sec) => '${clock((sec / km).round())}/km';
     final goal = [
-      if (behind && realisticSec != null) ...[
-        l.wRaceGoalStart(clock(target), perKm(realisticSec)),
-        l.wRaceDesc,
-      ] else
+      if (behind && realisticSec != null)
+        l.wRaceGoalBehind(clock(target), perKm(realisticSec), clock(GoalModel.roundTarget(realisticSec)))
+      else
         l.wRaceGoalDesc(clock(target)),
-      if (!behind && conservative && realisticSec != null)
-        l.wRaceRealistic(clock(GoalModel.roundTarget(realisticSec)), perKm(realisticSec)),
+      // (The race is paced at [raceSec], the most the fitness gives – no "pick it up" beyond it: verifier G1-V5.)
+      if (!behind && raceSec < target - 30) l.wRaceRealisticPace(clock(GoalModel.roundTarget(raceSec)), perKm(raceSec)),
     ];
     lines.insertAll(at, goal);
     return lines.join('\n');

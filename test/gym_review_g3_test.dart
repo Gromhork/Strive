@@ -299,7 +299,9 @@ void main() {
     for (final w in gymOf(gen(p, weeks: 4))) {
       final est = estimateGymMinutes(exOf(w, p));
       expect(w.durationMin, est);
-      if (est > 30) expect(w.description, contains(l.wGymOverTimeNote(est, 30)));
+      // (The note only beyond the estimate's own precision – 5 min / 10 %, audit T15; within it, no note.)
+      if (est > 35) expect(w.description, contains(l.wGymOverTimeNote(est, 30)));
+      if (est <= 35) expect(w.description, isNot(contains(l.wGymOverTimeNote(est, 30))));
     }
   });
 

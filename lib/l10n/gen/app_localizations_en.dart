@@ -6779,4 +6779,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wRideTaperPickupsDesc => 'Taper: easy riding with a few short pick-ups – they keep the legs sharp while the volume comes down.';
+
+  @override
+  String get planToEventRaceWeek => 'Your race is already this week – the plan is just the race week: easy sessions, a short opener and the race. For a build-up, pick a later race.';
+
+  @override
+  String get summaryPlanLengthRaceWeek => 'Length: race week only';
+
+  @override
+  String wRaceGoalBehind(String goal, String pace, String realistic) {
+    return 'Your goal $goal is out of reach for now – race at the realistic $pace (≈ $realistic). Start controlled; if you feel good after halfway, pick it up.';
+  }
+
+  @override
+  String get wRunContinuousDesc => 'Run easy without stopping – walk only if you need to. If it feels too hard, repeat last week.';
+
+  @override
+  String get wLongRunWalkContDesc => 'Long session with walk breaks: run 10 min, walk 1 min – time on your feet for the race. Your other runs are continuous now; the breaks keep the long one safe. Talking pace. Grows about 10 min a week.';
+
+  @override
+  String get feasCapFinishTarget => 'So plan short walk breaks from the beginning of the race (e.g. 1 min every 10 min) – your target time stays, but start easy: finishing comes first.';
+
+  @override
+  String get feasRunFrequencyFinish => 'The plan therefore treats the race as a finish goal, without a target time – set one of your own if you have it.';
+
+  @override
+  String wRaceRealisticPace(String time, String pace) {
+    return 'Your race pace is the realistic one on your fitness: $time ($pace). Start the first km at goal pace, then settle into it – no faster.';
+  }
 }

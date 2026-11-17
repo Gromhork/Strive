@@ -143,11 +143,13 @@ void main() {
     final work = r.steps.singleWhere((s) => s.isWork);
     final pace = (check.realisticSec / 10).round();
     expect(work.paceMin, pace - 3); // before: 270 - 3 (target pace, ~6 % too fast)
-    expect(r.description, contains(l.wRaceGoalStart(clock(2700), '${clock(pace)}/km')));
-    // Realistic targets keep the target pace and the usual text.
+    // (Audit T1: the goal out of reach is said plainly, not "Goal 45:00 – start at 4:48/km".)
+    expect(r.description, contains(l.wRaceGoalBehind(clock(2700), '${clock(pace)}/km', clock(GoalModel.roundTarget(check.realisticSec)))));
+    // Realistic targets keep the usual text; the race paces like the goal-pace work – the faster of target and
+    // realistic time (audit RUN-9).
     final ok = runner(target: 3000);
     final r2 = gen(ok).singleWhere((w) => w.intensity == 'race');
-    expect(r2.steps.singleWhere((s) => s.isWork).paceMin, 300 - 3);
+    expect(r2.steps.singleWhere((s) => s.isWork).paceMin, (GoalModel.check(ok, start: start)!.ambitionSec / 10).round() - 3);
     expect(r2.description, contains(l.wRaceGoalDesc(clock(3000))));
   });
 

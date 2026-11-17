@@ -282,7 +282,8 @@ void main() {
           expect(b.phase, isIn(['build', 'peak']));
           expect(plan.any((w) => w.sport == Sport.ride && w.intensity == 'long' && sameDay(w.date, b.date)), isTrue);
           expect(b.isKey, isFalse);
-          // (The first brick is 10 min – [EventSpec.brick]; its time is what its title says, review 2026-11 tri-9.)
+          // (The first brick is 10 min – [EventSpec.brick]; its own minutes – from 10 off the bike, audit FUZZ-5 – and its time
+          // is what its title says, review 2026-11 tri-9.)
           expect(b.durationMin, inInclusiveRange(10, maxMin + 5));
           expect(b.title, l.wBrickRun(b.durationMin));
         }

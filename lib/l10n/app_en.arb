@@ -4987,5 +4987,36 @@
       }
     }
   },
-  "wRideTaperPickupsDesc": "Taper: easy riding with a few short pick-ups – they keep the legs sharp while the volume comes down."
+  "wRideTaperPickupsDesc": "Taper: easy riding with a few short pick-ups – they keep the legs sharp while the volume comes down.",
+  "planToEventRaceWeek": "Your race is already this week – the plan is just the race week: easy sessions, a short opener and the race. For a build-up, pick a later race.",
+  "summaryPlanLengthRaceWeek": "Length: race week only",
+  "wRaceGoalBehind": "Your goal {goal} is out of reach for now – race at the realistic {pace} (≈ {realistic}). Start controlled; if you feel good after halfway, pick it up.",
+  "@wRaceGoalBehind": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      },
+      "realistic": {
+        "type": "String"
+      }
+    }
+  },
+  "wRunContinuousDesc": "Run easy without stopping – walk only if you need to. If it feels too hard, repeat last week.",
+  "wLongRunWalkContDesc": "Long session with walk breaks: run 10 min, walk 1 min – time on your feet for the race. Your other runs are continuous now; the breaks keep the long one safe. Talking pace. Grows about 10 min a week.",
+  "feasCapFinishTarget": "So plan short walk breaks from the beginning of the race (e.g. 1 min every 10 min) – your target time stays, but start easy: finishing comes first.",
+  "feasRunFrequencyFinish": "The plan therefore treats the race as a finish goal, without a target time – set one of your own if you have it.",
+  "wRaceRealisticPace": "Your race pace is the realistic one on your fitness: {time} ({pace}). Start the first km at goal pace, then settle into it – no faster.",
+  "@wRaceRealisticPace": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      }
+    }
+  }
 }

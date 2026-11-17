@@ -11896,6 +11896,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Taper: easy riding with a few short pick-ups – they keep the legs sharp while the volume comes down.'**
   String get wRideTaperPickupsDesc;
+
+  /// No description provided for @planToEventRaceWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Your race is already this week – the plan is just the race week: easy sessions, a short opener and the race. For a build-up, pick a later race.'**
+  String get planToEventRaceWeek;
+
+  /// No description provided for @summaryPlanLengthRaceWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Length: race week only'**
+  String get summaryPlanLengthRaceWeek;
+
+  /// No description provided for @wRaceGoalBehind.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goal {goal} is out of reach for now – race at the realistic {pace} (≈ {realistic}). Start controlled; if you feel good after halfway, pick it up.'**
+  String wRaceGoalBehind(String goal, String pace, String realistic);
+
+  /// No description provided for @wRunContinuousDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Run easy without stopping – walk only if you need to. If it feels too hard, repeat last week.'**
+  String get wRunContinuousDesc;
+
+  /// No description provided for @wLongRunWalkContDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Long session with walk breaks: run 10 min, walk 1 min – time on your feet for the race. Your other runs are continuous now; the breaks keep the long one safe. Talking pace. Grows about 10 min a week.'**
+  String get wLongRunWalkContDesc;
+
+  /// No description provided for @feasCapFinishTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'So plan short walk breaks from the beginning of the race (e.g. 1 min every 10 min) – your target time stays, but start easy: finishing comes first.'**
+  String get feasCapFinishTarget;
+
+  /// No description provided for @feasRunFrequencyFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'The plan therefore treats the race as a finish goal, without a target time – set one of your own if you have it.'**
+  String get feasRunFrequencyFinish;
+
+  /// No description provided for @wRaceRealisticPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Your race pace is the realistic one on your fitness: {time} ({pace}). Start the first km at goal pace, then settle into it – no faster.'**
+  String wRaceRealisticPace(String time, String pace);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

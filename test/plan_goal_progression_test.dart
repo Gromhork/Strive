@@ -154,7 +154,9 @@ void main() {
       expect(PlanGenerator.recommendedWeeks(beginner), (min: 8, max: 12, def: 8));
       expect(PlanGenerator.recommendedWeeks(beginner.copyWith(level: 'advanced')), (min: 8, max: 16, def: 12));
       // Beginner HM 16–18 weeks (review 2026-11 M1 / M3: the long run grows ≤ +10 % / +1 km a step).
-      expect(PlanGenerator.recommendedWeeks(runner('hm', 12)).min, 16);
+      expect(PlanGenerator.recommendedWeeks(runner('hm', 12, can30: true)).min, 16);
+      // Run/walk starters: the ladder comes on top – the first length the plan finds long enough (audit RUN-5).
+      expect(PlanGenerator.recommendedWeeks(runner('hm', 12)).min, greaterThan(16));
       for (final r in [PlanGenerator.recommendedWeeks(beginner), PlanGenerator.recommendedWeeks(beginner.copyWith(level: 'advanced'))]) {
         expect(PlanGenerator.supportedWeeks, contains(r.def));
       }

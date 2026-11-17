@@ -2068,7 +2068,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           onTap: () => _setA({'difficulty': 'challenging'}),
         ),
         _label(l.planLength),
-        if (weeksToEvent != null && weeksToEvent >= 2 && weeksToEvent <= GoalModel.maxEventWeeks)
+        if (weeksToEvent != null && weeksToEvent >= 1 && weeksToEvent <= GoalModel.maxEventWeeks)
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
@@ -2081,7 +2081,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     [
                       pre > 0
                           ? l.planToEventPre(weeksToEvent, pre, specific)
-                          : (weeksToEvent < rec.$1 ? l.planToEventShort(weeksToEvent, rec.$1) : l.planToEvent(weeksToEvent)),
+                          : (weeksToEvent == 1
+                              ? l.planToEventRaceWeek
+                              : (weeksToEvent < rec.$1 ? l.planToEventShort(weeksToEvent, rec.$1) : l.planToEvent(weeksToEvent))),
                       if (widget.edit) l.planKeepsDone,
                     ].join('\n'),
                     style: const TextStyle(fontSize: 13),
@@ -2141,8 +2143,8 @@ List<String> planSummaryLines(AppLocalizations l, UserProfile p, {DateTime? now}
   final toEvent = a.eventDate == null ? null : PlanGenerator.planWeeksUntil(p, a.eventDate!, now ?? DateTime.now());
   return [
     l.summaryWeekStructure('${l.sessionsPerWeekN(total)} – ${sports.map((s) => '${s.label(l)} ${count[s]}×').join(' · ')}'),
-    toEvent != null && toEvent >= 2 && toEvent <= GoalModel.maxEventWeeks
-        ? l.summaryPlanLengthEvent(toEvent)
+    toEvent != null && toEvent >= 1 && toEvent <= GoalModel.maxEventWeeks
+        ? (toEvent == 1 ? l.summaryPlanLengthRaceWeek : l.summaryPlanLengthEvent(toEvent))
         : l.summaryPlanLength(a.planWeeks),
   ];
 }

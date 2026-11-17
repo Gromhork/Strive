@@ -968,7 +968,14 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
   for (final wk in weeks) {
     final runs = wk.ws.where((w) => w.sport == Sport.run);
     for (final long in runs.where((w) => w.intensity == 'long')) {
-      final other = runs.where((w) => w != long && runningKm(w) > runningKm(long) + 0.05).firstOrNull;
+      // (Two run/walks: by their running time – their running km are total km minus estimated walking, each rounded
+      // to 0.1 km, so equal running (a recovery week's 8 × 1 min next to the long 8 × 1 min) differed by 0.1 km.)
+      int runSec(PlannedWorkout w) => w.steps.where((s) => s.kind == 'work').fold(0, (x, s) => x + (s.durationSec ?? 0));
+      bool rw(PlannedWorkout w) => w.steps.any((s) => s.zone == 'walk' && s.kind == 'recovery');
+      final other =
+          runs
+              .where((w) => w != long && (rw(w) && rw(long) ? runSec(w) > runSec(long) : runningKm(w) > runningKm(long) + 0.05))
+              .firstOrNull;
       if (other != null) r.add(_inv11b, c, wk.idx, 'long run ${long.distanceKm} km < "${other.title}" ${other.distanceKm} km');
     }
   }
