@@ -8,6 +8,7 @@ import '../data/default_programs.dart';
 import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'event_spec.dart';
+import 'exercise_class.dart';
 import 'fitness_state.dart';
 import 'goal_model.dart';
 import 'health_limits.dart';
@@ -1284,7 +1285,8 @@ class PlanGenerator {
     if (_longShort && !_finishMode && !_probing) {
       _finishMode = true;
       try {
-        return generate(start: start, weeks: weeks);
+        // (With the gym history – the rotation and the A/B week continue from it; review 2026-11 eng-2.)
+        return generate(start: start, weeks: weeks, gymHistory: gymHistory);
       } finally {
         _finishMode = false;
       }
@@ -1526,8 +1528,9 @@ class PlanGenerator {
       if (w.sport == Sport.run && hf.lowImpactRun && w.intensity != 'race') l.healthRunNote,
       if ((w.sport == Sport.run || w.sport == Sport.ride) && hf.capIntensity && hard) l.healthHeartNote,
       if (w.sport == Sport.swim && hf.avoidOverhead && w.intensity != 'race') l.healthSwimShoulderNote,
-      if (w.sport == Sport.gym && hf.avoidAxialLoading) l.healthGymBackNote,
-      if (w.sport == Sport.gym && hf.avoidOverhead) l.healthGymShoulderNote,
+      // (A workout whose lifts were swapped already says so – [_gym]; the general note for the others.)
+      if (w.sport == Sport.gym && hf.avoidAxialLoading && !w.gymMods.contains(gymModNoAxial)) l.healthGymBackNote,
+      if (w.sport == Sport.gym && hf.avoidOverhead && !w.gymMods.contains(gymModNoOverhead)) l.healthGymShoulderNote,
       if (w.sport == Sport.gym && hf.kneeOrHip) l.healthGymJointNote,
       if (w.sport == Sport.gym && hf.noStraining) l.healthGymHeartNote,
     ];
@@ -1841,11 +1844,7 @@ class PlanGenerator {
     // sessions of the same sport on consecutive days.
     final multisport = profile.focus == TrainingFocus.duathlon || profile.focus == TrainingFocus.triathlon;
     final strictQ = profile.level != 'advanced' || masters;
-    int noQualityDay(List<Sport> seq) {
-      final m = {
-        for (var i = 0; i < seq.length; i++) days[i]: [seq[i]],
-      };
-      final longs = _longSessionDays(m, longDay, masters, minutes: _explicitMinutes(profile));
+    int noQualityDay(List<Sport> seq, Map<Sport, int> longs) {
       var n = 0;
       for (final s in const [Sport.run, Sport.ride]) {
         final sd = [
@@ -1881,7 +1880,23 @@ class PlanGenerator {
         var sc = score(seq);
         // The quality-day check only for arrangements that can still win (it is the costly part).
         if (sc >= bestScore) return;
-        if (multisport) sc += 12 * noQualityDay(seq);
+        if (multisport) {
+          final longs = _longSessionDays(
+            {
+              for (var i = 0; i < seq.length; i++) days[i]: [seq[i]],
+            },
+            longDay,
+            masters,
+            minutes: _explicitMinutes(profile),
+          );
+          sc += 12 * noQualityDay(seq, longs);
+          // No strength session the day before the long run either (C3; [score] covers the long day) – review
+          // 2026-11 GYM-9: a 70.3 athlete's only strength day sat before the long run every week.
+          for (var i = 0; i < seq.length; i++) {
+            final eve = days[i] % 7 + 1;
+            if (seq[i] == Sport.gym && eve != longDay && longs.values.contains(eve)) sc += 8;
+          }
+        }
         if (sc < bestScore) {
           bestScore = sc;
           best = [...seq];
@@ -2468,7 +2483,9 @@ class PlanGenerator {
     // Gym: sessions the day before a key endurance session avoid heavy legs (C3).
     for (final d in days) {
       for (final s in roles[d]!) {
-        if (s.sport == Sport.gym && key.containsKey(next(d))) s.role = 'nolegs';
+        // (Before a run or ride only – a swim's kick barely loads the legs; review 2026-11 GYM-9: a swimmer's
+        // only full-body day went "legs easy" every week before the long swim.)
+        if (s.sport == Sport.gym && (key[next(d)] == Sport.run || key[next(d)] == Sport.ride)) s.role = 'nolegs';
       }
     }
     return roles;
@@ -3641,10 +3658,32 @@ class PlanGenerator {
     final g = PlanGenerator(lookupAppLocalizations(const Locale('en')), plain, templates, () => '');
     final start = addDays(startOfWeek(DateTime.now()), 7);
     g.generate(start: start, weeks: 2);
+    final picks = [
+      for (final (day, ref) in g._gymPicks)
+        if (daysBetween(start, day) ~/ 7 <= 1) (day, ref),
+    ];
+    // Weeks A and B repeat as a pair: week B's last program must not be week A's first again (review 2026-11
+    // UX-10: 5 PPL days – B ended with Push, A starts with Push, and the setup warned about its own suggestion).
+    // The program that takes its place: one neither neighbour has, the least used, no leg day before the long day.
+    final rotation = _rotationFor(plain.athlete, scheduleOf(plain));
+    final long = longDayOf(p);
+    final n = picks.length;
+    for (var i = 0; n > 2 && rotation.length > 2 && i < n; i++) {
+      final k = (i + 1) % n;
+      if (picks[i].$2 != picks[k].$2) continue;
+      final at = k == 0 ? i : k; // change week B, not the first day of week A
+      final prev = picks[(at - 1 + n) % n].$2, next = picks[(at + 1) % n].$2;
+      final day = picks[at].$1;
+      int used(String r) => picks.where((x) => x.$2 == r).length;
+      final cands = [
+        for (final r in rotation)
+          if (r != prev && r != next && !(day.weekday % 7 + 1 == long && g._gymInfo(r).legHeavy)) r,
+      ]..sort((x, y) => used(x).compareTo(used(y)));
+      if (cands.isNotEmpty) picks[at] = (day, cands.first);
+    }
     final out = (a: <int, String>{}, b: <int, String>{});
-    for (final (day, ref) in g._gymPicks) {
+    for (final (day, ref) in picks) {
       final w = daysBetween(start, day) ~/ 7;
-      if (w > 1) break;
       final t = g._templateOfRef(ref);
       (w == 0 ? out.a : out.b)[day.weekday] = t != null ? gymProgramRef(t) : 'key:$ref';
     }
@@ -3653,10 +3692,14 @@ class PlanGenerator {
 
   /// Program rotation for the chosen (or recommended) split and equipment.
   static List<String> _rotationFor(AthleteData a, Map<int, List<Sport>> schedule) {
-    if (a.equipment == 'home') return splitRotation['home']!;
-    if (a.equipment == 'bodyweight') return splitRotation['bodyweight']!;
     final all = schedule.values.expand((e) => e);
     final gymDays = all.where((s) => s == Sport.gym).length;
+    // Home / bodyweight: full body A/B up to 3 days; from 4 days upper / lower (review 2026-11 GYM-4: full body
+    // on consecutive days loaded every muscle two days in a row).
+    if (a.equipment == 'home' || a.equipment == 'bodyweight') {
+      final key = a.equipment == 'home' ? 'home' : 'bodyweight';
+      return splitRotation[gymDays >= 4 ? '${key}_ul' : key]!;
+    }
     final endurance = all.where((s) => s != Sport.gym).length;
     final split = a.gymSplit == 'auto' ? recommendedSplit(gymDays, enduranceSessions: endurance) : a.gymSplit;
     final rot = splitRotation[split] ?? splitRotation['fullbody']!;
@@ -3784,20 +3827,23 @@ class PlanGenerator {
   /// Role 'nolegs': a key endurance session follows – leg-heavy programs wait if possible;
   /// [raceSoon]: no leg-heavy program at all (an assigned one gives way to the rotation).
   Map<DateTime, String> _planGymWeek(_GymQueue queue, List<(DateTime, String)> days, int weekNo, bool Function(DateTime) raceSoon) {
-    final slots = <_GymSlot>[];
-    for (final (day, role) in days) {
-      final assigned = _assignedGym(day.weekday, weekNo);
+    _GymSlot slot(DateTime day, String role, int week) {
+      final assigned = _assignedGym(day.weekday, week);
       final race = raceSoon(day);
-      slots.add(
-        _GymSlot(
-          day,
-          noLegs: role == 'nolegs',
-          race: race,
-          fixed: assigned != null && !(race && _gymInfo(assigned).legHeavy) ? assigned : null,
-        ),
+      return _GymSlot(
+        day,
+        noLegs: role == 'nolegs',
+        race: race,
+        fixed: assigned != null && !(race && _gymInfo(assigned).legHeavy) ? assigned : null,
       );
     }
-    final refs = queue.planWeek(slots);
+
+    final slots = [for (final (day, role) in days) slot(day, role, weekNo)];
+    // The lookahead's next week: the same days and roles, with its own race window (none once the race is over –
+    // review 2026-11 GYM-6: a copied race window made a passed-over leg day look blocked after the race too) and
+    // its own assignment (week B).
+    final next = [for (final (day, role) in days) slot(addDays(day, 7), role, weekNo + 1)];
+    final refs = queue.planWeek(slots, next);
     for (var i = 0; i < slots.length; i++) {
       _gymPicks.add((slots[i].day, refs[i]));
     }
@@ -3839,7 +3885,9 @@ class PlanGenerator {
     final deload = phase == 'recovery' || phase == 'taper' || noLegs;
     // Beginners stay at RIR 3 → 3 → 2 (review 2026-11 L2: technique before effort; RIR 1 is for experienced
     // lifters, Helms 2016).
-    final rir = deload ? 4 : (beginner ? const [3, 3, 2] : const [3, 2, 1])[min(block, 2)];
+    // Heart / blood pressure (review 2026-11 GYM-2): never closer than 2 reps to failure – the RIR-1 week
+    // contradicted the health note's "2–3 reps in reserve" (and LoadPrescriber prescribes no AMRAP sets).
+    final rir = max(hf.noStraining ? 2 : 0, deload ? 4 : (beginner ? const [3, 3, 2] : const [3, 2, 1])[min(block, 2)]);
     // Beginners (§2.3/2.4, review 2026-11 IMPORTANT 19): the first [_regressionWeeks] weeks use the
     // regression of the technically demanding lifts ([gymRegressions]); the full lifts follow afterwards.
     // Before the race: the program without its leg exercises (upper body, core).
@@ -3849,14 +3897,28 @@ class PlanGenerator {
     // The load adaptations the notes promise are stored too (review r7 R3/S2/S3: "legs 10–15 % lighter"
     // and the race window's "about 10 % lighter" were text only – the prescriber gave full loads and
     // AMRAP sets): [gymLoadPhase] passes them to LoadPrescriber everywhere the workout is used.
+    // Health limitations (review 2026-11 GYM-2): the lifts the health note warns about are swapped in the
+    // workout itself ([gymHealthMods]) – back: no axial loading, shoulder: no overhead pressing, knee / hip /
+    // ankle: no jumps. Applied before the beginner regressions.
+    final health = [if (hf.avoidAxialLoading) gymModNoAxial, if (hf.avoidOverhead) gymModNoOverhead, if (hf.lowImpactRun) gymModNoJump];
     final mods = [
-      if (beginner && week < _regressionWeeks && gymModApplies(gymModRegress, program)) gymModRegress,
       if (noLegs && gymModApplies(gymModNoLegs, program)) gymModNoLegs,
-      if (noLegs) gymModRaceWeek,
-      if (legsBeforeKey) gymModLegsEasy,
+      for (final m in health)
+        if (gymModApplies(m, program)) m,
     ];
+    // (Regressions only for what the health swaps left.)
+    final unregressed = applyGymMods(program, mods, gymGoal: a.gymGoal);
+    if (beginner && week < _regressionWeeks && gymModApplies(gymModRegress, unregressed)) mods.add(gymModRegress);
+    mods.addAll([if (noLegs) gymModRaceWeek, if (legsBeforeKey) gymModLegsEasy]);
     final exercises = applyGymMods(program, mods, gymGoal: a.gymGoal);
     final minutes = exercises.isNotEmpty ? estimateGymMinutes(exercises) : (t?.estimatedMinutes ?? 60);
+    // The regression note names lat pulldowns, dumbbell RDLs and reverse crunches; other regressions (bodyweight
+    // programs, the assisted pull-up of a Pull day that has pulldowns already) get the general note.
+    const named = {('0652', '2330'), ('0032', '1459'), ('0085', '1459'), ('0472', '0872')};
+    final namedOnly = [
+      for (var i = 0; i < unregressed.length && i < exercises.length; i++)
+        if (unregressed[i].exId != exercises[i].exId) (unregressed[i].exId, exercises[i].exId),
+    ].every(named.contains);
     // Sets, rep ranges and loads are per exercise (program + exercise_class.dart + LoadPrescriber,
     // which also applies the deload: ~10 % lighter, same sets) – the note only states what is true
     // for every exercise: the effort target and the progression.
@@ -3867,9 +3929,14 @@ class PlanGenerator {
         l.wGymDeloadNote5
       else ...[
         deloadAhead ? l.wGymLoadDesc(rir) : l.wGymLoadDescNoDeload(rir),
-        l.wGymProgressNote,
+        // How LoadPrescriber progresses (review 2026-11 GYM-14): bodyweight programs by reps and harder
+        // variations, beginners linearly on the compound lifts, everyone else by double progression.
+        if (_bodyweightProgram(exercises)) l.wGymProgressNoteBw else if (beginner) l.wGymProgressNoteLinear else l.wGymProgressNote,
       ],
-      if (mods.contains(gymModRegress)) l.wGymRegressionNote,
+      if (mods.contains(gymModRegress)) namedOnly ? l.wGymRegressionNote : l.wGymRegressionNote2,
+      if (mods.contains(gymModNoAxial)) l.healthGymBackSwapNote,
+      if (mods.contains(gymModNoOverhead)) l.healthGymShoulderSwapNote,
+      if (mods.contains(gymModNoJump)) l.healthGymNoJumpNote,
       if (legsBeforeKey && !info.legHeavy) l.wGymConcurrentNote,
       if (legsBeforeKey) l.wGymLegsEasyNote,
       if (noLegs) l.wGymRaceWeekNote,
@@ -3881,7 +3948,9 @@ class PlanGenerator {
       sport: Sport.gym,
       title: name,
       description: notes.join('\n'),
-      durationMin: min(minutes, capMin),
+      // The workout's real length (review 2026-11 GYM-12: a 46 min program was stored – and shown in reminders
+      // and the calendar export – as the day's 30 min); the note above says it is longer than the day allows.
+      durationMin: minutes,
       templateId: t?.id,
       intensity: deload ? 'easy' : 'moderate',
       phase: phase,
@@ -3892,6 +3961,11 @@ class PlanGenerator {
   /// Weeks a beginner's strength plan uses the regressions of [gymRegressions] (about one 4–6 week
   /// block of technique and base strength before the full lifts, §2.4).
   static const _regressionWeeks = 6;
+
+  /// A program of bodyweight exercises only (the built-in bodyweight programs): no load to add – it
+  /// progresses by reps and harder variations.
+  static bool _bodyweightProgram(List<GymExercise> exercises) =>
+      exercises.isNotEmpty && exercises.every((e) => e.bw ?? classifyLift(e.exId, e.name).bodyweight);
 
   String _builtinName(String key) => _builtins.where((t) => t.key == key).firstOrNull?.name ?? '';
 
@@ -5230,13 +5304,14 @@ class _GymInfo {
   /// Has leg exercises at all.
   final bool hasLegs;
 
-  bool overlaps(_GymInfo o) => groups.any(o.groups.contains);
+  /// Muscle groups both programs train ([gymMuscleSets] ≥ 3 work sets each).
+  int overlaps(_GymInfo o) => groups.where(o.groups.contains).length;
 
   factory _GymInfo.of(List<GymExercise> exercises, {bool legHeavy = false}) {
     final n = gymGroupSets(exercises);
     return _GymInfo(
       {
-        for (final e in n.entries)
+        for (final e in gymMuscleSets(exercises).entries)
           if (e.value >= 3) e.key,
       },
       legHeavy: legHeavy || legHeavyExercises(exercises),
@@ -5356,8 +5431,14 @@ class _GymQueue {
       // leg day on a key session's eve (review r7 S1 / S4: Legs twice a week in a bro split, Upper twice as
       // often as Lower for hybrid athletes) – every program about equally often.
       if (recent.contains(ref) && _due.length > 2) cost += 100;
-      if (yesterday != null && yesterday.overlaps(g)) cost += 60;
-      if (g.legHeavy && slot.race) cost += 500;
+      // (Each further shared muscle group adds a little: chest day → shoulder day shares delts and triceps, back
+      // day → shoulder day only the rear delts – review 2026-11 GYM-10.)
+      final shared = yesterday == null ? 0 : yesterday.overlaps(g);
+      // (≤ 80: still below a program again before the others had their turn.)
+      if (shared > 0) cost += 60 + 10 * min(shared - 1, 2);
+      // Before a race a leg-heavy program never goes – absolute while another program exists (review 2026-11
+      // GYM-6 / UX-8: overdue penalties outweighed it, and "Legs" without its leg work was a core-only session).
+      if (g.legHeavy && slot.race) cost += 100000;
       // (Also when it is overdue – then the others cost more anyway, but the lookahead must see that passing it
       // over only moves it onto the next key session's eve.)
       if (g.legHeavy && slot.noLegs && !slot.race) cost += 40;
@@ -5367,25 +5448,31 @@ class _GymQueue {
     return out;
   }
 
-  /// Lowest summed cost of [slots] from [i] on, looking [depth] sessions ahead.
-  int _future(List<_GymSlot> slots, int i, int depth) {
+  /// Lowest summed cost of [slots] from [i] on, looking [depth] sessions ahead; [budget] or more when
+  /// nothing stays below [budget] (branch and bound – the cheapest programs are tried first).
+  int _future(List<_GymSlot> slots, int i, int depth, [int budget = 1 << 30]) {
     if (depth == 0 || i >= slots.length) return 0;
     final slot = slots[i];
-    if (slot.fixed != null) return (_GymQueue._copy(this)..record(slot.fixed!, slot.day))._future(slots, i + 1, depth - 1);
+    if (slot.fixed != null) {
+      // An assigned program cannot move – the free session before it must not be the same program.
+      final repeat = slot.fixed == last ? 1000 : 0;
+      return repeat + (_GymQueue._copy(this)..record(slot.fixed!, slot.day))._future(slots, i + 1, depth - 1, budget - repeat);
+    }
     final costs = _costs(slot);
-    var best = 1 << 30;
-    for (var k = 0; k < costs.length; k++) {
-      if (costs[k] >= best) continue;
+    final order = [for (var k = 0; k < costs.length; k++) k]..sort((x, y) => costs[x].compareTo(costs[y]));
+    var best = budget;
+    for (final k in order) {
+      if (costs[k] >= best) break;
       final q = _GymQueue._copy(this)..record(_due[k], slot.day);
-      best = min(best, costs[k] + q._future(slots, i + 1, depth - 1));
+      best = min(best, costs[k] + q._future(slots, i + 1, depth - 1, best - costs[k]));
     }
     return best;
   }
 
   /// The programs of a week's gym [slots] (in date order).
-  List<String> planWeek(List<_GymSlot> slots) {
-    // Lookahead into the next week: the same weekly pattern (week B's assignment aside).
-    final ahead = [...slots, for (final s in slots) _GymSlot(addDays(s.day, 7), noLegs: s.noLegs, race: s.race, fixed: s.fixed)];
+  /// [next]: the next week's slots (lookahead).
+  List<String> planWeek(List<_GymSlot> slots, List<_GymSlot> next) {
+    final ahead = [...slots, ...next];
     final out = <String>[];
     for (var i = 0; i < slots.length; i++) {
       final slot = slots[i];
@@ -5396,10 +5483,13 @@ class _GymQueue {
       }
       final costs = _costs(slot);
       var pick = 0, best = 1 << 30;
+      // The rest of the week (two to four sessions ahead) – review 2026-11 GYM-10: two sessions ahead, Monday's Back
+      // looked as good as Chest, and Chest → Shoulders on consecutive days followed every bro-split week.
+      final depth = max(2, min(4, slots.length - 1 - i));
       for (var k = 0; k < costs.length; k++) {
         if (costs[k] >= best) continue;
         final q = _GymQueue._copy(this)..record(_due[k], slot.day);
-        final total = costs[k] + q._future(ahead, i + 1, 2);
+        final total = costs[k] + q._future(ahead, i + 1, depth, best - costs[k]);
         if (total < best) {
           best = total;
           pick = k;

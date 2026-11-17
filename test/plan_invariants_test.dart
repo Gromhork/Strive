@@ -9,6 +9,7 @@ import 'package:strive/core/sport.dart';
 import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
+import 'package:strive/services/plan_exercises.dart';
 import 'package:strive/services/plan_generator.dart';
 import 'package:strive/services/schedule_advisor.dart';
 
@@ -550,7 +551,7 @@ void main() {
       }
     });
 
-    test('back / shoulder / heart: strength sessions keep their programs and get a note', () {
+    test('back / shoulder / heart: strength sessions keep their programs and get a note (swapped lifts named)', () {
       for (final e in profiles.entries.where((e) => e.value.focus.sports.contains(Sport.gym))) {
         final limited = withLimits(e.value, ['back', 'shoulder', 'heart', 'knee']);
         final plan = PlanGenerator(l, limited, templates, id).generate(start: start, weeks: 4);
@@ -559,7 +560,10 @@ void main() {
         expect(gym.map((w) => w.title).toList(), base.where((w) => w.sport == Sport.gym).map((w) => w.title).toList(), reason: e.key);
         for (final w in gym) {
           final lines = w.description.split('\n');
-          expect(lines, containsAll([l.healthGymBackNote, l.healthGymShoulderNote, l.healthGymHeartNote, l.healthGymJointNote]));
+          // Lifts the workout swapped are named as swapped (review 2026-11 GYM-2), else the general note.
+          expect(lines, containsAll([l.healthGymHeartNote, l.healthGymJointNote]));
+          expect(lines, contains(w.gymMods.contains(gymModNoAxial) ? l.healthGymBackSwapNote : l.healthGymBackNote));
+          expect(lines, contains(w.gymMods.contains(gymModNoOverhead) ? l.healthGymShoulderSwapNote : l.healthGymShoulderNote));
         }
       }
     });

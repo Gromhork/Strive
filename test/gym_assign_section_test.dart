@@ -200,6 +200,22 @@ void main() {
     expect(find.text(l.gymAssignWarnLegs('Legs', 'Fri')), findsOneWidget);
   });
 
+  testWidgets('5 PPL days (review 2026-11 UX-10): the suggestion does not warn about itself; the uneven spread is said plainly', (
+    tester,
+  ) async {
+    await pumpHost(tester, ppl.copyWith(trainingDays: const [1, 2, 3, 5, 6]));
+    await tester.tap(find.byKey(const ValueKey('gymAssign')));
+    await tester.pumpAndSettle();
+    final a = hostProfile(tester).athlete;
+    expect(a.gymAB, isTrue);
+    // Week B does not end with week A's first program (A -> B -> A).
+    expect(a.gymPlanB[6], isNot(a.gymPlanA[1]));
+    for (final name in ['Push', 'Pull', 'Legs']) {
+      expect(find.text(l.gymAssignWarnBackToBack(name, 'Sat\u2013Mon')), findsNothing);
+    }
+    expect(find.text(l.gymAssignUneven(3, 5)), findsOneWidget);
+  });
+
   testWidgets('4 PPL days (review r7 R7-5): week A / B preselected, warnings for back-to-back sessions and legs 1× a week', (tester) async {
     final four = ppl.copyWith(trainingDays: const [1, 2, 4, 6]);
     await pumpHost(tester, four);

@@ -366,8 +366,10 @@ SmartProgression? smartProgression(
   // 3. Linear progression (beginner compounds): every target hit → one step, same reps;
   //    a target missed narrowly → same weight and targets once more (two misses in a row
   //    end linear progression, see LoadPrescriber).
-  //    Needs the prescribed targets (old data without them uses double progression).
-  if (linear && loaded && work.every((s) => s.target != null && s.target! > 0)) {
+  //    Needs the prescribed targets (old data without them uses double progression), and a step of
+  //    ≤ 10 % of the load (NSCA 2–10 %; review 2026-11 GYM-1: a 10 kg dumbbell press jumped to 12 kg, +20 %,
+  //    at the same reps and failed) – bigger steps go through double progression / microloading below.
+  if (linear && loaded && increment / total <= 0.10 + 1e-9 && work.every((s) => s.target != null && s.target! > 0)) {
     final t = [for (final s in work) min(top, max(bottom, s.target!))];
     if (work.every((s) => s.reps >= s.target!)) {
       if (eff.hard) return hold(ProgressReason.holdHard);

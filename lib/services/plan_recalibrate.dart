@@ -463,7 +463,8 @@ class Recalibrator {
         else
           p,
     ];
-    final gapFinder = fillGaps ? PlanGaps(l, profile, plans: current, now: now, templates: templates, newId: newId) : null;
+    final gapFinder =
+        fillGaps ? PlanGaps(l, profile, plans: current, now: now, templates: templates, sessions: sessions, newId: newId) : null;
     final fills = {for (final f in gapFinder?.find() ?? const <GapFill>[]) f.plan.id: f};
     final budgets = gapFinder?.budgets ?? const <String, int>{};
     // Workouts that count as hard neighbours of a refilled session (endurance, not skipped).

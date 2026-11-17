@@ -82,6 +82,24 @@ UserProfile withReachedVolume(
   );
 }
 
+/// The athlete's gym workouts of the [days] before [day] (day, program id), oldest first: recorded
+/// sessions of a program and planned workouts marked as done – a new plan's gym rotation (and an
+/// A/B week alternation) continues from them ([PlanGenerator.generate]).
+List<(DateTime, String)> gymHistoryBefore(List<PlannedWorkout> existing, List<Session> sessions, DateTime day, {int days = 21}) {
+  final from = addDays(dayOnly(day), -days);
+  bool inWindow(DateTime d) => !dayOnly(d).isBefore(from) && dayOnly(d).isBefore(dayOnly(day));
+  final out = <(DateTime, String)>[
+    for (final s in sessions)
+      if (s.sport == Sport.gym && s.templateId != null && inWindow(s.start)) (dayOnly(s.start), s.templateId!),
+  ];
+  final seen = {for (final (d, id) in out) '${dayKey(d)}|$id'};
+  for (final p in existing) {
+    if (p.sport != Sport.gym || !p.isDone || p.templateId == null || !inWindow(p.date)) continue;
+    if (seen.add('${dayKey(p.date)}|${p.templateId}')) out.add((dayOnly(p.date), p.templateId!));
+  }
+  return out..sort((x, y) => x.$1.compareTo(y.$1));
+}
+
 /// Gaps in the current plan (docs/training-science.md §11, "gaps"). Pure – no Firestore.
 ///
 /// The plan is rebuilt with [PlanGenerator] from its start (stored on the profile as
@@ -99,12 +117,23 @@ UserProfile withReachedVolume(
 /// they are never "missing". Weeks that only hold the athlete's own (non-generated) workouts
 /// are left alone.
 class PlanGaps {
-  PlanGaps(this.l, this.profile, {required this.plans, required this.now, this.templates = const [], String Function()? newId})
-    : _newId = newId ?? (() => 'gap${_seq++}');
+  PlanGaps(
+    this.l,
+    this.profile, {
+    required this.plans,
+    required this.now,
+    this.templates = const [],
+    this.sessions = const [],
+    String Function()? newId,
+  }) : _newId = newId ?? (() => 'gap${_seq++}');
 
   final AppLocalizations l;
   final UserProfile profile;
   final List<PlannedWorkout> plans;
+
+  /// The athlete's recorded sessions: with the plan's done gym workouts, the gym history the plan was
+  /// generated with ([gymHistoryBefore]) – the rebuilt plan's rotation then matches the calendar's.
+  final List<Session> sessions;
   final DateTime now;
   final List<WorkoutTemplate> templates;
   final String Function() _newId;
@@ -242,7 +271,10 @@ class PlanGaps {
   List<PlannedWorkout>? _anchor(List<PlannedWorkout> phased) {
     final a = profile.athlete;
     if (a.planStart != null && (a.planLength ?? 0) > 0 && phased.any((p) => !dayOnly(p.date).isBefore(dayOnly(a.planStart!)))) {
-      return _gen(profile, dayOnly(a.planStart!), a.planLength!);
+      // The gym history the plan was generated with (PlanService.replacePlan): without it the rebuilt rotation
+      // was offset from the calendar's and a deleted Legs day was refilled with Pull (review 2026-11 eng-5).
+      final start = dayOnly(a.planStart!);
+      return _gen(profile, start, a.planLength!, gymHistory: gymHistoryBefore(plans, sessions, start));
     }
     // Latest block of generated workouts (no hole > 3 weeks).
     var i = phased.length - 1;
@@ -266,7 +298,7 @@ class PlanGaps {
     for (final start in cands.reversed.take(4)) {
       final mine = block.where((p) => !dayOnly(p.date).isBefore(start)).toList();
       final weeks = daysBetween(_monday(start), _monday(mine.last.date)) ~/ 7 + 1;
-      final gen = _gen(profile, start, max(1, weeks.round()));
+      final gen = _gen(profile, start, max(1, weeks.round()), gymHistory: gymHistoryBefore(plans, sessions, start));
       final phaseOf = <String, String>{
         for (final p in gen)
           if (p.intensity != 'race') dayKey(_monday(p.date)): p.phase ?? '',

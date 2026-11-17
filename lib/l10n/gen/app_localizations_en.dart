@@ -6396,4 +6396,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String folderDuplicatedHidden(int n) {
     return '$n hidden by the sport filter.';
   }
+
+  @override
+  String get wGymRegressionNote2 => 'First weeks: easier variations of the technically demanding exercises – the full exercises follow once the technique is solid.';
+
+  @override
+  String get wGymProgressNoteLinear => 'Progression: on the main lifts the weight goes up in small steps as long as you make every rep; on the other exercises first build the reps to the top of the range, then add weight.';
+
+  @override
+  String get wGymProgressNoteBw => 'Progression: first more reps – also beyond the range – then a harder variation (pull-ups and dips: added weight).';
+
+  @override
+  String get healthGymBackSwapNote => 'Back: squats, deadlifts, bent-over rows and standing presses are replaced by leg press, glute bridges and supported variations – no heavy axial load, neutral spine.';
+
+  @override
+  String get healthGymShoulderSwapNote => 'Shoulder: overhead pressing, overhead triceps work and dips are replaced by incline and close-grip variations – stay pain-free.';
+
+  @override
+  String get healthGymNoJumpNote => 'No jumps: jump squats are replaced by squats without a jump.';
+
+  @override
+  String get splitHomeNote2 => 'For training at home or with body weight Strive uses full-body programs (2 alternating); from 4 strength days a week upper and lower body alternate.';
+
+  @override
+  String get equipBodyweightSub2 => 'No equipment – a sturdy table, a chair and a door are enough';
+
+  @override
+  String get splitFullbodyWarning => 'Full body on 4 or more days loads every muscle on consecutive days – from 4 days upper / lower is the better choice.';
+
+  @override
+  String gymAssignUneven(int n, int days) {
+    return '$n programs cannot be spread evenly over $days strength days a week – one of them comes up a little more often. That is as even as it gets.';
+  }
 }

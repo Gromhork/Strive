@@ -6396,4 +6396,36 @@ class AppLocalizationsDe extends AppLocalizations {
   String folderDuplicatedHidden(int n) {
     return '$n davon blendet der Sportfilter aus.';
   }
+
+  @override
+  String get wGymRegressionNote2 => 'Erste Wochen: leichtere Varianten der technisch anspruchsvollen Übungen – die vollen Übungen folgen, sobald die Technik sitzt.';
+
+  @override
+  String get wGymProgressNoteLinear => 'Steigerung: Bei den Grundübungen steigt das Gewicht in kleinen Schritten, solange du alle Wiederholungen schaffst; bei den übrigen Übungen erst die Wiederholungen bis zum oberen Ende aufbauen, dann Gewicht erhöhen.';
+
+  @override
+  String get wGymProgressNoteBw => 'Steigerung: Erst mehr Wiederholungen – auch über den Bereich hinaus –, dann eine schwerere Variante (Klimmzüge und Dips: Zusatzgewicht).';
+
+  @override
+  String get healthGymBackSwapNote => 'Rücken: Kniebeugen, Kreuzheben, vorgebeugtes Rudern und Drücken im Stehen sind durch Beinpresse, Glute Bridges und gestützte Varianten ersetzt – keine schwere axiale Last, neutrale Wirbelsäule.';
+
+  @override
+  String get healthGymShoulderSwapNote => 'Schulter: Drücken über Kopf, Trizeps über Kopf und Dips sind durch Schrägbank- und enge Varianten ersetzt – schmerzfrei bleiben.';
+
+  @override
+  String get healthGymNoJumpNote => 'Keine Sprünge: Sprungkniebeugen sind durch Kniebeugen ohne Sprung ersetzt.';
+
+  @override
+  String get splitHomeNote2 => 'Bei Training zuhause oder mit Eigengewicht nutzt Strive Ganzkörper-Programme (2 im Wechsel); ab 4 Krafttagen pro Woche wechseln sich Ober- und Unterkörper ab.';
+
+  @override
+  String get equipBodyweightSub2 => 'Keine Geräte – ein stabiler Tisch, ein Stuhl und eine Tür reichen';
+
+  @override
+  String get splitFullbodyWarning => 'Ganzkörper an 4 oder mehr Tagen belastet jeden Muskel an aufeinanderfolgenden Tagen – ab 4 Tagen ist Ober-/Unterkörper die bessere Wahl.';
+
+  @override
+  String gymAssignUneven(int n, int days) {
+    return '$n Programme lassen sich nicht gleichmäßig auf $days Krafttage pro Woche verteilen – eines kommt etwas öfter dran. Gleichmäßiger geht es nicht.';
+  }
 }

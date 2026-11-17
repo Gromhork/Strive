@@ -11422,6 +11422,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} hidden by the sport filter.'**
   String folderDuplicatedHidden(int n);
+
+  /// No description provided for @wGymRegressionNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'First weeks: easier variations of the technically demanding exercises – the full exercises follow once the technique is solid.'**
+  String get wGymRegressionNote2;
+
+  /// No description provided for @wGymProgressNoteLinear.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression: on the main lifts the weight goes up in small steps as long as you make every rep; on the other exercises first build the reps to the top of the range, then add weight.'**
+  String get wGymProgressNoteLinear;
+
+  /// No description provided for @wGymProgressNoteBw.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression: first more reps – also beyond the range – then a harder variation (pull-ups and dips: added weight).'**
+  String get wGymProgressNoteBw;
+
+  /// No description provided for @healthGymBackSwapNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Back: squats, deadlifts, bent-over rows and standing presses are replaced by leg press, glute bridges and supported variations – no heavy axial load, neutral spine.'**
+  String get healthGymBackSwapNote;
+
+  /// No description provided for @healthGymShoulderSwapNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulder: overhead pressing, overhead triceps work and dips are replaced by incline and close-grip variations – stay pain-free.'**
+  String get healthGymShoulderSwapNote;
+
+  /// No description provided for @healthGymNoJumpNote.
+  ///
+  /// In en, this message translates to:
+  /// **'No jumps: jump squats are replaced by squats without a jump.'**
+  String get healthGymNoJumpNote;
+
+  /// No description provided for @splitHomeNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'For training at home or with body weight Strive uses full-body programs (2 alternating); from 4 strength days a week upper and lower body alternate.'**
+  String get splitHomeNote2;
+
+  /// No description provided for @equipBodyweightSub2.
+  ///
+  /// In en, this message translates to:
+  /// **'No equipment – a sturdy table, a chair and a door are enough'**
+  String get equipBodyweightSub2;
+
+  /// No description provided for @splitFullbodyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Full body on 4 or more days loads every muscle on consecutive days – from 4 days upper / lower is the better choice.'**
+  String get splitFullbodyWarning;
+
+  /// No description provided for @gymAssignUneven.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} programs cannot be spread evenly over {days} strength days a week – one of them comes up a little more often. That is as even as it gets.'**
+  String gymAssignUneven(int n, int days);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
