@@ -122,6 +122,10 @@ Future<bool> signOutAndClear(BuildContext context, {bool checked = false}) async
 
 /// Deletes a guest's server data and the anonymous account. Best effort: offline, the data
 /// stays (the guest was told signing out deletes it; there is nothing else to do with it).
+/// The data deleted, `guest.delete()` can still fail (e.g. `requires-recent-login` for a guest
+/// signed in long ago – an anonymous account cannot sign in again): an empty anonymous auth
+/// record remains, without any data and unreachable. Accepted; Firebase's automatic clean-up of
+/// anonymous accounts (Identity Platform) removes such records if enabled.
 Future<bool> deleteGuestAccount(User guest, {Duration timeout = const Duration(seconds: 10)}) async {
   try {
     await Repository(guest.uid).deleteAllData().timeout(timeout);

@@ -255,8 +255,9 @@ abstract class WorkoutStore {
   Future<void> clearSummary();
 
   /// Hands the stored workout / summary of account [from] to account [to] (the guest's data
-  /// moved into an existing account: it is the same person's workout).
-  Future<void> reassign(String from, String to);
+  /// moved into an existing account: it is the same person's workout). [relink] re-points their
+  /// program and planned workout (old id → the id in [to], null = none there).
+  Future<void> reassign(String from, String to, {String? Function(String? id)? relink});
 }
 
 /// File storage in the app's private support directory.
@@ -392,13 +393,28 @@ class FileWorkoutStore implements WorkoutStore {
   Future<void> clearSummary() => _run(() => _delete('summary.json'));
 
   @override
-  Future<void> reassign(String from, String to) => _run(() async {
+  Future<void> reassign(String from, String to, {String? Function(String? id)? relink}) => _run(() async {
     for (final name in const ['active.json', 'summary.json']) {
       final f = await _file(name);
       if (!await f.exists()) continue;
       final m = jsonDecode(await f.readAsString()) as Map;
-      if (m['uid'] == from) await _writeAtomic(name, jsonEncode({...m, 'uid': to}));
+      if (m['uid'] == from) await _writeAtomic(name, _reassigned(m, to, relink));
     }
+  });
+}
+
+/// A stored file ([m]) handed to account [to], its program / planned workout re-pointed.
+String _reassigned(Map m, String to, String? Function(String? id)? relink) {
+  final data = m['data'];
+  return jsonEncode({
+    ...m,
+    'uid': to,
+    if (relink != null && data is Map)
+      'data': {
+        ...data,
+        for (final k in const ['planId', 'templateId'])
+          if (data.containsKey(k)) k: relink(data[k] as String?),
+      },
   });
 }
 
@@ -452,11 +468,11 @@ class MemoryWorkoutStore implements WorkoutStore {
   Future<void> clearSummary() async => summary = null;
 
   @override
-  Future<void> reassign(String from, String to) async {
+  Future<void> reassign(String from, String to, {String? Function(String? id)? relink}) async {
     String? re(String? json) {
       if (json == null) return null;
       final m = jsonDecode(json) as Map;
-      return m['uid'] == from ? jsonEncode({...m, 'uid': to}) : json;
+      return m['uid'] == from ? _reassigned(m, to, relink) : json;
     }
 
     active = re(active);

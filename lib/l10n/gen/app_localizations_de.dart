@@ -6416,13 +6416,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get signOutAnyway => 'Trotzdem abmelden';
 
   @override
-  String get guestExistsTitle => 'Dieses Google-Konto hat schon Strive-Daten';
+  String get guestExistsTitle => 'Dieses Konto hat schon Strive-Daten';
 
   @override
   String get guestExistsBody => 'Dein Gastkonto lässt sich nicht damit verknüpfen. Du kannst zu diesem Konto wechseln und deine Gast-Daten mitnehmen – oder wechseln und die Gast-Daten verwerfen.';
 
   @override
-  String get guestExistsMergeInfo => 'Mitgenommen werden deine Einheiten, Körperwerte, eigenen Programme und Ziele. Profil und Trainingsplan des Google-Kontos bleiben.';
+  String get guestExistsMergeInfo => 'Mitgenommen werden deine Einheiten, Körperwerte, eigenen Programme und Ziele. Profil und Trainingsplan des Kontos bleiben.';
 
   @override
   String get guestExistsMerge => 'Daten mitnehmen';
@@ -6435,15 +6435,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String guestSwitchMerged(int count) {
-    return 'Zum Google-Konto gewechselt – übernommene Einheiten: $count';
+    return 'Zu deinem Konto gewechselt – übernommene Einheiten: $count';
   }
 
   @override
-  String get guestSwitchDiscarded => 'Zum Google-Konto gewechselt. Die Gast-Daten wurden gelöscht.';
+  String get guestSwitchDiscarded => 'Zu deinem Konto gewechselt. Die Gast-Daten wurden gelöscht.';
 
   @override
   String get guestSwitchFailed => 'Wechsel fehlgeschlagen – es wurde nichts geändert. Prüf deine Internetverbindung und versuch es noch einmal.';
 
   @override
-  String get guestSwitchSignInAgain => 'Bitte melde dich mit Google an, um weiterzumachen.';
+  String get guestSwitchSignInAgain => 'Bitte melde dich noch einmal an, um weiterzumachen.';
 }

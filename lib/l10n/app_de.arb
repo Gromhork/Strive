@@ -1894,14 +1894,14 @@
   "signOutUnsyncedTitle": "Noch nicht synchronisiert",
   "signOutUnsyncedBody": "Einige Änderungen – z. B. offline erfasste Einheiten – sind noch nicht auf dem Server. Wenn du dich jetzt abmeldest, gehen sie verloren. Geh online und warte kurz, dann bleiben sie erhalten.",
   "signOutAnyway": "Trotzdem abmelden",
-  "guestExistsTitle": "Dieses Google-Konto hat schon Strive-Daten",
+  "guestExistsTitle": "Dieses Konto hat schon Strive-Daten",
   "guestExistsBody": "Dein Gastkonto lässt sich nicht damit verknüpfen. Du kannst zu diesem Konto wechseln und deine Gast-Daten mitnehmen – oder wechseln und die Gast-Daten verwerfen.",
-  "guestExistsMergeInfo": "Mitgenommen werden deine Einheiten, Körperwerte, eigenen Programme und Ziele. Profil und Trainingsplan des Google-Kontos bleiben.",
+  "guestExistsMergeInfo": "Mitgenommen werden deine Einheiten, Körperwerte, eigenen Programme und Ziele. Profil und Trainingsplan des Kontos bleiben.",
   "guestExistsMerge": "Daten mitnehmen",
   "guestExistsDiscard": "Gast-Daten verwerfen",
   "guestSwitchRunning": "Konto wird gewechselt …",
-  "guestSwitchMerged": "Zum Google-Konto gewechselt – übernommene Einheiten: {count}",
-  "guestSwitchDiscarded": "Zum Google-Konto gewechselt. Die Gast-Daten wurden gelöscht.",
+  "guestSwitchMerged": "Zu deinem Konto gewechselt – übernommene Einheiten: {count}",
+  "guestSwitchDiscarded": "Zu deinem Konto gewechselt. Die Gast-Daten wurden gelöscht.",
   "guestSwitchFailed": "Wechsel fehlgeschlagen – es wurde nichts geändert. Prüf deine Internetverbindung und versuch es noch einmal.",
-  "guestSwitchSignInAgain": "Bitte melde dich mit Google an, um weiterzumachen."
+  "guestSwitchSignInAgain": "Bitte melde dich noch einmal an, um weiterzumachen."
 }

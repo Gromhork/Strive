@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/google_auth.dart';
 import '../../main.dart';
 import '../../widgets/common.dart';
@@ -12,6 +13,17 @@ import '../../widgets/common.dart';
 /// deleted": the deletion signs out, the app switches to this page, and a snackbar of the old page
 /// was lost on the way. Shown as a card at the top until dismissed or the next sign-in.
 final loginNotice = ValueNotifier<String?>(null);
+
+/// The user-facing text of a Firebase Auth error code (login page, linking a guest).
+String authErrorMessage(AppLocalizations l, String code) => switch (code) {
+  'invalid-email' => l.authInvalidEmail,
+  'user-not-found' || 'wrong-password' || 'invalid-credential' => l.authWrongCredentials,
+  'email-already-in-use' => l.authEmailInUse,
+  'weak-password' => l.authWeakPassword,
+  'network-request-failed' => l.authNetwork,
+  'operation-not-allowed' || 'configuration-not-found' => l.authNotEnabled,
+  _ => '${l.authError} ($code)',
+};
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -53,18 +65,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  String _message(String code) {
-    final l = context.l10n;
-    return switch (code) {
-      'invalid-email' => l.authInvalidEmail,
-      'user-not-found' || 'wrong-password' || 'invalid-credential' => l.authWrongCredentials,
-      'email-already-in-use' => l.authEmailInUse,
-      'weak-password' => l.authWeakPassword,
-      'network-request-failed' => l.authNetwork,
-      'operation-not-allowed' || 'configuration-not-found' => l.authNotEnabled,
-      _ => '${l.authError} ($code)',
-    };
-  }
+  String _message(String code) => authErrorMessage(context.l10n, code);
 
   Future<void> _submit() => _run(() async {
     final auth = FirebaseAuth.instance;

@@ -11462,7 +11462,7 @@ abstract class AppLocalizations {
   /// No description provided for @guestExistsTitle.
   ///
   /// In en, this message translates to:
-  /// **'This Google account already has Strive data'**
+  /// **'This account already has Strive data'**
   String get guestExistsTitle;
 
   /// No description provided for @guestExistsBody.
@@ -11474,7 +11474,7 @@ abstract class AppLocalizations {
   /// No description provided for @guestExistsMergeInfo.
   ///
   /// In en, this message translates to:
-  /// **'Taken along: your workouts, body values, own programs and goals. The Google account keeps its profile and training plan.'**
+  /// **'Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.'**
   String get guestExistsMergeInfo;
 
   /// No description provided for @guestExistsMerge.
@@ -11498,13 +11498,13 @@ abstract class AppLocalizations {
   /// No description provided for @guestSwitchMerged.
   ///
   /// In en, this message translates to:
-  /// **'Switched to your Google account – workouts taken along: {count}'**
+  /// **'Switched to your account – workouts taken along: {count}'**
   String guestSwitchMerged(int count);
 
   /// No description provided for @guestSwitchDiscarded.
   ///
   /// In en, this message translates to:
-  /// **'Switched to your Google account. The guest data was deleted.'**
+  /// **'Switched to your account. The guest data was deleted.'**
   String get guestSwitchDiscarded;
 
   /// No description provided for @guestSwitchFailed.
@@ -11516,7 +11516,7 @@ abstract class AppLocalizations {
   /// No description provided for @guestSwitchSignInAgain.
   ///
   /// In en, this message translates to:
-  /// **'Please sign in with Google again to continue.'**
+  /// **'Please sign in again to continue.'**
   String get guestSwitchSignInAgain;
 }
 

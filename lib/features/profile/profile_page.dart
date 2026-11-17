@@ -368,13 +368,8 @@ Future<void> linkGuestWithEmail(BuildContext context) async {
           ],
         ),
   );
-  if (ok != true) return;
-  try {
-    await FirebaseAuth.instance.currentUser!.linkWithCredential(EmailAuthProvider.credential(email: email.text.trim(), password: pw.text));
-    if (context.mounted) toast(context, l.accountLinked);
-  } on FirebaseAuthException catch (e) {
-    if (context.mounted) toast(context, '${l.authError} (${e.code})');
-  }
+  if (ok != true || !context.mounted) return;
+  await linkGuestWithEmailCredential(context, email.text.trim(), pw.text);
 }
 
 /// Guest logout: "Signing out as a guest deletes all data on this device." with

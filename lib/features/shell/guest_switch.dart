@@ -8,12 +8,14 @@ import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../data/repository.dart';
 import '../../providers.dart';
+import '../../services/active_workout.dart';
 import '../../services/app_check.dart';
 import '../../services/google_auth.dart';
 import '../../services/guest_merge.dart';
+import '../../services/tracker.dart';
 import '../../services/workout_store.dart';
 import '../../widgets/common.dart';
-import '../auth/login_page.dart' show loginNotice;
+import '../auth/login_page.dart' show authErrorMessage, loginNotice;
 import '../calendar/auto_adjust.dart' show rootMessengerKey;
 import 'account.dart';
 
@@ -39,17 +41,41 @@ Future<void> linkGuestWithGoogle(BuildContext context) async {
     case GuestLinkOutcome.linked:
       toast(context, l.accountLinked);
     case GuestLinkOutcome.accountExists:
-      final choice = await showDialog<GuestDataChoice>(context: context, builder: (_) => const GuestExistsDialog());
-      if (choice == null || !context.mounted) {
-        // Next time the account picker shows again (not silently this account).
-        await GoogleAuth.signOut();
-        return;
-      }
-      await switchFromGuest(context, r.credential!, keepData: choice == GuestDataChoice.merge);
+      await resolveGuestAccountExists(context, r.credential!);
   }
 }
 
-/// "This Google account already has Strive data": take along / discard / cancel.
+/// Profile → "Secure account" → e-mail. Links the guest with e-mail + password; an address that
+/// already has a Strive account offers the same choice as Google ([resolveGuestAccountExists]).
+Future<void> linkGuestWithEmailCredential(BuildContext context, String email, String password) async {
+  final l = context.l10n;
+  final cred = EmailAuthProvider.credential(email: email, password: password);
+  try {
+    await FirebaseAuth.instance.currentUser!.linkWithCredential(cred);
+    if (context.mounted) toast(context, l.accountLinked);
+  } on FirebaseAuthException catch (e) {
+    if (!context.mounted) return;
+    if (GoogleAuth.isAccountTakenCode(e.code)) {
+      await resolveGuestAccountExists(context, cred);
+    } else {
+      toast(context, authErrorMessage(l, e.code));
+    }
+  }
+}
+
+/// The sign-in [cred] already has a Strive account: the user takes the guest data along,
+/// discards it or cancels (nothing changes).
+Future<void> resolveGuestAccountExists(BuildContext context, AuthCredential cred) async {
+  final choice = await showDialog<GuestDataChoice>(context: context, builder: (_) => const GuestExistsDialog());
+  if (choice == null || !context.mounted) {
+    // Next time the account picker shows again (not silently this account).
+    await GoogleAuth.signOut();
+    return;
+  }
+  await switchFromGuest(context, cred, keepData: choice == GuestDataChoice.merge);
+}
+
+/// "This account already has Strive data": take along / discard / cancel.
 class GuestExistsDialog extends StatelessWidget {
   const GuestExistsDialog({super.key});
 
@@ -82,14 +108,16 @@ class GuestExistsDialog extends StatelessWidget {
   }
 }
 
-/// Switches from the signed-in guest to the account of [cred].
+/// Switches from the signed-in guest to the account of [cred] (Google, or e-mail + password).
 ///
 /// [keepData]: the guest data is first copied into that account – through a second Firebase app
 /// signed in to it, while the guest stays signed in here. Only when every batch was accepted by
 /// the server are the guest's documents and the anonymous account deleted (they could never be
 /// reached again – an anonymous account cannot sign in twice) and the app switches. Any failure
-/// before that changes nothing. Otherwise the guest data is deleted (as chosen) and the app
-/// switches.
+/// before that changes nothing – also a wrong password: [cred] is checked in that second app
+/// before anything is deleted. Otherwise the guest data is deleted (as chosen) and the app
+/// switches. A workout in progress continues in the account, re-pointed to the copied program
+/// (the guest's open plan stays behind). The guest's documents are cleared from the local cache.
 Future<void> switchFromGuest(BuildContext context, AuthCredential cred, {required bool keepData}) async {
   final l = context.l10n;
   final guest = FirebaseAuth.instance.currentUser;
@@ -112,18 +140,20 @@ Future<void> switchFromGuest(BuildContext context, AuthCredential cred, {require
   );
 
   // 1. Nothing has changed yet: a failure leaves the guest as it was.
-  ({String uid, int sessions})? moved;
+  ({String uid, GuestTransfer transfer})? moved;
   try {
     if (keepData) {
-      moved = await copyGuestData(guestUid, cred);
+      moved = await copyGuestData(guestUid, cred, ownSuffix: l.ownVersionSuffix, de: l.localeName.startsWith('de'));
     } else {
       await Repository(guestUid).ensureServerReachable();
+      // The sign-in must work (e-mail: the password) before the guest data is deleted.
+      await _inTransferApp(cred, (_) async {});
     }
   } catch (e) {
     debugPrint('guest switch failed: $e');
     if (nav.canPop()) nav.pop();
     await GoogleAuth.signOut();
-    _notify(l.guestSwitchFailed);
+    _notify(e is FirebaseAuthException && wrongCredentialCodes.contains(e.code) ? l.authWrongCredentials : l.guestSwitchFailed);
     return;
   }
 
@@ -134,10 +164,12 @@ Future<void> switchFromGuest(BuildContext context, AuthCredential cred, {require
   final store = container.read(workoutStoreProvider);
   if (moved != null) {
     // A workout in progress is the same person's: it continues in the target account.
-    await store.reassign(guestUid, moved.uid);
+    await store.reassign(guestUid, moved.uid, relink: moved.transfer.relink);
   } else {
     await discardLocalWorkout(container);
   }
+  // The guest's documents must not stay in this phone's cache.
+  await clearLocalCache();
 
   // 3. Switch.
   try {
@@ -146,30 +178,62 @@ Future<void> switchFromGuest(BuildContext context, AuthCredential cred, {require
     debugPrint('sign-in after the guest switch failed: $e');
     loginNotice.value = l.guestSwitchSignInAgain;
   }
+  // After the sign-in: the autosave stores the re-pointed workout for the new account.
+  if (moved != null) relinkActiveWorkout(container, moved.transfer.relink);
   invalidateUserScoped(container);
   nav.popUntil((r) => r.isFirst);
   if (FirebaseAuth.instance.currentUser?.isAnonymous == false) {
-    _notify(moved != null ? l.guestSwitchMerged(moved.sessions) : l.guestSwitchDiscarded);
+    _notify(moved != null ? l.guestSwitchMerged(moved.transfer.sessions) : l.guestSwitchDiscarded);
   }
 }
 
+/// Sign-in failures that mean "wrong e-mail / password" (not a network problem).
+const wrongCredentialCodes = {'wrong-password', 'invalid-credential', 'user-not-found', 'user-disabled', 'invalid-email'};
+
+/// Re-points the workout in progress (gym or cardio) into the account the guest data moved to:
+/// its program and planned workout get their new ids ([relink]), or none when they stayed
+/// behind – saving it never links a document that does not exist.
+void relinkActiveWorkout(ProviderContainer c, String? Function(String? id) relink) {
+  if (c.read(activeGymProvider) != null) c.read(activeGymProvider.notifier).relink(relink);
+  if (c.read(trackerProvider) != null) c.read(trackerProvider.notifier).relink(relink);
+}
+
 /// Copies the guest's data into the account of [cred] (see [guestTransfer]) and returns that
-/// account's uid and the number of workouts taken along. Throws when anything fails.
-Future<({String uid, int sessions})> copyGuestData(String guestUid, AuthCredential cred) async {
+/// account's uid and the transfer (workouts taken along, new ids). Throws when anything fails.
+Future<({String uid, GuestTransfer transfer})> copyGuestData(
+  String guestUid,
+  AuthCredential cred, {
+  String ownSuffix = 'custom',
+  bool de = false,
+}) async {
   final guestData = await Repository(guestUid).exportAll();
-  final app = await _transferApp();
-  try {
-    await activateAppCheck(app);
-    final auth = FirebaseAuth.instanceFor(app: app);
-    final signedIn = await auth.signInWithCredential(cred);
-    final uid = signedIn.user!.uid;
+  return _inTransferApp(cred, (app) async {
+    final uid = FirebaseAuth.instanceFor(app: app).currentUser!.uid;
     final db = FirebaseFirestore.instanceFor(app: app);
     // Nothing of this transfer stays in a local cache.
     db.settings = const Settings(persistenceEnabled: false);
     final target = Repository(uid, db);
-    final t = guestTransfer(guest: guestData, target: await target.exportAll(), newId: target.newId);
+    final t = guestTransfer(
+      guest: guestData,
+      target: await target.exportAll(),
+      newId: target.newId,
+      today: DateTime.now(),
+      ownSuffix: ownSuffix,
+      de: de,
+    );
     await target.importAll(t.writes);
-    return (uid: uid, sessions: t.sessions);
+    return (uid: uid, transfer: t);
+  });
+}
+
+/// Runs [body] with the account of [cred] signed in in a second Firebase app (the guest stays
+/// signed in in the default one). Throws when the sign-in fails (e.g. a wrong password).
+Future<T> _inTransferApp<T>(AuthCredential cred, Future<T> Function(FirebaseApp app) body) async {
+  final app = await _transferApp();
+  try {
+    await activateAppCheck(app);
+    await FirebaseAuth.instanceFor(app: app).signInWithCredential(cred);
+    return await body(app);
   } finally {
     try {
       await FirebaseAuth.instanceFor(app: app).signOut();

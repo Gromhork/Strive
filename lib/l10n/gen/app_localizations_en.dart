@@ -6416,13 +6416,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signOutAnyway => 'Log out anyway';
 
   @override
-  String get guestExistsTitle => 'This Google account already has Strive data';
+  String get guestExistsTitle => 'This account already has Strive data';
 
   @override
   String get guestExistsBody => 'Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.';
 
   @override
-  String get guestExistsMergeInfo => 'Taken along: your workouts, body values, own programs and goals. The Google account keeps its profile and training plan.';
+  String get guestExistsMergeInfo => 'Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.';
 
   @override
   String get guestExistsMerge => 'Take data along';
@@ -6435,15 +6435,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guestSwitchMerged(int count) {
-    return 'Switched to your Google account – workouts taken along: $count';
+    return 'Switched to your account – workouts taken along: $count';
   }
 
   @override
-  String get guestSwitchDiscarded => 'Switched to your Google account. The guest data was deleted.';
+  String get guestSwitchDiscarded => 'Switched to your account. The guest data was deleted.';
 
   @override
   String get guestSwitchFailed => 'Switching failed – nothing was changed. Check your internet connection and try again.';
 
   @override
-  String get guestSwitchSignInAgain => 'Please sign in with Google again to continue.';
+  String get guestSwitchSignInAgain => 'Please sign in again to continue.';
 }

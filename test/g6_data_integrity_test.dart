@@ -11,16 +11,20 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:strive/core/sport.dart';
+import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/data/repository.dart';
+import 'package:strive/features/auth/login_page.dart' show authErrorMessage;
 import 'package:strive/features/shell/account.dart';
 import 'package:strive/features/shell/guest_switch.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
 import 'package:strive/services/active_workout.dart';
 import 'package:strive/services/app_check.dart';
+import 'package:strive/services/google_auth.dart';
 import 'package:strive/services/guest_merge.dart';
 import 'package:strive/services/notification_service.dart';
+import 'package:strive/services/tracker.dart';
 import 'package:strive/services/workout_store.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -41,6 +45,18 @@ class _FakeUser implements User {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _LinkedGym extends ActiveGymNotifier {
+  @override
+  ActiveGym? build() =>
+      ActiveGym(title: 'Push A', templateId: 'tpl', planId: 'open', start: DateTime(2026, 11, 17, 9), exercises: const []);
+}
+
+/// No recording (and no wakelock call when the container is disposed).
+class _IdleTracker extends TrackerNotifier {
+  @override
+  CardioState? build() => null;
 }
 
 class _RunningGym extends ActiveGymNotifier {
@@ -138,16 +154,17 @@ void main() {
           'sessions': [('X', _session('run', externalId: 'hc-1'))],
         },
       );
-      final t = guestTransfer(guest: guest, target: target, newId: newId);
+      final t = guestTransfer(guest: guest, target: target, newId: newId, today: DateTime(2026, 11, 17));
       Map<String, Map<String, dynamic>> of(String c) => {
         for (final (cc, id, d) in t.writes)
           if (cc == c) id: d,
       };
 
-      // Never the user document (profile) and never the open plan or the plan history.
+      // Never the user document (profile) and never the open plan or the plan history; of
+      // the plan only the completed entry its workout links to (data-1b).
       expect(t.writes.where((w) => w.$1.isEmpty || w.$1 == 'planLog'), isEmpty);
       final plans = of('plans');
-      expect(plans.values.map((p) => p['status']).toSet(), {'done', 'skipped'});
+      expect(plans.values.map((p) => p['status']), ['done']);
 
       // The Health Connect workout the target already has is not copied twice.
       final sessions = of('sessions');
@@ -180,7 +197,7 @@ void main() {
     });
 
     test('target without a finished setup: everything moves unchanged', () {
-      final t = guestTransfer(guest: guest, target: const AccountData(), newId: newId);
+      final t = guestTransfer(guest: guest, target: const AccountData(), newId: newId, today: DateTime(2026, 11, 17));
       expect(t.writes.length, 1 + guest.documentCount);
       expect(t.writes.first, ('', '', guest.user));
       expect(t.writes.where((w) => w.$1 == 'plans').length, 3);
@@ -227,6 +244,255 @@ void main() {
       expect(link.substring(0, link.indexOf('\n  }\n')).contains('signInWithCredential'), isFalse);
       final profile = File('lib/features/profile/profile_page.dart').readAsStringSync();
       expect(profile.contains('GoogleAuth.signIn()'), isFalse);
+    });
+  });
+
+  group('data-1a…e: taking the guest data along, follow-up', () {
+    var n = 0;
+    String newId() => 'n${n++}';
+    setUp(() => n = 0);
+    final today = DateTime(2026, 11, 17); // Tuesday; the week starts on Monday 16th
+    const onboarded = {'name': 'Google', 'onboarded': true};
+
+    List<Doc> builtins(String goal, {bool de = false, String prefix = 'g', Set<String> skip = const {}}) {
+      var i = 0;
+      return [
+        for (final t in defaultTemplates(() => '$prefix${i++}', de: de, goal: goal))
+          if (!skip.contains(t.key)) (t.id, t.toMap()),
+      ];
+    }
+
+    Map<String, Map<String, dynamic>> of(GuestTransfer t, String c) => {
+      for (final (cc, id, d) in t.writes)
+        if (cc == c) id: d,
+    };
+
+    test('1a: untouched built-ins of another goal map to the target\'s – no "Full Body A" twice', () {
+      for (final (guestGoal, targetGoal) in [('hypertrophy', 'strength'), ('strength', 'general'), ('general', 'hypertrophy')]) {
+        for (final de in [false, true]) {
+          final guestT = builtins(guestGoal, de: de);
+          // The target deleted one built-in: the guest's copy of it stays behind (the plan adds
+          // missing built-ins itself), it does not come along as an own program.
+          final targetT = builtins(targetGoal, prefix: 'T', skip: {'bro_arms'});
+          final t = guestTransfer(
+            guest: AccountData(user: const {'onboarded': true}, collections: {'templates': guestT}),
+            target: AccountData(user: onboarded, collections: {'templates': targetT}),
+            newId: newId,
+            today: today,
+          );
+          expect(of(t, 'templates'), isEmpty, reason: '$guestGoal → $targetGoal (de: $de)');
+          final targetIdByKey = {for (final (id, d) in targetT) d['key']: id};
+          for (final (id, d) in guestT) {
+            expect(t.relink(id), targetIdByKey[d['key']], reason: '${d['key']}');
+          }
+        }
+      }
+    });
+
+    test('1a: a used built-in (own loads) maps too; an edited one comes along renamed "(custom)"', () {
+      final guestT = builtins('hypertrophy');
+      final fbIdx = guestT.indexWhere((d) => d.$2['key'] == 'fb_a');
+      final fb = guestT[fbIdx].$2;
+      final ex = [for (final e in fb['exercises'] as List) Map<String, dynamic>.from(e as Map)];
+      // Loads entered → still the built-in.
+      final loaded = {
+        ...fb,
+        'exercises': [
+          for (final e in ex)
+            {
+              ...e,
+              'sets': [for (final s in e['sets'] as List) Map<String, dynamic>.from(s as Map)..['w'] = 40.0],
+            },
+        ],
+      };
+      // An exercise removed → the user's own version.
+      final edited = {...fb, 'exercises': ex.sublist(1)};
+      final t = guestTransfer(
+        guest: AccountData(
+          user: const {'onboarded': true},
+          collections: {
+            'templates': [('loaded', loaded), ('edited', edited), ('own', _template(null)..['name'] = 'Upper A')],
+          },
+        ),
+        target: AccountData(
+          user: onboarded,
+          collections: {
+            'templates': [...builtins('strength', prefix: 'T'), ('Town', _template(null)..['name'] = 'Upper A')],
+          },
+        ),
+        newId: newId,
+        today: today,
+        ownSuffix: 'custom',
+      );
+      final copies = of(t, 'templates');
+      expect(t.relink('loaded'), isNot(isIn(copies.keys)));
+      expect(t.relink('loaded'), isNotNull);
+      expect(copies.length, 2);
+      final e = copies[t.relink('edited')]!;
+      expect(e['name'], 'Full Body A (custom)');
+      expect(e['key'], isNull);
+      expect(e['origKey'], 'fb_a');
+      expect(e['folder'], fb['folder']);
+      // An own program whose name the target already uses in that folder.
+      expect(copies[t.relink('own')]!['name'], 'Upper A 2');
+    });
+
+    test('1a: a German guest\'s edited built-in goes to the English target\'s standard folder', () {
+      final guestT = builtins('general', de: true);
+      final fb = guestT.firstWhere((d) => d.$2['key'] == 'fb_a').$2;
+      final edited = {...fb, 'exercises': (fb['exercises'] as List).sublist(1)};
+      final targetT = builtins('general', prefix: 'T');
+      final t = guestTransfer(
+        guest: AccountData(
+          user: const {'onboarded': true},
+          collections: {
+            'templates': [('edited', edited)],
+          },
+        ),
+        target: AccountData(user: onboarded, collections: {'templates': targetT}),
+        newId: newId,
+        today: today,
+      );
+      final copy = of(t, 'templates').values.single;
+      expect(copy['folder'], targetT.firstWhere((d) => d.$2['key'] == 'fb_a').$2['folder']);
+      expect(copy['name'], '${fb['name']} (custom)');
+    });
+
+    Map<String, dynamic> plan(String status, String date, {String? sessionId}) => {..._plan(status, sessionId: sessionId), 'date': date};
+
+    test('1b: only completed history before this week, in weeks without a target plan', () {
+      final t = guestTransfer(
+        guest: AccountData(
+          user: const {'onboarded': true},
+          collections: {
+            'sessions': [
+              ('s1', _session('run', planId: 'old')),
+              ('s2', _session('run', planId: 'thisWeek')),
+              ('s3', _session('run', planId: 'clash')),
+            ],
+            'plans': [
+              ('old', plan('done', '2026-11-03', sessionId: 's1')),
+              ('thisWeek', plan('done', '2026-11-16', sessionId: 's2')),
+              ('clash', plan('done', '2026-11-10', sessionId: 's3')),
+              ('noSession', plan('done', '2026-11-02')),
+              ('skippedPast', plan('skipped', '2026-11-04')),
+              ('skippedFuture', plan('skipped', '2026-11-25')),
+              ('planned', plan('planned', '2026-11-20')),
+            ],
+          },
+        ),
+        target: AccountData(
+          user: onboarded,
+          collections: {
+            'plans': [('tp', plan('planned', '2026-11-12'))],
+          },
+        ),
+        newId: newId,
+        today: today,
+      );
+      final plans = of(t, 'plans');
+      expect(plans.values.map((p) => p['date']), ['2026-11-03']);
+      expect(t.relink('old'), plans.keys.single);
+      final sessions = of(t, 'sessions');
+      expect(sessions.length, 3);
+      // Workouts without a copied entry come along unlinked (extra training in the target).
+      expect(sessions.values.map((s) => s['planId']).toList()..sort((a, b) => '$a'.compareTo('$b')), [plans.keys.single, null, null]);
+      expect(t.relink('thisWeek'), isNull);
+    });
+
+    test('1c: the workout in progress is re-pointed to the copied program; the open plan stayed behind', () async {
+      final t = GuestTransfer(const [], sessions: 0, ids: const {'tpl': 'T9'});
+      final c = ProviderContainer(
+        overrides: [activeGymProvider.overrideWith(_LinkedGym.new), trackerProvider.overrideWith(_IdleTracker.new)],
+      );
+      addTearDown(c.dispose);
+      relinkActiveWorkout(c, t.relink);
+      expect(c.read(activeGymProvider)!.templateId, 'T9');
+      expect(c.read(activeGymProvider)!.planId, isNull);
+      expect(c.read(activeGymProvider)!.title, 'Push A');
+
+      // The stored copy (and an unsaved summary) as well.
+      final store = MemoryWorkoutStore(() => 'guest');
+      await store.saveGym(
+        ActiveGym(title: 'Push A', templateId: 'tpl', planId: 'p', start: DateTime(2026, 11, 17, 9), exercises: const []),
+      );
+      await store.saveSummary(
+        Session(id: 'd', sport: Sport.gym, title: 'Push A', start: DateTime(2026, 11, 17), durationSec: 60, templateId: 'tpl', planId: 'p'),
+      );
+      await store.reassign('guest', 'google', relink: t.relink);
+      store.owner = () => 'google';
+      final g = (await store.loadActive())!.gym!;
+      expect((g.templateId, g.planId), ('T9', null));
+      final s = (await store.loadSummary())!;
+      expect((s.templateId, s.planId), ('T9', null));
+
+      // Cardio recordings carry the planned workout only.
+      final cardio = CardioState(sport: Sport.run, title: 'Run', planId: 'p', start: DateTime(2026, 11, 17));
+      expect(cardio.copyWith(relink: t.relink).planId, isNull);
+      expect(cardio.copyWith().planId, 'p');
+    });
+
+    test('1d: a Health Connect duplicate links to the target\'s workout; deleted ones stay deleted', () {
+      final t = guestTransfer(
+        guest: AccountData(
+          user: const {
+            'onboarded': true,
+            'hcDeleted': ['hc-gone', 'hc-shared'],
+          },
+          collections: {
+            'sessions': [
+              ('s1', _session('run', planId: 'p1', externalId: 'hc-1')),
+              ('s2', _session('run', externalId: 'hc-del')),
+              ('s3', _session('run', planId: 'p3', externalId: 'hc-claimed')),
+            ],
+            'plans': [('p1', plan('done', '2026-11-03', sessionId: 's1')), ('p3', plan('done', '2026-10-27', sessionId: 's3'))],
+          },
+        ),
+        target: AccountData(
+          user: const {
+            ...onboarded,
+            'hcDeleted': ['hc-del', 'hc-shared'],
+          },
+          collections: {
+            'sessions': [('X1', _session('run', externalId: 'hc-1')), ('X3', _session('run', planId: 'TP', externalId: 'hc-claimed'))],
+          },
+        ),
+        newId: newId,
+        today: today,
+      );
+      // Nothing copied twice, nothing the target deleted comes back.
+      expect(of(t, 'sessions'), isEmpty);
+      // The completed entry points to the target's copy of the workout; one the target's own
+      // plan already claims is not taken along.
+      final plans = of(t, 'plans');
+      expect(plans.values.map((p) => p['sessionId']), ['X1']);
+      // The guest's deleted imports are added to the target's list.
+      final user = t.writes.where((w) => w.$1.isEmpty).single.$3;
+      expect((user['hcDeleted'] as List).toSet(), {'hc-del', 'hc-shared', 'hc-gone'});
+      expect(user.keys, ['hcDeleted']);
+    });
+
+    test('1d: the guest\'s cached documents are cleared before the account signs in', () {
+      final src = File('lib/features/shell/guest_switch.dart').readAsStringSync();
+      final sw = src.substring(src.indexOf('Future<void> switchFromGuest('));
+      expect(sw.indexOf('await clearLocalCache()'), greaterThan(sw.indexOf('deleteGuestAccount(guest)')));
+      expect(sw.indexOf('await clearLocalCache()'), lessThan(sw.indexOf('FirebaseAuth.instance.signInWithCredential(cred)')));
+      // Discarding: the sign-in (e-mail: the password) is checked before the guest data is deleted.
+      expect(sw.indexOf('_inTransferApp(cred'), lessThan(sw.indexOf('deleteGuestAccount(guest)')));
+    });
+
+    test('1e: an e-mail address that already has an account offers the same choice', () {
+      final src = File('lib/features/shell/guest_switch.dart').readAsStringSync();
+      final email = src.substring(src.indexOf('Future<void> linkGuestWithEmailCredential('));
+      expect(email.indexOf('resolveGuestAccountExists(context, cred)'), greaterThan(email.indexOf('isAccountTakenCode(e.code)')));
+      expect(File('lib/features/profile/profile_page.dart').readAsStringSync(), contains('linkGuestWithEmailCredential(context'));
+      expect(GoogleAuth.isAccountTakenCode('email-already-in-use'), isTrue);
+      // Other errors read as text, not as a bare code.
+      expect(authErrorMessage(l, 'wrong-password'), l.authWrongCredentials);
+      expect(authErrorMessage(l, 'weak-password'), l.authWeakPassword);
+      expect(wrongCredentialCodes, containsAll(['wrong-password', 'invalid-credential']));
+      // The dialog no longer speaks of a Google account only.
+      expect(l.guestExistsTitle.contains('Google'), isFalse);
     });
   });
 

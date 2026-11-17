@@ -118,10 +118,11 @@ class ActiveGym {
     DateTime? holdStart,
     int? holdTarget,
     bool clearHold = false,
+    String? Function(String? id)? relink,
   }) => ActiveGym(
     title: title ?? this.title,
-    templateId: templateId,
-    planId: planId,
+    templateId: relink == null ? templateId : relink(templateId),
+    planId: relink == null ? planId : relink(planId),
     start: start,
     exercises: exercises,
     programSets: programSets,
@@ -240,6 +241,10 @@ class ActiveGymNotifier extends Notifier<ActiveGym?> {
   }
 
   void _touch() => state = state?.copyWith();
+
+  /// Re-points the workout's program and planned workout ([relink]: old id → new id, null = no
+  /// counterpart) – the guest's data moved into another account under new ids.
+  void relink(String? Function(String? id) relink) => state = state?.copyWith(relink: relink);
 
   void rename(String t) => state = state?.copyWith(title: t);
 
