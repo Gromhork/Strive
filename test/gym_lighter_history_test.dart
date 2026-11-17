@@ -65,10 +65,11 @@ void main() {
     final ps = run(squat, 3, (w) => w < 2 ? 'recovery' : null);
     expect(ps[1].weight, greaterThanOrEqualTo(ps[0].weight));
     expect(ps[2].weight, greaterThanOrEqualTo(ps[1].weight / 0.9 - 2.5));
-    // A deload week after legs-easy-only weeks: about the same level, not another ~10 % off.
+    // A deload week after legs-easy-only weeks: ~10 % below those weeks – they are the lift's loading level (review
+    // 2026-11 GYM-5: 0.9 / 0.875 made the recovery week as heavy as, or heavier than, the week before).
     final mixed = run(squat, 5, (w) => w < 4 ? 'legsEasy' : 'recovery');
-    expect(mixed[4].weight, greaterThanOrEqualTo(mixed[3].weight - 2.5));
-    expect(mixed[4].weight, lessThanOrEqualTo(mixed[3].weight + 2.5));
+    expect(mixed[4].weight, lessThan(mixed[3].weight));
+    expect(mixed[4].weight, greaterThanOrEqualTo(mixed[3].weight * 0.9 - 5));
   });
 
   test('bodyweight lower exercises on legs-easy days only: the reps never go down', () {

@@ -230,7 +230,8 @@ class AutoAdjuster {
       final allDistance = p.steps.isNotEmpty && p.steps.every((v) => v.distanceM != null);
       km = double.parse((p.distanceKm! * (allDistance && d0 > 0 ? d1 / d0 : g)).toStringAsFixed(1));
     }
-    return retitledRunWalk(_copy(p, steps: steps, durationMin: max(10, (p.durationMin * g).round()), distanceKm: km));
+    // (The title's "N × length" follows the steps – run/walk and quality sets alike.)
+    return retitledRepeats(_copy(p, steps: steps, durationMin: max(10, (p.durationMin * g).round()), distanceKm: km));
   }
 
   /// Interval sets (≥ 3 identical work steps in one block) change by whole repeats – a
@@ -272,10 +273,13 @@ class AutoAdjuster {
   static Map<String, dynamic> undoUpdate(PlannedWorkout p) {
     final a = p.auto;
     if (a == null) return const {};
+    // A title with a repeat count follows the restored steps ("3 × 800 m" back to "4 × 800 m").
+    final title = a.steps.isEmpty ? p.title : retitledRepeats(p.copyWith(steps: a.steps)).title;
     return {
       'durationMin': a.durationMin,
       'distanceKm': a.distanceKm,
       'steps': a.steps.map((e) => e.toMap()).toList(),
+      if (title != p.title) 'title': title,
       'auto': FieldValue.delete(),
     };
   }

@@ -660,6 +660,10 @@ weeklyTargetSets per muscle (per difficulty & level):
   BALANCED    6–10        10–14         12–16
   CHALLENGING 8–12        12–18         14–22
 progress volume +1–2 sets/muscle/week per mesocycle week; reset at deload        [M/P]
+// Generator (implemented): the plan never changes a program's set counts (athlete's decision) – the built-in
+// programs carry the weekly volume (~9–12 sets/muscle full body, ~12–18 UL / PPL, §5); the plan periodises
+// through load and reps in reserve only (RIR wave 3 → 2 → 1, beginners 3 → 3 → 2, heart limitation ≥ 2).
+// Difficulty does not change strength volume.
 perSessionCap: ≤ 8–10 effective sets per muscle per session (spread above this)  [P]
 ```
 
@@ -760,7 +764,9 @@ order of rules (first match wins); w = last top weight, total = w + body load (b
            when the lifter chose it – not the app's own lighter prescription; a session with every target met is
            never "worse")
            → ≥ 2 reps/set lost or limit: −7.5 % of total (reactive deload, Bell 2023 [74]); else hold w, repeat reps
-2b. linear (BEGINNER, compound lifts, targets stored, until the first stall = targets missed twice in a row):
+2b. linear (BEGINNER, compound lifts, targets stored, one increment ≤ 10 % of the load – a 2 kg step on a 10 kg dumbbell
+           goes through double progression / microloading instead –, until the first stall = targets missed twice in
+           a row, or a missed session followed by a lighter one; review 2026-11 GYM-1):
            all targets hit and not hard → +1 increment, same reps (§2.4 linear model); hard → hold;
            narrowly missed once → same weight and targets again; then double progression
 3. top:    all sets ≥ top of range
@@ -782,8 +788,10 @@ AMRAP recalibration: AMRAP set ≥ 2 reps above its target → load = e1RM(AMRAP
 e1RM floor: no reps missed in the last 4 weeks → never more than 15 % below the load the best e1RM of those 4 weeks
            supports (RIR 2) – limit ratings and holds alone cannot spiral the load down
 breaks (unchanged): 3–6 wk → last weight × 0.95/0.9; > 6 wk → e1RM × 0.9 (× 0.85 beyond 12 wk) [68]
-deload / taper week: load × 0.9 of the loading-week prescription, deload keeps about half the work sets
-           (max(n/2, 2) of n ≥ 3, 1 of 2; no drop sets) – Bell 2023 [74]: ~50 % volume. Deload/taper sessions are
+deload / taper week: load × 0.9 of the last loading session (a pending step is undone: its load and target reps;
+           bodyweight: ~10 % less total load, else ~20 % fewer reps), the program's sets (the athlete's decision –
+           the plan never changes set counts), RIR 4, no AMRAP. Lifts done on 'legs easy' days only (the day before a key
+           run / ride) have that as their loading level: the deload goes 10 % below it (review 2026-11 GYM-5). Deload/taper sessions are
            tagged and skipped by progression, trend and e1RM, so the second deload session is again 90 % of the loading
            level and the next loading week resumes at the last loading level (§1.9) instead of "regressing" from it
 ```
@@ -843,15 +851,23 @@ Volume was cut (fewer reps and sets) while frequency was kept. No RCT shows the 
 
 ```text
 deloadEvery: BEGINNER none planned for the first 8–12 wk (only a reactive deload) · INTERMEDIATE every 4–6 wk · ADVANCED every 4–5 wk
-deloadWeek: sets × 0.5, load × 0.9 (or RIR +2–3), frequency unchanged
+deloadWeek: sets × 0.5, load × 0.9 (or RIR +2–3), frequency unchanged   // literature; the generator keeps the
+            // program's sets and lightens load (~90 %) and effort (RIR 4) only – the athlete's decision
 reactiveDeload trigger: e1RM down ≥ 5% for 2 sessions, or RPE ≥ 2 above target on ≥ 2 lifts
 hybrid athletes: put the strength deload in the same week as the endurance recovery week
 ```
 
 Generator: beginners' strength sessions in endurance recovery weeks of the first 10 weeks keep the loading phase (no set
-cut); from week 11 they deload with the endurance recovery week. The day before a key endurance session (C3/C4), a
-full-body / home / bodyweight program keeps half of its leg work sets (at least 1); the planned workout carries that
-adjusted exercise list, which the session start uses.
+cut); from week 11 they deload with the endurance recovery week. The day before a key run or ride (C3/C4; not before a
+swim – the kick barely loads the legs) a program keeps all its sets, its leg exercises go ~12.5 % lighter at RIR ~4
+('legs easy', no AMRAP); leg-heavy programs move to another day where possible. In the last 10 days before an endurance
+race no leg-heavy program is chosen while another exists (absolute), the others drop their leg exercises.
+
+Progression note in the workout (what LoadPrescriber does): bodyweight programs – more reps, then a harder variation;
+beginners – the main lifts add load in small steps at the same reps, the rest double progression; everyone else –
+double progression. Beginners' first 6 weeks use regressions (lat pulldown or band-assisted pull-ups, dumbbell RDL,
+reverse crunches; bodyweight: incline push-ups, bent-knee inverted rows, squats instead of jump squats) – never the same
+exercise twice in one session.
 
 ### 2.8 Split by days per week [P] (all keep ≥ 2×/week per muscle)
 
@@ -863,6 +879,12 @@ adjusted exercise list, which the session start uses.
 | 4 | Upper / Lower × 2 | |
 | 5 | Upper / Lower / Push / Pull / Legs, or U/L + 1 weak-point day | |
 | 6 | Push / Pull / Legs × 2 | ADVANCED only |
+
+Generator: pure strength plans use at most 4 days (beginner), 5 (intermediate) or 6 (advanced) – at least one full rest
+day (review 2026-11 GYM-8). Home and bodyweight training: full body A / B up to 3 days, upper / lower alternating from 4
+days (GYM-4); the full-body split card warns at 4+ days. The rotation avoids shared muscle groups on consecutive days
+(chest, delts, triceps, back, biceps, legs; a press also loads delts and triceps) and looks ahead over the rest of the
+week (bro split: Chest → Back → Shoulders, not Chest → Shoulders).
 
 Exercise order within a session: compound → accessory → isolation. Big lower-body lifts first. Core work last [P].
 
@@ -900,6 +922,12 @@ FTP = 0.90 × avgPower(8-min test)                  // alternative (CTS)
 no power meter: use LTHR (30-min solo TT, avg HR of the last 20 min) or HRmax zones (§5)
 retest every 6–8 weeks or at the end of each build block
 ```
+
+Generator (audit 2026-11, RS4): a power meter without a stated FTP plans its watts from a W/kg estimate (beginner 2.0,
+intermediate 2.8, advanced 3.6 W/kg) – the first quality ride of the plan is a 20-min FTP test (warm-up with 3 × 1 min
+pick-ups when the day has ≥ 55 min, 20 min as hard as can be held evenly; FTP = 95 % of its average, entered in the plan
+settings), and every ride with watt targets says the watts are estimated. Every power-meter plan retests every 6 loading
+weeks in base / build (not with a heart / blood-pressure limitation – no maximal efforts – and not on a day < 40 min).
 
 ### 3.2 Coggan power zones [P] and Friel/Coggan HR zones [P]
 
@@ -962,6 +990,32 @@ race-day TSB target +5…+25
 | Sprints | 6–10 × 10–15 s max, full rest | — |
 | Recovery | 30–60 min Z1 | — |
 
+Generator (audit 2026-11, RS1 / RS9 / RS8 / T2 / tri-6 / RS5):
+
+```text
+sweet spot / beginner threshold : the work time (24 → 60 min, beginners 15 → 40 / 30, recovery weeks 70 %) picks the last
+                  step of the ladder 2 × 10 → 3 × 10 → 2 × 15 → 2 × 20 → 3 × 15 → 2 × 25 → 2 × 30 min that fits (+3 min) –
+                  never "3 × 5 min" (blocks < 8–10 min at 88–94 % build fatigue without the time-at-SS stimulus)
+threshold       : 3 × 10 → 3 × 12 → 3 × 15 → 2 × 20 → 2 × 25 min at 91–100 % FTP (the watt range and the note agree;
+                  beginners' threshold blocks too – their note said 95–105 % on a 91–105 % range)
+tempo (base)    : Z3 76–90 % FTP, the note says 76–90 %; race-specific tempo (70.3 / Ironman / Gran Fondo peak) has its own
+                  watts 75–85 % FTP; the Ironman text calls it a notch above race power (~65–75 % FTP)
+fit to the day  : fewer blocks first (≥ 2; VO2max ≥ 3), then the cool-down (≥ 3 min) and the warm-up (≥ 8 min), then
+                  shorter blocks (≥ 8 min; VO2max ≥ 3 min) with recoveries ≤ 0.3 × the block (≥ 2 min); when even that does
+                  not fit: an easy Z2 ride with 3–4 × 1 min pick-ups (not a key session) instead of a token interval session
+race week       : the quality ride is openers – ≤ 40 min of Z2 with 3–4 × 1 min pick-ups (G2-V1: sized by the day's whole
+                  time it was a 190–240 min "opener" 2–3 days before the race)
+knee / hip      : no seated low-cadence climbing repeats (patellofemoral load rises with torque); every ride notes high
+                  cadence 85–95 rpm, easy gears on climbs, saddle height (§9.1)
+long ride       : the first one ≤ 110 % of the athlete's longest recent ride (at their easy speed), else a long-ride race
+                  (≥ 3 h) starts at 90 min (advanced 2 h, beginners 1 h); then ≤ +10 % (≥ 15 min) a loading week – a goal
+                  that needs more gets 10–20 min steps (Ironman intermediate in 24 weeks: 90 → ~275–300 min);
+                  recovery rides ≤ 90 min; without an event ≤ 3 / 4 / 5 h by level (or the longest recent ride)
+ride distance   : at the athlete's speed for the zone – from the FTP (GoalModel.bikeKmh) or the level's long-race speed
+                  (25 / 29 / 33 km/h × 0.93 at ~72 % FTP) × (power share / 0.72)^(1/3); a fixed 27 km/h overstated a
+                  beginner's km by ~16 %
+```
+
 ---
 
 ## 4. Swimming
@@ -1006,9 +1060,9 @@ the day before it). Swimmers with ≥ 4 swims a week (swim focus): a second qual
 CSS + 3–6 s. CSS sets are ~35 % of the session (3-swim weeks stay ~80/20 by time).
 
 **Swim novices (fix/plan-pro, user report "13 × 100 m CSS for someone who cannot swim 400 m").** A swim novice is
-anyone who said they cannot swim 400 m freestyle without stopping – *whatever the level in the other sports* – or a
-beginner without swim experience and without a CSS test. The quick setup now asks the question too ("Dein aktueller
-Stand": can run 30 min / can swim 400 m). Novices get:
+anyone who said they cannot swim 400 m freestyle without stopping – *whatever the level in the other sports*. The answer
+decides (audit 2026-11, RS2: a beginner without swim experience who answered "yes" got the 8 × 50 m ladder anyway); the
+quick setup asks the question too ("Dein aktueller Stand": can run 30 min / can swim 400 m). Novices get:
 
 ```text
 volume       : ~800 m per session at the start (§4.4 beginner 800–1500 m with breaks), ≤ 1.4 km per session
@@ -1022,13 +1076,33 @@ CSS test     : after the last stage – 400 m and 200 m time trials (§4.1), the
 no CSS set   : before the test (also for intermediate / advanced runners and cyclists)
 swim zones   : CSS ~150 s / 100 m without a test (the level default 110 s of an intermediate was far too fast)
 no swim experience, no test (can swim 400 m): starts at the beginner volume (1.5 km / session) whatever the level
+beginner, can swim 400 m, no test: no ladder; a CSS test in the recovery week after ≥ 3 loading weeks (else after 6
+               loading weeks), not with a heart / shoulder limitation
 ```
 
+Drill blocks are whole 100 m ("alternate 50 m drill, 50 m freestyle"); a single 50 m drill step alternates the two drills
+instead (RS10).
+
 **Long swim** (swim-focus plans, with or without event): a weekly continuous swim on the long day, starting at ~90 %
-of an average session (former novices 400 m), +12 % (≥ 100 m) per loading week towards the race's continuous
+of an average session (former novices 400 m; beginners 400 m, 500 m with a test – audit 2026-11 RS3: a beginner with a
+10:00 400 m test started at 1.4 km – then +100–200 m per loading week as the race needs), +12 % (≥ 100 m) per loading week towards the race's continuous
 distance (swim1500 1.5 km, swim3800 3 km, swim5000 4 km; without an event 1.5 / 2.5 / 3 km by level); recovery / taper
 weeks by the long-session factors (§1.7). Open-water races and triathlon: sighting every 6–9 strokes in build / peak
 and an open-water note (wetsuit, group / drafting, never alone).
+
+Beginner sessions stay ≤ ~1.5 km, technique sessions included (the long swim: its continuous part plus warm-up, drills and
+cool-down); a triathlon beginner's cap grows ≤ 10 % a loading week from 1.5 km (their swims are the week's whole
+swimming), recovery / taper weeks ~25 % below it (G2-V3: a 70.3 beginner's only swim sat at 2 × 400 m for 20 weeks).
+Past 1.5 km an open-water beginner's long swim may grow ~12 % a week; their plan lengths follow that progression
+(swim3800 18–22 weeks, swim5000 22–26 – G2-V7: 16 weeks ended at 2.5 km). The long swim's
+title names the continuous part ("Lange Schwimmeinheit: 1000 m am Stück"). When the day's time cuts a continuous swim the
+frame gives way first (warm-up ≥ 200 m, drills 100 m, cool-down ≥ 100 m – tri-7); a swim still cut is a `longSwim` issue
+that names the day and the time that would hold it. "It grows ~100 m a week" is only said while it does. The only swim
+of a non-beginner's week ends with 4 → 6 → 8 × 100 m at CSS in build / peak (tri-11) – from the main set's remainder and a
+shorter warm-up / drill block, so the race-length repeats keep their progression; when < 4 × 100 m fit that way, every
+other loading week is a CSS week (G2-V2). Two quality swims are ≥ 48 h apart (UX-3); the continuous swim gets the swim day
+with the most time per session, a CSS set may take the double day (G2-V4). Taper CSS sets ≤ 8 × 100 m (race week ≤ 6), none
+in the 2 days before the race.
 
 ### 4.4 Weekly volume by level [P]
 
@@ -1047,6 +1121,7 @@ paddle use, keep breathing bilateral, and progress main-set volume no faster tha
 Order: (1) breathing and exhaling underwater; (2) body position, horizontal with head neutral; (3) rotation and
 bilateral breathing every 3; (4) catch and pull (high elbow); (5) kick from the hips with a small amplitude. Use fins and a pull buoy as
 aids. For BEGINNER, don't use pace targets for the first 4–6 weeks: give reps by distance and rest by breaths/RPE.
+(Generator: beginners without a test never get swim paces; with a test not in the first 5 plan weeks.)
 
 **Goal-directed swim novices** (fix/plan-goal-progression) [P]: a triathlon whose continuous swim (sprint 400 m,
 olympic / 70.3 800 m, Ironman 1000 m) cannot be reached in the weeks before the taper (8 ladder stages + CSS test +
@@ -1201,6 +1276,38 @@ min transition run, the full long run). Counted back from the taper, the last lo
 ride's progression ignores the capped weeks. Advanced Ironman 28 wk: 2 rides / 2 swims → 3 / 3 per week; peak weekend
 "300' + brick, then 30 km" → "300' + brick, then 21–22.5 km" alternating with "180' + 20' brick, then 30 km".
 
+**Audit 2026-11 (G2)** [P]:
+
+```text
+long run day    : the second long session goes on the free day the athlete gave the most time besides the long day (Sat 300
+                  / Sun 150 min: long run Sunday – it went on a 60 min Friday at up to 165 min); days with more time than
+                  the usual session are kept first when a beginner's week drops a day; the long ride takes the long day when
+                  a day plan puts ride + run there; the long-day note names every long-session day left at its default
+2 days          : triathlon on 2 days – long ride (+ brick) on the long day, swim + run as a double day on the other; sprint
+                  needs ≥ 1 swim / ride / run a week (frequency warnings)
+third run       : 70.3 / Ironman intermediate / advanced with ≥ 6 days or 2 sessions a day – an easy run as a second session
+                  (preferably after a swim, not next to another run day); the long run keeps ~50–60 % of the week's run km,
+                  the third run splits the second one's volume; easy runs in loading weeks ≥ 25 min (advanced 30)
+taper           : one shortened quality run and ride also with 2 a week (intensity kept, §1.7) – taper quality costs half a
+                  point of the week's hard budget (G2-V6), duathlon: the run first; a discipline the spacing leaves without
+                  one gets strides / 1 min pick-ups in its first easy session; race week: ride openers
+second swim     : the double day of a triathlete's second swim avoids the run's / ride's only possible quality day and the
+                  long sessions' days (G2-V4); a third long-course run never takes the last solo swim day (G2-V5); a
+                  swim-day time is only suggested when the plan with it reaches the continuous swim
+run/walk        : with 1–2 runs a week a stage takes 2 loading weeks, the long run/walk's running ≤ 1.5 × the stage's and
+                  ≤ +10 % / +5 min a week (the only run: whole blocks rounded down, a stage that cannot waits a week); the
+                  week's run/walk running ≤ +30 % (G2-V9)
+duathlon peak   : the run before the ride counts as run volume (quality run cap); brick weeks ≤ +12 % run km on the last
+                  loading week – the long run gives ≤ 8 %, then the brick / pre-ride run (whole 5 min, titled as planned)
+day plan bricks : the brick is the run slot of its day (no brick + separate run); a knee swap never puts a second ride on a
+                  day – the run's time goes to that day's ride
+race day        : bike leg at the event's race power (Ironman ~70 % → Z2, 70.3 / olympic / sprint Z3, watts with an FTP),
+                  runs by the predicted leg pace (E included, never I); a duathlon's second run at the first run's pace ×
+                  the off-bike factor (G2-V8); finish-only: Z2 / E; leg km localised; a time the athlete
+                  did not set is a "Prognose", no "first km" cue
+same-day order  : PlannedWorkout.slot – run before the bike, swim, ride, brick, other runs, strength
+```
+
 ---
 
 ## 7. Default progression summary (generator flow)
@@ -1271,15 +1378,22 @@ knee | hip | ankle (incl. Achilles)  -> lowImpactRun
   beginners without race times start with run/walk (no running experience: stage 1, else 3 × 5 min)
   note on every run: soft surfaces, stop if pain > 3/10 or it changes the stride (pain-monitoring model [62])
 knee | hip -> strength note: pain-free range of motion, reduce depth or load
-back       -> avoidAxialLoading: strength note (no heavy back squat / deadlift; leg press, split squat,
-              hip thrust; lumbar compression in squats reaches several times body weight [64]);
-              the strength programs may read the flag – the generator does not rewrite them
+knee | hip -> cycling: no seated low-cadence (60–70 rpm) climbing repeats – the sweet spot stays at a normal cadence;
+              every ride notes high cadence (85–95 rpm), easy gears on climbs, saddle height, stop with pain (high
+              pedal torque raises patellofemoral / tibiofemoral load)
+knee | hip | ankle -> no jump squats in strength sessions (gymMod 'noJump': squats without a jump)
+back       -> avoidAxialLoading: the workouts swap the lifts (gymMod 'noAxial'): back squat → leg press / split
+              squat, deadlift / RDL → barbell glute bridge (hip extension), bent-over rows → cable / chest-supported
+              rows, standing press → seated, standing calf raise → seated, jump squat → squat, hanging leg raise →
+              dead bug; note says so (lumbar compression in squats reaches several times body weight [64])
 shoulder   -> avoidOverhead: swims ~20 % shorter, CSS sets become technique sessions, note "no paddles,
               bilateral breathing" (paddles and volume are the main loads in swimmer's shoulder [63]);
-              strength note: no heavy overhead pressing
+              strength: overhead presses → incline presses, overhead triceps extensions and dips → pushdowns /
+              lying extensions / close-grip push-ups (gymMod 'noOverhead')
 heart      -> capIntensity: nothing above threshold – no I/R runs, no Z5 rides (VO2 sets become threshold),
               no strides in the shake-out, ≤ 1 quality session per sport and week; note on quality sessions;
-              strength note: 2–3 reps in reserve, exhale on effort, no breath holding (Valsalva drives
+              strength: RIR ≥ 2 in every week (the wave's RIR-1 week becomes 2), no AMRAP calibration sets (the effort
+              chip calibrates); note: 2–3 reps in reserve, exhale on effort, no breath holding (Valsalva drives
               systolic pressure far above 200 mmHg in heavy lifts [65]). Moderate continuous and threshold
               work stays – it is what exercise guidelines for hypertension recommend [60]; medical clearance first.
 ```

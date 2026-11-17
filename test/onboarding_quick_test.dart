@@ -382,4 +382,110 @@ void main() {
     expect(longRuns.where((w) => w.durationMin > 182).length, inInclusiveRange(1, 2));
     expect(longRuns.every((w) => w.durationMin <= 210), isTrue);
   });
+
+  // Audit UX-1: a pure gym plan offered running races and planned "race + shake-out" after 17 weeks without a
+  // run. The event step offers a plan length only, a stale race is dropped, and the plan holds no run.
+  testWidgets('gym focus: no race in the event step, a stale race is dropped', (tester) async {
+    final now = DateTime.now();
+    final profile = UserProfile(
+      name: 'Ben',
+      birthYear: now.year - 30,
+      level: 'intermediate',
+      focus: TrainingFocus.gym,
+      experience: const {Sport.gym},
+      trainingDays: const [1, 2, 3, 5, 6],
+      onboarded: true,
+      athlete: AthleteData(eventDistance: '10k', eventDate: addDays(startOfWeek(dayOnly(now)), 7 * 16 + 6)),
+    );
+    final repo = await _pump(tester, profile: profile, mode: SetupMode.plan, loaded: true);
+    for (var i = 0; i < 8 && find.text(l.eventGymNoRace).evaluate().isEmpty; i++) {
+      await _next(tester);
+    }
+    expect(find.text(l.eventGymNoRace), findsOneWidget);
+    expect(find.byKey(const ValueKey('goalKind')), findsNothing, reason: 'no race to choose');
+    await _finish(tester);
+    if (find.text(l.replacePlanOk).evaluate().isNotEmpty) await _tap(tester, find.text(l.replacePlanOk));
+    expect(repo.savedProfile!.athlete.eventDate, isNull);
+    expect(repo.savedProfile!.athlete.eventDistance, isNull);
+    expect(repo.savedPlans, isNotEmpty);
+    expect(repo.savedPlans.where((w) => w.sport != Sport.gym), isEmpty);
+  });
+
+  // Audit UX-9 / UX-4: the plan step's options are tappable – "Add run days" goes back to the week, where the
+  // recommendation now meets the marathon's 4 runs.
+  testWidgets('plan step: "add run days" opens the week with the race-aware recommendation', (tester) async {
+    final now = DateTime.now();
+    final profile = UserProfile(
+      name: 'Lea',
+      birthYear: now.year - 30,
+      level: 'intermediate',
+      focus: TrainingFocus.hybrid,
+      experience: const {Sport.gym, Sport.run},
+      goals: const ['strength'],
+      trainingDays: const [1, 2, 3, 4, 5, 6],
+      longDay: 6,
+      onboarded: true,
+      athlete: AthleteData(
+        setupMode: 'advanced',
+        sessionMinutes: 60,
+        dayPlan: const {
+          1: [Sport.gym],
+          2: [Sport.run],
+          3: [Sport.gym],
+          4: [Sport.run],
+          5: [Sport.gym],
+          6: [Sport.run],
+        },
+        raceTimes: const {'hm': 110 * 60},
+        eventDistance: 'm',
+        eventDate: addDays(startOfWeek(dayOnly(now)), 7 * 16 + 6),
+      ),
+    );
+    await _pump(tester, profile: profile, mode: SetupMode.plan, loaded: true);
+    final add = find.text(l.feasAddRunDays);
+    for (var i = 0; i < 10 && add.evaluate().isEmpty; i++) {
+      await _next(tester);
+    }
+    expect(add, findsOneWidget);
+    await _tap(tester, add);
+    expect(find.text(l.weekPlanTitle), findsOneWidget);
+    expect(find.textContaining(l.recPerWeek(4)), findsWidgets, reason: 'the recommendation names 4 runs for the marathon');
+  });
+
+  // Audit UX-4 (follow-up): a beginner's 5 days with one session each cannot hold a 70.3's 6 minimum sessions – the
+  // detailed week says so and points to two sessions a day.
+  testWidgets('detailed week: a race minimum that one session a day cannot hold is named', (tester) async {
+    final now = DateTime.now();
+    final profile = UserProfile(
+      name: 'Kim',
+      birthYear: now.year - 30,
+      level: 'beginner',
+      focus: TrainingFocus.triathlon,
+      experience: const {Sport.swim, Sport.ride, Sport.run},
+      trainingDays: const [1, 3, 5, 6, 7],
+      onboarded: true,
+      athlete: AthleteData(
+        setupMode: 'advanced',
+        sessionMinutes: 60,
+        dayPlan: const {
+          1: [Sport.swim],
+          3: [Sport.ride],
+          5: [Sport.run],
+          6: [Sport.ride],
+          7: [Sport.run],
+        },
+        eventDistance: '70.3',
+        eventDate: addDays(startOfWeek(dayOnly(now)), 7 * 24 + 6),
+      ),
+    );
+    await _pump(tester, profile: profile, mode: SetupMode.plan, loaded: true);
+    for (var i = 0; i < 10 && find.text(l.weekPlanTitle).evaluate().isEmpty; i++) {
+      await _next(tester);
+    }
+    expect(find.text(l.weekPlanTitle), findsOneWidget);
+    expect(find.text(l.recMinNoFit(6, 5)), findsOneWidget);
+    await _tap(tester, find.text(l.twicePerDay));
+    expect(find.byKey(const ValueKey('recMinNoFit')), findsNothing);
+    expect(find.textContaining(l.recPerWeek(2)), findsWidgets);
+  });
 }

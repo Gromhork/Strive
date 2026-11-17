@@ -514,7 +514,10 @@ void _check(_Case c, List<PlannedWorkout> plan, _Report r, AppLocalizations l, L
   // ── Race ──
   final races = plan.where((w) => w.intensity == 'race').toList();
   if (ev != null) {
-    if (races.length != 1) r.add('R01 not exactly one race', c, '${races.length} race workouts');
+    // (A week without any sport of the race – a hybrid week of gym days only – places no race: audit UX-1.)
+    final weekSports = {for (final v in PlanGenerator.scheduleOf(p, afterRunWalk: true).values) ...v};
+    final raceable = PlanGenerator.raceSportsOf(spec).any(weekSports.contains);
+    if (races.length != (raceable ? 1 : 0)) r.add('R01 not exactly one race', c, '${races.length} race workouts');
     if (races.isNotEmpty && !sameDay(races.first.date, raceDay!)) {
       r.add('R01 race not on race date', c, '${_w(races.first)} vs ${dayKey(raceDay)}');
     }
@@ -722,7 +725,8 @@ void _check(_Case c, List<PlannedWorkout> plan, _Report r, AppLocalizations l, L
   for (final w in plan.where((w) => w.sport != Sport.gym && w.intensity != 'race')) {
     final m = nxm.firstMatch(w.title);
     if (m == null) continue;
-    final n = int.parse(m.group(1)!);
+    // ("Endurance 12 × 200 m + 4 × 100 m CSS": the repeats of every "N × M" together – as plan_matrix_test 11a.)
+    final n = nxm.allMatches(w.title).fold(0, (x, e) => x + int.parse(e.group(1)!));
     final work = w.steps.where((s) => s.kind == 'work' && s.zone != 'DR' && s.zone != 'walk').toList();
     if (work.length != n && w.steps.where((s) => s.kind == 'work').length != n) {
       r.add('C04 title N × M != work steps', c, '${_w(w)} has ${work.length} work steps');

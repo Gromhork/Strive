@@ -187,6 +187,74 @@ void main() {
     expect(steps.last.weight, greaterThanOrEqualTo(70), reason: summary(steps));
   });
 
+  test('GYM-1 beginner dumbbell press: no 20 % linear jumps, no swinging back and forth', () {
+    for (final (exId, name) in [('0314', 'dumbbell incline bench press'), ('0289', 'dumbbell bench press'), ('0336', 'dumbbell lunge')]) {
+      for (final p in [beginner, const UserProfile(weightKg: 62, gender: 'f', level: 'beginner', birthYear: 1964)]) {
+        GymExercise planned() => plannedEx(exId, name, lo: 8, hi: 12);
+        final first = LoadPrescriber(history: const [], profile: p, now: start).forExercise(planned())!.weight;
+        final steps = simulate(
+          planned: planned,
+          lifter: Lifter(oneRm: (i) => first * 1.33 * (1 + 0.004 * i)),
+          sessions: 42,
+          profile: p,
+          dayOf: (i) => (i ~/ 3) * 7 + const [0, 2, 4][i % 3],
+        );
+        printOnFailure(summary(steps));
+        // The load never comes back down below a load whose targets were all met …
+        var completed = 0.0;
+        var downs = 0;
+        for (var i = 1; i < steps.length; i++) {
+          final prev = steps[i - 1];
+          final met = [for (var k = 0; k < prev.done.length; k++) prev.done[k] >= prev.targets[k]].every((x) => x);
+          if (met) completed = max(completed, prev.weight);
+          expect(steps[i].weight, greaterThanOrEqualTo(completed - 1e-6), reason: '$name ${p.gender} session $i\n${summary(steps)}');
+          if (steps[i].weight < prev.weight - 1e-6) downs++;
+        }
+        // … and does not swing: at most one step back in 14 weeks (the lifter gets steadily stronger).
+        expect(downs, lessThanOrEqualTo(1), reason: '$name ${p.gender}\n${summary(steps)}');
+      }
+    }
+  });
+
+  test('GYM-5 deload after weeks of legs-easy sessions only: lighter than the week before', () {
+    // A squat done only the day before the key run (legs easy), then a recovery week.
+    final steps = simulate(
+      planned: () => plannedEx('0043', 'barbell full squat', lo: 5, hi: 8),
+      lifter: Lifter(oneRm: (i) => 100 + 0.5 * i),
+      sessions: 8,
+      profile: intermediate,
+      dayOf: (i) => i * 7,
+      phaseOf: (i) => i == 3 || i == 7 ? 'recovery' : 'legsEasy',
+    );
+    printOnFailure(summary(steps));
+    for (final i in [3, 7]) {
+      final prev = steps[i - 1], deload = steps[i];
+      int volume(SimStep s) => s.targets.fold(0, (a, b) => a + b);
+      expect(deload.weight, lessThan(prev.weight), reason: summary(steps));
+      expect(volume(deload), lessThanOrEqualTo(volume(prev)), reason: summary(steps));
+    }
+    // The deload is temporary: the next legs-easy week resumes at the legs-easy level, not below it.
+    expect(steps[4].weight, greaterThanOrEqualTo(steps[2].weight), reason: summary(steps));
+  });
+
+  test('GYM-11 bodyweight deload after a load step: reps of the last loading week, not of the step', () {
+    // Pull-ups at the top of the range (10/10/10) → next step +2.5 kg × 6; the recovery week instead.
+    final steps = simulate(
+      planned: () => plannedEx('0652', 'pull-up', lo: 6, hi: 10),
+      lifter: Lifter(oneRm: (i) => i < 3 ? 108 : 125, bodyKg: 80),
+      sessions: 6,
+      profile: intermediate,
+      dayOf: (i) => i * 3,
+      phaseOf: (i) => i == 5 ? 'recovery' : null,
+    );
+    printOnFailure(summary(steps));
+    final last = steps[4], deload = steps[5];
+    expect(last.done, everyElement(10), reason: summary(steps)); // top of the range: the next step would add load
+    // ~10 % lighter: at most ~20 % fewer reps of the last loading session, no added load.
+    expect(deload.weight, lessThanOrEqualTo(last.weight));
+    expect(deload.targets.first, greaterThanOrEqualTo((last.done.reduce(min) * 0.8).floor()), reason: summary(steps));
+  });
+
   test('I12 under-estimated start load is corrected without an effort rating', () {
     final steps = simulate(
       planned: () => plannedEx('0025', 'barbell bench press', lo: 5, hi: 8),

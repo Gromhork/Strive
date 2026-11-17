@@ -186,7 +186,7 @@ void main() {
       );
       if (next.isNotEmpty && (next.first.distanceKm ?? 0) >= 25) expect(b.durationMin, lessThanOrEqualTo(30), reason: '${b.date}');
     }
-    final tempo = plan.where((p) => p.sport == Sport.ride && p.phase == 'peak' && p.description.split('\n').contains(l.wRideTempoDescIm));
+    final tempo = plan.where((p) => p.sport == Sport.ride && p.phase == 'peak' && p.description.split('\n').contains(l.wRideTempoDescIm2));
     expect(tempo, isNotEmpty);
     expect(plan.where((p) => p.description.contains(l.wRideTempoDesc)), isEmpty);
   });

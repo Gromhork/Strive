@@ -10,6 +10,7 @@ import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/services/event_spec.dart';
+import 'package:strive/services/plan_exercises.dart';
 import 'package:strive/services/plan_generator.dart';
 import 'package:strive/services/schedule_advisor.dart';
 
@@ -232,7 +233,7 @@ void main() {
         final tag = '${e.key}: ${w.title} ${w.date}';
         expect(w.title.trim(), isNotEmpty, reason: tag);
         expect(w.description.trim(), isNotEmpty, reason: tag);
-        // (A brick run shows its own minutes – 10 min off the bike, audit FUZZ-5.)
+        // (A run off the bike – or a duathlon's run before it – may take 5–10 min, as its title says; audit FUZZ-5.)
         expect(w.durationMin, inInclusiveRange(w.intensity == 'moderate' ? 5 : 15, w.intensity == 'race' ? 720 : 240), reason: tag);
         if (w.distanceKm != null) expect(w.distanceKm!.isFinite && w.distanceKm! >= 0, isTrue, reason: tag);
         if (w.sport != Sport.gym && w.intensity != 'race') expect(w.steps, isNotEmpty, reason: tag);
@@ -289,7 +290,10 @@ void main() {
           final budget = n <= 4 ? 2.0 : (n <= 7 ? 3.0 : 4.0);
           final points = w.fold<double>(
             0,
-            (x, s) => x + (s.intensity == 'long' || (s.sport == Sport.swim && hard(s)) ? 0.5 : (hard(s) ? 1 : 0)),
+            // (Taper weeks: the shortened quality sessions cost 0.5 too – review 2026-11 G2-V6.)
+            (x, s) =>
+                x +
+                (s.intensity == 'long' || (s.sport == Sport.swim && hard(s)) || (s.phase == 'taper' && hard(s)) ? 0.5 : (hard(s) ? 1 : 0)),
           );
           expect(points, lessThanOrEqualTo(budget), reason: '${e.key}: ${wk.key} $points > $budget');
         }
@@ -558,7 +562,7 @@ void main() {
       }
     });
 
-    test('back / shoulder / heart: strength sessions keep their programs and get a note', () {
+    test('back / shoulder / heart: strength sessions keep their programs and get a note (swapped lifts named)', () {
       for (final e in profiles.entries.where((e) => e.value.focus.sports.contains(Sport.gym))) {
         final limited = withLimits(e.value, ['back', 'shoulder', 'heart', 'knee']);
         final plan = PlanGenerator(l, limited, templates, id).generate(start: start, weeks: 4);
@@ -567,7 +571,10 @@ void main() {
         expect(gym.map((w) => w.title).toList(), base.where((w) => w.sport == Sport.gym).map((w) => w.title).toList(), reason: e.key);
         for (final w in gym) {
           final lines = w.description.split('\n');
-          expect(lines, containsAll([l.healthGymBackNote, l.healthGymShoulderNote, l.healthGymHeartNote, l.healthGymJointNote]));
+          // Lifts the workout swapped are named as swapped (review 2026-11 GYM-2), else the general note.
+          expect(lines, containsAll([l.healthGymHeartNote, l.healthGymJointNote]));
+          expect(lines, contains(w.gymMods.contains(gymModNoAxial) ? l.healthGymBackSwapNote : l.healthGymBackNote));
+          expect(lines, contains(w.gymMods.contains(gymModNoOverhead) ? l.healthGymShoulderSwapNote : l.healthGymShoulderNote));
         }
       }
     });
@@ -578,6 +585,7 @@ void main() {
         final plan = PlanGenerator(l, p, templates, id).generate(start: start, weeks: 8);
         final perDay = <DateTime, List<PlannedWorkout>>{};
         for (final w in plan.where((w) => w.intensity != 'race')) {
+          // (A run off the bike – or a duathlon's run before it – may take 10 min, as its title says.)
           expect(w.durationMin, inInclusiveRange(w.intensity == 'moderate' ? 5 : 15, 240), reason: '${e.key}: ${w.title}');
           perDay.putIfAbsent(dayOnly(w.date), () => []).add(w);
         }

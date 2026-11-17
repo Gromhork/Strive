@@ -406,8 +406,15 @@ class NumberAnswer {
 
 /// Like [askNumber], with a third choice [noneLabel] ("Ohne Distanz") that answers
 /// `NumberAnswer(null)`; null when cancelled. Values must be positive.
-Future<NumberAnswer?> askOptionalNumber(BuildContext context, String title, {required String noneLabel, String? suffix, String? hint}) =>
-    _askNumber(context, title, suffix: suffix, hint: hint, noneLabel: noneLabel, positive: true);
+/// [warn]: a hint for a value that is possible but unlikely (e.g. an impossible pace) – shown, not blocking.
+Future<NumberAnswer?> askOptionalNumber(
+  BuildContext context,
+  String title, {
+  required String noneLabel,
+  String? suffix,
+  String? hint,
+  String? Function(double value)? warn,
+}) => _askNumber(context, title, suffix: suffix, hint: hint, noneLabel: noneLabel, positive: true, warn: warn);
 
 Future<NumberAnswer?> _askNumber(
   BuildContext context,
@@ -418,6 +425,7 @@ Future<NumberAnswer?> _askNumber(
   bool signed = false,
   bool positive = false,
   String? noneLabel,
+  String? Function(double value)? warn,
 }) {
   final ctrl = TextEditingController(text: initial == null ? '' : Units.num(initial, 2));
   final l = context.l10n;
@@ -434,6 +442,7 @@ Future<NumberAnswer?> _askNumber(
           builder: (c, setState) {
             final text = ctrl.text.trim();
             final v = valid(text);
+            final warning = v == null ? null : warn?.call(v);
             void save() {
               if (v != null) Navigator.pop(c, NumberAnswer(v));
             }
@@ -458,6 +467,12 @@ Future<NumberAnswer?> _askNumber(
                     onChanged: (_) => setState(() {}),
                     onSubmitted: (_) => save(),
                   ),
+                  if (warning != null)
+                    Padding(
+                      key: const ValueKey('askNumberWarn'),
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(warning, style: const TextStyle(fontSize: 13, color: AppColors.warning, fontWeight: FontWeight.w600)),
+                    ),
                   // The third answer sits with the field: three buttons in a row don't fit a phone.
                   if (noneLabel != null) ...[
                     const SizedBox(height: 8),

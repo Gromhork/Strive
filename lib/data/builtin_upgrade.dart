@@ -52,8 +52,10 @@ List<GymExercise>? upgradedBuiltinExercises(WorkoutTemplate t, String goal) {
   if (sig == gymSignature(target)) return null;
   final known = {
     if (_v1[key] != null) _v1[key]!,
-    for (final g in gymGoals)
+    for (final g in gymGoals) ...[
       if (_current(g)[key] case final ex?) gymSignature(ex),
+      for (final ex in previousBuiltinVersions(g)[key] ?? const <List<GymExercise>>[]) gymSignature(ex),
+    ],
   };
   // Only unchanged programs whose sets carry no own weights.
   if (!known.contains(sig) || t.exercises.any((e) => e.sets.any((s) => s.weight != 0))) return null;
@@ -107,6 +109,11 @@ final Map<String, Set<String>> _knownGym = () {
   for (final g in gymGoals) {
     for (final e in _current(g).entries) {
       out.putIfAbsent(e.key, () => {}).add(gymSignature(e.value));
+    }
+    for (final e in previousBuiltinVersions(g).entries) {
+      for (final ex in e.value) {
+        out.putIfAbsent(e.key, () => {}).add(gymSignature(ex));
+      }
     }
   }
   return out;

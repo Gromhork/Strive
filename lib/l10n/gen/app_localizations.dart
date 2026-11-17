@@ -530,7 +530,7 @@ abstract class AppLocalizations {
   /// No description provided for @daysPerWeek.
   ///
   /// In en, this message translates to:
-  /// **'{count} days per week'**
+  /// **'{count, plural, =1{1 day per week} other{{count} days per week}}'**
   String daysPerWeek(int count);
 
   /// No description provided for @longSessionDay.
@@ -1670,7 +1670,7 @@ abstract class AppLocalizations {
   /// No description provided for @generatePlanSub.
   ///
   /// In en, this message translates to:
-  /// **'Focus: {focus} · {days} days/week (change in plan settings)'**
+  /// **'Focus: {focus} · {days, plural, =1{1 day/week} other{{days} days/week}} (change in plan settings)'**
   String generatePlanSub(String focus, int days);
 
   /// No description provided for @planLocalDesc.
@@ -1682,7 +1682,7 @@ abstract class AppLocalizations {
   /// No description provided for @planCreated.
   ///
   /// In en, this message translates to:
-  /// **'{count} workouts planned'**
+  /// **'{count, plural, =1{1 workout planned} other{{count} workouts planned}}'**
   String planCreated(int count);
 
   /// No description provided for @aiUnavailable.
@@ -2132,7 +2132,7 @@ abstract class AppLocalizations {
   /// No description provided for @daysLeft.
   ///
   /// In en, this message translates to:
-  /// **'{days} days left'**
+  /// **'{days, plural, =1{1 day left} other{{days} days left}}'**
   String daysLeft(int days);
 
   /// No description provided for @eventPassed.
@@ -3290,7 +3290,7 @@ abstract class AppLocalizations {
   /// No description provided for @sessionsPerWeekN.
   ///
   /// In en, this message translates to:
-  /// **'{n} sessions / week'**
+  /// **'{n, plural, =1{1 session / week} other{{n} sessions / week}}'**
   String sessionsPerWeekN(int n);
 
   /// No description provided for @longDayHint.
@@ -3692,7 +3692,7 @@ abstract class AppLocalizations {
   /// No description provided for @diffEasySub.
   ///
   /// In en, this message translates to:
-  /// **'+5 % volume/week, a deload week every 3rd week, mostly easy sessions.'**
+  /// **'+5 % volume/week, a recovery week every 3rd week, mostly easy sessions.'**
   String get diffEasySub;
 
   /// No description provided for @diffBalanced.
@@ -3704,7 +3704,7 @@ abstract class AppLocalizations {
   /// No description provided for @diffBalancedSub.
   ///
   /// In en, this message translates to:
-  /// **'+8 % volume/week, a deload week every 4th week, ~80/20 easy/hard.'**
+  /// **'+8 % volume/week, a recovery week every 4th week, ~80/20 easy/hard.'**
   String get diffBalancedSub;
 
   /// No description provided for @diffChallenging.
@@ -4568,7 +4568,7 @@ abstract class AppLocalizations {
   /// No description provided for @gcalSynced.
   ///
   /// In en, this message translates to:
-  /// **'{count} workouts synced'**
+  /// **'{count, plural, =1{1 workout synced} other{{count} workouts synced}}'**
   String gcalSynced(int count);
 
   /// No description provided for @gcalConnectedToast.
@@ -4748,7 +4748,7 @@ abstract class AppLocalizations {
   /// No description provided for @timeCustomDays.
   ///
   /// In en, this message translates to:
-  /// **'{count} days set individually'**
+  /// **'{count, plural, =1{1 day set individually} other{{count} days set individually}}'**
   String timeCustomDays(int count);
 
   /// No description provided for @timeDefault.
@@ -5366,7 +5366,7 @@ abstract class AppLocalizations {
   /// No description provided for @nWorkouts.
   ///
   /// In en, this message translates to:
-  /// **'{count} workouts'**
+  /// **'{count, plural, =1{1 workout} other{{count} workouts}}'**
   String nWorkouts(int count);
 
   /// No description provided for @sessionN.
@@ -6104,7 +6104,7 @@ abstract class AppLocalizations {
   /// No description provided for @adjustProtected.
   ///
   /// In en, this message translates to:
-  /// **'Dropped – deload/taper week stays easy'**
+  /// **'Dropped – recovery/taper week stays easy'**
   String get adjustProtected;
 
   /// No description provided for @adjustDone.
@@ -7448,7 +7448,7 @@ abstract class AppLocalizations {
   /// No description provided for @planToEventPre.
   ///
   /// In en, this message translates to:
-  /// **'{weeks} weeks to race day: {n} weeks of base building first, then the {x}-week race plan.'**
+  /// **'{weeks} weeks to race day: {n, plural, =1{1 week} other{{n} weeks}} of base building first, then the {x}-week race plan.'**
   String planToEventPre(int weeks, int n, int x);
 
   /// No description provided for @planKeepsDone.
@@ -7490,7 +7490,7 @@ abstract class AppLocalizations {
   /// No description provided for @planAligned.
   ///
   /// In en, this message translates to:
-  /// **'Plan aligned: {weeks} weeks to race day'**
+  /// **'Plan aligned: {weeks, plural, =1{1 week} other{{weeks} weeks}} to race day'**
   String planAligned(int weeks);
 
   /// No description provided for @goalStatusTitle.
@@ -7508,7 +7508,7 @@ abstract class AppLocalizations {
   /// No description provided for @goalCountdownDays.
   ///
   /// In en, this message translates to:
-  /// **'{days} days'**
+  /// **'{days, plural, =1{1 day} other{{days} days}}'**
   String goalCountdownDays(int days);
 
   /// No description provided for @goalToRace.
@@ -9884,19 +9884,19 @@ abstract class AppLocalizations {
   /// No description provided for @termLoadWeekBody.
   ///
   /// In en, this message translates to:
-  /// **'A normal training week in which volume or intensity rises a little. Two to four loading weeks are followed by a deload week.'**
+  /// **'A normal training week in which volume or intensity rises a little. Two to four loading weeks are followed by a recovery week.'**
   String get termLoadWeekBody;
 
   /// No description provided for @termLoadWeekTip.
   ///
   /// In en, this message translates to:
-  /// **'Feeling tired at the end of a loading week is normal – the deload week turns it into fitness.'**
+  /// **'Feeling tired at the end of a loading week is normal – the recovery week turns it into fitness.'**
   String get termLoadWeekTip;
 
   /// No description provided for @termDeloadTitle.
   ///
   /// In en, this message translates to:
-  /// **'Deload week'**
+  /// **'Recovery week'**
   String get termDeloadTitle;
 
   /// No description provided for @termDeloadBody.
@@ -9968,7 +9968,7 @@ abstract class AppLocalizations {
   /// No description provided for @daysLeftInline.
   ///
   /// In en, this message translates to:
-  /// **'{days} days left'**
+  /// **'{days, plural, =1{1 day left} other{{days} days left}}'**
   String daysLeftInline(int days);
 
   /// No description provided for @fcReasonSessionsSkipped.
@@ -10730,7 +10730,7 @@ abstract class AppLocalizations {
   /// No description provided for @swimTestImplausible.
   ///
   /// In en, this message translates to:
-  /// **'These two times don’t fit together (the 400 m should take a little more than twice the 200 m). Please check them – until then the CSS is estimated from the 400 m.'**
+  /// **'These two times don’t fit together: usually the 400 m takes a little more than twice as long as the 200 m (about 2.0–2.4 ×). Please check them – until then the CSS is estimated from the 400 m.'**
   String get swimTestImplausible;
 
   /// No description provided for @calJumpCurrentWeek.
@@ -11422,6 +11422,480 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} hidden by the sport filter.'**
   String folderDuplicatedHidden(int n);
+
+  /// No description provided for @signOutWorkoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A workout is running'**
+  String get signOutWorkoutTitle;
+
+  /// No description provided for @signOutWorkoutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging out ends it without saving it.'**
+  String get signOutWorkoutBody;
+
+  /// No description provided for @signOutSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing your changes …'**
+  String get signOutSyncing;
+
+  /// No description provided for @signOutUnsyncedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes not synced yet'**
+  String get signOutUnsyncedTitle;
+
+  /// No description provided for @signOutUnsyncedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some changes – e.g. workouts recorded offline – have not reached the server yet. If you log out now, they are lost. Go online and wait a moment to keep them.'**
+  String get signOutUnsyncedBody;
+
+  /// No description provided for @signOutAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out anyway'**
+  String get signOutAnyway;
+
+  /// No description provided for @guestExistsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has Strive data'**
+  String get guestExistsTitle;
+
+  /// No description provided for @guestExistsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.'**
+  String get guestExistsBody;
+
+  /// No description provided for @guestExistsMergeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.'**
+  String get guestExistsMergeInfo;
+
+  /// No description provided for @guestExistsMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Take data along'**
+  String get guestExistsMerge;
+
+  /// No description provided for @guestExistsDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard guest data'**
+  String get guestExistsDiscard;
+
+  /// No description provided for @guestSwitchRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching account …'**
+  String get guestSwitchRunning;
+
+  /// No description provided for @guestSwitchMerged.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to your account – workouts taken along: {count}'**
+  String guestSwitchMerged(int count);
+
+  /// No description provided for @guestSwitchDiscarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to your account. The guest data was deleted.'**
+  String get guestSwitchDiscarded;
+
+  /// No description provided for @guestSwitchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching failed – nothing was changed. Check your internet connection and try again.'**
+  String get guestSwitchFailed;
+
+  /// No description provided for @guestSwitchSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again to continue.'**
+  String get guestSwitchSignInAgain;
+
+  /// No description provided for @wGymRegressionNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'First weeks: easier variations of the technically demanding exercises – the full exercises follow once the technique is solid.'**
+  String get wGymRegressionNote2;
+
+  /// No description provided for @wGymProgressNoteLinear.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression: on the main lifts the weight goes up in small steps as long as you make every rep; on the other exercises first build the reps to the top of the range, then add weight.'**
+  String get wGymProgressNoteLinear;
+
+  /// No description provided for @wGymProgressNoteBw.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression: first more reps – also beyond the range – then a harder variation (pull-ups and dips: added weight).'**
+  String get wGymProgressNoteBw;
+
+  /// No description provided for @healthGymBackSwapNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Back: squats, deadlifts, bent-over rows and standing presses are replaced by leg press, glute bridges and supported variations – no heavy axial load, neutral spine.'**
+  String get healthGymBackSwapNote;
+
+  /// No description provided for @healthGymShoulderSwapNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulder: overhead pressing, overhead triceps work and dips are replaced by incline and close-grip variations – stay pain-free.'**
+  String get healthGymShoulderSwapNote;
+
+  /// No description provided for @healthGymNoJumpNote.
+  ///
+  /// In en, this message translates to:
+  /// **'No jumps: jump squats are replaced by squats without a jump.'**
+  String get healthGymNoJumpNote;
+
+  /// No description provided for @splitHomeNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'For training at home or with body weight Strive uses full-body programs (2 alternating); from 4 strength days a week upper and lower body alternate.'**
+  String get splitHomeNote2;
+
+  /// No description provided for @equipBodyweightSub2.
+  ///
+  /// In en, this message translates to:
+  /// **'No equipment – a sturdy table, a chair and a door are enough'**
+  String get equipBodyweightSub2;
+
+  /// No description provided for @splitFullbodyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Full body on 4 or more days loads every muscle on consecutive days – from 4 days upper / lower is the better choice.'**
+  String get splitFullbodyWarning;
+
+  /// No description provided for @gymAssignUneven.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} programs cannot be spread evenly over {days} strength days a week – one of them comes up a little more often. That is as even as it gets.'**
+  String gymAssignUneven(int n, int days);
+
+  /// No description provided for @healthGymBackSwapNoteHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Back: deadlift variations, bent-over rows, standing presses and jumps are replaced by glute bridges, chest-supported rows, seated presses and squats without a jump – no heavy axial load, neutral spine.'**
+  String get healthGymBackSwapNoteHome;
+
+  /// No description provided for @wGymProgressNoteBw2.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression: first more reps – also beyond the range – then a harder variation (e.g. feet raised, single-leg or a slower lowering).'**
+  String get wGymProgressNoteBw2;
+
+  /// No description provided for @wGymShortNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortened to the {min} min planned for this day: the last accessory exercises are left out – add them when you have more time.'**
+  String wGymShortNote(int min);
+
+  /// No description provided for @eventGymNoRace.
+  ///
+  /// In en, this message translates to:
+  /// **'A pure strength plan trains for no race. For a running race choose the Hybrid focus (strength + running) or Running – here you set how long the plan runs.'**
+  String get eventGymNoRace;
+
+  /// No description provided for @feasNoRuns.
+  ///
+  /// In en, this message translates to:
+  /// **'Your week has no run day yet – this race needs {n, plural, =1{at least 1 run} other{at least {n} runs}} a week. Add run days.'**
+  String feasNoRuns(int n);
+
+  /// No description provided for @feasNoRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Your week has no bike day yet – this race needs {n, plural, =1{at least 1 ride} other{at least {n} rides}} a week. Add bike days.'**
+  String feasNoRides(int n);
+
+  /// No description provided for @feasNoSwims.
+  ///
+  /// In en, this message translates to:
+  /// **'Your week has no swim session yet – this race needs {n, plural, =1{at least 1 swim} other{at least {n} swims}} a week. Add swim days.'**
+  String feasNoSwims(int n);
+
+  /// No description provided for @feasLongRideRamp.
+  ///
+  /// In en, this message translates to:
+  /// **'From where you are now, your long ride grows safely only to about {have} in {weeks} weeks – this race needs long rides of about {need}.'**
+  String feasLongRideRamp(String have, int weeks, String need);
+
+  /// No description provided for @feasAddRunDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Add run days'**
+  String get feasAddRunDays;
+
+  /// No description provided for @feasAddRideDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Add bike days'**
+  String get feasAddRideDays;
+
+  /// No description provided for @feasAddSwimDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Add swim days'**
+  String get feasAddSwimDays;
+
+  /// No description provided for @feasRaiseTwoDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase the time on {day} to {time} and on {day2} to {time2}'**
+  String feasRaiseTwoDays(String day, String time, String day2, String time2);
+
+  /// No description provided for @feasShowDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details and options'**
+  String get feasShowDetails;
+
+  /// No description provided for @goalCountdownToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Race day today'**
+  String get goalCountdownToday;
+
+  /// No description provided for @wGymLoadDesc2.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading week: end every work set with about {rir} reps in the tank – the reserve shrinks week by week until the next recovery week. Sets, rep range and suggested weight are shown for each exercise.'**
+  String wGymLoadDesc2(int rir);
+
+  /// No description provided for @wGymLoadDescOneRep.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading week: end every work set with about 1 rep in the tank – the reserve shrinks week by week until the next recovery week. Sets, rep range and suggested weight are shown for each exercise.'**
+  String get wGymLoadDescOneRep;
+
+  /// No description provided for @wGymLoadDescNoDeloadOneRep.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish every work set with about 1 rep in reserve. Sets, rep range and suggested weight are shown with each exercise.'**
+  String get wGymLoadDescNoDeloadOneRep;
+
+  /// No description provided for @legacyRecalWhyFatigueRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.'**
+  String get legacyRecalWhyFatigueRecovery;
+
+  /// No description provided for @legacyRecalWhyFatigueCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Still harder than intended after the recovery week: check sleep, illness and stress – and consider a slower target time. Quality stays, with fewer repeats.'**
+  String get legacyRecalWhyFatigueCheck;
+
+  /// No description provided for @planMoveBeforeLong.
+  ///
+  /// In en, this message translates to:
+  /// **'The next day holds “{title}” – a hard session right before makes it harder. Better leave an easy day in between.'**
+  String planMoveBeforeLong(String title);
+
+  /// No description provided for @planMoveSameDay.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” is already planned on this day.'**
+  String planMoveSameDay(String title);
+
+  /// No description provided for @calJumpRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to race day'**
+  String get calJumpRace;
+
+  /// No description provided for @recMinNoFit.
+  ///
+  /// In en, this message translates to:
+  /// **'This race needs at least {n} sessions a week – more than {days} days with one session each. Choose “Up to 2× per day”.'**
+  String recMinNoFit(int n, int days);
+
+  /// No description provided for @feasLongRunLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'In your week as it is, your long run reaches only about {km} km – this race needs long runs of {x} km. More time on one day alone does not change that here: check which days carry your runs and which one is your long-session day.'**
+  String feasLongRunLayout(int km, int x);
+
+  /// No description provided for @feasLongRideLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'In your week as it is, your long ride reaches only {min} min – this race needs long rides of at least {target} min. More time on one day alone does not change that here: check which days carry your rides and which one is your long-session day.'**
+  String feasLongRideLayout(int min, int target);
+
+  /// No description provided for @planLogRedate.
+  ///
+  /// In en, this message translates to:
+  /// **'Session date corrected'**
+  String get planLogRedate;
+
+  /// No description provided for @planLogRedateReason.
+  ///
+  /// In en, this message translates to:
+  /// **'A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off.'**
+  String get planLogRedateReason;
+
+  /// No description provided for @feasLongDayDefault2.
+  ///
+  /// In en, this message translates to:
+  /// **'The long sessions on {day} and {day2} need up to {time} and {time2} – far more than your other sessions. The plan schedules them like that; set those days’ times yourself if they do not fit.'**
+  String feasLongDayDefault2(String day, String day2, String time, String time2);
+
+  /// No description provided for @stepRideTempoNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo – 76–90 % FTP, steady'**
+  String get stepRideTempoNote2;
+
+  /// No description provided for @wRideTempoDescIm2.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo at 75–85 % FTP – a notch above your Ironman race power (about 65–75 % FTP, the race-pace blocks of your long rides): it makes race pace feel easy. Steady, aero, with fuelling.'**
+  String get wRideTempoDescIm2;
+
+  /// No description provided for @wRidePickups.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance ride with {n} pick-ups'**
+  String wRidePickups(int n);
+
+  /// No description provided for @wRidePickupsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Zone 2 with a few 1 min pick-ups – the time on this day is too short for proper sweet-spot or threshold blocks (at least 2 × 8 min after a warm-up). More time on this day brings them back.'**
+  String get wRidePickupsDesc;
+
+  /// No description provided for @stepRidePickupNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Short pick-up – brisk, not all-out, then easy again'**
+  String get stepRidePickupNote;
+
+  /// No description provided for @wFtpTest.
+  ///
+  /// In en, this message translates to:
+  /// **'FTP test (20 min)'**
+  String get wFtpTest;
+
+  /// No description provided for @wFtpTestDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm up well, then ride 20 min as hard as you can hold evenly (start a little conservatively). Your FTP is 95 % of the 20 min average power – enter it in the plan settings (cycling): Strive then sets your watt targets from it.'**
+  String get wFtpTestDesc;
+
+  /// No description provided for @stepFtpTestNote.
+  ///
+  /// In en, this message translates to:
+  /// **'20 min time trial: as hard as you can hold evenly – note the average power'**
+  String get stepFtpTestNote;
+
+  /// No description provided for @wFtpEstimateNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The watt targets are estimated (FTP about {watts} W from your level and weight) – after the FTP test enter your FTP in the plan settings.'**
+  String wFtpEstimateNote(String watts);
+
+  /// No description provided for @healthRideKneeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Knee / hip: high cadence (85–95 rpm), easy gears on climbs – no grinding in heavy gears; check your saddle height. Stop if it hurts.'**
+  String get healthRideKneeNote;
+
+  /// No description provided for @wRideOpenersDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Race week: easy riding with a few short pick-ups – they keep the legs sharp without tiring them.'**
+  String get wRideOpenersDesc;
+
+  /// No description provided for @wLongRunWalkDescSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run/walk: the rhythm of your current stage, a few more repeats – time on your feet for the race. Talking pace, walk briskly. It grows slowly, a little each week.'**
+  String get wLongRunWalkDescSingle;
+
+  /// No description provided for @wLongSwim2.
+  ///
+  /// In en, this message translates to:
+  /// **'Long swim: {meters} m continuous'**
+  String wLongSwim2(int meters);
+
+  /// No description provided for @drillsNote50.
+  ///
+  /// In en, this message translates to:
+  /// **'{a} / {b} – 50 m drill, alternate the two drills'**
+  String drillsNote50(String a, String b);
+
+  /// No description provided for @wSwimContinuousDesc2.
+  ///
+  /// In en, this message translates to:
+  /// **'Swim the main set in one go at an easy, steady pace – breathe on both sides, no stopping.'**
+  String get wSwimContinuousDesc2;
+
+  /// No description provided for @feasLongSwimTime.
+  ///
+  /// In en, this message translates to:
+  /// **'The time on {day} only fits a continuous swim of about {meters} m next to warm-up and cool-down – this race needs about {target} m in one go. About {time} on that day would hold it.'**
+  String feasLongSwimTime(String day, int meters, int target, String time);
+
+  /// No description provided for @feasLongSwim2.
+  ///
+  /// In en, this message translates to:
+  /// **'By race day your continuous swim only reaches about {meters} m – the training should take you to about {target} m in one go (the swim leg is {leg} m).'**
+  String feasLongSwim2(int meters, int target, String leg);
+
+  /// No description provided for @feasLongSwimTime2.
+  ///
+  /// In en, this message translates to:
+  /// **'The time on {day} only fits a continuous swim of about {meters} m next to warm-up and cool-down – the training should take you to about {target} m in one go (the swim leg is {leg} m). About {time} on that day would hold it.'**
+  String feasLongSwimTime2(String day, int meters, int target, String leg, String time);
+
+  /// No description provided for @wRaceTriForecastDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast about {time}. Start the swim calmly, ride in your planned range, begin the run controlled – finish strong. Good luck!'**
+  String wRaceTriForecastDesc(String time);
+
+  /// No description provided for @wRaceTriGoalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal time {time}. Start the swim calmly, ride in your planned range, begin the run controlled – finish strong. Good luck!'**
+  String wRaceTriGoalDesc(String time);
+
+  /// No description provided for @wRaceDuForecastDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast about {time}. First run controlled, ride in your planned range, begin the second run controlled – finish strong. Good luck!'**
+  String wRaceDuForecastDesc(String time);
+
+  /// No description provided for @wRaceDuGoalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal time {time}. First run controlled, ride in your planned range, begin the second run controlled – finish strong. Good luck!'**
+  String wRaceDuGoalDesc(String time);
+
+  /// No description provided for @wRaceForecastDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast {time}. Start controlled (first km not faster than the forecast pace), finish strong. Good luck!'**
+  String wRaceForecastDesc(String time);
+
+  /// No description provided for @wSwimEnduranceCss.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance {reps} × {meters} m + {n} × 100 m CSS'**
+  String wSwimEnduranceCss(int reps, int meters, int n);
+
+  /// No description provided for @wRideTaperPickupsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Taper: easy riding with a few short pick-ups – they keep the legs sharp while the volume comes down.'**
+  String get wRideTaperPickupsDesc;
 
   /// No description provided for @planToEventRaceWeek.
   ///

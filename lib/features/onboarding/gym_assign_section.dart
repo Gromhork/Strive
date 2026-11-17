@@ -179,10 +179,25 @@ class _GymAssignSectionState extends State<GymAssignSection> {
         'pull' => l.gymGroupPull,
         _ => l.gymGroupLegs,
       };
+      var uneven = false;
       for (final e in trained.skip(1)) {
         if (e.value < 2 - 1e-9 && e.value <= most.value - 0.5 + 1e-9) {
           out.add(l.gymAssignWarnFrequency(group(e.key), nf.format(e.value), group(most.key), nf.format(most.value)));
+          uneven = true;
         }
+      }
+      // Said plainly when no assignment can do better (review 2026-11 UX-10): the programs come up as evenly as
+      // the days allow (one session apart at most), but the sessions do not divide by the programs.
+      final uses = <String, int>{};
+      for (var w = 0; w < weeks.length; w++) {
+        for (final d in _gymDays) {
+          if (at(w, d) case final r?) uses[r] = (uses[r] ?? 0) + 1;
+        }
+      }
+      final total = uses.values.fold<int>(0, (x, y) => x + y);
+      if (uneven && uses.length > 1 && total % uses.length != 0) {
+        final spread = uses.values.reduce((x, y) => x > y ? x : y) - uses.values.reduce((x, y) => x < y ? x : y);
+        if (spread <= 1) out.add(l.gymAssignUneven(uses.length, _gymDays.length));
       }
     }
     // A leg-heavy program the day before the long session.

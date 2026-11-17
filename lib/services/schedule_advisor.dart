@@ -3,6 +3,7 @@ import 'dart:math';
 import '../core/sport.dart';
 import '../data/default_programs.dart';
 import '../data/models.dart';
+import 'event_spec.dart';
 
 /// Recommends how often to train each sport per week and builds an optimal weekday
 /// layout ("Auto" button in the setup). Rules (docs/training-science.md):
@@ -50,19 +51,26 @@ class ScheduleAdvisor {
         Sport.swim => const [2, 3, 4][lv],
       };
     }
+    // The race's minimum sessions of each discipline ([EventSpec.minRuns] …) – the plan check warns below them,
+    // so the recommendation never does (audit UX-4: "3× running" for a hybrid marathon, then "a marathon needs
+    // at least 4 runs a week").
+    for (final s in res.keys) {
+      res[s] = max(res[s]!, _minFor(s));
+    }
     // Fit into the available sessions (days × sessions/day, keep rest days).
     final cap = maxDays * a.sessionsPerDay;
     var total = res.values.fold<int>(0, (x, y) => x + y);
     final main = _mainSport([Sport.run, Sport.ride, Sport.swim].where(res.containsKey).toList()..add(Sport.run));
     while (total > cap) {
       // Endurance focus: strength goes down to 1× first; then the sport with the most
-      // sessions (on ties not the main sport).
+      // sessions (on ties not the main sport) – above the race's minimum while one is.
       Sport s;
       if (multi > 0 && (res[Sport.gym] ?? 0) > 1) {
         s = Sport.gym;
       } else {
+        final above = res.entries.where((e) => e.value > _minFor(e.key)).toList();
         s =
-            res.entries.reduce((x, y) {
+            (above.isEmpty ? res.entries : above).reduce((x, y) {
               if (x.value != y.value) return x.value > y.value ? x : y;
               return x.key == main ? y : x;
             }).key;
@@ -72,6 +80,22 @@ class ScheduleAdvisor {
     }
     res.removeWhere((_, v) => v <= 0);
     return res;
+  }
+
+  /// Sessions a week the race needs at least over all chosen sports – more than [maxDays] with one session a day
+  /// cannot be recommended (a 70.3 beginner: 6 sessions, 5 days) – the setup says so (audit UX-4).
+  int get raceMinSessions => sports.fold(0, (n, s) => n + _minFor(s));
+
+  /// Sessions a week of [s] the race of the plan needs at least (0 without a race of this focus).
+  int _minFor(Sport s) {
+    final spec = EventSpec.of(a.eventDistance);
+    if (spec == null || !spec.fits(profile.focus)) return 0;
+    return switch (s) {
+      Sport.run => spec.minRuns,
+      Sport.ride => spec.minRides,
+      Sport.swim => spec.minSwims,
+      _ => 0,
+    };
   }
 
   /// Builds a weekday → sports layout for [freq].
