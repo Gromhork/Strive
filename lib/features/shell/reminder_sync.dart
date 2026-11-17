@@ -7,10 +7,39 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/notification_service.dart';
 
-/// Re-schedules local notifications whenever settings or the plan change.
+/// The device's time zone (IANA id; null until read / unknown). Read at start and again whenever
+/// the app comes back to the foreground – after a flight the phone switches zones while the app
+/// sleeps.
+class DeviceTimeZone extends Notifier<String?> {
+  @override
+  String? build() {
+    AppLifecycleListener? listener;
+    try {
+      listener = AppLifecycleListener(onResume: refresh);
+    } catch (_) {
+      // No widgets binding (pure unit tests).
+    }
+    ref.onDispose(() => listener?.dispose());
+    refresh();
+    return null;
+  }
+
+  Future<void> refresh() async {
+    final zone = await NotificationService.deviceTimeZone();
+    if (zone != null && ref.mounted && zone != state) state = zone;
+  }
+}
+
+final deviceTimeZoneProvider = NotifierProvider<DeviceTimeZone, String?>(DeviceTimeZone.new);
+
+/// Re-schedules local notifications whenever settings or the plan change, on every new day (the
+/// 14-day window moves on) and when the device's time zone changes (reminders are absolute
+/// instants: 08:00 in Berlin would ring at 02:00 in New York).
 final reminderSyncProvider = Provider<void>((ref) {
   final settings = ref.watch(settingsProvider);
   final plans = ref.watch(planListProvider);
+  ref.watch(todayProvider);
+  final zone = ref.watch(deviceTimeZoneProvider);
   final prefs = ref.read(prefsProvider);
   final code = settings.locale ?? WidgetsBinding.instance.platformDispatcher.locale.languageCode;
   final l = lookupAppLocalizations(Locale(code == 'de' ? 'de' : 'en'));
@@ -21,6 +50,7 @@ final reminderSyncProvider = Provider<void>((ref) {
       enabled: settings.trainingReminder,
       hour: settings.reminderHour,
       minute: settings.reminderMinute,
+      timeZone: zone,
       plans: plans,
       title: (p) => l.trainingReminderTitle(p.sport.label(l)),
       body: (p) => '${p.title} · ${p.durationMin} min',

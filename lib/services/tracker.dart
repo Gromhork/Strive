@@ -341,10 +341,11 @@ class CardioState {
     double? lapStartDist,
     List<StepResult>? stepResults,
     Map<int, int>? paceTime,
+    String? Function(String? id)? relink,
   }) => CardioState(
     sport: sport,
     title: title,
-    planId: planId,
+    planId: relink == null ? planId : relink(planId),
     start: start,
     accumulatedSec: accumulatedSec ?? this.accumulatedSec,
     runningSince: pause ? null : (runningSince ?? this.runningSince),
@@ -779,6 +780,10 @@ class TrackerNotifier extends Notifier<CardioState?> {
   }
 
   void setPoolLength(int m) => state = state?.copyWith(poolLengthM: m);
+
+  /// Re-points the recording's planned workout ([relink]: old id → new id, null = no
+  /// counterpart) – the guest's data moved into another account under new ids.
+  void relink(String? Function(String? id) relink) => state = state?.copyWith(relink: relink);
 
   /// Stops recording and returns a session draft (not yet saved).
   Session finish(String id, {double? manualDistanceM}) {
