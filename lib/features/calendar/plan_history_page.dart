@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../data/plan_log.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../../l10n/relocalize.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
 import 'auto_adjust.dart';
@@ -124,7 +125,9 @@ class PlanLogCard extends ConsumerWidget {
     'week' => l.planLogWeekReason,
     'replace' => l.planLogReplaceReason,
     'unlink' => l.planLogUnlinkReason,
-    _ => entry.note,
+    // Stored as rendered text (the recalibration's findings) in the language of that day: shown in today's
+    // (audit T12 – German findings inside the English history).
+    _ => _relocalized(l, entry.note),
   };
 
   @override
@@ -175,6 +178,10 @@ class PlanLogCard extends ConsumerWidget {
   }
 }
 
+/// [text] (stored in the language active when it was written) in the app's current language ([Relocalizer]).
+String _relocalized(AppLocalizations l, String text) =>
+    text.isEmpty ? text : Relocalizer.to(l.localeName.startsWith('de') ? 'de' : 'en').text(text);
+
 /// "Long run · Sat 14 Nov: 9 km → 7.7 km" – what changed on one workout.
 class _ItemLine extends StatelessWidget {
   const _ItemLine({required this.item, required this.profile});
@@ -195,7 +202,7 @@ class _ItemLine extends StatelessWidget {
       if (a.isDone && !b.isDone) parts.add(l.planLogTickedOff);
       if (!a.isDone && b.isDone) parts.add(l.planLogReopened);
       if (a.sport != b.sport) parts.add('${b.sport.label(l)} → ${a.sport.label(l)}');
-      if (a.title != b.title && a.sport == b.sport) parts.add('${b.title} → ${a.title}');
+      if (a.title != b.title && a.sport == b.sport) parts.add('${_relocalized(l, b.title)} → ${_relocalized(l, a.title)}');
       final ba = amountLabel(b, profile), aa = amountLabel(a, profile);
       if (ba != aa && a.status != 'skipped') parts.add('$ba → $aa');
       final bs = b.exercises.fold(0, (x, e) => x + e.workSets.length), as = a.exercises.fold(0, (x, e) => x + e.workSets.length);
@@ -212,7 +219,10 @@ class _ItemLine extends StatelessWidget {
             child: Text.rich(
               TextSpan(
                 children: [
-                  TextSpan(text: '${(b ?? a).title} · ${df.format((b ?? a).date)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                  TextSpan(
+                    text: '${_relocalized(l, (b ?? a).title)} · ${df.format((b ?? a).date)}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   if (parts.isNotEmpty) TextSpan(text: '\n${parts.join(' · ')}'),
                 ],
               ),
