@@ -2045,6 +2045,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final specific = PlanGenerator.specificWeeksFor(_planProfile);
     final pre = weeksToEvent == null ? 0 : weeksToEvent - specific;
     final rec = _recommendedRange;
+    // A pure gym plan has no weekly volume growth nor easy/hard split (sets follow the program): its
+    // difficulty only sets how often a recovery week comes.
+    final gym = _planProfile.focus == TrainingFocus.gym;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2053,7 +2056,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _choiceCard(
           selected: a.difficulty == 'easy',
           title: l.diffEasy,
-          sub: l.diffEasySub,
+          sub: gym ? l.diffEasySubGym : l.diffEasySub,
           icon: Icons.spa_outlined,
           color: AppColors.run,
           onTap: () => _setA({'difficulty': 'easy'}),
@@ -2061,7 +2064,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _choiceCard(
           selected: a.difficulty == 'balanced',
           title: l.diffBalanced,
-          sub: l.diffBalancedSub,
+          sub: gym ? l.diffBalancedSubGym : l.diffBalancedSub,
           icon: Icons.balance_rounded,
           badge: l.recommended,
           onTap: () => _setA({'difficulty': 'balanced'}),
@@ -2069,7 +2072,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _choiceCard(
           selected: a.difficulty == 'challenging',
           title: l.diffChallenging,
-          sub: l.diffChallengingSub,
+          sub: gym ? l.diffChallengingSubGym : l.diffChallengingSub,
           icon: Icons.local_fire_department_outlined,
           color: AppColors.gym,
           onTap: () => _setA({'difficulty': 'challenging'}),

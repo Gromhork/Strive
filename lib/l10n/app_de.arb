@@ -1979,5 +1979,8 @@
   "planCreating": "Dein Plan wird erstellt …",
   "summaryRunFitness": "Laufform (VDOT)",
   "summarySportDataChanged": "Sportdaten (Level, Bestzeiten, Rad, Schwimmen, Kraft oder Gesundheit): angepasst",
-  "startedOnDayNotCounted": "am {day} begonnen – nicht gewertet"
+  "startedOnDayNotCounted": "am {day} begonnen – nicht gewertet",
+  "diffEasySubGym": "Jede 3. Woche eine Entlastungswoche – mehr Erholung zwischen den Belastungswochen.",
+  "diffBalancedSubGym": "Jede 4. Woche eine Entlastungswoche – stetiger Fortschritt für die meisten.",
+  "diffChallengingSubGym": "Profis trainieren längere Blöcke bis zur Entlastungswoche – für Erfahrene."
 }

@@ -11974,6 +11974,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'started on {day} – not counted'**
   String startedOnDayNotCounted(String day);
+
+  /// No description provided for @diffEasySubGym.
+  ///
+  /// In en, this message translates to:
+  /// **'A recovery week every 3rd week – more time to recover between loading weeks.'**
+  String get diffEasySubGym;
+
+  /// No description provided for @diffBalancedSubGym.
+  ///
+  /// In en, this message translates to:
+  /// **'A recovery week every 4th week – steady progress for most athletes.'**
+  String get diffBalancedSubGym;
+
+  /// No description provided for @diffChallengingSubGym.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced lifters train longer blocks before a recovery week – for experienced athletes.'**
+  String get diffChallengingSubGym;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

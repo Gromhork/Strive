@@ -6824,4 +6824,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String startedOnDayNotCounted(String day) {
     return 'started on $day – not counted';
   }
+
+  @override
+  String get diffEasySubGym => 'A recovery week every 3rd week – more time to recover between loading weeks.';
+
+  @override
+  String get diffBalancedSubGym => 'A recovery week every 4th week – steady progress for most athletes.';
+
+  @override
+  String get diffChallengingSubGym => 'Advanced lifters train longer blocks before a recovery week – for experienced athletes.';
 }

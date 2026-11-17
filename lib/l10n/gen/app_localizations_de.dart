@@ -6824,4 +6824,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String startedOnDayNotCounted(String day) {
     return 'am $day begonnen – nicht gewertet';
   }
+
+  @override
+  String get diffEasySubGym => 'Jede 3. Woche eine Entlastungswoche – mehr Erholung zwischen den Belastungswochen.';
+
+  @override
+  String get diffBalancedSubGym => 'Jede 4. Woche eine Entlastungswoche – stetiger Fortschritt für die meisten.';
+
+  @override
+  String get diffChallengingSubGym => 'Profis trainieren längere Blöcke bis zur Entlastungswoche – für Erfahrene.';
 }

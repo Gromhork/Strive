@@ -5030,5 +5030,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "diffEasySubGym": "A recovery week every 3rd week – more time to recover between loading weeks.",
+  "diffBalancedSubGym": "A recovery week every 4th week – steady progress for most athletes.",
+  "diffChallengingSubGym": "Advanced lifters train longer blocks before a recovery week – for experienced athletes."
 }

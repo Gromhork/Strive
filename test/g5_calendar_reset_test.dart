@@ -91,7 +91,8 @@ void main() {
           prefsProvider.overrideWithValue(prefs),
           authProvider.overrideWith((ref) => Stream.value(null)),
           profileProvider.overrideWith(
-            (ref) => Stream.value(const UserProfile(name: 'Alex', onboarded: true, weightKg: 75, birthYear: 1990, focus: TrainingFocus.run)),
+            (ref) =>
+                Stream.value(const UserProfile(name: 'Alex', onboarded: true, weightKg: 75, birthYear: 1990, focus: TrainingFocus.run)),
           ),
           sessionsProvider.overrideWith((ref) => Stream.value(const <Session>[])),
           plansProvider.overrideWith((ref) => Stream.value(plans)),

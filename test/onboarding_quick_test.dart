@@ -419,6 +419,9 @@ void main() {
     }
     expect(find.text(l.eventGymNoRace), findsOneWidget);
     expect(find.byKey(const ValueKey('goalKind')), findsNothing, reason: 'no race to choose');
+    await _next(tester); // → plan: the difficulty speaks of recovery weeks, not of volume growth / 80/20
+    expect(find.text(l.diffBalancedSubGym), findsOneWidget);
+    expect(find.text(l.diffBalancedSub), findsNothing);
     await _finish(tester);
     if (find.text(l.replacePlanOk).evaluate().isNotEmpty) await _tap(tester, find.text(l.replacePlanOk));
     expect(repo.savedProfile!.athlete.eventDate, isNull);
