@@ -11944,6 +11944,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your race pace is the realistic one on your fitness: {time} ({pace}). Start the first km at goal pace, then settle into it – no faster.'**
   String wRaceRealisticPace(String time, String pace);
+
+  /// No description provided for @stepRaceFinishNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish pace – start easy, keep it even'**
+  String get stepRaceFinishNote;
+
+  /// No description provided for @planCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating your plan …'**
+  String get planCreating;
+
+  /// No description provided for @summaryRunFitness.
+  ///
+  /// In en, this message translates to:
+  /// **'Running form (VDOT)'**
+  String get summaryRunFitness;
+
+  /// No description provided for @summarySportDataChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport data (level, best times, bike, swim, gym or health): updated'**
+  String get summarySportDataChanged;
+
+  /// No description provided for @startedOnDayNotCounted.
+  ///
+  /// In en, this message translates to:
+  /// **'started on {day} – not counted'**
+  String startedOnDayNotCounted(String day);
+
+  /// No description provided for @diffEasySubGym.
+  ///
+  /// In en, this message translates to:
+  /// **'A recovery week every 3rd week – more time to recover between loading weeks.'**
+  String get diffEasySubGym;
+
+  /// No description provided for @diffBalancedSubGym.
+  ///
+  /// In en, this message translates to:
+  /// **'A recovery week every 4th week – steady progress for most athletes.'**
+  String get diffBalancedSubGym;
+
+  /// No description provided for @diffChallengingSubGym.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced lifters train longer blocks before a recovery week – for experienced athletes.'**
+  String get diffChallengingSubGym;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

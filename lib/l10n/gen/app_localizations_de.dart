@@ -6807,4 +6807,30 @@ class AppLocalizationsDe extends AppLocalizations {
   String wRaceRealisticPace(String time, String pace) {
     return 'Dein Renntempo ist das realistische deines Leistungsstands: $time ($pace). Den ersten km im Zieltempo, dann in dieses Tempo finden – nicht schneller.';
   }
+
+  @override
+  String get stepRaceFinishNote => 'Ankommenstempo – locker starten, gleichmäßig einteilen';
+
+  @override
+  String get planCreating => 'Dein Plan wird erstellt …';
+
+  @override
+  String get summaryRunFitness => 'Laufform (VDOT)';
+
+  @override
+  String get summarySportDataChanged => 'Sportdaten (Level, Bestzeiten, Rad, Schwimmen, Kraft oder Gesundheit): angepasst';
+
+  @override
+  String startedOnDayNotCounted(String day) {
+    return 'am $day begonnen – nicht gewertet';
+  }
+
+  @override
+  String get diffEasySubGym => 'Jede 3. Woche eine Entlastungswoche – mehr Erholung zwischen den Belastungswochen.';
+
+  @override
+  String get diffBalancedSubGym => 'Jede 4. Woche eine Entlastungswoche – stetiger Fortschritt für die meisten.';
+
+  @override
+  String get diffChallengingSubGym => 'Profis trainieren längere Blöcke bis zur Entlastungswoche – für Erfahrene.';
 }

@@ -6807,4 +6807,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String wRaceRealisticPace(String time, String pace) {
     return 'Your race pace is the realistic one on your fitness: $time ($pace). Start the first km at goal pace, then settle into it – no faster.';
   }
+
+  @override
+  String get stepRaceFinishNote => 'Finish pace – start easy, keep it even';
+
+  @override
+  String get planCreating => 'Creating your plan …';
+
+  @override
+  String get summaryRunFitness => 'Running form (VDOT)';
+
+  @override
+  String get summarySportDataChanged => 'Sport data (level, best times, bike, swim, gym or health): updated';
+
+  @override
+  String startedOnDayNotCounted(String day) {
+    return 'started on $day – not counted';
+  }
+
+  @override
+  String get diffEasySubGym => 'A recovery week every 3rd week – more time to recover between loading weeks.';
+
+  @override
+  String get diffBalancedSubGym => 'A recovery week every 4th week – steady progress for most athletes.';
+
+  @override
+  String get diffChallengingSubGym => 'Advanced lifters train longer blocks before a recovery week – for experienced athletes.';
 }

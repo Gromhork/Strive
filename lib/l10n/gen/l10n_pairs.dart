@@ -1904,4 +1904,12 @@ const l10nPairs = <(String, String)>[
   ('So plan short walk breaks from the beginning of the race (e.g. 1 min every 10 min) – your target time stays, but start easy: finishing comes first.', 'Plane deshalb im Rennen von Beginn an kurze Gehpausen ein (z. B. 1 min alle 10 min) – deine Zielzeit bleibt, aber starte ruhig: Ankommen geht vor.'),
   ('The plan therefore treats the race as a finish goal, without a target time – set one of your own if you have it.', 'Der Plan behandelt das Rennen deshalb als Finish-Ziel, ohne Zielzeit – hast du eine eigene, trage sie ein.'),
   ('Your race pace is the realistic one on your fitness: {time} ({pace}). Start the first km at goal pace, then settle into it – no faster.', 'Dein Renntempo ist das realistische deines Leistungsstands: {time} ({pace}). Den ersten km im Zieltempo, dann in dieses Tempo finden – nicht schneller.'),
+  ('Finish pace – start easy, keep it even', 'Ankommenstempo – locker starten, gleichmäßig einteilen'),
+  ('Creating your plan …', 'Dein Plan wird erstellt …'),
+  ('Running form (VDOT)', 'Laufform (VDOT)'),
+  ('Sport data (level, best times, bike, swim, gym or health): updated', 'Sportdaten (Level, Bestzeiten, Rad, Schwimmen, Kraft oder Gesundheit): angepasst'),
+  ('started on {day} – not counted', 'am {day} begonnen – nicht gewertet'),
+  ('A recovery week every 3rd week – more time to recover between loading weeks.', 'Jede 3. Woche eine Entlastungswoche – mehr Erholung zwischen den Belastungswochen.'),
+  ('A recovery week every 4th week – steady progress for most athletes.', 'Jede 4. Woche eine Entlastungswoche – stetiger Fortschritt für die meisten.'),
+  ('Advanced lifters train longer blocks before a recovery week – for experienced athletes.', 'Profis trainieren längere Blöcke bis zur Entlastungswoche – für Erfahrene.'),
 ];

@@ -36,6 +36,8 @@ import '../onboarding/onboarding_page.dart';
 import '../session/start_helpers.dart';
 import '../stats/body_page.dart';
 import '../../services/plan_text.dart';
+import '../../services/plan_service.dart';
+import '../../widgets/whole_words_text.dart';
 import '../stats/session_detail_page.dart';
 
 class HomePage extends ConsumerWidget {
@@ -199,8 +201,13 @@ class TodayCard extends ConsumerStatefulWidget {
 class _TodayCardState extends ConsumerState<TodayCard> {
   int _i = 0;
 
+  // While the first setup still creates the plan (the profile is saved first and opens this page),
+  // the card says so instead of offering "Plan erstellen" for a plan that is on its way.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<bool>(valueListenable: PlanService.creating, builder: (context, creating, _) => _build(context, creating));
+
+  Widget _build(BuildContext context, bool creating) {
     ref.watch(todayProvider); // "today" changes at midnight
     final l = context.l10n;
     final filter = ref.watch(sportFilterProvider);
@@ -226,6 +233,8 @@ class _TodayCardState extends ConsumerState<TodayCard> {
               ? (Icons.filter_alt_outlined, AppColors.brand, l.todayHiddenByFilter(hidden), l.todayHiddenByFilterSub)
               : doneToday.isNotEmpty
               ? (Icons.check_circle_rounded, AppColors.success, l.doneToday(doneToday.length), doneToday.map((s) => s.title).join(', '))
+              : noPlan && creating
+              ? (Icons.hourglass_top_rounded, AppColors.brand, l.planCreating, l.noPlanYetSub)
               : noPlan
               ? (Icons.event_note_rounded, AppColors.brand, l.noPlanYet, l.noPlanYetSub)
               : (Icons.self_improvement_rounded, AppColors.brand, l.restDay, l.restDaySub);
@@ -280,6 +289,12 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                         style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
                         onPressed: () => ref.read(sportFilterProvider.notifier).set(null),
                         child: Text(l.showAllSports),
+                      )
+                      : noPlan && creating
+                      ? const Padding(
+                        key: ValueKey('todayPlanCreating'),
+                        padding: EdgeInsets.all(8),
+                        child: SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 3)),
                       )
                       : noPlan
                       ? FilledButton.icon(
@@ -472,44 +487,6 @@ String shortPlanLabel(AppLocalizations l, PlannedWorkout p) {
   return t;
 }
 
-/// A centred label of at most two lines that never breaks inside a word: a word wider than the cell
-/// shrinks the label instead (audit UX-17: "Interval|le", "Techni|k" at font scale 1.3).
-class _WholeWordsLabel extends StatelessWidget {
-  const _WholeWordsLabel(this.text, {this.textKey, required this.style});
-  final String text;
-  final Key? textKey;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, c) {
-      final scaler = MediaQuery.textScalerOf(context);
-      final base = DefaultTextStyle.of(context).style.merge(style);
-      var widest = 0.0;
-      for (final w in text.split(RegExp(r'\s+'))) {
-        final tp = TextPainter(
-          text: TextSpan(text: w, style: base),
-          textDirection: Directionality.of(context),
-          textScaler: scaler,
-          maxLines: 1,
-        )..layout();
-        if (tp.width > widest) widest = tp.width;
-        tp.dispose();
-      }
-      final shrink = widest > c.maxWidth && widest > 0 ? c.maxWidth / widest : 1.0;
-      return Text(
-        text,
-        key: textKey,
-        textAlign: TextAlign.center,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: style,
-        textScaler: shrink < 1 ? TextScaler.linear(scaler.scale(14) / 14 * shrink * 0.98) : null,
-      );
-    },
-  );
-}
-
 /// "Demnächst": the next six days.
 class ComingUpCard extends ConsumerWidget {
   const ComingUpCard({super.key});
@@ -589,7 +566,8 @@ class ComingUpCard extends ConsumerWidget {
                             triggerMode: TooltipTriggerMode.longPress,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 1),
-                              child: _WholeWordsLabel(
+                              child: WholeWordsText(
+                                textAlign: TextAlign.center,
                                 // Six days share the row: a short label (the kind of session; gym:
                                 // "GK A") – long titles were cut off. The full title is one tap away.
                                 hiddenDay

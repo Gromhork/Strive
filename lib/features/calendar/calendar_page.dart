@@ -805,11 +805,12 @@ class DoneElsewhereLine extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         child: Row(
           children: [
-            Icon(Icons.check_rounded, size: 16, color: c.color(context)),
+            // A start too short to count is no "done" (the workout page says it stays open).
+            Icon(c.notCounted ? Icons.close_rounded : Icons.check_rounded, size: 16, color: c.color(context)),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                '${glueTitle(plan.title)} · ${l.doneOnDay(_weekdayFormat(context.localeName).format(session.start))}',
+                '${glueTitle(plan.title)} · ${(c.notCounted ? l.startedOnDayNotCounted : l.doneOnDay)(_weekdayFormat(context.localeName).format(session.start))}',
                 style: t?.copyWith(color: Theme.of(context).colorScheme.outline),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

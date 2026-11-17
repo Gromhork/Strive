@@ -335,6 +335,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       await _doFinish();
     } finally {
       _finishing = false;
+      PlanService.creating.value = false;
     }
   }
 
@@ -393,6 +394,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       // A long day that is no longer a training day would be silently ignored – store "automatic".
       'longDay': longDays.contains(p.longDay) ? p.longDay : null,
     });
+    if (_generatePlan && widget.mode == SetupMode.setup) PlanService.creating.value = true;
     repo.saveProfile(profile);
     final now = DateTime.now();
 
@@ -1079,8 +1081,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               contentPadding: EdgeInsets.zero,
               title: Text(l.canRun30),
               subtitle: Text(l.canRun30Sub),
-              value: a.canRun30,
-              onChanged: (v) => _setA({'canRun30': v}),
+              // A beginner without running experience starts on run/walk whatever the default answer
+              // said – the switch shows what the plan does, and "yes" counts as running experience.
+              value: a.canRun30 && PlanGenerator.runWalkStartFor(_quickProfile) != 0,
+              onChanged: (v) {
+                if (v && !p.experience.contains(Sport.run)) setState(() => p = p.copyWith(experience: {...p.experience, Sport.run}));
+                _setA({'canRun30': v});
+              },
             ),
           if (_sports.contains(Sport.swim))
             SwitchListTile(
@@ -2038,6 +2045,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final specific = PlanGenerator.specificWeeksFor(_planProfile);
     final pre = weeksToEvent == null ? 0 : weeksToEvent - specific;
     final rec = _recommendedRange;
+    // A pure gym plan has no weekly volume growth nor easy/hard split (sets follow the program): its
+    // difficulty only sets how often a recovery week comes.
+    final gym = _planProfile.focus == TrainingFocus.gym;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2046,7 +2056,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _choiceCard(
           selected: a.difficulty == 'easy',
           title: l.diffEasy,
-          sub: l.diffEasySub,
+          sub: gym ? l.diffEasySubGym : l.diffEasySub,
           icon: Icons.spa_outlined,
           color: AppColors.run,
           onTap: () => _setA({'difficulty': 'easy'}),
@@ -2054,7 +2064,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _choiceCard(
           selected: a.difficulty == 'balanced',
           title: l.diffBalanced,
-          sub: l.diffBalancedSub,
+          sub: gym ? l.diffBalancedSubGym : l.diffBalancedSub,
           icon: Icons.balance_rounded,
           badge: l.recommended,
           onTap: () => _setA({'difficulty': 'balanced'}),
@@ -2062,7 +2072,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         _choiceCard(
           selected: a.difficulty == 'challenging',
           title: l.diffChallenging,
-          sub: l.diffChallengingSub,
+          sub: gym ? l.diffChallengingSubGym : l.diffChallengingSub,
           icon: Icons.local_fire_department_outlined,
           color: AppColors.gym,
           onTap: () => _setA({'difficulty': 'challenging'}),
@@ -2198,6 +2208,22 @@ List<String> planSettingChanges(
   if (a.eventDate == null) add(l.planLength, l.planWeeksN(b.planWeeks), l.planWeeksN(a.planWeeks));
   add(l.difficultyTitle, diff(b.difficulty), diff(a.difficulty));
   add(l.longRunExtendTitle, b.longRunExtend ? l.yes : l.no, a.longRunExtend ? l.yes : l.no);
+  // The sport data (a new best time changes every pace of the plan) – the running form by name, the
+  // rest (bike, swim, gym, health) in one line: "nothing changes" after a new 10 km time was wrong.
+  String vdot(double? v) => v == null ? '–' : Units.fixed(v);
+  final vb = Vdot.of(b), va = Vdot.of(a);
+  add(l.summaryRunFitness, vdot(vb), vdot(va));
+  const sportData = [
+    'raceTimes', 'runWeeklyKm', 'longestRunKm', 'canRun30', 'ftp', 'bikeWeeklyHours', 'longestRideKm', 'hasPowerMeter', //
+    'indoorTrainer', 'swim400Sec', 'swim200Sec', 'swimWeeklyKm', 'canSwim400', 'poolLength', 'equipment', 'gymGoal', //
+    'gymSplit', 'oneRm', 'gymAssign', 'gymAB', 'gymPlanA', 'gymPlanB', 'limitations', 'restHr',
+  ];
+  final bm = b.toMap(), am = a.toMap();
+  final otherData =
+      before.level != after.level ||
+      '${before.experience.map((s) => s.name).toList()..sort()}' != '${after.experience.map((s) => s.name).toList()..sort()}' ||
+      sportData.any((k) => !(k == 'raceTimes' && vdot(vb) != vdot(va)) && '${bm[k]}' != '${am[k]}');
+  if (otherData) out.add(l.summarySportDataChanged);
   return out;
 }
 

@@ -144,7 +144,8 @@ class GoalStatusView extends StatelessWidget {
                     ),
                     Text(
                       DateFormat.yMMMMEEEEd(context.localeName).format(f.raceDate),
-                      maxLines: 1,
+                      // "Sonntag, 25. April 2027" next to the countdown: two lines, never "25. April 20…".
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: small,
                     ),

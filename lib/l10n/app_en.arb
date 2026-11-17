@@ -5018,5 +5018,20 @@
         "type": "String"
       }
     }
-  }
+  },
+  "stepRaceFinishNote": "Finish pace – start easy, keep it even",
+  "planCreating": "Creating your plan …",
+  "summaryRunFitness": "Running form (VDOT)",
+  "summarySportDataChanged": "Sport data (level, best times, bike, swim, gym or health): updated",
+  "startedOnDayNotCounted": "started on {day} – not counted",
+  "@startedOnDayNotCounted": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "diffEasySubGym": "A recovery week every 3rd week – more time to recover between loading weeks.",
+  "diffBalancedSubGym": "A recovery week every 4th week – steady progress for most athletes.",
+  "diffChallengingSubGym": "Advanced lifters train longer blocks before a recovery week – for experienced athletes."
 }

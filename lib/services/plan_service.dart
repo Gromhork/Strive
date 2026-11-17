@@ -26,6 +26,10 @@ class PlanService {
   /// (audit UX-16: after "Plan neu aufsetzen" the list stayed weeks into the old plan).
   static final replaced = ValueNotifier<int>(0);
 
+  /// True while the first setup creates the plan: its profile is saved first (which already opens
+  /// the app), the plan follows a moment later – Home shows "creating" instead of "no plan yet".
+  static final creating = ValueNotifier<bool>(false);
+
   /// Time after a replacement in which another one is refused.
   static const cooldown = Duration(seconds: 3);
 
