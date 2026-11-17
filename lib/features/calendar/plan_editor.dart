@@ -147,6 +147,7 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
       steps: _sport == Sport.gym ? const [] : _steps,
       phase: widget.existing?.phase,
       isKey: _isKey,
+      slot: widget.existing?.slot ?? 0,
       exercises: _sport == Sport.gym && _customEx ? _gymEx : const [],
       // The plan's day adaptations stay while the workout keeps following the same program; the load
       // ones ([gymLoadMods]: lighter legs, race window) also with exercises adjusted here.

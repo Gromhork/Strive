@@ -241,6 +241,10 @@ class EventSpec {
       longDayMin: 120,
       brick: (10, 20, 20),
       runWalkFinish: true,
+      // (Each discipline at least once a week – review 2026-11 tri-4: a 2-day plan without a swim had no warning.)
+      minRuns: 1,
+      minRides: 1,
+      minSwims: 1,
     ),
     'olympic': EventSpec(
       'olympic',
@@ -330,6 +334,7 @@ class EventSpec {
       brick: (10, 20, 20),
       runWalkFinish: true,
       minRuns: 2,
+      minRides: 1,
     ),
     'du_standard': EventSpec(
       'du_standard',
@@ -386,6 +391,9 @@ class EventSpec {
     'swim3800': EventSpec(
       'swim3800',
       weeks: (12, 16),
+      // Beginners build their continuous swim from what they can swim (~400–500 m) by +100–200 m a loading week
+      // (§4.5; review 2026-11 RS3) – ~14 loading weeks to 3.2 km.
+      weeksBeginner: (16, 20),
       taper: 2,
       longSwimM: 3200,
       swimKm: [8, 12, 18],

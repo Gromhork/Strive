@@ -64,10 +64,7 @@ class FeasibilityCard extends StatelessWidget {
   static String issueText(AppLocalizations l, PlanFeasibility f, String issue, {bool canSwitch = false}) => switch (issue) {
     'beginnerMarathon' => l.feasBeginnerMarathon,
     'beginnerDistance' => l.feasBeginnerDistance,
-    'longSwim' =>
-      f.openWater
-          ? l.feasLongSwimOpen((f.longSwimM ?? 0).round(), (f.longSwimTargetM ?? 0).round())
-          : l.feasLongSwim((f.longSwimM ?? 0).round(), (f.longSwimTargetM ?? 0).round()),
+    'longSwim' => _longSwimText(l, f),
     'runWalkLong' => l.feasRunWalkLong,
     'runWalk' => l.feasRunWalk,
     'longRunTime' => l.feasLongRunTime((f.longRunKm ?? 0).floor(), (f.longRunTargetKm ?? 0).round()),
@@ -79,6 +76,23 @@ class FeasibilityCard extends StatelessWidget {
       f.extraIssueText(l, issue, dayName: (d) => DateFormat.EEEE(l.localeName).format(DateTime(2024, 1, d)), canSwitch: canSwitch) ??
           l.feasTooShort(f.weeks ?? 0),
   };
+
+  /// `longSwim`: open water with its safety rules; a triathlon's target as the plan's goal next to the leg (review
+  /// 2026-11 T11); the day whose time cut the swim when that, not the weeks, is the limit (tri-7).
+  static String _longSwimText(AppLocalizations l, PlanFeasibility f) {
+    final have = (f.longSwimM ?? 0).round(), target = (f.longSwimTargetM ?? 0).round();
+    final day =
+        f.longSwimDay == null || f.longSwimDayMin == null ? null : DateFormat.EEEE(l.localeName).format(DateTime(2024, 1, f.longSwimDay!));
+    final time = f.longSwimDayMin == null ? '' : _hm(f.longSwimDayMin!);
+    if (f.openWater) {
+      return [l.feasLongSwimOpen(have, target), if (day != null) l.feasLongSwimTime(day, have, target, time)].join(' ');
+    }
+    final leg = f.longSwimLegM;
+    if (leg != null) {
+      return day != null ? l.feasLongSwimTime2(day, have, target, '${leg.round()}', time) : l.feasLongSwim2(have, target, '${leg.round()}');
+    }
+    return day != null ? l.feasLongSwimTime(day, have, target, time) : l.feasLongSwim(have, target);
+  }
 
   /// Issues worth showing: "the long ride only reaches 0 min" / "swimming only 0 m" means the
   /// week has no such session at all (e.g. checked with the wrong focus) – never shown as a

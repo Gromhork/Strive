@@ -11422,6 +11422,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} hidden by the sport filter.'**
   String folderDuplicatedHidden(int n);
+
+  /// No description provided for @feasLongDayDefault2.
+  ///
+  /// In en, this message translates to:
+  /// **'The long sessions on {day} and {day2} need up to {time} and {time2} – far more than your other sessions. The plan schedules them like that; set those days’ times yourself if they do not fit.'**
+  String feasLongDayDefault2(String day, String day2, String time, String time2);
+
+  /// No description provided for @stepRideTempoNote2.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo – 76–90 % FTP, steady'**
+  String get stepRideTempoNote2;
+
+  /// No description provided for @wRideTempoDescIm2.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo at 75–85 % FTP – a notch above your Ironman race power (about 65–75 % FTP, the race-pace blocks of your long rides): it makes race pace feel easy. Steady, aero, with fuelling.'**
+  String get wRideTempoDescIm2;
+
+  /// No description provided for @wRidePickups.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance ride with {n} pick-ups'**
+  String wRidePickups(int n);
+
+  /// No description provided for @wRidePickupsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Zone 2 with a few 1 min pick-ups – the time on this day is too short for proper sweet-spot or threshold blocks (at least 2 × 8 min after a warm-up). More time on this day brings them back.'**
+  String get wRidePickupsDesc;
+
+  /// No description provided for @stepRidePickupNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Short pick-up – brisk, not all-out, then easy again'**
+  String get stepRidePickupNote;
+
+  /// No description provided for @wFtpTest.
+  ///
+  /// In en, this message translates to:
+  /// **'FTP test (20 min)'**
+  String get wFtpTest;
+
+  /// No description provided for @wFtpTestDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm up well, then ride 20 min as hard as you can hold evenly (start a little conservatively). Your FTP is 95 % of the 20 min average power – enter it in the plan settings (cycling): Strive then sets your watt targets from it.'**
+  String get wFtpTestDesc;
+
+  /// No description provided for @stepFtpTestNote.
+  ///
+  /// In en, this message translates to:
+  /// **'20 min time trial: as hard as you can hold evenly – note the average power'**
+  String get stepFtpTestNote;
+
+  /// No description provided for @wFtpEstimateNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The watt targets are estimated (FTP about {watts} W from your level and weight) – after the FTP test enter your FTP in the plan settings.'**
+  String wFtpEstimateNote(String watts);
+
+  /// No description provided for @healthRideKneeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Knee / hip: high cadence (85–95 rpm), easy gears on climbs – no grinding in heavy gears; check your saddle height. Stop if it hurts.'**
+  String get healthRideKneeNote;
+
+  /// No description provided for @wRideOpenersDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Race week: easy riding with a few short pick-ups – they keep the legs sharp without tiring them.'**
+  String get wRideOpenersDesc;
+
+  /// No description provided for @wLongRunWalkDescSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run/walk: the rhythm of your current stage, a few more repeats – time on your feet for the race. Talking pace, walk briskly. It grows slowly, a little each week.'**
+  String get wLongRunWalkDescSingle;
+
+  /// No description provided for @wLongSwim2.
+  ///
+  /// In en, this message translates to:
+  /// **'Long swim: {meters} m continuous'**
+  String wLongSwim2(int meters);
+
+  /// No description provided for @drillsNote50.
+  ///
+  /// In en, this message translates to:
+  /// **'{a} / {b} – 50 m drill, alternate the two drills'**
+  String drillsNote50(String a, String b);
+
+  /// No description provided for @wSwimContinuousDesc2.
+  ///
+  /// In en, this message translates to:
+  /// **'Swim the main set in one go at an easy, steady pace – breathe on both sides, no stopping.'**
+  String get wSwimContinuousDesc2;
+
+  /// No description provided for @feasLongSwimTime.
+  ///
+  /// In en, this message translates to:
+  /// **'The time on {day} only fits a continuous swim of about {meters} m next to warm-up and cool-down – this race needs about {target} m in one go. About {time} on that day would hold it.'**
+  String feasLongSwimTime(String day, int meters, int target, String time);
+
+  /// No description provided for @feasLongSwim2.
+  ///
+  /// In en, this message translates to:
+  /// **'By race day your continuous swim only reaches about {meters} m – the training should take you to about {target} m in one go (the swim leg is {leg} m).'**
+  String feasLongSwim2(int meters, int target, String leg);
+
+  /// No description provided for @feasLongSwimTime2.
+  ///
+  /// In en, this message translates to:
+  /// **'The time on {day} only fits a continuous swim of about {meters} m next to warm-up and cool-down – the training should take you to about {target} m in one go (the swim leg is {leg} m). About {time} on that day would hold it.'**
+  String feasLongSwimTime2(String day, int meters, int target, String leg, String time);
+
+  /// No description provided for @wRaceTriForecastDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast about {time}. Start the swim calmly, ride in your planned range, begin the run controlled – finish strong. Good luck!'**
+  String wRaceTriForecastDesc(String time);
+
+  /// No description provided for @wRaceTriGoalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal time {time}. Start the swim calmly, ride in your planned range, begin the run controlled – finish strong. Good luck!'**
+  String wRaceTriGoalDesc(String time);
+
+  /// No description provided for @wRaceDuForecastDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast about {time}. First run controlled, ride in your planned range, begin the second run controlled – finish strong. Good luck!'**
+  String wRaceDuForecastDesc(String time);
+
+  /// No description provided for @wRaceDuGoalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal time {time}. First run controlled, ride in your planned range, begin the second run controlled – finish strong. Good luck!'**
+  String wRaceDuGoalDesc(String time);
+
+  /// No description provided for @wRaceForecastDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast {time}. Start controlled (first km not faster than the forecast pace), finish strong. Good luck!'**
+  String wRaceForecastDesc(String time);
+
+  /// No description provided for @wSwimEnduranceCss.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance {reps} × {meters} m + {n} × 100 m CSS'**
+  String wSwimEnduranceCss(int reps, int meters, int n);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

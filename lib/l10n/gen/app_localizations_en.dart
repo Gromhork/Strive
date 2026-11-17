@@ -6396,4 +6396,107 @@ class AppLocalizationsEn extends AppLocalizations {
   String folderDuplicatedHidden(int n) {
     return '$n hidden by the sport filter.';
   }
+
+  @override
+  String feasLongDayDefault2(String day, String day2, String time, String time2) {
+    return 'The long sessions on $day and $day2 need up to $time and $time2 – far more than your other sessions. The plan schedules them like that; set those days’ times yourself if they do not fit.';
+  }
+
+  @override
+  String get stepRideTempoNote2 => 'Tempo – 76–90 % FTP, steady';
+
+  @override
+  String get wRideTempoDescIm2 => 'Tempo at 75–85 % FTP – a notch above your Ironman race power (about 65–75 % FTP, the race-pace blocks of your long rides): it makes race pace feel easy. Steady, aero, with fuelling.';
+
+  @override
+  String wRidePickups(int n) {
+    return 'Endurance ride with $n pick-ups';
+  }
+
+  @override
+  String get wRidePickupsDesc => 'Zone 2 with a few 1 min pick-ups – the time on this day is too short for proper sweet-spot or threshold blocks (at least 2 × 8 min after a warm-up). More time on this day brings them back.';
+
+  @override
+  String get stepRidePickupNote => 'Short pick-up – brisk, not all-out, then easy again';
+
+  @override
+  String get wFtpTest => 'FTP test (20 min)';
+
+  @override
+  String get wFtpTestDesc => 'Warm up well, then ride 20 min as hard as you can hold evenly (start a little conservatively). Your FTP is 95 % of the 20 min average power – enter it in the plan settings (cycling): Strive then sets your watt targets from it.';
+
+  @override
+  String get stepFtpTestNote => '20 min time trial: as hard as you can hold evenly – note the average power';
+
+  @override
+  String wFtpEstimateNote(String watts) {
+    return 'The watt targets are estimated (FTP about $watts W from your level and weight) – after the FTP test enter your FTP in the plan settings.';
+  }
+
+  @override
+  String get healthRideKneeNote => 'Knee / hip: high cadence (85–95 rpm), easy gears on climbs – no grinding in heavy gears; check your saddle height. Stop if it hurts.';
+
+  @override
+  String get wRideOpenersDesc => 'Race week: easy riding with a few short pick-ups – they keep the legs sharp without tiring them.';
+
+  @override
+  String get wLongRunWalkDescSingle => 'Long run/walk: the rhythm of your current stage, a few more repeats – time on your feet for the race. Talking pace, walk briskly. It grows slowly, a little each week.';
+
+  @override
+  String wLongSwim2(int meters) {
+    return 'Long swim: $meters m continuous';
+  }
+
+  @override
+  String drillsNote50(String a, String b) {
+    return '$a / $b – 50 m drill, alternate the two drills';
+  }
+
+  @override
+  String get wSwimContinuousDesc2 => 'Swim the main set in one go at an easy, steady pace – breathe on both sides, no stopping.';
+
+  @override
+  String feasLongSwimTime(String day, int meters, int target, String time) {
+    return 'The time on $day only fits a continuous swim of about $meters m next to warm-up and cool-down – this race needs about $target m in one go. About $time on that day would hold it.';
+  }
+
+  @override
+  String feasLongSwim2(int meters, int target, String leg) {
+    return 'By race day your continuous swim only reaches about $meters m – the training should take you to about $target m in one go (the swim leg is $leg m).';
+  }
+
+  @override
+  String feasLongSwimTime2(String day, int meters, int target, String leg, String time) {
+    return 'The time on $day only fits a continuous swim of about $meters m next to warm-up and cool-down – the training should take you to about $target m in one go (the swim leg is $leg m). About $time on that day would hold it.';
+  }
+
+  @override
+  String wRaceTriForecastDesc(String time) {
+    return 'Forecast about $time. Start the swim calmly, ride in your planned range, begin the run controlled – finish strong. Good luck!';
+  }
+
+  @override
+  String wRaceTriGoalDesc(String time) {
+    return 'Goal time $time. Start the swim calmly, ride in your planned range, begin the run controlled – finish strong. Good luck!';
+  }
+
+  @override
+  String wRaceDuForecastDesc(String time) {
+    return 'Forecast about $time. First run controlled, ride in your planned range, begin the second run controlled – finish strong. Good luck!';
+  }
+
+  @override
+  String wRaceDuGoalDesc(String time) {
+    return 'Goal time $time. First run controlled, ride in your planned range, begin the second run controlled – finish strong. Good luck!';
+  }
+
+  @override
+  String wRaceForecastDesc(String time) {
+    return 'Forecast $time. Start controlled (first km not faster than the forecast pace), finish strong. Good luck!';
+  }
+
+  @override
+  String wSwimEnduranceCss(int reps, int meters, int n) {
+    return 'Endurance $reps × $meters m + $n × 100 m CSS';
+  }
 }

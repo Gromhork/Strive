@@ -889,6 +889,12 @@ no power meter: use LTHR (30-min solo TT, avg HR of the last 20 min) or HRmax zo
 retest every 6–8 weeks or at the end of each build block
 ```
 
+Generator (audit 2026-11, RS4): a power meter without a stated FTP plans its watts from a W/kg estimate (beginner 2.0,
+intermediate 2.8, advanced 3.6 W/kg) – the first quality ride of the plan is a 20-min FTP test (warm-up with 3 × 1 min
+pick-ups when the day has ≥ 55 min, 20 min as hard as can be held evenly; FTP = 95 % of its average, entered in the plan
+settings), and every ride with watt targets says the watts are estimated. Every power-meter plan retests every 6 loading
+weeks in base / build (not with a heart / blood-pressure limitation – no maximal efforts – and not on a day < 40 min).
+
 ### 3.2 Coggan power zones [P] and Friel/Coggan HR zones [P]
 
 | Zone | Name | % FTP | % LTHR (Coggan) | Typical RPE |
@@ -950,6 +956,31 @@ race-day TSB target +5…+25
 | Sprints | 6–10 × 10–15 s max, full rest | — |
 | Recovery | 30–60 min Z1 | — |
 
+Generator (audit 2026-11, RS1 / RS9 / RS8 / T2 / tri-6 / RS5):
+
+```text
+sweet spot / beginner threshold : the work time (24 → 60 min, beginners 15 → 40 / 30, recovery weeks 70 %) picks the last
+                  step of the ladder 2 × 10 → 3 × 10 → 2 × 15 → 2 × 20 → 3 × 15 → 2 × 25 → 2 × 30 min that fits (+3 min) –
+                  never "3 × 5 min" (blocks < 8–10 min at 88–94 % build fatigue without the time-at-SS stimulus)
+threshold       : 3 × 10 → 3 × 12 → 3 × 15 → 2 × 20 → 2 × 25 min at 91–100 % FTP (the watt range and the note agree;
+                  beginners' threshold blocks too – their note said 95–105 % on a 91–105 % range)
+tempo (base)    : Z3 76–90 % FTP, the note says 76–90 %; race-specific tempo (70.3 / Ironman / Gran Fondo peak) has its own
+                  watts 75–85 % FTP; the Ironman text calls it a notch above race power (~65–75 % FTP)
+fit to the day  : fewer blocks first (≥ 2; VO2max ≥ 3), then the cool-down (≥ 3 min) and the warm-up (≥ 8 min), then
+                  shorter blocks (≥ 8 min; VO2max ≥ 3 min) with recoveries ≤ 0.3 × the block (≥ 2 min); when even that does
+                  not fit: an easy Z2 ride with 3–4 × 1 min pick-ups (not a key session) instead of a token interval session
+race week       : the quality ride is openers – Z2 with 3–4 × 1 min pick-ups
+knee / hip      : no seated low-cadence climbing repeats (patellofemoral load rises with torque); every ride notes high
+                  cadence 85–95 rpm, easy gears on climbs, saddle height (§9.1)
+long ride       : the first one ≤ 110 % of the athlete's longest recent ride (at their easy speed), else a long-ride race
+                  (≥ 3 h) starts at 90 min (advanced 2 h, beginners 1 h); then ≤ +10 % (≥ 15 min) a loading week – a goal
+                  that needs more gets 10–20 min steps (Ironman intermediate in 24 weeks: 90 → ~275–300 min);
+                  recovery rides ≤ 90 min
+ride distance   : at the athlete's speed for the zone – from the FTP (GoalModel.bikeKmh) or the level's long-race speed
+                  (25 / 29 / 33 km/h × 0.93 at ~72 % FTP) × (power share / 0.72)^(1/3); a fixed 27 km/h overstated a
+                  beginner's km by ~16 %
+```
+
 ---
 
 ## 4. Swimming
@@ -994,9 +1025,9 @@ the day before it). Swimmers with ≥ 4 swims a week (swim focus): a second qual
 CSS + 3–6 s. CSS sets are ~35 % of the session (3-swim weeks stay ~80/20 by time).
 
 **Swim novices (fix/plan-pro, user report "13 × 100 m CSS for someone who cannot swim 400 m").** A swim novice is
-anyone who said they cannot swim 400 m freestyle without stopping – *whatever the level in the other sports* – or a
-beginner without swim experience and without a CSS test. The quick setup now asks the question too ("Dein aktueller
-Stand": can run 30 min / can swim 400 m). Novices get:
+anyone who said they cannot swim 400 m freestyle without stopping – *whatever the level in the other sports*. The answer
+decides (audit 2026-11, RS2: a beginner without swim experience who answered "yes" got the 8 × 50 m ladder anyway); the
+quick setup asks the question too ("Dein aktueller Stand": can run 30 min / can swim 400 m). Novices get:
 
 ```text
 volume       : ~800 m per session at the start (§4.4 beginner 800–1500 m with breaks), ≤ 1.4 km per session
@@ -1010,13 +1041,26 @@ CSS test     : after the last stage – 400 m and 200 m time trials (§4.1), the
 no CSS set   : before the test (also for intermediate / advanced runners and cyclists)
 swim zones   : CSS ~150 s / 100 m without a test (the level default 110 s of an intermediate was far too fast)
 no swim experience, no test (can swim 400 m): starts at the beginner volume (1.5 km / session) whatever the level
+beginner, can swim 400 m, no test: no ladder; a CSS test in the recovery week after ≥ 3 loading weeks (else after 6
+               loading weeks), not with a heart / shoulder limitation
 ```
 
+Drill blocks are whole 100 m ("alternate 50 m drill, 50 m freestyle"); a single 50 m drill step alternates the two drills
+instead (RS10).
+
 **Long swim** (swim-focus plans, with or without event): a weekly continuous swim on the long day, starting at ~90 %
-of an average session (former novices 400 m), +12 % (≥ 100 m) per loading week towards the race's continuous
+of an average session (former novices 400 m; beginners 400 m, 500 m with a test – audit 2026-11 RS3: a beginner with a
+10:00 400 m test started at 1.4 km – then +100–200 m per loading week as the race needs), +12 % (≥ 100 m) per loading week towards the race's continuous
 distance (swim1500 1.5 km, swim3800 3 km, swim5000 4 km; without an event 1.5 / 2.5 / 3 km by level); recovery / taper
 weeks by the long-session factors (§1.7). Open-water races and triathlon: sighting every 6–9 strokes in build / peak
 and an open-water note (wetsuit, group / drafting, never alone).
+
+Beginner sessions stay ≤ ~1.5 km (the long swim: its continuous part plus warm-up, drills and cool-down); the long swim's
+title names the continuous part ("Lange Schwimmeinheit: 1000 m am Stück"). When the day's time cuts a continuous swim the
+frame gives way first (warm-up ≥ 200 m, drills 100 m, cool-down ≥ 100 m – tri-7); a swim still cut is a `longSwim` issue
+that names the day and the time that would hold it. "It grows ~100 m a week" is only said while it does. The only swim
+of a non-beginner's week ends with 4 → 6 → 8 × 100 m at CSS in build / peak (tri-11). Two quality swims are ≥ 48 h apart
+(UX-3).
 
 ### 4.4 Weekly volume by level [P]
 
@@ -1035,6 +1079,7 @@ paddle use, keep breathing bilateral, and progress main-set volume no faster tha
 Order: (1) breathing and exhaling underwater; (2) body position, horizontal with head neutral; (3) rotation and
 bilateral breathing every 3; (4) catch and pull (high elbow); (5) kick from the hips with a small amplitude. Use fins and a pull buoy as
 aids. For BEGINNER, don't use pace targets for the first 4–6 weeks: give reps by distance and rest by breaths/RPE.
+(Generator: beginners without a test never get swim paces; with a test not in the first 5 plan weeks.)
 
 **Goal-directed swim novices** (fix/plan-goal-progression) [P]: a triathlon whose continuous swim (sprint 400 m,
 olympic / 70.3 800 m, Ironman 1000 m) cannot be reached in the weeks before the taper (8 ladder stages + CSS test +
@@ -1189,6 +1234,31 @@ min transition run, the full long run). Counted back from the taper, the last lo
 ride's progression ignores the capped weeks. Advanced Ironman 28 wk: 2 rides / 2 swims → 3 / 3 per week; peak weekend
 "300' + brick, then 30 km" → "300' + brick, then 21–22.5 km" alternating with "180' + 20' brick, then 30 km".
 
+**Audit 2026-11 (G2)** [P]:
+
+```text
+long run day    : the second long session goes on the free day the athlete gave the most time besides the long day (Sat 300
+                  / Sun 150 min: long run Sunday – it went on a 60 min Friday at up to 165 min); days with more time than
+                  the usual session are kept first when a beginner's week drops a day; the long ride takes the long day when
+                  a day plan puts ride + run there; the long-day note names every long-session day left at its default
+2 days          : triathlon on 2 days – long ride (+ brick) on the long day, swim + run as a double day on the other; sprint
+                  needs ≥ 1 swim / ride / run a week (frequency warnings)
+third run       : 70.3 / Ironman intermediate / advanced with ≥ 6 days or 2 sessions a day – an easy run as a second session
+                  (preferably after a swim, not next to another run day); the long run keeps ~50–60 % of the week's run km,
+                  the third run splits the second one's volume; easy runs in loading weeks ≥ 25 min (advanced 30)
+taper           : one shortened quality run and ride also with 2 a week (intensity kept, §1.7); race week: ride openers
+run/walk        : with 1–2 runs a week a stage takes 2 loading weeks, the long run/walk's running ≤ 1.5 × the stage's and
+                  ≤ +10 % / +5 min a week
+duathlon peak   : the run before the ride counts as run volume (quality run cap); brick weeks ≤ +12 % run km on the last
+                  loading week – the long run gives ≤ 8 %, then the brick / pre-ride run (whole 5 min, titled as planned)
+day plan bricks : the brick is the run slot of its day (no brick + separate run); a knee swap never puts a second ride on a
+                  day – the run's time goes to that day's ride
+race day        : bike leg at the event's race power (Ironman ~70 % → Z2, 70.3 / olympic / sprint Z3, watts with an FTP),
+                  runs by the predicted leg pace (E included); finish-only: Z2 / E; leg km localised; a time the athlete
+                  did not set is a "Prognose", no "first km" cue
+same-day order  : PlannedWorkout.slot – run before the bike, swim, ride, brick, other runs, strength
+```
+
 ---
 
 ## 7. Default progression summary (generator flow)
@@ -1259,6 +1329,9 @@ knee | hip | ankle (incl. Achilles)  -> lowImpactRun
   beginners without race times start with run/walk (no running experience: stage 1, else 3 × 5 min)
   note on every run: soft surfaces, stop if pain > 3/10 or it changes the stride (pain-monitoring model [62])
 knee | hip -> strength note: pain-free range of motion, reduce depth or load
+knee | hip -> cycling: no seated low-cadence (60–70 rpm) climbing repeats – the sweet spot stays at a normal cadence;
+              every ride notes high cadence (85–95 rpm), easy gears on climbs, saddle height, stop with pain (high
+              pedal torque raises patellofemoral / tibiofemoral load)
 back       -> avoidAxialLoading: strength note (no heavy back squat / deadlift; leg press, split squat,
               hip thrust; lumbar compression in squats reaches several times body weight [64]);
               the strength programs may read the flag – the generator does not rewrite them

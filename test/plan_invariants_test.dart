@@ -231,7 +231,8 @@ void main() {
         final tag = '${e.key}: ${w.title} ${w.date}';
         expect(w.title.trim(), isNotEmpty, reason: tag);
         expect(w.description.trim(), isNotEmpty, reason: tag);
-        expect(w.durationMin, inInclusiveRange(15, w.intensity == 'race' ? 720 : 240), reason: tag);
+        // (A run off the bike – or a duathlon's run before it – may take 5–10 min, as its title says.)
+        expect(w.durationMin, inInclusiveRange(w.intensity == 'moderate' ? 5 : 15, w.intensity == 'race' ? 720 : 240), reason: tag);
         if (w.distanceKm != null) expect(w.distanceKm!.isFinite && w.distanceKm! >= 0, isTrue, reason: tag);
         if (w.sport != Sport.gym && w.intensity != 'race') expect(w.steps, isNotEmpty, reason: tag);
         for (final s in w.steps) {
@@ -570,7 +571,8 @@ void main() {
         final plan = PlanGenerator(l, p, templates, id).generate(start: start, weeks: 8);
         final perDay = <DateTime, List<PlannedWorkout>>{};
         for (final w in plan.where((w) => w.intensity != 'race')) {
-          expect(w.durationMin, inInclusiveRange(15, 240), reason: '${e.key}: ${w.title}');
+          // (A run off the bike – or a duathlon's run before it – may take 10 min, as its title says.)
+          expect(w.durationMin, inInclusiveRange(w.intensity == 'moderate' ? 5 : 15, 240), reason: '${e.key}: ${w.title}');
           perDay.putIfAbsent(dayOnly(w.date), () => []).add(w);
         }
         for (final d in perDay.entries) {

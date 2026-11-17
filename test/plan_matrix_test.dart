@@ -920,7 +920,8 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
   for (final w in plan.where((w) => w.sport != Sport.gym && w.intensity != 'race')) {
     final m = nxm.firstMatch(w.title);
     if (m != null) {
-      final n = int.parse(m.group(1)!);
+      // ("Ausdauer 3 × 400 m + 6 × 100 m CSS": the repeats of every "N × M" together.)
+      final n = nxm.allMatches(w.title).fold(0, (x, e) => x + int.parse(e.group(1)!));
       final v = double.parse(m.group(2)!.replaceAll(',', '.'));
       final work = w.steps.where((s) => s.kind == 'work' && s.zone != 'DR').toList();
       if (work.length != n) {
