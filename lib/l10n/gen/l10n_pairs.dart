@@ -1857,4 +1857,5 @@ const l10nPairs = <(String, String)>[
   ('Goal time {time}. First run controlled, ride in your planned range, begin the second run controlled – finish strong. Good luck!', 'Zielzeit {time}. Den ersten Lauf kontrolliert, Rad im geplanten Bereich, den zweiten Lauf kontrolliert beginnen – stark finishen. Viel Erfolg!'),
   ('Forecast {time}. Start controlled (first km not faster than the forecast pace), finish strong. Good luck!', 'Prognose {time}. Kontrolliert starten (erster km nicht schneller als das Prognosetempo), stark finishen. Viel Erfolg!'),
   ('Endurance {reps} × {meters} m + {n} × 100 m CSS', 'Ausdauer {reps} × {meters} m + {n} × 100 m CSS'),
+  ('Taper: easy riding with a few short pick-ups – they keep the legs sharp while the volume comes down.', 'Tapering: locker fahren mit ein paar kurzen Antritten – sie halten die Beine spritzig, während der Umfang sinkt.'),
 ];

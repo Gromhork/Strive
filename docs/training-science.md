@@ -969,13 +969,14 @@ tempo (base)    : Z3 76–90 % FTP, the note says 76–90 %; race-specific tempo
 fit to the day  : fewer blocks first (≥ 2; VO2max ≥ 3), then the cool-down (≥ 3 min) and the warm-up (≥ 8 min), then
                   shorter blocks (≥ 8 min; VO2max ≥ 3 min) with recoveries ≤ 0.3 × the block (≥ 2 min); when even that does
                   not fit: an easy Z2 ride with 3–4 × 1 min pick-ups (not a key session) instead of a token interval session
-race week       : the quality ride is openers – Z2 with 3–4 × 1 min pick-ups
+race week       : the quality ride is openers – ≤ 40 min of Z2 with 3–4 × 1 min pick-ups (G2-V1: sized by the day's whole
+                  time it was a 190–240 min "opener" 2–3 days before the race)
 knee / hip      : no seated low-cadence climbing repeats (patellofemoral load rises with torque); every ride notes high
                   cadence 85–95 rpm, easy gears on climbs, saddle height (§9.1)
 long ride       : the first one ≤ 110 % of the athlete's longest recent ride (at their easy speed), else a long-ride race
                   (≥ 3 h) starts at 90 min (advanced 2 h, beginners 1 h); then ≤ +10 % (≥ 15 min) a loading week – a goal
                   that needs more gets 10–20 min steps (Ironman intermediate in 24 weeks: 90 → ~275–300 min);
-                  recovery rides ≤ 90 min
+                  recovery rides ≤ 90 min; without an event ≤ 3 / 4 / 5 h by level (or the longest recent ride)
 ride distance   : at the athlete's speed for the zone – from the FTP (GoalModel.bikeKmh) or the level's long-race speed
                   (25 / 29 / 33 km/h × 0.93 at ~72 % FTP) × (power share / 0.72)^(1/3); a fixed 27 km/h overstated a
                   beginner's km by ~16 %
@@ -1055,12 +1056,19 @@ distance (swim1500 1.5 km, swim3800 3 km, swim5000 4 km; without an event 1.5 / 
 weeks by the long-session factors (§1.7). Open-water races and triathlon: sighting every 6–9 strokes in build / peak
 and an open-water note (wetsuit, group / drafting, never alone).
 
-Beginner sessions stay ≤ ~1.5 km (the long swim: its continuous part plus warm-up, drills and cool-down); the long swim's
+Beginner sessions stay ≤ ~1.5 km, technique sessions included (the long swim: its continuous part plus warm-up, drills and
+cool-down); a triathlon beginner's cap grows ≤ 10 % a loading week from 1.5 km (their swims are the week's whole
+swimming), recovery / taper weeks ~25 % below it (G2-V3: a 70.3 beginner's only swim sat at 2 × 400 m for 20 weeks).
+Past 1.5 km an open-water beginner's long swim may grow ~12 % a week; their plan lengths follow that progression
+(swim3800 18–22 weeks, swim5000 22–26 – G2-V7: 16 weeks ended at 2.5 km). The long swim's
 title names the continuous part ("Lange Schwimmeinheit: 1000 m am Stück"). When the day's time cuts a continuous swim the
 frame gives way first (warm-up ≥ 200 m, drills 100 m, cool-down ≥ 100 m – tri-7); a swim still cut is a `longSwim` issue
 that names the day and the time that would hold it. "It grows ~100 m a week" is only said while it does. The only swim
-of a non-beginner's week ends with 4 → 6 → 8 × 100 m at CSS in build / peak (tri-11). Two quality swims are ≥ 48 h apart
-(UX-3).
+of a non-beginner's week ends with 4 → 6 → 8 × 100 m at CSS in build / peak (tri-11) – from the main set's remainder and a
+shorter warm-up / drill block, so the race-length repeats keep their progression; when < 4 × 100 m fit that way, every
+other loading week is a CSS week (G2-V2). Two quality swims are ≥ 48 h apart (UX-3); the continuous swim gets the swim day
+with the most time per session, a CSS set may take the double day (G2-V4). Taper CSS sets ≤ 8 × 100 m (race week ≤ 6), none
+in the 2 days before the race.
 
 ### 4.4 Weekly volume by level [P]
 
@@ -1246,15 +1254,22 @@ long run day    : the second long session goes on the free day the athlete gave 
 third run       : 70.3 / Ironman intermediate / advanced with ≥ 6 days or 2 sessions a day – an easy run as a second session
                   (preferably after a swim, not next to another run day); the long run keeps ~50–60 % of the week's run km,
                   the third run splits the second one's volume; easy runs in loading weeks ≥ 25 min (advanced 30)
-taper           : one shortened quality run and ride also with 2 a week (intensity kept, §1.7); race week: ride openers
+taper           : one shortened quality run and ride also with 2 a week (intensity kept, §1.7) – taper quality costs half a
+                  point of the week's hard budget (G2-V6), duathlon: the run first; a discipline the spacing leaves without
+                  one gets strides / 1 min pick-ups in its first easy session; race week: ride openers
+second swim     : the double day of a triathlete's second swim avoids the run's / ride's only possible quality day and the
+                  long sessions' days (G2-V4); a third long-course run never takes the last solo swim day (G2-V5); a
+                  swim-day time is only suggested when the plan with it reaches the continuous swim
 run/walk        : with 1–2 runs a week a stage takes 2 loading weeks, the long run/walk's running ≤ 1.5 × the stage's and
-                  ≤ +10 % / +5 min a week
+                  ≤ +10 % / +5 min a week (the only run: whole blocks rounded down, a stage that cannot waits a week); the
+                  week's run/walk running ≤ +30 % (G2-V9)
 duathlon peak   : the run before the ride counts as run volume (quality run cap); brick weeks ≤ +12 % run km on the last
                   loading week – the long run gives ≤ 8 %, then the brick / pre-ride run (whole 5 min, titled as planned)
 day plan bricks : the brick is the run slot of its day (no brick + separate run); a knee swap never puts a second ride on a
                   day – the run's time goes to that day's ride
 race day        : bike leg at the event's race power (Ironman ~70 % → Z2, 70.3 / olympic / sprint Z3, watts with an FTP),
-                  runs by the predicted leg pace (E included); finish-only: Z2 / E; leg km localised; a time the athlete
+                  runs by the predicted leg pace (E included, never I); a duathlon's second run at the first run's pace ×
+                  the off-bike factor (G2-V8); finish-only: Z2 / E; leg km localised; a time the athlete
                   did not set is a "Prognose", no "first km" cue
 same-day order  : PlannedWorkout.slot – run before the bike, swim, ride, brick, other runs, strength
 ```

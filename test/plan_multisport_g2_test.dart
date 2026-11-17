@@ -726,14 +726,15 @@ void main() {
       final p = prof(
         TrainingFocus.triathlon,
         'intermediate',
-        const [3, 6],
-        {'eventDistance': 'sprint', 'eventDate': race(8, 6), 'sessionMinutes': 90},
+        const [2, 4, 6, 7],
+        // (One swim a week in 60 min: the 2 × 800 m repeats, not the 1.5 km continuous swim of the plan's goal.)
+        {'eventDistance': '70.3', 'eventDate': race(16), 'sessionMinutes': 60},
       );
       final f = PlanGenerator.feasibility(p, start: start, l: de);
       expect(f.issues, contains('longSwim'));
-      expect(f.longSwimLegM, 750);
+      expect(f.longSwimLegM, 1900);
       final text = FeasibilityCard.issueText(de, f, 'longSwim');
-      expect(text, contains('750 m'));
+      expect(text, contains('1900 m'));
       expect(text, isNot(contains('dieses Rennen braucht')));
     });
   });
@@ -820,5 +821,384 @@ void main() {
         );
       }
     }
+  });
+
+  // ───────────────────────── Verifier round (G2-V1 … G2-V10) ─────────────────────────
+
+  group('G2-V1: race-week openers are a short ride', () {
+    for (final (name, focus, ev, level, days, a) in [
+      (
+        'ride160 beginner, 420 min days, race Friday',
+        TrainingFocus.ride,
+        'ride160',
+        'beginner',
+        const [2, 3, 5],
+        <String, dynamic>{'sessionMinutes': 420},
+      ),
+      (
+        'ride100 intermediate, 2 days of 450–480 min',
+        TrainingFocus.ride,
+        'ride100',
+        'intermediate',
+        const [3, 5],
+        <String, dynamic>{
+          'sessionMinutes': 480,
+          'dayMinutes': {2: 450},
+          'ftp': 300,
+        },
+      ),
+      (
+        'sprint triathlon, 450 min days',
+        TrainingFocus.triathlon,
+        'sprint',
+        'intermediate',
+        const [1, 3, 4, 5, 6, 7],
+        <String, dynamic>{'sessionMinutes': 450},
+      ),
+    ]) {
+      test(name, () {
+        final weeks = ev == 'sprint' ? 10 : 8;
+        final p = prof(focus, level, days, {'eventDistance': ev, 'eventDate': race(weeks, ev == 'sprint' ? 7 : 5), ...a});
+        final plan = gen(p);
+        final ws = weeksOf(plan);
+        final raceWeek = ws.last;
+        expect(raceWeek.first.phase, 'taper');
+        for (final w in raceWeek.where((w) => w.sport == Sport.ride)) {
+          expect(w.durationMin, lessThanOrEqualTo(45), reason: '${w.date} ${w.title}');
+        }
+        int mins(List<PlannedWorkout> wk) => wk.where((w) => w.sport != Sport.gym).fold(0, (x, w) => x + w.durationMin);
+        final peak = ws.take(ws.length - 1).where(loading).map(mins).fold(0, max);
+        expect(mins(raceWeek), lessThanOrEqualTo(peak * 0.6), reason: 'race week ${mins(raceWeek)} vs peak $peak min');
+        final raceDay = plan.firstWhere((w) => w.intensity == 'race').date;
+        for (final w in plan.where((w) => w.intensity != 'race' && w.sport != Sport.gym)) {
+          final d = daysBetween(w.date, raceDay);
+          if (d >= 1 && d <= 2) {
+            expect(w.durationMin, lessThanOrEqualTo(60), reason: '${w.date} ${w.title}');
+            expect(quality(w), isFalse, reason: '${w.date} ${w.title}');
+          }
+        }
+      });
+    }
+  });
+
+  test('G2-V2: the single swim keeps its race-length repeats next to the CSS block', () {
+    final p = prof(
+      TrainingFocus.triathlon,
+      'intermediate',
+      const [1, 2, 4, 6, 7],
+      {
+        'eventDistance': 'olympic',
+        'eventDate': race(12),
+        'sessionMinutes': 60,
+        'dayMinutes': {6: 150, 7: 90},
+        'ftp': 220,
+        'raceTimes': {'10k': 3000},
+      },
+    );
+    final plan = gen(p);
+    final peak = plan.where((w) => w.sport == Sport.swim && w.phase == 'peak').toList();
+    expect(peak, isNotEmpty);
+    for (final w in peak) {
+      final en = w.steps.where((s) => s.isWork && s.zone == 'EN').map((s) => s.distanceM!).fold(0.0, max);
+      expect(en, greaterThanOrEqualTo(800), reason: '${w.date} ${w.title}');
+    }
+    // Build / peak: CSS at least every other week, never two weeks in a row without it.
+    final late = weeksOf(plan).where((wk) => wk.first.phase == 'build' || wk.first.phase == 'peak').toList();
+    bool css(List<PlannedWorkout> wk) => wk.any((w) => w.sport == Sport.swim && w.steps.any((s) => s.zone == 'CSS'));
+    for (var i = 1; i < late.length; i++) {
+      expect(css(late[i]) || css(late[i - 1]), isTrue, reason: 'week of ${late[i].first.date}');
+    }
+    expect(PlanGenerator.feasibility(p, start: start, l: de).issues, isNot(contains('longSwim')));
+  });
+
+  test("G2-V3: a triathlon beginner's only swim grows past 1.5 km, deloads in recovery / taper weeks", () {
+    final p = prof(
+      TrainingFocus.triathlon,
+      'beginner',
+      const [2, 4, 6],
+      {'eventDistance': '70.3', 'eventDate': race(20), 'sessionMinutes': 90},
+    );
+    final plan = gen(p);
+    final swims = plan.where((w) => w.sport == Sport.swim && w.intensity != 'race').toList();
+    double km(PlannedWorkout w) => w.distanceKm ?? 0;
+    final late = swims.where((w) => w.phase == 'build' || w.phase == 'peak').toList();
+    expect(late.map(km).fold(0.0, max), greaterThan(km(swims.first) + 0.4));
+    final cont = swims
+        .where((w) => w.phase != 'taper')
+        .expand((w) => w.steps)
+        .where((s) => s.isWork && s.zone == 'EN')
+        .map((s) => s.distanceM!)
+        .fold(0.0, max);
+    expect(cont, greaterThanOrEqualTo(800));
+    // Recovery / taper swims are shorter than the loading week before them.
+    final ws = weeksOf(plan);
+    double sw(List<PlannedWorkout> wk) => wk.where((w) => w.sport == Sport.swim).fold(0.0, (x, w) => x + km(w));
+    for (var i = 1; i < ws.length; i++) {
+      final phase = ws[i].first.phase;
+      if (phase != 'recovery' && phase != 'taper') continue;
+      final prev = ws.sublist(0, i).lastWhere(loading);
+      expect(sw(ws[i]), lessThan(sw(prev)), reason: 'week of ${ws[i].first.date}');
+    }
+  });
+
+  test('G2-V4: the continuous swim gets the solo swim day, the quality ride its whole day', () {
+    final p = prof(
+      TrainingFocus.triathlon,
+      'intermediate',
+      const [1, 3, 5, 6, 7],
+      {
+        'eventDistance': 'ironman',
+        'eventDate': race(24),
+        'sessionMinutes': 60,
+        'dayMinutes': {6: 300, 7: 150},
+        'ftp': 220,
+      },
+    );
+    expect(PlanGenerator.feasibility(p, start: start, l: de).issues, isNot(contains('longSwim')));
+    final plan = gen(p);
+    final cont = plan
+        .where((w) => w.sport == Sport.swim && w.phase != 'taper')
+        .expand((w) => w.steps)
+        .where((s) => s.isWork && s.zone == 'EN');
+    expect(cont.map((s) => s.distanceM!).fold(0.0, max), greaterThanOrEqualTo(1800));
+    // The quality ride's work grows beyond 2 × 8 min.
+    final work = plan
+        .where((w) => w.sport == Sport.ride && quality(w))
+        .map((w) => w.steps.where((s) => s.isWork).fold(0, (x, s) => x + s.durationSec!))
+        .fold(0, max);
+    expect(work, greaterThan(16 * 60));
+  });
+
+  test('G2-V5: the third run keeps off the only solo swim day; a suggested swim-day time resolves the warning', () {
+    final p = prof(
+      TrainingFocus.triathlon,
+      'intermediate',
+      const [1, 2, 3, 4, 6, 7],
+      {
+        'eventDistance': 'ironman',
+        'eventDate': race(30),
+        'sessionMinutes': 90,
+        'dayMinutes': {6: 360, 7: 180},
+        'ftp': 240,
+      },
+    );
+    final sched = PlanGenerator.scheduleOf(p);
+    expect(sched.values.where((v) => v.length == 1 && v.first == Sport.swim), isNotEmpty, reason: '$sched');
+    expect(sched.values.where((v) => v.contains(Sport.run)).length, 3, reason: '$sched');
+    expect(PlanGenerator.feasibility(p, start: start, l: de).issues, isNot(contains('longSwim')));
+    // Wherever a swim day's time is suggested, that time resolves the warning (the check re-plans with it).
+    for (final q in [
+      p,
+      prof(
+        TrainingFocus.triathlon,
+        'intermediate',
+        const [1, 3, 5, 6, 7],
+        {
+          'eventDistance': 'ironman',
+          'eventDate': race(24),
+          'sessionMinutes': 45,
+          'dayMinutes': {6: 300, 7: 150},
+        },
+      ),
+      prof(
+        TrainingFocus.triathlon,
+        'intermediate',
+        const [2, 4, 6, 7],
+        {
+          'eventDistance': '70.3',
+          'eventDate': race(20),
+          'sessionMinutes': 60,
+          'dayMinutes': {6: 180, 7: 90},
+        },
+      ),
+    ]) {
+      final f = PlanGenerator.feasibility(q, start: start, l: de);
+      if (!f.issues.contains('longSwim') || f.longSwimDay == null || f.longSwimDayMin == null) continue;
+      final r = q.copyWith(
+        athlete: q.athlete.merge({
+          'dayMinutes': {...q.athlete.dayMinutes, f.longSwimDay!: f.longSwimDayMin!},
+        }),
+      );
+      expect(PlanGenerator.feasibility(r, start: start, l: de).issues, isNot(contains('longSwim')), reason: '${q.athlete.eventDistance}');
+    }
+  });
+
+  test('G2-V6: duathlon taper – the run keeps its quality session, the ride at least pick-ups', () {
+    for (final days in const [
+      [2, 4, 6, 7],
+      [1, 2, 4, 6, 7],
+      [1, 2, 3, 4, 6, 7],
+    ]) {
+      final plan = gen(
+        prof(TrainingFocus.duathlon, 'intermediate', days, {'eventDistance': 'du_standard', 'eventDate': race(10), 'sessionMinutes': 60}),
+      );
+      final taper = weeksOf(plan).where((wk) => wk.first.phase == 'taper').toList();
+      expect(taper.length, greaterThanOrEqualTo(2));
+      for (final wk in taper.take(taper.length - 1)) {
+        expect(wk.any((w) => w.sport == Sport.run && quality(w)), isTrue, reason: '$days ${wk.first.date}');
+        expect(
+          wk.any((w) => w.sport == Sport.ride && w.steps.any((s) => s.isWork && const {'Z3', 'SS', 'Z4', 'Z5'}.contains(s.zone))),
+          isTrue,
+        );
+      }
+    }
+  });
+
+  test('G2-V7: open-water beginners reach ~80 % of the race in one go at the recommended plan length', () {
+    for (final ev in const ['swim1500', 'swim3800', 'swim5000']) {
+      final p0 = prof(TrainingFocus.swim, 'beginner', const [2, 4, 6], {'eventDistance': ev, 'sessionMinutes': 60});
+      final weeks = PlanGenerator.recommendedWeeks(p0).def;
+      final p = p0.copyWith(athlete: p0.athlete.merge({'eventDate': race(weeks)}));
+      final cont = gen(p)
+          .where((w) => w.sport == Sport.swim && w.phase != 'taper' && w.intensity != 'race')
+          .expand((w) => w.steps)
+          .where((s) => s.isWork && s.zone != 'DR' && s.zone != 'SP')
+          .map((s) => s.distanceM!)
+          .fold(0.0, max);
+      final km = {'swim1500': 1.5, 'swim3800': 3.8, 'swim5000': 5.0}[ev]!;
+      expect(cont, greaterThanOrEqualTo(km * 800 - 1e-6), reason: '$ev at $weeks weeks: $cont m');
+      expect(PlanGenerator.feasibility(p, start: start, l: de).issues, isNot(contains('longSwim')), reason: ev);
+    }
+  });
+
+  test("G2-V8: the duathlon's second run is not faster than the first, never at interval pace", () {
+    final p = prof(
+      TrainingFocus.duathlon,
+      'advanced',
+      const [2, 4, 6, 7],
+      {
+        'eventDistance': 'du_sprint',
+        'eventDate': race(8),
+        'sessionMinutes': 60,
+        'ftp': 280,
+        'raceTimes': {'5k': 1080},
+      },
+    );
+    final legs = GoalModel.legTimes(p, 60)!.$1;
+    expect(legs[2] / 2.5, greaterThanOrEqualTo(legs[0] / 5));
+    final raceDay = gen(p).firstWhere((w) => w.intensity == 'race');
+    final runs = raceDay.steps.where((s) => s.distanceM != null && const {'E', 'M', 'T', 'I'}.contains(s.zone)).toList();
+    expect(runs.length, 2);
+    expect(runs[1].durationSec! / runs[1].distanceM!, greaterThanOrEqualTo(runs[0].durationSec! / runs[0].distanceM! * 0.97));
+    for (final s in runs) {
+      expect(s.zone, isIn(const ['E', 'M', 'T']));
+    }
+  });
+
+  group('G2-V9: run/walk running grows gently', () {
+    int running(List<PlannedWorkout> wk) => wk
+        .where((w) => w.sport == Sport.run)
+        .expand((w) => w.steps)
+        .where((s) => s.isWork && s.zone == 'E')
+        .fold(0, (x, s) => x + (s.durationSec ?? 0));
+    test("duathlon beginner on run/walk: the week's running ≤ +30 %", () {
+      final plan = gen(
+        prof(
+          TrainingFocus.duathlon,
+          'beginner',
+          const [2, 4, 6],
+          {'eventDistance': 'du_sprint', 'eventDate': race(8), 'sessionMinutes': 45, 'canRun30': false},
+        ),
+      );
+      final ws = weeksOf(plan).where(loading).toList();
+      for (var i = 1; i < ws.length; i++) {
+        expect(running(ws[i]), lessThanOrEqualTo(running(ws[i - 1]) * 1.3), reason: 'week of ${ws[i].first.date}');
+      }
+    });
+    test('one long run/walk a week: ≤ +10 % / +5 min of running in whole blocks', () {
+      final plan = gen(
+        prof(
+          TrainingFocus.triathlon,
+          'beginner',
+          const [2, 4, 6],
+          {
+            'eventDistance': '70.3',
+            'eventDate': race(12),
+            'sessionMinutes': 75,
+            'canRun30': false,
+            'canSwim400': false,
+            'difficulty': 'easy',
+            'limitations': ['back'],
+          },
+          exp: const {},
+          age: 55,
+        ),
+      );
+      final ws = weeksOf(plan).where(loading).toList();
+      for (var i = 1; i < ws.length; i++) {
+        final a = running(ws[i - 1]), b = running(ws[i]);
+        expect(b, lessThanOrEqualTo(max(a * 1.1, a + 300)), reason: 'week of ${ws[i].first.date}: $a → $b s');
+      }
+    });
+  });
+
+  group('G2-V10', () {
+    test('(a) multisport easy runs in loading weeks ≥ 25 min', () {
+      final plan = gen(
+        prof(
+          TrainingFocus.triathlon,
+          'beginner',
+          const [1, 2, 4, 5, 6, 7],
+          {
+            'eventDistance': '70.3',
+            'eventDate': race(24, 6),
+            'sessionMinutes': 60,
+            'dayMinutes': {6: 240, 7: 150},
+          },
+        ),
+      );
+      for (final w in plan.where(
+        (w) => w.sport == Sport.run && w.intensity == 'easy' && loading([w]) && !w.steps.any((s) => s.zone == 'walk'),
+      )) {
+        expect(w.durationMin, greaterThanOrEqualTo(25), reason: '${w.date} ${w.title}');
+      }
+    });
+
+    test('(b) without an event the long ride is capped by level', () {
+      final p = prof(
+        TrainingFocus.triathlon,
+        'beginner',
+        const [2, 4, 6],
+        {'sessionMinutes': 480, 'bikeWeeklyHours': 17.5, 'longestRideKm': 75.0},
+      );
+      final longest = gen(p, weeks: 12).where((w) => w.sport == Sport.ride).map((w) => w.durationMin).fold(0, max);
+      expect(longest, lessThanOrEqualTo(240));
+    });
+
+    test("(c) swim beginners' sessions stay ≤ 1.5 km, technique sessions too", () {
+      final plan = gen(
+        prof(TrainingFocus.swim, 'beginner', const [2, 4, 6], {'eventDistance': 'swim1500', 'eventDate': race(10), 'sessionMinutes': 90}),
+      );
+      for (final w in plan.where((w) => w.sport == Sport.swim && w.intensity != 'long' && w.intensity != 'race')) {
+        expect(w.distanceKm, lessThanOrEqualTo(1.55), reason: '${w.date} ${w.title}');
+      }
+    });
+
+    test('(e) the knee swap never stretches a quality ride', () {
+      final plan = gen(
+        prof(
+          TrainingFocus.duathlon,
+          'intermediate',
+          const [2, 4, 6, 7],
+          {
+            'eventDistance': 'du_standard',
+            'eventDate': race(12),
+            'sessionMinutes': 60,
+            'dayMinutes': {6: 180},
+            'sessionsPerDay': 2,
+            'limitations': ['knee'],
+            'dayPlan': <int, List<Sport>>{
+              2: [Sport.run],
+              4: [Sport.ride, Sport.run],
+              6: [Sport.ride, Sport.run],
+              7: [Sport.run],
+            },
+          },
+        ),
+      );
+      for (final w in plan.where((w) => w.sport == Sport.ride && quality(w))) {
+        expect(w.steps.where((s) => s.kind == 'steady' && s.zone == 'Z2'), isEmpty, reason: '${w.date} ${w.title}');
+      }
+    });
   });
 }

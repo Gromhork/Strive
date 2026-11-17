@@ -6499,4 +6499,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String wSwimEnduranceCss(int reps, int meters, int n) {
     return 'Ausdauer $reps × $meters m + $n × 100 m CSS';
   }
+
+  @override
+  String get wRideTaperPickupsDesc => 'Tapering: locker fahren mit ein paar kurzen Antritten – sie halten die Beine spritzig, während der Umfang sinkt.';
 }

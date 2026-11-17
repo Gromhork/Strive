@@ -267,6 +267,16 @@ class PlanGenerator {
   /// Quality runs this week, loading weeks so far, race week of the taper.
   int _qRuns = 0, _loadWeek = 0;
 
+  /// Sports whose taper-week touch of intensity (strides / pick-ups) is planned already this week – a discipline that
+  /// gets no quality session in a taper week (spacing, the week's hard budget) keeps some intensity (§1.7; review
+  /// 2026-11 G2-V6): its first easy session carries strides or pick-ups.
+  final _taperTouch = <Sport>{};
+
+  /// A taper week before race week without a quality session of [sport] ([nQ]: this week's) whose touch of intensity
+  /// is still to plan – true once (marks it planned).
+  bool _taperTouchDue(Sport sport, String phase, int nQ) =>
+      phase == 'taper' && !_taperLast && nQ == 0 && !hf.capIntensity && _taperTouch.add(sport);
+
   /// Loading weeks of continuous running since the run/walk ladder ended (null: no run/walk start).
   int? _postRunWalk;
   bool _taperLast = false;
@@ -700,6 +710,7 @@ class PlanGenerator {
     int? rwPos = rwStart == null ? null : 0;
     var rwLongSec = 0, rwRunMax = 0, rwLongRun = 0; // (rwLongRun: running s of the last loading week's long run/walk)
     var rwHeld = 0; // loading weeks on the current run/walk stage
+    var rwWeekRun = 0, rwWeekN = 0; // running s / sessions of the last loading week's run/walks (multisport: ≤ +30 %)
     var rwLongKm = 0.0; // running km of the longest long run/walk (R1 reference afterwards)
     var easyKm = 0.0; // easy-run cap of a former run/walker: the last 30 min run, +10 % a week
     _walkBreaks = rwGoal;
@@ -964,7 +975,9 @@ class PlanGenerator {
           // race (review 2026-11 H2): up to +200 m when +100 m cannot reach the race's continuous swim in the
           // loading weeks left – like the triathlon novice's continuous swim.
           final left = phases.sublist(w).takeWhile((p) => p != 'taper').where((p) => p != 'recovery').length;
-          final need = openGoal != null && left > 0 ? (((capM - longSwimLoad) / left / 100).ceil() * 100.0).clamp(100.0, 200.0) : 100.0;
+          // (Past 1.5 km the step may be ~12 % – +200 m a week took a beginner 14 loading weeks to 3 km, G2-V7.)
+          final stepMax = max(200.0, (longSwimLoad * 0.12 / 100).round() * 100.0);
+          final need = openGoal != null && left > 0 ? (((capM - longSwimLoad) / left / 100).ceil() * 100.0).clamp(100.0, stepMax) : 100.0;
           longSwimLoad = min(capM, max(longSwimLoad + need, (longSwimLoad * 1.12 / 100).round() * 100.0));
         }
         _longSwimM = rest ? max(300.0, (longSwimLoad * longF / 100).round() * 100.0) : longSwimLoad;
@@ -1009,6 +1022,7 @@ class PlanGenerator {
       _stage = phaseWeeks <= 1 ? 1 : min(2, phaseIdx * 3 ~/ phaseWeeks);
       _taperLast = phase == 'taper' && w == total - 1;
       _contSwimDone = false;
+      _taperTouch.clear();
       _qRuns = roles.values.expand((x) => x).where((r) => r.sport == Sport.run && r.role.startsWith('q')).length;
       _loadWeek = loadWeeks;
       _postRunWalk = rwStart == null ? null : postRw;
@@ -1045,6 +1059,7 @@ class PlanGenerator {
                   (rwRunMax * (rwFew ? (_gentleGoal ? 1.25 : 1.5) : (_gentleGoal ? 1.5 : 2))).round(),
                   rest ? 0 : rwLongSec,
                   single: rwFew,
+                  onlyRun: runPerWeek == 1,
                   prevRunSec: !rwFew || rwLongRun == 0 || rest ? null : rwLongRun,
                 );
                 if (!rest) {
@@ -1227,7 +1242,10 @@ class PlanGenerator {
         // Multisport loading weeks: an easy run of ≥ 25 min (advanced 30) – the share of a short long run minus a long
         // brick left 15–20 min jogs (review 2026-11 tri-8).
         final floorKm =
-            spec?.multisport == true && !rest ? max(easyFloor, _floorHalf((level == 'advanced' ? 30 : 25) * 60 / _longPace)) : easyFloor;
+            // (Rounded up to 0.5 km: rounded down, "25 min" came out at 23 – G2-V10.)
+            spec?.multisport == true && !rest
+                ? max(easyFloor, ((level == 'advanced' ? 30 : 25) * 60 / _longPace * 2 - 1e-9).ceil() / 2)
+                : easyFloor;
         final each = ((wk - used) / (easyRuns.length + skippedRuns)).clamp(floorKm, max(floorKm, capKm)).toDouble();
         for (final (day, cap) in easyRuns) {
           week.add(_easyRun(day, phase, each, w, cap));
@@ -1247,13 +1265,38 @@ class PlanGenerator {
         if (runs >= 3 && free >= 0) {
           week[free] = _crossRide(week[free].date, phase, week[free].durationMin);
         } else if (runs >= 3) {
-          // (Preferably into an easy or long ride – a quality ride keeps its structure.)
-          final i = [easyRun((p) => rideDay(p.date, easy: true)), easyRun((_) => true)].firstWhere((x) => x >= 0, orElse: () => -1);
+          // (Only into an easy or long ride – a quality ride keeps its structure: "Threshold 2 × 8 min" with a 25 min Z2
+          // block in a 55 min ride, review 2026-11 G2-V10; no such ride – the run stays.)
+          final i = easyRun((p) => rideDay(p.date, easy: true));
           if (i >= 0) {
             final run = week.removeAt(i);
             final j = week.indexWhere((p) => p.sport == Sport.ride && p.date == run.date);
             if (j >= 0) week[j] = _longerRide(week[j], run.durationMin);
           }
+        }
+      }
+      // Multisport run/walk (review 2026-11 G2-V9: 26 → 36 min of running from one week to the next when the easy
+      // run/walk moved on a stage): the week's running grows ≤ 30 % over the last loading week's – the easy run/walk
+      // gives up blocks, the long run/walk keeps its own ≤ +10 % / +5 min step.
+      if (runWalk && spec?.multisport == true) {
+        int rwSec(PlannedWorkout p) =>
+            p.steps.any((x) => x.zone == 'walk') ? p.steps.where((x) => x.isWork).fold(0, (t, x) => t + (x.durationSec ?? 0)) : 0;
+        int blocks(PlannedWorkout p) => p.steps.where((x) => x.isWork).length;
+        int rwTotal() => week.where((p) => p.sport == Sport.run).fold(0, (t, p) => t + rwSec(p));
+        final n = week.where((p) => p.sport == Sport.run && rwSec(p) > 0).length;
+        // (Against a full week with as many run/walks – a plan starting mid-week has a short first week – and never
+        // below half the stage's blocks.)
+        if (!rest && rwWeekRun > 0 && n <= rwWeekN) {
+          final minBlocks = (_runWalkTable[min(rwStage, _runWalkTable.length - 1)].$3 / 2).ceil();
+          for (var t = 0; t < 10 && rwTotal() > rwWeekRun * 1.3; t++) {
+            final i = week.indexWhere((p) => p.sport == Sport.run && p.intensity == 'easy' && rwSec(p) > 0 && blocks(p) > minBlocks);
+            if (i < 0) break;
+            week[i] = _runWalk(week[i].date, rwStage, phase, maxReps: blocks(week[i]) - 1);
+          }
+        }
+        if (!rest) {
+          rwWeekRun = rwTotal();
+          rwWeekN = n;
         }
       }
       // Whole-week checks on the sessions actually planned (after the time caps) – single-sport runs.
@@ -2082,11 +2125,27 @@ class PlanGenerator {
     if (tri && (longCourse || swimNoviceOf(profile) || profile.level == 'beginner')) {
       final swimDays = daysWith(Sport.swim);
       if (swimDays.length == 1 && res.length >= 4) {
+        // Not on the day of the run's / ride's only possible quality session nor on a long session's day: the double day
+        // halves the time of both sessions (review 2026-11 G2-V4: the second swim halved the only quality ride's 60 min
+        // Wednesday – "Sweet Spot 2 × 8 min" for 24 weeks – while Friday's easy run, next to the long ride, had room). The
+        // day before the long day only when every other day is one of those.
+        final longs = _longSessionDays(res, longDay, masters, minutes: _explicitMinutes(profile), rideFirst: _rideFirst(profile));
+        int cost(int d) {
+          final s = res[d]!.first;
+          final sDays = daysWith(s);
+          final qualityDay =
+              (s == Sport.run || s == Sport.ride) &&
+              !longs.values.contains(d) &&
+              longs.values.every((x) => dist(x, d) > 1) &&
+              sDays.where((x) => !longs.values.contains(x) && longs.values.every((y) => dist(y, x) > 1)).length == 1;
+          return (longs.values.contains(d) ? 3 : 0) + (qualityDay ? 2 : 0) + (d % 7 + 1 == longDay ? 1 : 0);
+        }
+
         final cand =
-            res.keys
-                .where((d) => d != longDay && d % 7 + 1 != longDay && !res[d]!.contains(Sport.swim) && !res[d]!.contains(Sport.gym))
-                .toList()
-              ..sort((x, y) => dist(y, swimDays.first).compareTo(dist(x, swimDays.first)));
+            res.keys.where((d) => d != longDay && !res[d]!.contains(Sport.swim) && !res[d]!.contains(Sport.gym)).toList()..sort((x, y) {
+              final c = cost(x).compareTo(cost(y));
+              return c != 0 ? c : dist(y, swimDays.first).compareTo(dist(x, swimDays.first));
+            });
         if (cand.isNotEmpty) res[cand.first] = [Sport.swim, ...res[cand.first]!];
       }
     }
@@ -2129,6 +2188,9 @@ class PlanGenerator {
       for (final sport in const [Sport.ride, Sport.swim, Sport.run]) {
         if (daysWith(sport).length >= 3) continue;
         if (sport == Sport.run && res.length < 6 && a.sessionsPerDay < 2) continue;
+        // The third run never takes the last swim day of its own: the continuous swim needs a whole day (review 2026-11
+        // G2-V5: the run halved the only solo swim day – the continuous swim fell from 2000 to 1700 m).
+        final soloSwims = res.keys.where((d) => res[d]!.length == 1 && res[d]!.first == Sport.swim).length;
         final cand =
             res.keys
                 .where(
@@ -2137,6 +2199,7 @@ class PlanGenerator {
                       res[d]!.length == 1 &&
                       !res[d]!.contains(sport) &&
                       !res[d]!.contains(Sport.gym) &&
+                      !(sport == Sport.run && res[d]!.first == Sport.swim && soloSwims <= 1) &&
                       mins(d) - 60 >= need(d, sport),
                 )
                 .toList()
@@ -2523,7 +2586,9 @@ class PlanGenerator {
         if (sDays.isEmpty) continue;
         final ld = longs[sport]; // no long swim
         final css = sport == Sport.swim;
-        final cost = css ? 0.5 : 1.0;
+        // Taper: the quality sessions are short (intensity kept, volume cut – §1.7) and cost half – each discipline with
+        // ≥ 2 sessions keeps one (review 2026-11 G2-V6: the ride took the budget, the taper's runs were all easy).
+        final cost = css || phase == 'taper' ? 0.5 : 1.0;
         var nQ = switch (sport) {
           Sport.run => _maxQualityRuns(sDays.length, phase),
           Sport.ride => _maxQualityRides(sDays.length, phase),
@@ -2536,9 +2601,21 @@ class PlanGenerator {
         if (multi) nQ = min(nQ, min(qualityLeft, ((budget - used) / cost + 1e-9).floor()));
         // Candidates: not the long day; never the day right before the long run (H5), nor
         // right after the long session (with > 2 sessions of that sport).
+        // (Taper, multisport: no quality ride in a slot too short for one once the taper cuts it – it would be an easy
+        // ride with pick-ups and leave the day's run without its quality session, review 2026-11 G2-V6.)
+        bool shortRide(int d) =>
+            sport == Sport.ride &&
+            multi &&
+            phase == 'taper' &&
+            dayMinutesFor(profile, d) ~/ schedule[d]!.length < 45 &&
+            schedule[d]!.length > 1;
         final cand = [
           for (final d in sDays)
-            if (d != ld && !(ld != null && d == prev(ld) && sport == Sport.run) && !(ld != null && d == next(ld) && sDays.length > 2)) d,
+            if (d != ld &&
+                !(ld != null && d == prev(ld) && sport == Sport.run) &&
+                !(ld != null && d == next(ld) && sDays.length > 2) &&
+                !shortRide(d))
+              d,
         ];
         // The largest set of days that keeps the spacing; ties: far from the long day and on
         // days without a second session (a double day halves the time of each).
@@ -2577,7 +2654,12 @@ class PlanGenerator {
     final preferred =
         !multi
             ? [Sport.run, Sport.ride, Sport.swim]
-            : (phase == 'base' || phase == 'recovery' ? [Sport.ride, Sport.swim, Sport.run] : [Sport.ride, Sport.run, Sport.swim]);
+            : (phase == 'base' || phase == 'recovery'
+                ? [Sport.ride, Sport.swim, Sport.run]
+                // (Duathlon taper: the run first – two of the race's three legs.)
+                : (phase == 'taper' && profile.focus == TrainingFocus.duathlon
+                    ? [Sport.run, Sport.ride, Sport.swim]
+                    : [Sport.ride, Sport.run, Sport.swim]));
     int count(Map<Sport, List<int>> m) => m.values.fold(0, (x, v) => x + v.length);
     // Build / peak (B7): among the orders that fit the most quality sessions, the one that gives
     // intensity to the disciplines that waited longest – a week with long sessions on Saturday
@@ -2634,6 +2716,32 @@ class PlanGenerator {
     // swims only if there is no quality session at all). A single weekly swim alternates
     // technique and continuous endurance swimming.
     final swimDays = days.where((d) => schedule[d]!.contains(Sport.swim)).toList();
+    // The continuous swim (an easy swim, [_swimSession]) needs the swim day with the most time per session, the CSS
+    // set (≤ ~35 min) does with half a day (review 2026-11 G2-V4: CSS on a solo 60 min Monday, the continuous swim in
+    // half of Wednesday – 900 m for 24 weeks instead of 2000 m). Swapped when the CSS set keeps its spacing there.
+    if (_contSwimM > 0 && swimDays.length >= 2) {
+      int per(int d) => dayMinutesFor(profile, d) ~/ schedule[d]!.length;
+      final q = swimDays.where((d) => roles[d]!.any((x) => x.sport == Sport.swim && x.role.startsWith('q'))).toList();
+      final easy = swimDays.where((d) => roles[d]!.any((x) => x.sport == Sport.swim && x.role == 'easy')).toList();
+      if (q.length == 1 && easy.isNotEmpty) {
+        final qd = q.first;
+        final cont = easy.first; // the first easy swim of the week is the continuous one
+        final k = {...key}..remove(qd);
+        final target = easy.where((d) => per(d) < per(qd)).toList()..sort((x, y) => per(x).compareTo(per(y)));
+        if (per(qd) > per(cont)) {
+          for (final d in target) {
+            if (!spaced(d, Sport.swim, k, half: true)) continue;
+            if (k.entries.any((e) => e.value == Sport.swim && !longDays.contains(e.key) && dist(e.key, d) <= 1)) continue;
+            final from = roles[qd]!.firstWhere((x) => x.sport == Sport.swim), to = roles[d]!.firstWhere((x) => x.sport == Sport.swim);
+            to.role = from.role;
+            from.role = 'easy';
+            key.remove(qd);
+            key[d] = Sport.swim;
+            break;
+          }
+        }
+      }
+    }
     if (swimDays.isNotEmpty) {
       final slots = [for (final d in swimDays) roles[d]!.firstWhere((x) => x.sport == Sport.swim)];
       final hasQ = slots.any((x) => x.role.startsWith('q'));
@@ -3082,7 +3190,8 @@ class PlanGenerator {
     var strides =
         (phase == 'base' || phase == 'build' || phase == 'peak') && !beginner && !hf.noHardRunning && day.weekday.isEven
             ? 4 + min(4, week ~/ 2)
-            : 0;
+            // (A taper week without a quality run: strides on its first easy run – [_taperTouchDue].)
+            : (!beginner && !hf.noHardRunning && _taperTouchDue(Sport.run, phase, _qRuns) ? 4 : 0);
     while (strides > 0 && capMin * 60 - strides * 80 < 3 * pz.easySlow) {
       strides = strides > 4 ? strides - 1 : 0;
     }
@@ -3200,8 +3309,10 @@ class PlanGenerator {
   }
 
   /// Run/walk session of [stage] (beginners who cannot run 30 min yet).
-  PlannedWorkout _runWalk(DateTime day, int stage, String phase) {
+  /// [maxReps]: fewer blocks than the stage's (the week's running grows ≤ 30 %, [generate]).
+  PlannedWorkout _runWalk(DateTime day, int stage, String phase, {int? maxReps}) {
     var (run, walk, reps) = _runWalkTable[min(stage, _runWalkTable.length - 1)];
+    if (maxReps != null) reps = max(1, min(reps, maxReps));
     // Taper: the same rhythm, less of it (race week ~55 %, earlier taper weeks ~75 %) – the stage
     // stays, the volume drops like everyone else's (Bosquet 2007).
     if (phase == 'taper') {
@@ -3228,7 +3339,8 @@ class PlanGenerator {
   /// with the running ≤ [maxRunSec] (2 × the longest regular session's), never shorter than the
   /// regular session nor (loading weeks) than last week's [prevSec] main set; fits [capMin].
   /// Returns the workout and its main set (s).
-  /// [single]: the week's only run (the description does not refer to other runs).
+  /// [single]: the week's only run (the description does not refer to other runs). [onlyRun]: really the only one –
+  /// its running grows in whole blocks rounded down, a stage that cannot waits ([prevRunSec]).
   (PlannedWorkout, int) _longRunWalk(
     DateTime day,
     int stage,
@@ -3239,6 +3351,7 @@ class PlanGenerator {
     int prevSec, {
     bool single = false,
     int? prevRunSec,
+    bool onlyRun = false,
   }) {
     var (run, walk, reps0) = _runWalkTable[min(stage, _runWalkTable.length - 1)];
     if (walk == 0) {
@@ -3247,16 +3360,37 @@ class PlanGenerator {
       run = min(run, 600);
       walk = 60;
     }
+    // The week's only run: a stage whose whole blocks cannot hold last week's running within its growth (+10 % / +5 min)
+    // – 6 × 3 min, then 2 × 8 min = less, 3 × 8 min = +6 min (review 2026-11 G2-V9) – waits: the stage before it this
+    // week. (Next to other runs the long run/walk keeps their stage – it stays the longest of them.)
+    if (prevRunSec != null && onlyRun && stage > 0) {
+      final growth = max((prevRunSec * 1.1).round(), prevRunSec + 300);
+      if (max(reps0, (prevRunSec / run).ceil()) * run > growth) {
+        return _longRunWalk(
+          day,
+          stage - 1,
+          phase,
+          targetSec,
+          capMin,
+          maxRunSec,
+          prevSec,
+          single: single,
+          prevRunSec: prevRunSec,
+          onlyRun: true,
+        );
+      }
+    }
     int main(int n) => n * (run + walk) - walk;
     final byTarget = ((targetSec + walk) / (run + walk)).round();
     final keep = ((prevSec - 0.03 * prevSec + walk) / (run + walk)).ceil();
     var reps = max(reps0, min(byTarget, max(maxRunSec ~/ run, keep)));
-    // [prevRunSec]: last loading week's running – this week's ≤ +10 % / +5 min (to the nearest whole block), also when
+    // [prevRunSec]: last loading week's running – this week's ≤ +10 % / +5 min (in whole blocks), also when
     // the stage's shorter walk breaks would keep last week's main set (tri-2), and never less (a longer block of the
     // next stage must not shorten it).
     if (prevRunSec != null) {
+      // (Whole blocks within the growth – rounding to the nearest made 18 → 24 min, review 2026-11 G2-V9.)
       final growth = max((prevRunSec * 1.1).round(), prevRunSec + 300);
-      final upper = ((growth + run / 2) / run).floor();
+      final upper = onlyRun ? growth ~/ run : ((growth + run / 2) / run).floor();
       reps = max(reps0, min(max(reps, min((prevRunSec / run).ceil(), upper)), upper));
     }
     final wu = phase == 'taper' ? 180 : 300;
@@ -3340,7 +3474,11 @@ class PlanGenerator {
     if (target != null && weekH > 0) share = max(share, min(0.6, target / (weekH * 60)));
     // 5-min steps: 15-min steps kept a slowly growing long ride flat for 4 weeks.
     final m = max(rest ? 45 : 60, ((weekH * share) * 60 / 5).round() * 5);
-    return spec == null ? m : min(m, spec!.longRideCapMin);
+    if (spec != null) return min(m, spec!.longRideCapMin);
+    // Without an event the long ride is capped by level – beginners 3 h, intermediate 4 h, advanced 5 h (review 2026-11
+    // G2-V10: 17.5 bike hours stated by a beginner grew a 7:50 h long ride); a longer recent ride raises the cap to it.
+    final longest = a.longestRideKm == null ? 0 : (a.longestRideKm! / _rideKmh('Z2') * 60 / 5).floor() * 5;
+    return min(m, max(longest, beginner ? 180 : (level == 'advanced' ? 300 : 240)));
   }
 
   /// [loadWeek] counts the loading weeks so far: quality rides progress only in those.
@@ -3545,6 +3683,8 @@ class PlanGenerator {
         intensity = 'tempo';
       }
     } else {
+      // A taper week without a quality ride: its first easy ride carries a few pick-ups ([_taperTouchDue]).
+      if (perWeek >= 2 && _taperTouchDue(Sport.ride, phase, nQ)) return _ridePickups(day, phase, min(capMin, 45), taper: true);
       // Remaining time after the long ride and ~65 min per quality ride, never longer
       // than 75 % of the long ride.
       final longMin = longRide;
@@ -3648,15 +3788,18 @@ class PlanGenerator {
   /// Easy ride with a few 1 min pick-ups – the quality ride of a day too short for ≥ 2 blocks of 8 min (VO2max:
   /// 3 × 3 min) after a proper warm-up ([_fitRide]). Not a key session.
   /// [opener]: race week's openers (the reason in the description).
-  PlannedWorkout _ridePickups(DateTime day, String phase, int capMin, {bool opener = false}) {
-    final m = max(20, capMin);
+  /// [taper]: a taper week's touch of intensity ([_taperTouchDue]).
+  PlannedWorkout _ridePickups(DateTime day, String phase, int capMin, {bool opener = false, bool taper = false}) {
+    // Openers are a short session (≤ 40 min – the day's whole time made a 190–240 min "opener" 2–3 days before the
+    // race, review 2026-11 G2-V1); the fallback of a short day fills that day (its time is short by definition).
+    final m = max(20, opener ? min(capMin, 40) : capMin);
     final n = m >= 30 ? 4 : 3;
     final first = min(10, m - n * 3 - 3), last = m - first - n * 3;
     return _plan(
       day,
       Sport.ride,
       l.wRidePickups(n),
-      opener ? l.wRideOpenersDesc : l.wRidePickupsDesc,
+      opener ? l.wRideOpenersDesc : (taper ? l.wRideTaperPickupsDesc : l.wRidePickupsDesc),
       'easy',
       [
         _rideStep('warmup', 'Z2', first * 60, note: l.stepZ2RideNote),
@@ -3762,6 +3905,10 @@ class PlanGenerator {
       return _swimCssTest(day, phase, week);
     }
     if (role == 'long') return _longSwim(day, phase, capMin);
+    // No CSS set in the 2 days before the race (a 155 min "CSS 20 × 100 m" two days out – review 2026-11 G2-V1 fuzz):
+    // an easy swim there; the race-week CSS set earlier in the week stays short ([_swimSession]).
+    final raceDay = a.eventDate == null || spec == null ? null : dayOnly(a.eventDate!);
+    if (_taperLast && role.startsWith('q') && raceDay != null && daysBetween(day, raceDay) <= 2) role = 'easy';
     // Technique sessions stay ≤ ~60 min: drill quality drops with fatigue, and long sessions
     // of 50 m repeats do not build the continuous swimming a race needs.
     if (role == 'technique' || ((beginner || hf.avoidOverhead) && role.startsWith('q'))) capMin = min(capMin, 60);
@@ -3778,14 +3925,28 @@ class PlanGenerator {
     final small = beginner || _swimNovice;
     final floor = small ? (restWeek ? 400.0 : 600.0) : (restWeek ? 600.0 : 1000.0);
     var total = max(floor, (min(per, maxM) * share / 100).round() * 100.0);
-    // Beginners: ≤ ~1.5 km a session (§4.4: 800–1500 m – review 2026-11 RS3: 2.1–2.2 km sessions).
-    if (small) total = min(total, max(floor, 1500.0));
+    // Beginners: ≤ ~1.5 km a session (§4.4: 800–1500 m – review 2026-11 RS3: 2.1–2.2 km sessions). A triathlete's swims
+    // are the whole week's swimming (often a single one) and must reach the race's leg: their cap starts at 1.5 km and
+    // grows ≤ 10 % a loading week (§4.4) – a fixed 1.5 km held a 70.3 beginner's only swim at 2 × 400 m for 20 weeks,
+    // recovery and taper weeks included (review 2026-11 G2-V3). Recovery / taper weeks stay ~25 % below the cap, so the
+    // deload still shows.
+    var capM = double.infinity;
+    if (small) {
+      capM = 1500.0 * (_tri ? pow(1.1, _loadWeek) : 1.0);
+      if (restWeek) capM *= 0.75;
+      // (The shoulder's ~20 % less applies below the cap too.)
+      capM = max(floor, (capM * share / 100).floor() * 100.0);
+      total = min(total, capM);
+    }
     // Short repeats with long rests (beginners: 50 m + 30 s) take longer than the rough
-    // estimate above: shrink until the session really fits the time available.
+    // estimate above: shrink until the session really fits the time available – and the beginners' cap (drills and
+    // repeats round up: a 1.5 km technique session came out at 1.6 km, G2-V10).
     final contDone = _contSwimDone;
     var w = _swimSession(day, role, phase, total, week, capMin: capMin);
-    for (var i = 0; i < 4 && w.durationMin > capMin + 5 && total > floor; i++) {
-      total = max(floor, (total * capMin / w.durationMin / 100).floor() * 100.0);
+    for (var i = 0; i < 4 && (w.durationMin > capMin + 5 || (w.distanceKm ?? 0) * 1000 > capM + 50) && total > floor; i++) {
+      final byTime = w.durationMin > capMin + 5 ? total * capMin / w.durationMin : total;
+      final byCap = (w.distanceKm ?? 0) * 1000 > capM + 50 ? total - ((w.distanceKm ?? 0) * 1000 - capM) : total;
+      total = max(floor, (min(byTime, byCap) / 100).floor() * 100.0);
       _contSwimDone = contDone;
       w = _swimSession(day, role, phase, total, week, capMin: capMin);
     }
@@ -3970,7 +4131,9 @@ class PlanGenerator {
         _ => (100.0, 15),
       };
       // ~35 % of the session at CSS (the rest easy): a 3-swim week stays ~80/20 by time.
-      final n = max(rep >= 300 ? 3 : (rep >= 200 ? 4 : 6), ((total * (0.35 + 0.05 * load)) / rep).round());
+      // (Taper: the set shortened like every quality session – ≤ 8 × 100 m, race week ≤ 6.)
+      final n0 = max(rep >= 300 ? 3 : (rep >= 200 ? 4 : 6), ((total * (0.35 + 0.05 * load)) / rep).round());
+      final n = phase == 'taper' ? min(n0, _taperLast ? 6 : 8) : n0;
       steps.add(_drillStep(200, week));
       steps.add(const WorkoutStep(kind: 'recovery', durationSec: 30, zone: 'REC'));
       for (var i = 0; i < n; i++) {
@@ -4044,16 +4207,10 @@ class PlanGenerator {
     } else {
       // The only swim of the week: the technique drills come first (§4.3: 10–20 % drills).
       final single = _swimsPerWeek == 1;
-      if (single) {
-        steps.add(_drillStep(total * 0.15, week));
-        steps.add(const WorkoutStep(kind: 'recovery', durationSec: 30, zone: 'REC'));
-      }
+      var drillM = max(100.0, (total * 0.15 / 100).round() * 100.0);
       // Build / peak: a bigger main set, so the race-length repeats (800 m+) fit a 60 min session.
       final late = phase == 'build' || phase == 'peak';
-      // The only swim of a non-beginner's week ends with a CSS block in build / peak (review 2026-11 tri-11: one swim a
-      // week never had a CSS or threshold swim – the race is swum near CSS): 4 → 6 → 8 × 100 m.
-      final cssReps = single && late && _swimCssOk ? 4 + 2 * _stage : 0;
-      final main = (total * (single ? 0.55 : (late ? 0.7 : 0.65)) / 100).round() * 100.0 - cssReps * 100;
+      final main = (total * (single ? 0.55 : (late ? 0.7 : 0.65)) / 100).round() * 100.0;
       // Continuous swimming grows through the plan (towards the race distance in one go):
       // beginners 50 → 100 → 200 → 400 → 800 m every 3 weeks, others 200 → 400 → 800 m
       // every 4 weeks; 800 m repeats only for olympic / 70.3, and always ≥ 2 repeats.
@@ -4061,20 +4218,53 @@ class PlanGenerator {
       // 800 m, Ironman 1000 m); swim novices start here only after their CSS test.
       final ladder = beginner ? [100.0, 200.0, 400.0, 800.0, 1000.0] : [200.0, 400.0, 800.0, 1000.0];
       final repMax = spec?.swimRepMax ?? 400.0;
-      var i = min(week ~/ (beginner ? 3 : 4), ladder.length - 1);
-      while (i > 0 && (ladder[i] > repMax || main < ladder[i] * 2)) {
-        i--;
+      (double, int) repeats(double main) {
+        var i = min(week ~/ (beginner ? 3 : 4), ladder.length - 1);
+        while (i > 0 && (ladder[i] > repMax || main < ladder[i] * 2)) {
+          i--;
+        }
+        var rep = ladder[i];
+        while (rep > 50 && main < rep * 2) {
+          rep = rep / 2;
+        }
+        // Whole repeats (rounded down) that fill ≥ 75 % of the main set – rounding 2.5 × 800 m up to 3 made
+        // the swim volume jump +30 % from one week to the next.
+        while (rep > 100 && main - max(2, (main / rep).floor()) * rep > main * 0.25) {
+          rep = ladder.lastWhere((x) => x < rep, orElse: () => rep / 2);
+        }
+        return (rep, max(2, rep >= 400 ? (main / rep).floor() : (main / rep).round()));
       }
-      var rep = ladder[i];
-      while (rep > 50 && main < rep * 2) {
-        rep = rep / 2;
+
+      var (rep, reps) = repeats(main);
+      // The only swim of a non-beginner's week ends with a CSS block in build / peak (review 2026-11 tri-11: one swim a
+      // week never had a CSS or threshold swim – the race is swum near CSS): 4 → 6 → 8 × 100 m. Its metres come from
+      // the main set's remainder, a shorter warm-up (≥ 300 m) and drill block (≥ 200 m) – the race-length repeats keep
+      // their progression (review 2026-11 G2-V2: taken off the main set, it halved 2 × 800 m to 2 × 400 m). When not
+      // even 4 × 100 m fit that way, every other loading week is a CSS week (the repeats from the rest of the main set)
+      // and the weeks between keep the full endurance set.
+      var cssReps = 0;
+      if (single && late && _swimCssOk) {
+        final want = 4 + 2 * _stage;
+        var wuM = wu.distanceM!;
+        final spare = max(0.0, main - reps * rep) + max(0.0, wuM - 300) + max(0.0, drillM - 200);
+        if (spare >= 400) {
+          cssReps = min(want, (spare / 100).floor());
+          var need = cssReps * 100 - max(0.0, main - reps * rep);
+          final fromWu = min(max(0.0, wuM - 300), max(0.0, need));
+          wuM -= fromWu;
+          need -= fromWu;
+          if (need > 0) drillM -= need;
+          wu = _swimStep('warmup', 'REC', wuM, note: l.stepSwimWu);
+          steps[0] = wu;
+        } else if (_loadWeek.isEven) {
+          cssReps = want;
+          (rep, reps) = repeats(main - want * 100);
+        }
       }
-      // Whole repeats (rounded down) that fill ≥ 75 % of the main set – rounding 2.5 × 800 m up to 3 made
-      // the swim volume jump +30 % from one week to the next.
-      while (rep > 100 && main - max(2, (main / rep).floor()) * rep > main * 0.25) {
-        rep = ladder.lastWhere((x) => x < rep, orElse: () => rep / 2);
+      if (single) {
+        steps.add(_drillStep(drillM, week));
+        steps.add(const WorkoutStep(kind: 'recovery', durationSec: 30, zone: 'REC'));
       }
-      final reps = max(2, rep >= 400 ? (main / rep).floor() : (main / rep).round());
       for (var i = 0; i < reps; i++) {
         steps.add(_swimStep('work', 'EN', rep, note: ow ? l.stepSightingNote : l.stepSwimEnNote));
         if (i < reps - 1) steps.add(WorkoutStep(kind: 'recovery', durationSec: beginner ? 30 : 20, zone: 'REC'));
@@ -4603,7 +4793,9 @@ class PlanGenerator {
     String runZone(int i) {
       if (finish) return 'E';
       final pace = (secs[i] / lg[i]).round();
-      return _zoneForPace(pace, easy: true);
+      // A race leg is never run at interval pace (G2-V8): at most threshold.
+      final z = _zoneForPace(pace, easy: true);
+      return z == 'I' ? 'T' : z;
     }
 
     final zones = [
@@ -5375,10 +5567,20 @@ class PlanGenerator {
         issues.add('longSwim');
         // The day's time cut the continuous swim (review 2026-11 tri-7): that day is the fix – raise its time to what a
         // session with the target in one go needs next to the day's other sessions.
-        final d = g._swimLimitDay;
+        var d = g._swimLimitDay;
+        var day = d == null ? null : _swimDayTimeFor(p, d, g._swimLimitMin);
+        // Only a day time that really resolves it (review 2026-11 G2-V5: the raised day reshuffled the week and the swim
+        // stayed at 1700 m): the plan with that day time is checked – else the note names no day.
+        if (d != null && day != null && day > dayMinutesFor(p, d)) {
+          final q = p.copyWith(
+            athlete: p.athlete.merge({
+              'dayMinutes': {...p.athlete.dayMinutes, d: day},
+            }),
+          );
+          if (_longestSwim(PlanGenerator(l, q, const [], () => '').generate(start: start)) < need - 1e-9) d = day = null;
+        }
         if (d != null) {
           swimDay = d;
-          final day = _swimDayTimeFor(p, d, g._swimLimitMin);
           swimDayMin = day;
           if (day != null && day > dayMinutesFor(p, d)) {
             if (raiseDay == null) {

@@ -288,7 +288,10 @@ void main() {
           final budget = n <= 4 ? 2.0 : (n <= 7 ? 3.0 : 4.0);
           final points = w.fold<double>(
             0,
-            (x, s) => x + (s.intensity == 'long' || (s.sport == Sport.swim && hard(s)) ? 0.5 : (hard(s) ? 1 : 0)),
+            // (Taper weeks: the shortened quality sessions cost 0.5 too – review 2026-11 G2-V6.)
+            (x, s) =>
+                x +
+                (s.intensity == 'long' || (s.sport == Sport.swim && hard(s)) || (s.phase == 'taper' && hard(s)) ? 0.5 : (hard(s) ? 1 : 0)),
           );
           expect(points, lessThanOrEqualTo(budget), reason: '${e.key}: ${wk.key} $points > $budget');
         }

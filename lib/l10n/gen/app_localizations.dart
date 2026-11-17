@@ -11572,6 +11572,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Endurance {reps} × {meters} m + {n} × 100 m CSS'**
   String wSwimEnduranceCss(int reps, int meters, int n);
+
+  /// No description provided for @wRideTaperPickupsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Taper: easy riding with a few short pick-ups – they keep the legs sharp while the volume comes down.'**
+  String get wRideTaperPickupsDesc;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -391,9 +391,10 @@ class EventSpec {
     'swim3800': EventSpec(
       'swim3800',
       weeks: (12, 16),
-      // Beginners build their continuous swim from what they can swim (~400–500 m) by +100–200 m a loading week
-      // (§4.5; review 2026-11 RS3) – ~14 loading weeks to 3.2 km.
-      weeksBeginner: (16, 20),
+      // Beginners build their continuous swim from what they can swim (~400–500 m) by +100–200 m a loading week, ~12 %
+      // past 1.5 km (§4.5; review 2026-11 RS3 / G2-V7: 16 weeks ended at 2.5 km, below the ~3 km open water needs) –
+      // ~13 loading weeks to 3.1 km: 18 weeks with the recovery weeks and the taper.
+      weeksBeginner: (18, 22),
       taper: 2,
       longSwimM: 3200,
       swimKm: [8, 12, 18],
@@ -405,6 +406,8 @@ class EventSpec {
     'swim5000': EventSpec(
       'swim5000',
       weeks: (12, 20),
+      // (Not a beginner's goal – if they choose it anyway: ~4 km in one go from ~400 m takes 22 weeks, G2-V7.)
+      weeksBeginner: (22, 26),
       taper: 2,
       beginnerOk: false,
       longSwimM: 4000,

@@ -208,7 +208,9 @@ class GoalModel {
     final parts =
         d.sport == EventSport.triathlon
             ? [l[0] * 10 * (css + 10), l[1] / kmh * 3600, run(l[2]) * runF]
-            : [run(l[0]) * 1.02, l[1] / kmh * 3600, run(l[2]) * runF];
+            // Duathlon: the second run at the first run's pace × the slowdown off the bike – its stand-alone 2.5 / 5 km
+            // race pace made it faster than the first run (review 2026-11 G2-V8: 3:39 vs 3:57 /km, "interval pace").
+            : [run(l[0]) * 1.02, l[1] / kmh * 3600, run(l[0]) * 1.02 / l[0] * l[2] * runF];
     return ([for (final x in parts) x.round()], transition);
   }
 
