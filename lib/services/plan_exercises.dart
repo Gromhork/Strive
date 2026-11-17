@@ -25,6 +25,34 @@ const gymModLegsEasy = 'legsEasy';
 /// when the plan week itself is still a loading week.
 const gymModRaceWeek = 'raceWeek';
 
+/// [PlannedWorkout.gymMods]: `short:<minutes>` – the program is longer than the day allows: its last
+/// accessory exercises (never a compound lift, never a set of the others) are left out until it fits
+/// the day's minutes (review 2026-11 G3V-6: 35–46 min workouts on 30 min days) – [shortenedGymExercises].
+const gymModShortPrefix = 'short:';
+
+/// The [gymModShortPrefix] mod for a day of [minutes].
+String gymModShort(int minutes) => '$gymModShortPrefix$minutes';
+
+/// The day's minutes of a [gymModShortPrefix] mod in [mods], or null.
+int? gymShortMinutes(List<String> mods) {
+  for (final m in mods) {
+    if (m.startsWith(gymModShortPrefix)) return int.tryParse(m.substring(gymModShortPrefix.length));
+  }
+  return null;
+}
+
+/// [exercises] without their last accessory exercises (from the end, compound lifts stay) until
+/// [estimateGymMinutes] fits [minutes] – or only compound lifts are left.
+List<GymExercise> shortenedGymExercises(List<GymExercise> exercises, int minutes) {
+  final out = [...exercises];
+  for (var i = out.length - 1; i >= 0 && out.length > 1 && estimateGymMinutes(out) > minutes; i--) {
+    if (classifyLift(out[i].exId, out[i].name).isCompound) continue;
+    out.removeAt(i);
+    normalizeSupersets(out);
+  }
+  return out;
+}
+
 /// Mods that change the load only (not the exercises): they stay when the athlete adjusts the
 /// workout's exercises for the day.
 const gymLoadMods = {gymModLegsEasy, gymModRaceWeek};
@@ -214,6 +242,9 @@ List<GymExercise> applyGymMods(List<GymExercise> exercises, List<String> mods, {
   }
   // A superset that lost a member (or all but one) is no superset any more, and the remaining
   // groups are lettered A, B, … again – the same in the plan, the preview and the tracker.
+  // A day shorter than the program: its last accessory exercises are left out.
+  final short = gymShortMinutes(mods);
+  if (short != null) out = shortenedGymExercises(out, short);
   normalizeSupersets(out);
   return out;
 }

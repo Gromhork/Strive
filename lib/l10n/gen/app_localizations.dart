@@ -11482,6 +11482,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} programs cannot be spread evenly over {days} strength days a week – one of them comes up a little more often. That is as even as it gets.'**
   String gymAssignUneven(int n, int days);
+
+  /// No description provided for @healthGymBackSwapNoteHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Back: deadlift variations, bent-over rows, standing presses and jumps are replaced by glute bridges, chest-supported rows, seated presses and squats without a jump – no heavy axial load, neutral spine.'**
+  String get healthGymBackSwapNoteHome;
+
+  /// No description provided for @wGymProgressNoteBw2.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression: first more reps – also beyond the range – then a harder variation (e.g. feet raised, single-leg or a slower lowering).'**
+  String get wGymProgressNoteBw2;
+
+  /// No description provided for @wGymShortNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortened to the {min} min planned for this day: the last accessory exercises are left out – add them when you have more time.'**
+  String wGymShortNote(int min);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

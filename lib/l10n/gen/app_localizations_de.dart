@@ -6428,4 +6428,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String gymAssignUneven(int n, int days) {
     return '$n Programme lassen sich nicht gleichmäßig auf $days Krafttage pro Woche verteilen – eines kommt etwas öfter dran. Gleichmäßiger geht es nicht.';
   }
+
+  @override
+  String get healthGymBackSwapNoteHome => 'Rücken: Kreuzheben-Varianten, vorgebeugtes Rudern, Drücken im Stehen und Sprünge sind durch Glute Bridges, gestütztes Rudern, Drücken im Sitzen und Kniebeugen ohne Sprung ersetzt – keine schwere axiale Last, neutrale Wirbelsäule.';
+
+  @override
+  String get wGymProgressNoteBw2 => 'Steigerung: Erst mehr Wiederholungen – auch über den Bereich hinaus –, dann eine schwerere Variante (z. B. Füße erhöht, einbeinig oder langsamer absenken).';
+
+  @override
+  String wGymShortNote(int min) {
+    return 'Gekürzt auf die $min min, die für diesen Tag eingeplant sind: Die letzten Ergänzungsübungen entfallen – häng sie an, wenn du mehr Zeit hast.';
+  }
 }

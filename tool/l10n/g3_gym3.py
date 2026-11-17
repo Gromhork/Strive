@@ -1,0 +1,5 @@
+{
+ 'healthGymBackSwapNoteHome': ['Back: deadlift variations, bent-over rows, standing presses and jumps are replaced by glute bridges, chest-supported rows, seated presses and squats without a jump – no heavy axial load, neutral spine.', 'Rücken: Kreuzheben-Varianten, vorgebeugtes Rudern, Drücken im Stehen und Sprünge sind durch Glute Bridges, gestütztes Rudern, Drücken im Sitzen und Kniebeugen ohne Sprung ersetzt – keine schwere axiale Last, neutrale Wirbelsäule.'],
+ 'wGymProgressNoteBw2': ['Progression: first more reps – also beyond the range – then a harder variation (e.g. feet raised, single-leg or a slower lowering).', 'Steigerung: Erst mehr Wiederholungen – auch über den Bereich hinaus –, dann eine schwerere Variante (z. B. Füße erhöht, einbeinig oder langsamer absenken).'],
+ 'wGymShortNote': ['Shortened to the {min} min planned for this day: the last accessory exercises are left out – add them when you have more time.', 'Gekürzt auf die {min} min, die für diesen Tag eingeplant sind: Die letzten Ergänzungsübungen entfallen – häng sie an, wenn du mehr Zeit hast.'],
+}

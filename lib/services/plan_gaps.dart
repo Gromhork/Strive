@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../core/format.dart';
 import '../core/sport.dart';
+import '../data/default_programs.dart';
 import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'plan_generator.dart';
@@ -216,8 +217,10 @@ class PlanGaps {
         final used = hs.where((p) => p.status != 'skipped').fold<int>(0, (x, p) => x + p.durationMin);
         budgets[key] = max(0, planned - used);
         for (final p in picked..sort((x, y) => x.date.compareTo(y.date))) {
+          // (Never a strength refill without a program to show.)
+          if (p.sport == Sport.gym && p.exercises.isEmpty && ![...templates, ..._missing].any((t) => t.id == p.templateId)) continue;
           final why = ext.contains(p.id) ? GapWhy.planEnded : (have.isEmpty ? GapWhy.emptyWeek : GapWhy.missing);
-          out.add(GapFill(PlannedWorkout.fromMap(_newId(), p.toMap()), why, budgetKey: key));
+          out.add(GapFill(PlannedWorkout.fromMap(_newId(), _withProgram(p).toMap()), why, budgetKey: key));
         }
       }
     }
@@ -263,8 +266,42 @@ class PlanGaps {
     return (out, ext);
   }
 
-  List<PlannedWorkout> _gen(UserProfile p, DateTime start, int weeks, {List<(DateTime, String)> gymHistory = const []}) =>
-      PlanGenerator(l, p, templates, () => 'ref${_refSeq++}').generate(start: start, weeks: weeks, gymHistory: gymHistory);
+  List<PlannedWorkout> _gen(UserProfile p, DateTime start, int weeks, {List<(DateTime, String)> gymHistory = const []}) => PlanGenerator(
+    l,
+    p,
+    [...templates, ..._missing],
+    () => 'ref${_refSeq++}',
+  ).generate(start: start, weeks: weeks, gymHistory: gymHistory);
+
+  /// Built-in programs the rebuilt plan uses that the athlete's list lacks (programs added in a later version, e.g.
+  /// the home / bodyweight upper / lower split – review 2026-11 G3V-2: the refill had no program, 0 exercises): the
+  /// plan is rebuilt with them (placeholder ids), and a refill that uses one gets it with a new id ([addedTemplates],
+  /// saved with the refill – Recalibration.newTemplates – as PlanService.replacePlan does).
+  late final List<WorkoutTemplate> _missing =
+      missingBuiltins(
+        templates,
+        () => '',
+        de: l.localeName.startsWith('de'),
+        only: PlanGenerator.gymKeysFor(profile).toSet(),
+      ).map((t) => WorkoutTemplate.fromMap('$_builtinPrefix${t.key}', t.toMap())).toList();
+
+  static const _builtinPrefix = 'builtin:';
+
+  /// Placeholder id → the program with its new id, drawn when a refill first uses it.
+  final _added = <String, WorkoutTemplate>{};
+
+  /// The missing built-in programs the refills of [find] use (with their new ids).
+  List<WorkoutTemplate> get addedTemplates => _added.values.toList();
+
+  /// [p] with its program's new id when it is a missing built-in.
+  PlannedWorkout _withProgram(PlannedWorkout p) {
+    final id = p.templateId;
+    if (id == null || !id.startsWith(_builtinPrefix)) return p;
+    final t = _missing.where((t) => t.id == id).firstOrNull;
+    if (t == null) return p;
+    final added = _added.putIfAbsent(id, () => WorkoutTemplate.fromMap(_newId(), t.toMap()));
+    return PlannedWorkout.fromMap(p.id, {...p.toMap(), 'templateId': added.id});
+  }
 
   /// The plan from its stored start, else from the start that reproduces the phases of the
   /// generated workouts best (≥ 75 % agree).

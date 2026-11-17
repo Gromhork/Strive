@@ -6428,4 +6428,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String gymAssignUneven(int n, int days) {
     return '$n programs cannot be spread evenly over $days strength days a week – one of them comes up a little more often. That is as even as it gets.';
   }
+
+  @override
+  String get healthGymBackSwapNoteHome => 'Back: deadlift variations, bent-over rows, standing presses and jumps are replaced by glute bridges, chest-supported rows, seated presses and squats without a jump – no heavy axial load, neutral spine.';
+
+  @override
+  String get wGymProgressNoteBw2 => 'Progression: first more reps – also beyond the range – then a harder variation (e.g. feet raised, single-leg or a slower lowering).';
+
+  @override
+  String wGymShortNote(int min) {
+    return 'Shortened to the $min min planned for this day: the last accessory exercises are left out – add them when you have more time.';
+  }
 }

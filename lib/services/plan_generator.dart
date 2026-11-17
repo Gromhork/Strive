@@ -1529,7 +1529,9 @@ class PlanGenerator {
       if ((w.sport == Sport.run || w.sport == Sport.ride) && hf.capIntensity && hard) l.healthHeartNote,
       if (w.sport == Sport.swim && hf.avoidOverhead && w.intensity != 'race') l.healthSwimShoulderNote,
       // (A workout whose lifts were swapped already says so – [_gym]; the general note for the others.)
-      if (w.sport == Sport.gym && hf.avoidAxialLoading && !w.gymMods.contains(gymModNoAxial)) l.healthGymBackNote,
+      // (Not for a bodyweight workout without a lift to swap – review G3V-5: "swap squats for leg press" did not fit.)
+      if (w.sport == Sport.gym && hf.avoidAxialLoading && !w.gymMods.contains(gymModNoAxial) && !_bodyweightProgram(_exercisesOfWorkout(w)))
+        l.healthGymBackNote,
       if (w.sport == Sport.gym && hf.avoidOverhead && !w.gymMods.contains(gymModNoOverhead)) l.healthGymShoulderNote,
       if (w.sport == Sport.gym && hf.kneeOrHip) l.healthGymJointNote,
       if (w.sport == Sport.gym && hf.noStraining) l.healthGymHeartNote,
@@ -1707,9 +1709,20 @@ class PlanGenerator {
   static Map<int, List<Sport>> scheduleOf(UserProfile p, {bool afterRunWalk = false}) {
     final a = p.athlete;
     if (a.advanced && a.dayPlan.values.any((v) => v.isNotEmpty)) {
+      // Pure strength: at most [UserProfile.maxPlanDays] gym days in the day plan too (review 2026-11 G3V-3: a
+      // beginner's 7-day plan was PPL Monday to Sunday) – the others are rest days, spread over the week.
+      final gymDays = [
+        for (final e in a.dayPlan.entries)
+          if (e.value.contains(Sport.gym)) e.key,
+      ]..sort();
+      final keep = p.focus == TrainingFocus.gym ? _spreadDays(gymDays, p.maxPlanDays, gymDays.lastOrNull ?? 7).toSet() : gymDays.toSet();
       return {
         for (final e in a.dayPlan.entries)
-          if (e.value.isNotEmpty) e.key: e.value,
+          if (e.value.isNotEmpty)
+            if (keep.contains(e.key) || !e.value.contains(Sport.gym))
+              e.key: e.value
+            else if (e.value.any((s) => s != Sport.gym))
+              e.key: [...e.value.where((s) => s != Sport.gym)],
       };
     }
     return deriveSchedule(p, afterRunWalk: afterRunWalk);
@@ -3643,8 +3656,11 @@ class PlanGenerator {
   /// programs the athlete assigned to gym days ([AthleteData.gymPlanA] / [AthleteData.gymPlanB]).
   static List<String> gymKeysFor(UserProfile p) {
     final a = p.athlete;
+    final rotation = _rotationFor(a, scheduleOf(p));
     return {
-      ..._rotationFor(a, scheduleOf(p)),
+      ...rotation,
+      // (A race window's second consecutive day – [_planGymWeek].)
+      if (a.eventDate != null && a.eventDistance != null) ..._raceAlternates(rotation),
       if (a.gymAssign)
         for (final r in [...a.gymPlanA.values, if (a.gymAB) ...a.gymPlanB.values])
           if (gymRefKey(r) case final k?) k,
@@ -3664,7 +3680,9 @@ class PlanGenerator {
     ];
     // Weeks A and B repeat as a pair: week B's last program must not be week A's first again (review 2026-11
     // UX-10: 5 PPL days – B ended with Push, A starts with Push, and the setup warned about its own suggestion).
-    // The program that takes its place: one neither neighbour has, the least used, no leg day before the long day.
+    // The program that takes its place: one neither neighbour has, no leg day before the long day, then (review
+    // 2026-11 G3V-4: ulppl Mon/Wed/Fri put Lower A right after Legs) no leg day next to a leg day, the fewest muscle
+    // groups shared with a neighbour on the day before / after, the least used, the rotation's order.
     final rotation = _rotationFor(plain.athlete, scheduleOf(plain));
     final long = longDayOf(p);
     final n = picks.length;
@@ -3674,11 +3692,23 @@ class PlanGenerator {
       final at = k == 0 ? i : k; // change week B, not the first day of week A
       final prev = picks[(at - 1 + n) % n].$2, next = picks[(at + 1) % n].$2;
       final day = picks[at].$1;
+      // Days between two picks of the repeating two-week cycle.
+      int gap(DateTime x, DateTime y) => (daysBetween(x, y) % 14 + 14) % 14;
+      final prevInfo = g._gymInfo(prev), nextInfo = g._gymInfo(next);
+      final prevNear = gap(picks[(at - 1 + n) % n].$1, day) == 1, nextNear = gap(day, picks[(at + 1) % n].$1) == 1;
       int used(String r) => picks.where((x) => x.$2 == r).length;
+      int legs(String r) => g._gymInfo(r).legHeavy && (prevInfo.legHeavy || nextInfo.legHeavy) ? 1 : 0;
+      int shared(String r) => (prevNear ? g._gymInfo(r).overlaps(prevInfo) : 0) + (nextNear ? g._gymInfo(r).overlaps(nextInfo) : 0);
+      int rank(String x, String y) => [
+        legs(x).compareTo(legs(y)),
+        shared(x).compareTo(shared(y)),
+        used(x).compareTo(used(y)),
+        rotation.indexOf(x).compareTo(rotation.indexOf(y)),
+      ].firstWhere((c) => c != 0, orElse: () => 0);
       final cands = [
         for (final r in rotation)
           if (r != prev && r != next && !(day.weekday % 7 + 1 == long && g._gymInfo(r).legHeavy)) r,
-      ]..sort((x, y) => used(x).compareTo(used(y)));
+      ]..sort(rank);
       if (cands.isNotEmpty) picks[at] = (day, cands.first);
     }
     final out = (a: <int, String>{}, b: <int, String>{});
@@ -3705,6 +3735,16 @@ class PlanGenerator {
     final rot = splitRotation[split] ?? splitRotation['fullbody']!;
     // Two full-body days a week alternate A/B (C is the optional third day).
     return split == 'fullbody' && gymDays <= 2 ? rot.take(2).toList() : rot;
+  }
+
+  /// The programs a race window's second consecutive gym day takes when [rotation] has a single program
+  /// without heavy leg work (the home / bodyweight upper / lower split): the full-body pair of the same
+  /// equipment, trained without its leg exercises.
+  static List<String> _raceAlternates(List<String> rotation) {
+    for (final key in const ['home', 'bodyweight']) {
+      if (rotation.join(',') == splitRotation['${key}_ul']!.join(',')) return [...splitRotation[key]!];
+    }
+    return const [];
   }
 
   /// Old (pre-key) template names, so existing users keep their programs.
@@ -3781,6 +3821,10 @@ class PlanGenerator {
     return _template(ref);
   }
 
+  /// Exercises of gym workout [w] (its own, else its program's).
+  List<GymExercise> _exercisesOfWorkout(PlannedWorkout w) =>
+      w.exercises.isNotEmpty ? w.exercises : (templates.where((t) => t.id == w.templateId).firstOrNull?.exercises ?? const []);
+
   /// Exercises of [ref]: the athlete's program, else the built-in one.
   List<GymExercise> _exercisesOfRef(String ref) =>
       _templateOfRef(ref)?.exercises ?? _builtins.where((t) => t.key == ref).firstOrNull?.exercises ?? const [];
@@ -3843,7 +3887,24 @@ class PlanGenerator {
     // review 2026-11 GYM-6: a copied race window made a passed-over leg day look blocked after the race too) and
     // its own assignment (week B).
     final next = [for (final (day, role) in days) slot(addDays(day, 7), role, weekNo + 1)];
+    var prev =
+        _gymPicks.isNotEmpty ? _gymPicks.last : (queue._lastDay != null && queue.last != null ? (queue._lastDay!, queue.last!) : null);
     final refs = queue.planWeek(slots, next);
+    // Before a race an upper / lower rotation has one program left (review 2026-11 G3V-1: "Home Upper" on
+    // Thursday and Friday): the second of two consecutive days takes the full-body program of the same
+    // equipment instead – without its leg work ([_gym]: gymModNoLegs), the one used longest ago.
+    final alternates = [
+      for (final r in _raceAlternates(queue.rotation))
+        if (_templateOfRef(r) != null) r,
+    ];
+    for (var i = 0; i < slots.length; i++) {
+      final s = slots[i];
+      if (alternates.isNotEmpty && s.fixed == null && s.race && prev != null && prev.$2 == refs[i] && daysBetween(prev.$1, s.day) == 1) {
+        final before = [for (final (_, r) in _gymPicks) r, ...refs.take(i)];
+        refs[i] = (alternates..sort((x, y) => before.lastIndexOf(x).compareTo(before.lastIndexOf(y)))).first;
+      }
+      prev = (s.day, refs[i]);
+    }
     for (var i = 0; i < slots.length; i++) {
       _gymPicks.add((slots[i].day, refs[i]));
     }
@@ -3910,7 +3971,17 @@ class PlanGenerator {
     final unregressed = applyGymMods(program, mods, gymGoal: a.gymGoal);
     if (beginner && week < _regressionWeeks && gymModApplies(gymModRegress, unregressed)) mods.add(gymModRegress);
     mods.addAll([if (noLegs) gymModRaceWeek, if (legsBeforeKey) gymModLegsEasy]);
-    final exercises = applyGymMods(program, mods, gymGoal: a.gymGoal);
+    var exercises = applyGymMods(program, mods, gymGoal: a.gymGoal);
+    // Longer than the day allows (review 2026-11 G3V-6): the last accessory exercises are left out – compound lifts
+    // and every set of what stays remain the program's ([gymModShortPrefix]).
+    var dropped = 0;
+    if (exercises.isNotEmpty && estimateGymMinutes(exercises) > capMin) {
+      dropped = exercises.length - shortenedGymExercises(exercises, capMin).length;
+      if (dropped > 0) {
+        mods.add(gymModShort(capMin));
+        exercises = applyGymMods(program, mods, gymGoal: a.gymGoal);
+      }
+    }
     final minutes = exercises.isNotEmpty ? estimateGymMinutes(exercises) : (t?.estimatedMinutes ?? 60);
     // The regression note names lat pulldowns, dumbbell RDLs and reverse crunches; other regressions (bodyweight
     // programs, the assisted pull-up of a Pull day that has pulldowns already) get the general note.
@@ -3931,15 +4002,25 @@ class PlanGenerator {
         deloadAhead ? l.wGymLoadDesc(rir) : l.wGymLoadDescNoDeload(rir),
         // How LoadPrescriber progresses (review 2026-11 GYM-14): bodyweight programs by reps and harder
         // variations, beginners linearly on the compound lifts, everyone else by double progression.
-        if (_bodyweightProgram(exercises)) l.wGymProgressNoteBw else if (beginner) l.wGymProgressNoteLinear else l.wGymProgressNote,
+        // (Review G3V-5: bodyweight programs have no pull-ups / dips any more; the linear steps only where a barbell or
+        // machine compound has them – dumbbell steps over 10 % progress by reps first, [smartProgression].)
+        if (_bodyweightProgram(exercises))
+          l.wGymProgressNoteBw2
+        else if (beginner && exercises.any(_fixedStepCompound))
+          l.wGymProgressNoteLinear
+        else
+          l.wGymProgressNote,
       ],
       if (mods.contains(gymModRegress)) namedOnly ? l.wGymRegressionNote : l.wGymRegressionNote2,
-      if (mods.contains(gymModNoAxial)) l.healthGymBackSwapNote,
+      // (Home / bodyweight programs have no leg press – their hinges, rows and jumps are swapped, review G3V-5.)
+      if (mods.contains(gymModNoAxial))
+        program.any((e) => _gymAxialSwapped.contains(e.exId)) ? l.healthGymBackSwapNote : l.healthGymBackSwapNoteHome,
       if (mods.contains(gymModNoOverhead)) l.healthGymShoulderSwapNote,
       if (mods.contains(gymModNoJump)) l.healthGymNoJumpNote,
       if (legsBeforeKey && !info.legHeavy) l.wGymConcurrentNote,
       if (legsBeforeKey) l.wGymLegsEasyNote,
       if (noLegs) l.wGymRaceWeekNote,
+      if (dropped > 0) l.wGymShortNote(capMin),
       if (minutes > capMin) l.wGymOverTimeNote(minutes, capMin),
     ];
     return PlannedWorkout(
@@ -3966,6 +4047,18 @@ class PlanGenerator {
   /// progresses by reps and harder variations.
   static bool _bodyweightProgram(List<GymExercise> exercises) =>
       exercises.isNotEmpty && exercises.every((e) => e.bw ?? classifyLift(e.exId, e.name).bodyweight);
+
+  /// Barbell / machine lifts of [gymNoAxialSwaps] (swapped for leg press, glute bridges, cable rows, seated presses –
+  /// healthGymBackSwapNote); the others are the dumbbell / bodyweight hinges, rows, presses and jumps.
+  static const _gymAxialSwapped = {'0043', '0032', '0085', '0027', '0605'};
+
+  /// A compound lift loaded in fixed steps (barbell, machine, cable): a beginner's weight goes up linearly
+  /// ([smartProgression] – steps ≤ 10 % of the load); dumbbells and body weight progress by reps first.
+  static bool _fixedStepCompound(GymExercise e) {
+    final lift = classifyLift(e.exId, e.name);
+    final n = e.name.toLowerCase();
+    return lift.isCompound && !lift.bodyweight && !(e.bw ?? false) && !n.contains('dumbbell') && !n.contains('kettlebell');
+  }
 
   String _builtinName(String key) => _builtins.where((t) => t.key == key).firstOrNull?.name ?? '';
 
@@ -5361,6 +5454,9 @@ class _GymQueue {
     _wait.addAll(o._wait);
   }
 
+  /// A race window's repeat of the only program without heavy leg work is replaced ([PlanGenerator._raceAlternates]).
+  late final bool _raceAlternates = PlanGenerator._raceAlternates(rotation).isNotEmpty;
+
   /// Sessions since each rotation program was last trained (rotation − 1 = on time).
   final _wait = <String, int>{};
 
@@ -5426,7 +5522,9 @@ class _GymQueue {
       final g = info(ref);
       final wait = _wait[ref] ?? 0;
       var cost = i * 10;
-      if (ref == prev && _due.length > 1) cost += 1000;
+      // (Not in a race window of the home / bodyweight upper / lower split: a repeat there becomes the full-body
+      // alternate – [PlanGenerator._planGymWeek]; the lookahead put Lower twice in a row before it, review G3V-1.)
+      if (ref == prev && _due.length > 1 && !(slot.race && _raceAlternates && !g.legHeavy)) cost += 1000;
       // Again before the others had their turn: weighs more than a muscle-group overlap with yesterday or a
       // leg day on a key session's eve (review r7 S1 / S4: Legs twice a week in a bro split, Upper twice as
       // often as Lower for hybrid athletes) – every program about equally often.

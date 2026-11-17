@@ -1897,5 +1897,8 @@
   "splitHomeNote2": "Bei Training zuhause oder mit Eigengewicht nutzt Strive Ganzkörper-Programme (2 im Wechsel); ab 4 Krafttagen pro Woche wechseln sich Ober- und Unterkörper ab.",
   "equipBodyweightSub2": "Keine Geräte – ein stabiler Tisch, ein Stuhl und eine Tür reichen",
   "splitFullbodyWarning": "Ganzkörper an 4 oder mehr Tagen belastet jeden Muskel an aufeinanderfolgenden Tagen – ab 4 Tagen ist Ober-/Unterkörper die bessere Wahl.",
-  "gymAssignUneven": "{n} Programme lassen sich nicht gleichmäßig auf {days} Krafttage pro Woche verteilen – eines kommt etwas öfter dran. Gleichmäßiger geht es nicht."
+  "gymAssignUneven": "{n} Programme lassen sich nicht gleichmäßig auf {days} Krafttage pro Woche verteilen – eines kommt etwas öfter dran. Gleichmäßiger geht es nicht.",
+  "healthGymBackSwapNoteHome": "Rücken: Kreuzheben-Varianten, vorgebeugtes Rudern, Drücken im Stehen und Sprünge sind durch Glute Bridges, gestütztes Rudern, Drücken im Sitzen und Kniebeugen ohne Sprung ersetzt – keine schwere axiale Last, neutrale Wirbelsäule.",
+  "wGymProgressNoteBw2": "Steigerung: Erst mehr Wiederholungen – auch über den Bereich hinaus –, dann eine schwerere Variante (z. B. Füße erhöht, einbeinig oder langsamer absenken).",
+  "wGymShortNote": "Gekürzt auf die {min} min, die für diesen Tag eingeplant sind: Die letzten Ergänzungsübungen entfallen – häng sie an, wenn du mehr Zeit hast."
 }

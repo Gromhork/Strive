@@ -736,6 +736,7 @@ class Recalibrator {
     return Recalibration(
       reasons: reasons,
       athlete: athlete,
+      newTemplates: gapFinder?.addedTemplates ?? const [],
       stats: RecalStats(
         estimated: estimated,
         oldFtp: a.ftp,
@@ -1665,6 +1666,7 @@ class Recalibration {
     this.raceTimes,
     this.athlete = const {},
     this.feasibility,
+    this.newTemplates = const [],
   });
   final List<RecalReason> reasons;
   final RecalStats stats;
@@ -1680,6 +1682,15 @@ class Recalibration {
   /// The race goal's feasibility re-checked on the actual training ([RecalReason.goalAtRisk]): later
   /// date / shorter distance options for the sheet. Null when nothing new.
   final PlanFeasibility? feasibility;
+
+  /// Built-in programs the athlete's list lacks that refills were planned with ([PlanGaps.addedTemplates]).
+  final List<WorkoutTemplate> newTemplates;
+
+  /// The programs of [newTemplates] the [additions] use – saved with them (else a refill had no program).
+  List<WorkoutTemplate> get templatesToSave => [
+    for (final t in newTemplates)
+      if (additions.any((p) => p.templateId == t.id)) t,
+  ];
 
   bool get isEmpty => changes.isEmpty && raceTimes == null && athlete.isEmpty;
 
@@ -1703,5 +1714,6 @@ class Recalibration {
     raceTimes: raceTimes,
     athlete: athlete,
     feasibility: feasibility,
+    newTemplates: newTemplates,
   );
 }
