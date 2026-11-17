@@ -6819,4 +6819,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get summarySportDataChanged => 'Sport data (level, best times, bike, swim, gym or health): updated';
+
+  @override
+  String startedOnDayNotCounted(String day) {
+    return 'started on $day – not counted';
+  }
 }

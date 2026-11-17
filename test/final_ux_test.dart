@@ -10,6 +10,7 @@ import 'package:strive/core/sport.dart';
 import 'package:strive/core/theme.dart';
 import 'package:strive/data/exercise_db.dart';
 import 'package:strive/data/models.dart';
+import 'package:strive/features/calendar/calendar_page.dart';
 import 'package:strive/features/calendar/planned_workout_page.dart';
 import 'package:strive/features/onboarding/onboarding_page.dart';
 import 'package:strive/features/profile/profile_page.dart';
@@ -122,5 +123,26 @@ void main() {
     final gym = before.copyWith(athlete: before.athlete.merge({'gymAB': true}));
     expect(planSettingChanges(l, 'en', before, gym), [l.summarySportDataChanged]);
     expect(planSettingChanges(l, 'en', before, before), isEmpty);
+  });
+
+  testWidgets('calendar: a too-short start on another day is not shown as "done"', (tester) async {
+    final day = DateTime(2026, 11, 18);
+    final plan = PlannedWorkout(id: 'p', date: day, sport: Sport.run, title: 'Easy run', durationMin: 50, status: 'done');
+    Session run(int sec) =>
+        Session(id: 's', sport: Sport.run, title: 'Easy run', start: DateTime(2026, 11, 17, 18), durationSec: sec, planId: 'p');
+    for (final (sec, text, icon) in [
+      (60, l.startedOnDayNotCounted('Tue'), Icons.close_rounded),
+      (3000, l.doneOnDay('Tue'), Icons.check_rounded),
+    ]) {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [profileProvider.overrideWith((ref) => Stream.value(const UserProfile()))],
+          child: _app(Scaffold(body: DoneElsewhereLine(key: ValueKey(sec), plan: plan, session: run(sec)))),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Easy run · $text'), findsOneWidget);
+      expect(find.byIcon(icon), findsOneWidget);
+    }
   });
 }

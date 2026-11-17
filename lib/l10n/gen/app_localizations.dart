@@ -11968,6 +11968,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sport data (level, best times, bike, swim, gym or health): updated'**
   String get summarySportDataChanged;
+
+  /// No description provided for @startedOnDayNotCounted.
+  ///
+  /// In en, this message translates to:
+  /// **'started on {day} – not counted'**
+  String startedOnDayNotCounted(String day);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

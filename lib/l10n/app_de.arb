@@ -1978,5 +1978,6 @@
   "stepRaceFinishNote": "Ankommenstempo – locker starten, gleichmäßig einteilen",
   "planCreating": "Dein Plan wird erstellt …",
   "summaryRunFitness": "Laufform (VDOT)",
-  "summarySportDataChanged": "Sportdaten (Level, Bestzeiten, Rad, Schwimmen, Kraft oder Gesundheit): angepasst"
+  "summarySportDataChanged": "Sportdaten (Level, Bestzeiten, Rad, Schwimmen, Kraft oder Gesundheit): angepasst",
+  "startedOnDayNotCounted": "am {day} begonnen – nicht gewertet"
 }

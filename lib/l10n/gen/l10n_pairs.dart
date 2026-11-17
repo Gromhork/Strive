@@ -1908,4 +1908,5 @@ const l10nPairs = <(String, String)>[
   ('Creating your plan …', 'Dein Plan wird erstellt …'),
   ('Running form (VDOT)', 'Laufform (VDOT)'),
   ('Sport data (level, best times, bike, swim, gym or health): updated', 'Sportdaten (Level, Bestzeiten, Rad, Schwimmen, Kraft oder Gesundheit): angepasst'),
+  ('started on {day} – not counted', 'am {day} begonnen – nicht gewertet'),
 ];
