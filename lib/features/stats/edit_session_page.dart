@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../data/models.dart';
+import '../../data/plan_log.dart';
 import '../../data/exercise_names_de.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
@@ -18,6 +19,7 @@ import '../../widgets/common.dart';
 import '../../widgets/discard_guard.dart';
 import '../../widgets/duration_picker.dart';
 import '../../services/insights.dart' show xpForSession;
+import '../../services/plan_match.dart';
 import '../../services/session_checks.dart';
 import 'session_check_hint.dart';
 import '../../widgets/rpe_picker.dart';
@@ -151,7 +153,18 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
       // Corrected performance data are the athlete's own numbers – no longer "from the plan".
       update['fromPlan'] = false;
     }
-    ref.read(repoProvider)?.updateMany(sessions: {s.id: update});
+    // A corrected date moves the session's plan link along (the old day's workout open again, the new day's ticked).
+    final relink = sameDay(_start, s.start) ? null : relinkOnRedate(s, _start, ref.read(planListProvider));
+    if (relink != null && relink.relink) update['planId'] = relink.planId;
+    final repo = ref.read(repoProvider);
+    repo?.updateMany(
+      sessions: {s.id: update},
+      plans: {
+        for (final (_, a) in relink?.changes ?? const <(PlannedWorkout, PlannedWorkout)>[])
+          a.id: {'status': a.status, 'sessionId': a.sessionId},
+      },
+    );
+    if (relink != null && relink.changes.isNotEmpty) repo?.logPlanChange(PlanLogEntry.of('redate', relink.changes));
     toast(context, l.sessionCorrected);
     Navigator.pop(context);
   }

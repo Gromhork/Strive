@@ -1887,5 +1887,7 @@
   "programDuplicated": "„{name}“ erstellt.",
   "programDuplicatedTo": "„{name}“ in {folder} erstellt.",
   "folderDuplicated": "{n, plural, =0{Leeren Ordner dupliziert.} =1{Ordner dupliziert (1 Programm).} other{Ordner dupliziert ({n} Programme).}}",
-  "folderDuplicatedHidden": "{n} davon blendet der Sportfilter aus."
+  "folderDuplicatedHidden": "{n} davon blendet der Sportfilter aus.",
+  "planLogRedate": "Datum der Einheit korrigiert",
+  "planLogRedateReason": "Eine Einheit wurde auf einen anderen Tag verschoben: Die Einheit des alten Tages ist wieder offen, die des neuen Tages abgehakt."
 }

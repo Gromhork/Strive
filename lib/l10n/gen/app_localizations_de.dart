@@ -6396,4 +6396,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String folderDuplicatedHidden(int n) {
     return '$n davon blendet der Sportfilter aus.';
   }
+
+  @override
+  String get planLogRedate => 'Datum der Einheit korrigiert';
+
+  @override
+  String get planLogRedateReason => 'Eine Einheit wurde auf einen anderen Tag verschoben: Die Einheit des alten Tages ist wieder offen, die des neuen Tages abgehakt.';
 }

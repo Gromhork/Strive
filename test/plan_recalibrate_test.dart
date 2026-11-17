@@ -118,7 +118,21 @@ void main() {
       }
       final shortBefore = c.before.steps.where((s) => s.isWork && (s.durationSec ?? 0) > 0 && s.durationSec! < 600).length;
       final shortAfter = c.after.steps.where((s) => s.isWork && (s.durationSec ?? 0) > 0 && s.durationSec! < 600).length;
-      if (c.kind == RecalKind.easier || c.kind == RecalKind.harder) expect(shortAfter, shortBefore, reason: c.before.title);
+      // (Quality kept at ~75 % after fatigue drops whole repeats – their length stays, review 2026-11 adapt-4.)
+      final q = c.before.intensity == 'tempo' || c.before.intensity == 'intervals';
+      if ((c.kind == RecalKind.easier || c.kind == RecalKind.harder) && !q) expect(shortAfter, shortBefore, reason: c.before.title);
+      if (c.kind == RecalKind.easier && q) {
+        expect(shortAfter, lessThanOrEqualTo(shortBefore), reason: c.before.title);
+        final zones = {
+          for (final s in [...c.before.steps, ...c.after.steps])
+            if (s.isWork) s.zone,
+        };
+        for (final z in zones) {
+          final b = c.before.steps.where((s) => s.isWork && s.zone == z).map((s) => '${s.durationSec}/${s.distanceM}').toSet();
+          final a = c.after.steps.where((s) => s.isWork && s.zone == z).map((s) => '${s.durationSec}/${s.distanceM}').toSet();
+          if (shortAfter < shortBefore) expect(b.containsAll(a), isTrue, reason: '${c.before.title}: repeats keep their length');
+        }
+      }
     }
     final ids = {for (final p in plans.where((p) => p.isDone)) p.id};
     expect(r.updates.keys.toSet().intersection(ids), isEmpty);

@@ -6396,4 +6396,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String folderDuplicatedHidden(int n) {
     return '$n hidden by the sport filter.';
   }
+
+  @override
+  String get planLogRedate => 'Session date corrected';
+
+  @override
+  String get planLogRedateReason => 'A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off.';
 }

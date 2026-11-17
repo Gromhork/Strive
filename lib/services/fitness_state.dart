@@ -173,6 +173,14 @@ class FitnessState {
     return Vdot.ofRaces(a) ?? Vdot.defaultFor(p.level);
   }
 
+  /// First day of the training block of a re-created plan ([PlanCarry.fitnessStart]) – only while the carry
+  /// belongs to the current plan ([AthleteData.planStart]).
+  static DateTime? _blockStart(AthleteData a) {
+    final c = a.planCarry;
+    if (c?.fitnessStart == null || a.planStart == null || !sameDay(c!.start, a.planStart!)) return null;
+    return dayOnly(c.fitnessStart!);
+  }
+
   /// The model from the profile alone (no plans / sessions): the plan stored on the profile
   /// ([AthleteData.planStart] / [AthleteData.planLength]) is assumed trained as planned; a
   /// recalibrated VDOT set after its start is the evidence. Without a running plan: today's VDOT.
@@ -181,6 +189,8 @@ class FitnessState {
     final today = dayOnly(now);
     var ps = a.planStart == null ? null : dayOnly(a.planStart!);
     if (ps != null && (ps.isAfter(today) || ((a.planLength ?? 0) > 0 && daysBetween(ps, today) > 7 * a.planLength!))) ps = null;
+    // A plan re-created mid-plan: the training block began with the plan it replaced ([PlanCarry.fitnessStart]).
+    if (ps != null) ps = _blockStart(a) ?? ps;
     final baseline = ps == null ? (Vdot.of(a) ?? Vdot.defaultFor(p.level)) : vdotAt(p, ps);
     final elapsed = ps == null ? 0.0 : daysBetween(ps, today) / 7;
     var current = baseline + GoalModel.gain(p, elapsed);
@@ -210,9 +220,12 @@ class FitnessState {
   /// plan kept in the history made the weeks since *its* start count as trained: the race-day gain shrank to
   /// ~0 and a target time the wizard had just suggested was flagged "very ambitious" (QA 2026-11: HM
   /// suggestion 1:39:00, check "realistic 1:41:59"). Null without generated workouts.
+  ///
+  /// A plan re-created mid-plan continues the training block of the plan it replaced ([PlanCarry.fitnessStart],
+  /// review 2026-11 adapt-6): the same morning's forecast and the weeks trained don't restart with it.
   static DateTime? currentPlanStart(UserProfile p, List<PlannedWorkout> phased) {
     if (phased.isEmpty) return null;
-    final stored = p.athlete.planStart == null ? null : dayOnly(p.athlete.planStart!);
+    final stored = _blockStart(p.athlete) ?? (p.athlete.planStart == null ? null : dayOnly(p.athlete.planStart!));
     if (stored != null) {
       final from = phased.where((x) => !dayOnly(x.date).isBefore(stored)).firstOrNull;
       if (from != null) return dayOnly(from.date);

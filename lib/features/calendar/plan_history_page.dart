@@ -116,6 +116,7 @@ class PlanLogCard extends ConsumerWidget {
     'readiness' => (Icons.healing_rounded, AppColors.danger, l.planLogReadiness(readinessLabel(l, entry.reason))),
     'replace' => (Icons.swap_horiz_rounded, AppColors.success, l.planLogReplace),
     'unlink' => (Icons.link_off_rounded, AppColors.warning, l.planLogUnlink),
+    'redate' => (Icons.event_available_rounded, AppColors.brand, l.planLogRedate),
     _ => (Icons.edit_calendar_outlined, AppColors.brand, entry.source),
   };
 
@@ -124,6 +125,7 @@ class PlanLogCard extends ConsumerWidget {
     'week' => l.planLogWeekReason,
     'replace' => l.planLogReplaceReason,
     'unlink' => l.planLogUnlinkReason,
+    'redate' => l.planLogRedateReason,
     _ => entry.note,
   };
 

@@ -11422,6 +11422,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} hidden by the sport filter.'**
   String folderDuplicatedHidden(int n);
+
+  /// No description provided for @planLogRedate.
+  ///
+  /// In en, this message translates to:
+  /// **'Session date corrected'**
+  String get planLogRedate;
+
+  /// No description provided for @planLogRedateReason.
+  ///
+  /// In en, this message translates to:
+  /// **'A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off.'**
+  String get planLogRedateReason;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
