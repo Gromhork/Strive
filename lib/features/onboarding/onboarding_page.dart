@@ -71,7 +71,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   int _page = 0;
 
   /// Race goal (true) or just a plan length in weeks (false).
-  late bool _withEvent = a.eventDate != null || a.eventDistance != null;
+  /// (A pure gym plan has no race – [eventFitsFocus].)
+  late bool _withEvent = p.focus != TrainingFocus.gym && (a.eventDate != null || a.eventDistance != null);
 
   /// Race goal without a date: the race is on the long-session day of the last of
   /// [AthleteData.planWeeks] weeks ([PlanGenerator.raceDayForWeeks]), kept in [AthleteData.eventDate]
@@ -88,7 +89,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   // Event
   final _eventName = TextEditingController();
   bool _generatePlan = true;
-  final _feasibility = FeasibilityCache();
+
+  /// (Checked in the background – the page rebuilds when a check is done.)
+  late final _feasibility = FeasibilityCache(
+    onUpdate: () {
+      if (mounted) setState(() {});
+    },
+  );
 
   @override
   void initState() {
@@ -162,7 +169,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         'eventName': goal.title,
       });
       if (key != null && !eventFitsFocus(key, p.focus)) {
-        p = p.copyWith(focus: eventDistanceOf(key)!.sport.focus);
+        p = p.copyWith(focus: focusForRace(key, p.focus));
         // The week of the old focus has no cycling for the new triathlon focus: derive it anew.
         final week = [for (final v in a.dayPlan.values) ...v];
         if (_advanced && p.focus.sports.any((s) => !week.contains(s))) a = a.merge({'dayPlan': PlanGenerator.deriveSchedule(_profile)});
@@ -248,6 +255,27 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final sports = _sports;
     final plan = [for (final v in a.dayPlan.values) ...v.where(sports.contains)];
     if (p.focus.sports.any((s) => !plan.contains(s))) _setA({'dayPlan': PlanGenerator.deriveSchedule(_profile)});
+  }
+
+  /// Applies a tapped option of the feasibility card (audit UX-9) – right here in the setup.
+  void _applyFeasibility(FeasibilityAction x) {
+    switch (x) {
+      case FeasLaterDate(:final date):
+        setState(() => _raceByWeeks = false);
+        _setA({'eventDate': date});
+      case FeasShorter(:final distance):
+        _setA({'eventDistance': distance, 'targetTimeSec': null});
+      case FeasDayMinutes(:final minutes):
+        _setA({
+          'dayMinutes': {...a.dayMinutes, ...minutes},
+        });
+      case FeasLongDay(:final weekday):
+        _setLongDay(weekday);
+      case FeasAddDay():
+        // The week: the quick setup's days, or the detailed day plan.
+        final i = _steps.indexWhere((s) => s.$1 == 'week' || s.$1 == 'schedule');
+        if (i >= 0) _pager.animateToPage(i, duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
+    }
   }
 
   /// Sets the long-session day ([d] null = automatic).
@@ -336,6 +364,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       // Never plan for a race of another sport than the focus.
       if (!eventFitsFocus(a.eventDistance, p.focus)) 'eventDistance': null,
       if (!eventFitsFocus(a.eventDistance, p.focus)) 'targetTimeSec': null,
+      // … and a pure gym plan for no race at all (audit UX-1): it runs for its plan length.
+      if (p.focus == TrainingFocus.gym) 'eventDate': null,
     });
     var days = [...(p.trainingDays.isEmpty ? defaultTrainingDays : p.trainingDays)]..sort();
     var longDays = days; // days that can hold the long endurance session
@@ -647,6 +677,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final (lo, hi) = swimTestBounds(meters);
     final css = SwimZones.fromTests(a.swim400Sec, a.swim200Sec) ?? SwimZones.defaultFor(p.level);
     final field = meters == 400 ? 'swim400Sec' : 'swim200Sec';
+    // With the other distance entered: the time that fits it (the 400 m take about 2.1 × the 200 m) – the
+    // CSS's guess made 4:00 for the 200 m next to a 7:35 400 m, a pair the hint then rejected (audit UX-15).
+    final other = meters == 400 ? a.swim200Sec : a.swim400Sec;
+    final fromOther = other == null || other <= 0 ? null : (meters == 400 ? other * 2.1 : other / 2.1);
     return DurationField(
       key: ValueKey('swimTest$meters'),
       value: meters == 400 ? a.swim400Sec : a.swim200Sec,
@@ -655,7 +689,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       title: l.swimTestFor('$meters m'),
       min: lo,
       max: hi,
-      initial: ((css * meters / 100 + (meters == 400 ? 15 : 0)) / 5).round() * 5,
+      initial: (((fromOther ?? css * meters / 100 + (meters == 400 ? 15 : 0)) / 5).round() * 5).clamp(lo, hi),
     );
   }
 
@@ -870,6 +904,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   setState(() => p = p.copyWith(focus: f));
                   // A race of another sport doesn't fit the new focus.
                   if (!eventFitsFocus(a.eventDistance, f)) _setA({'eventDistance': null, 'targetTimeSec': null});
+                  // A pure gym plan trains for no race (audit UX-1): a plan length instead.
+                  if (f == TrainingFocus.gym && _withEvent) {
+                    setState(() {
+                      _withEvent = false;
+                      _raceByWeeks = false;
+                    });
+                    _eventName.clear();
+                    _setA({'eventDate': null, 'eventDistance': null, 'targetTimeSec': null});
+                  }
                   _syncDayPlan();
                 },
                 child: AnimatedContainer(
@@ -1068,7 +1111,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     // Shown where it does something: the plan with the extension really has runs beyond the cap
     // ([LongRunCapNote.gains] – not when the week's volume or the weeks left keep the long run at or below the
     // cap anyway, review 2026-11) – or it is on and can be taken back.
-    final gains = ext != null && a.eventDate != null && (_feasibility.of(profile, DateTime.now(), l).capNote?.gains ?? false);
+    final gains = ext != null && a.eventDate != null && (_feasibility.capNote(profile, DateTime.now(), l)?.gains ?? false);
     final extShown = gains || (a.longRunExtend && (extSpec?.longRunExtraMin ?? 0) > 0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1189,6 +1232,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             return _RecommendationCard(
               freq: freq,
               current: perSport,
+              // The race's minimum sessions do not fit in one session a day on the days a week leaves (audit UX-4).
+              note: a.sessionsPerDay == 1 && adv.raceMinSessions > adv.maxDays ? l.recMinNoFit(adv.raceMinSessions, adv.maxDays) : null,
               title: l.recTitle,
               action: l.recAuto,
               applied: freq.entries.every((e) => perSport[e.key] == e.value),
@@ -1433,13 +1478,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           title: Text(l.canSwim400),
           subtitle: Text(l.canSwim400Sub),
           value: a.canSwim400,
-          onChanged: (v) => _setA({'canSwim400': v}),
+          // No 400 m in one go: no 400 m test either (audit UX-15) – its times go with the switch.
+          onChanged: (v) => _setA({'canSwim400': v, if (!v) 'swim400Sec': null, if (!v) 'swim200Sec': null}),
         ),
-        _label(l.cssTitle, hint: l.cssHint, term: Term.css),
-        Row(children: [Expanded(child: _swimTestField(l, 400)), const SizedBox(width: 12), Expanded(child: _swimTestField(l, 200))]),
+        if (a.canSwim400) ...[
+          _label(l.cssTitle, hint: l.cssHint, term: Term.css),
+          Row(children: [Expanded(child: _swimTestField(l, 400)), const SizedBox(width: 12), Expanded(child: _swimTestField(l, 200))]),
+        ],
         // Feedback like the run step's pace zones: the CSS and the swim zones it gives, and why
         // an entry is not used as entered.
-        if (test.kind == SwimTestKind.implausible || test.kind == SwimTestKind.only200)
+        if (a.canSwim400 && (test.kind == SwimTestKind.implausible || test.kind == SwimTestKind.only200))
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Row(
@@ -1641,6 +1689,19 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Widget _event(AppLocalizations l) {
     final df = DateFormat.yMMMd(context.localeName);
     final sport = EventSportX.fromFocus(p.focus);
+    // A pure gym plan trains for no race (audit UX-1: a 10 km after 17 weeks without a run): only a
+    // plan length, and where a race goes instead.
+    if (p.focus == TrainingFocus.gym) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _h(l.planLength, l.eventGymNoRace, icon: Icons.date_range_rounded, color: AppColors.warning),
+          Text(l.goalKindWeeksHint, style: Theme.of(context).textTheme.bodySmall),
+          _label(l.planLength),
+          _weekChips(l),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1973,7 +2034,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   Widget _plan(AppLocalizations l) {
     final weeksToEvent = a.eventDate == null ? null : PlanGenerator.planWeeksUntil(_planProfile, a.eventDate!, DateTime.now());
-    final pre = weeksToEvent == null ? 0 : weeksToEvent - GoalModel.specificWeeks;
+    // The generator's own race-specific block (Ironman 30, ultra 24, else 20 weeks) – audit T5.
+    final specific = PlanGenerator.specificWeeksFor(_planProfile);
+    final pre = weeksToEvent == null ? 0 : weeksToEvent - specific;
     final rec = _recommendedRange;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2017,7 +2080,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   child: Text(
                     [
                       pre > 0
-                          ? l.planToEventPre(weeksToEvent, pre, GoalModel.specificWeeks)
+                          ? l.planToEventPre(weeksToEvent, pre, specific)
                           : (weeksToEvent < rec.$1 ? l.planToEventShort(weeksToEvent, rec.$1) : l.planToEvent(weeksToEvent)),
                       if (widget.edit) l.planKeepsDone,
                     ].join('\n'),
@@ -2044,6 +2107,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             showTargetOk: true,
             onAdjustTarget: (sec) => _setA({'targetTimeSec': sec}),
             onExtendLongRun: (v) => _setA({'longRunExtend': v}),
+            onAction: _applyFeasibility,
           ),
         ],
         const Divider(height: 32),
@@ -2268,9 +2332,13 @@ class _RecommendationCard extends StatelessWidget {
     required this.onApply,
     this.current,
     this.applied = false,
+    this.note,
   });
   final Map<Sport, int> freq;
   final Map<Sport, int>? current;
+
+  /// A warning below the sessions (the race needs more than the week can hold).
+  final String? note;
   final String title;
   final String action;
   final VoidCallback onApply;
@@ -2328,6 +2396,18 @@ class _RecommendationCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (note != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              key: const ValueKey('recMinNoFit'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.warning),
+                const SizedBox(width: 6),
+                Expanded(child: Text(note!, style: Theme.of(context).textTheme.bodySmall)),
+              ],
+            ),
+          ],
           const SizedBox(height: 6),
           Text(l.recSub, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 4),

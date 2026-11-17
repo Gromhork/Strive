@@ -226,7 +226,13 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   late final bool _planAligned = _isPlanAligned();
   late bool _align = widget.existing == null || _planAligned;
   late int? _targetSec = _initialTarget();
-  final _feasibility = FeasibilityCache();
+
+  /// (Checked in the background – the page rebuilds when a check is done.)
+  late final _feasibility = FeasibilityCache(
+    onUpdate: () {
+      if (mounted) setState(() {});
+    },
+  );
 
   /// The plan settings point at this (existing) race: same day and distance.
   bool _isPlanAligned() {
@@ -348,8 +354,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   }
 
   /// The training focus a race needs (the current one when it fits).
-  static TrainingFocus _focusFor(String key, TrainingFocus current) =>
-      eventFitsFocus(key, current) ? current : (eventDistanceOf(key)?.sport.focus ?? current);
+  static TrainingFocus _focusFor(String key, TrainingFocus current) => focusForRace(key, current);
 
   /// Rebuilds the plan up to race day: completed workouts stay, upcoming planned ones are replaced.
   void _alignPlan(UserProfile profile, DateTime start) {
@@ -679,6 +684,17 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                         planAnyway: true,
                         showTargetOk: true,
                         onAdjustTarget: (sec) => setState(() => _targetSec = sec),
+                        // The race's own settings (date, distance) right here; the week in the plan settings.
+                        onAction: (x) {
+                          switch (x) {
+                            case FeasLaterDate(:final date):
+                              setState(() => _deadline = date);
+                            case FeasShorter(:final distance):
+                              _pickDistance(distance);
+                            default:
+                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+                          }
+                        },
                       ),
                     ],
                   ],

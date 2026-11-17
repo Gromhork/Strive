@@ -16,10 +16,12 @@ import '../../data/plan_log.dart';
 import '../../providers.dart';
 import '../../services/compliance.dart';
 import '../../services/plan_generator.dart';
+import '../../services/plan_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/plan_amount.dart';
 import '../stats/session_detail_page.dart';
 import '../../services/fitness_state.dart';
+import '../onboarding/onboarding_page.dart';
 import 'feasibility_card.dart';
 import 'plan_editor.dart';
 import 'plan_history_page.dart';
@@ -38,7 +40,13 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   bool _month = false;
   DateTime _focused = dayOnly(DateTime.now());
   DateTime _selected = dayOnly(DateTime.now());
-  final _feasibility = FeasibilityCache();
+
+  /// (Checked in the background – the page rebuilds when a check is done.)
+  late final _feasibility = FeasibilityCache(
+    onUpdate: () {
+      if (mounted) setState(() {});
+    },
+  );
   bool _hideFeasibility = false;
 
   /// Scroll controller of the week list and the month view: the tab's primary one (tapping the
@@ -58,7 +66,26 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   final _todayCellKey = GlobalKey();
 
   @override
+  void initState() {
+    super.initState();
+    PlanService.replaced.addListener(_onPlanReplaced);
+  }
+
+  /// A new plan (audit UX-16): back to the current week – the old scroll position pointed into the old plan.
+  void _onPlanReplaced() {
+    if (!mounted) return;
+    final today = dayOnly(DateTime.now());
+    setState(() {
+      _selected = today;
+      _focused = today;
+    });
+    final c = _scroll;
+    if (c.hasClients && c.positions.length == 1) c.jumpTo(0);
+  }
+
+  @override
   void dispose() {
+    PlanService.replaced.removeListener(_onPlanReplaced);
     _ownScroll.dispose();
     _jumpDir.dispose();
     super.dispose();
@@ -116,6 +143,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     label: FittedBox(fit: BoxFit.scaleDown, child: Text(l.recalButton, maxLines: 1)),
                   ),
                 ),
+                // Race day ahead: one tap there (audit UX-16: 17 weeks of scrolling by hand).
+                if (_raceDay() case final race?)
+                  IconButton(
+                    key: const ValueKey('jumpToRace'),
+                    tooltip: l.calJumpRace,
+                    icon: const Icon(Icons.flag_rounded),
+                    onPressed: () => _showDay(race),
+                  ),
                 // Secondary: a whole new plan, calendar export.
                 PopupMenuButton<String>(
                   key: const ValueKey('calendarMore'),
@@ -148,7 +183,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   dense: true,
                   segments: [Seg(false, icon: Icons.view_agenda_outlined), Seg(true, icon: Icons.calendar_view_month)],
                   value: _month,
-                  onChanged: (v) => setState(() => _month = v),
+                  onChanged: (v) {
+                    setState(() => _month = v);
+                    // The list opens at the day picked in the month (audit UX-16: it jumped back to this week).
+                    if (!v) WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToWeek(_selected));
+                  },
                 ),
               ],
             ),
@@ -156,7 +195,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           if (!goal.ok)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: FeasibilityCard(goal, onClose: () => setState(() => _hideFeasibility = true)),
+              // Compact (audit UX-9: the full card took half the calendar); details and options in a sheet.
+              child: FeasibilityCard(
+                goal,
+                compact: true,
+                onClose: () => setState(() => _hideFeasibility = true),
+                onOpenSettings:
+                    () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
+              ),
             ),
           Expanded(
             child: Stack(
@@ -197,6 +243,59 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         ],
       ),
     );
+  }
+
+  // ── Jumps to a day: the race, the day picked in the month.
+
+  /// The next race day: the plan's race workout, else the race date of the plan settings (not past).
+  DateTime? _raceDay() {
+    final today = ref.watch(todayProvider);
+    final races = ref.watch(planListProvider).where((p) => p.intensity == 'race' && !p.date.isBefore(today)).map((p) => dayOnly(p.date));
+    final race = races.isEmpty ? null : races.reduce((a, b) => a.isBefore(b) ? a : b);
+    final ev = ref.watch(profileOrDefaultProvider).athlete.eventDate;
+    return race ?? (ev != null && !dayOnly(ev).isBefore(today) ? dayOnly(ev) : null);
+  }
+
+  /// Shows [day]: the month view selects it, the list scrolls to its week.
+  void _showDay(DateTime day) {
+    setState(() {
+      _selected = day;
+      _focused = day;
+    });
+    if (!_month) WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToWeek(day));
+  }
+
+  /// Week (from this week) the list builds with [_targetWeekKey] – the one [_scrollToWeek] is heading for.
+  int? _targetWeek;
+  final _targetWeekKey = GlobalKey();
+
+  /// Scrolls the week list to the week of [day]: the weeks are built lazily, so first close to it (by the
+  /// current week's height), then exactly onto its card.
+  Future<void> _scrollToWeek(DateTime day) async {
+    if (!mounted || _month) return;
+    final w = (daysBetween(startOfWeek(dayOnly(DateTime.now())), startOfWeek(day)) / 7).round();
+    final c = _scroll;
+    if (!c.hasClients || c.positions.length != 1) return;
+    if (w == 0) {
+      await c.position.animateTo(0, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
+      return;
+    }
+    setState(() => _targetWeek = w);
+    await WidgetsBinding.instance.endOfFrame;
+    final est = _currentWeekKey.currentContext?.size?.height ?? 400;
+    for (var i = 0; i < 8 && mounted && c.hasClients; i++) {
+      final ctx = (w == -1 ? _lastWeekKey : _targetWeekKey).currentContext;
+      if (ctx != null) {
+        if (!ctx.mounted) return;
+        await Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
+        return;
+      }
+      // Not built yet: an estimate, then a week further on either side.
+      final p = c.position;
+      final off = (i.isEven ? 1 : -1) * ((i + 1) ~/ 2) * est;
+      p.jumpTo((w * est + off).clamp(p.minScrollExtent, p.maxScrollExtent));
+      await WidgetsBinding.instance.endOfFrame;
+    }
   }
 
   // ── "Today" button: shown while the current week is scrolled out of view.
@@ -348,7 +447,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverList(
-            delegate: SliverChildBuilderDelegate((_, i) => _weekCard(-(i + 1), idx, key: i == 0 ? _lastWeekKey : null), childCount: back),
+            delegate: SliverChildBuilderDelegate(
+              (_, i) => _weekCard(-(i + 1), idx, key: i == 0 ? _lastWeekKey : (-(i + 1) == _targetWeek ? _targetWeekKey : null)),
+              childCount: back,
+            ),
           ),
         ),
         SliverPadding(
@@ -370,7 +472,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   ),
                 );
               }
-              return _weekCard(i - 1, idx, key: i == 1 ? _currentWeekKey : null);
+              return _weekCard(i - 1, idx, key: i == 1 ? _currentWeekKey : (i - 1 == _targetWeek ? _targetWeekKey : null));
             }, childCount: ahead + 1), // hint + current week … last plan week
           ),
         ),

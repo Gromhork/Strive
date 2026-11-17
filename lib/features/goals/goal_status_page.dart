@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/event_distances.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
@@ -104,6 +105,13 @@ class GoalStatusView extends StatelessWidget {
     final currentWeek = elapsed ~/ 7;
     final small = theme.textTheme.bodySmall;
     final adherence = completion ?? f.adherence;
+    // VDOT is running fitness: a cycling or open-water goal never shows it – the old 10 km time meant nothing
+    // for an open-water swimmer, whose trend never appeared (audit UX-7). (Triathlon / duathlon keep it: the
+    // run leg and its interval runs.)
+    final running = switch (eventDistanceOf(f.event)?.sport) {
+      EventSport.ride || EventSport.swim => false,
+      _ => true,
+    };
     final conf = switch (f.confidence) {
       ForecastConfidence.high => l.fcConfHigh,
       ForecastConfidence.medium => l.fcConfMedium,
@@ -224,7 +232,8 @@ class GoalStatusView extends StatelessWidget {
               children: [
                 PhaseTimeline(segments: segments, position: position, height: 12),
                 const SizedBox(height: 12),
-                for (final o in outlook) _PhaseRow(o: o, current: currentWeek >= o.firstWeek && currentWeek < o.firstWeek + o.weeks),
+                for (final o in outlook)
+                  _PhaseRow(o: o, current: currentWeek >= o.firstWeek && currentWeek < o.firstWeek + o.weeks, vdot: running),
               ],
             ),
           ),
@@ -257,9 +266,11 @@ class GoalStatusView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        // ── Trend
-        SectionCard(title: l.goalFitnessTrend, trailing: const TermInfoButton(Term.vdot), child: _TrendChart(f: f, now: now)),
-        const SizedBox(height: 12),
+        // ── Trend (running fitness)
+        if (running) ...[
+          SectionCard(title: l.goalFitnessTrend, trailing: const TermInfoButton(Term.vdot), child: _TrendChart(f: f, now: now)),
+          const SizedBox(height: 12),
+        ],
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -280,14 +291,18 @@ class GoalStatusView extends StatelessWidget {
 }
 
 class _PhaseRow extends StatelessWidget {
-  const _PhaseRow({required this.o, required this.current});
+  const _PhaseRow({required this.o, required this.current, this.vdot = true});
   final PhaseOutlook o;
   final bool current;
+
+  /// Show the expected VDOT (running goals only).
+  final bool vdot;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final theme = Theme.of(context);
+    final values = [if (vdot) 'VDOT ${Units.fixed(o.expectedVdot)}', if (o.predictedSec != null) '~${clock(o.predictedSec!)}'];
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -309,15 +324,16 @@ class _PhaseRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontWeight: current ? FontWeight.w700 : FontWeight.w500, fontSize: 13),
                 ),
-                Text(
-                  ['VDOT ${Units.fixed(o.expectedVdot)}', if (o.predictedSec != null) '~${clock(o.predictedSec!)}'].join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontFeatures: const [FontFeature.tabularFigures()],
+                if (values.isNotEmpty)
+                  Text(
+                    values.join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
                   ),
-                ),
               ],
             ),
           ),

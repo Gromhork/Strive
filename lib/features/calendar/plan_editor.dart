@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../data/models.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/goal_model.dart';
 import '../../services/plan_service.dart';
@@ -122,6 +123,26 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
     return (max(5, (sec / 60).round()), stepsKm(_steps, _sport, p));
   }
 
+  /// What the chosen day collides with: a hard session on the eve of a long session, or a second session of
+  /// the same endurance sport that day. Only for a workout moved (or added) to that day.
+  List<String> _dayConflicts(List<PlannedWorkout> plans, AppLocalizations l) {
+    final ex = widget.existing;
+    if (_sport == Sport.gym || (ex != null && sameDay(ex.date, _date))) return const [];
+    final others = plans.where((w) => w.id != ex?.id && w.status != 'skipped').toList();
+    final hard = _isKey || const {'tempo', 'intervals', 'long', 'race'}.contains(_intensity);
+    final nextLong =
+        others.where((w) => sameDay(w.date, addDays(_date, 1)) && (w.intensity == 'long' || w.intensity == 'race')).firstOrNull;
+    final same = others.where((w) => sameDay(w.date, _date) && w.sport == _sport).firstOrNull;
+    return [if (hard && nextLong != null) l.planMoveBeforeLong(nextLong.title), if (same != null) l.planMoveSameDay(same.title)];
+  }
+
+  /// The steps differ from the workout's stored ones (always for a new workout).
+  bool get _stepsChanged {
+    final ex = widget.existing;
+    if (ex == null || ex.sport != _sport) return true;
+    return jsonEncode([for (final s in _steps) s.toMap()]) != jsonEncode([for (final s in ex.steps) s.toMap()]);
+  }
+
   void _save() {
     _persist();
     Navigator.pop(context);
@@ -140,7 +161,9 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
       description: _desc.text.trim(),
       durationMin: est?.$1 ?? (_sport == Sport.gym && _gymEx.isNotEmpty ? estimateGymMinutes(_gymEx) : _min),
       distanceKm: est != null ? est.$2 : parseNum(_km.text),
-      intensity: _structured && _intensity != 'race' ? deriveIntensity(_steps, _sport) : _intensity,
+      // Derived from the steps only when they changed: moving a "Fahrtspiel" (tempo) to another day relabelled it
+      // "Intervalle" (audit UX-13) – the plan's own label stays.
+      intensity: _structured && _intensity != 'race' && _stepsChanged ? deriveIntensity(_steps, _sport) : _intensity,
       templateId: _templateId,
       status: widget.existing?.status ?? 'planned',
       sessionId: widget.existing?.sessionId,
@@ -267,6 +290,21 @@ class _PlanEditorState extends ConsumerState<_PlanEditor> {
                 if (d != null) setState(() => _date = d);
               },
             ),
+            // A moved workout that now collides (audit UX-13: the Fahrtspiel moved onto the day before the long
+            // run, next to another run, without a word).
+            for (final w in _dayConflicts(ref.watch(planListProvider), l))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  key: const ValueKey('planDayConflict'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline_rounded, size: 18, color: AppColors.warning),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(w, style: const TextStyle(fontSize: 13))),
+                  ],
+                ),
+              ),
             if (templates.isNotEmpty) ...[
               DropdownButtonFormField<String?>(
                 value: templates.any((t) => t.id == _templateId) ? _templateId : null,
@@ -421,7 +459,13 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
   /// the preselected chip must match "Woche 2/14", not the stored default of 12.
   static int _currentLength(AthleteData a) => (a.planLength ?? 0) > 0 ? a.planLength! : a.planWeeks;
   bool _busy = false;
-  final _feasibility = FeasibilityCache();
+
+  /// (Checked in the background – the page rebuilds when a check is done.)
+  late final _feasibility = FeasibilityCache(
+    onUpdate: () {
+      if (mounted) setState(() {});
+    },
+  );
 
   /// "Allow longer long runs" as switched in this sheet (null: as stored). Kept here until "Plan neu
   /// aufsetzen" saves it with the new plan ([_run]): saved at once, a sheet closed without rebuilding left the

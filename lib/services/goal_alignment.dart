@@ -64,7 +64,7 @@ class GoalAlignment {
     if (g == null) return null;
     final key = keyOf(g);
     final race = eventDistanceOf(key);
-    final needed = key == null || eventFitsFocus(key, p.focus) ? p.focus : race!.sport.focus;
+    final needed = focusForRace(key, p.focus);
     final a = p.athlete;
     final aligned = a.eventDate != null && sameDay(a.eventDate!, g.deadline!) && (key == null || a.eventDistance == key);
     // Multisport race: every discipline should show up in the next two weeks of the plan.

@@ -40,8 +40,10 @@ int xpForSession(Session s) {
       xp += s.distanceM / 100 * 3;
   }
   final earned = max(5, xp.round());
-  // Edited afterwards: at most what it earned before the first correction ([Session.xpCap]).
-  return s.xpCap == null ? earned : min(earned, s.xpCap!);
+  // Edited afterwards: at most what it earned before the first correction ([Session.xpCap]). A cap of 0 is a
+  // recording that was no workout at all (stopped after seconds): its corrected numbers count like a manual
+  // entry would (audit UX-14: a corrected 28 min run kept "+0 XP").
+  return s.xpCap == null || s.xpCap == 0 ? earned : min(earned, s.xpCap!);
 }
 
 /// Cumulative XP needed to reach [level] (level 1 = 0 XP).
