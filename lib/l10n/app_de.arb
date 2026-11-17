@@ -1976,5 +1976,7 @@
   "feasRunFrequencyFinish": "Der Plan behandelt das Rennen deshalb als Finish-Ziel, ohne Zielzeit – hast du eine eigene, trage sie ein.",
   "wRaceRealisticPace": "Dein Renntempo ist das realistische deines Leistungsstands: {time} ({pace}). Den ersten km im Zieltempo, dann in dieses Tempo finden – nicht schneller.",
   "stepRaceFinishNote": "Ankommenstempo – locker starten, gleichmäßig einteilen",
-  "planCreating": "Dein Plan wird erstellt …"
+  "planCreating": "Dein Plan wird erstellt …",
+  "summaryRunFitness": "Laufform (VDOT)",
+  "summarySportDataChanged": "Sportdaten (Level, Bestzeiten, Rad, Schwimmen, Kraft oder Gesundheit): angepasst"
 }

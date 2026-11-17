@@ -6813,4 +6813,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get planCreating => 'Dein Plan wird erstellt …';
+
+  @override
+  String get summaryRunFitness => 'Laufform (VDOT)';
+
+  @override
+  String get summarySportDataChanged => 'Sportdaten (Level, Bestzeiten, Rad, Schwimmen, Kraft oder Gesundheit): angepasst';
 }

@@ -6813,4 +6813,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planCreating => 'Creating your plan …';
+
+  @override
+  String get summaryRunFitness => 'Running form (VDOT)';
+
+  @override
+  String get summarySportDataChanged => 'Sport data (level, best times, bike, swim, gym or health): updated';
 }

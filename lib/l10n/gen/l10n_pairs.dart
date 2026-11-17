@@ -1906,4 +1906,6 @@ const l10nPairs = <(String, String)>[
   ('Your race pace is the realistic one on your fitness: {time} ({pace}). Start the first km at goal pace, then settle into it – no faster.', 'Dein Renntempo ist das realistische deines Leistungsstands: {time} ({pace}). Den ersten km im Zieltempo, dann in dieses Tempo finden – nicht schneller.'),
   ('Finish pace – start easy, keep it even', 'Ankommenstempo – locker starten, gleichmäßig einteilen'),
   ('Creating your plan …', 'Dein Plan wird erstellt …'),
+  ('Running form (VDOT)', 'Laufform (VDOT)'),
+  ('Sport data (level, best times, bike, swim, gym or health): updated', 'Sportdaten (Level, Bestzeiten, Rad, Schwimmen, Kraft oder Gesundheit): angepasst'),
 ];

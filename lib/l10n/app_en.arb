@@ -5020,5 +5020,7 @@
     }
   },
   "stepRaceFinishNote": "Finish pace – start easy, keep it even",
-  "planCreating": "Creating your plan …"
+  "planCreating": "Creating your plan …",
+  "summaryRunFitness": "Running form (VDOT)",
+  "summarySportDataChanged": "Sport data (level, best times, bike, swim, gym or health): updated"
 }

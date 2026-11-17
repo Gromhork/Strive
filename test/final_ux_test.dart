@@ -11,6 +11,7 @@ import 'package:strive/core/theme.dart';
 import 'package:strive/data/exercise_db.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/features/calendar/planned_workout_page.dart';
+import 'package:strive/features/onboarding/onboarding_page.dart';
 import 'package:strive/features/profile/profile_page.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/providers.dart';
@@ -107,5 +108,19 @@ void main() {
     final subtitle = tester.widget<ListTile>(find.byKey(const ValueKey('plannedExercise-0'))).subtitle!;
     final texts = find.descendant(of: find.byWidget(subtitle), matching: find.byType(Text)).evaluate().map((e) => (e.widget as Text).data);
     expect(texts.any((t) => t != null && t.contains('≈')), isTrue, reason: 'weight suggestion still shown: $texts');
+  });
+
+  test('plan review: a new best time and changed gym data are named', () {
+    const before = UserProfile(level: 'intermediate', athlete: AthleteData(raceTimes: {'10k': 2880}));
+    final faster = before.copyWith(
+      athlete: before.athlete.merge({
+        'raceTimes': {'10k': 3780},
+      }),
+    );
+    final lines = planSettingChanges(l, 'en', before, faster);
+    expect(lines.single, startsWith('${l.summaryRunFitness}: 42'));
+    final gym = before.copyWith(athlete: before.athlete.merge({'gymAB': true}));
+    expect(planSettingChanges(l, 'en', before, gym), [l.summarySportDataChanged]);
+    expect(planSettingChanges(l, 'en', before, before), isEmpty);
   });
 }

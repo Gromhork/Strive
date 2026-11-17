@@ -2205,6 +2205,22 @@ List<String> planSettingChanges(
   if (a.eventDate == null) add(l.planLength, l.planWeeksN(b.planWeeks), l.planWeeksN(a.planWeeks));
   add(l.difficultyTitle, diff(b.difficulty), diff(a.difficulty));
   add(l.longRunExtendTitle, b.longRunExtend ? l.yes : l.no, a.longRunExtend ? l.yes : l.no);
+  // The sport data (a new best time changes every pace of the plan) – the running form by name, the
+  // rest (bike, swim, gym, health) in one line: "nothing changes" after a new 10 km time was wrong.
+  String vdot(double? v) => v == null ? '–' : Units.fixed(v);
+  final vb = Vdot.of(b), va = Vdot.of(a);
+  add(l.summaryRunFitness, vdot(vb), vdot(va));
+  const sportData = [
+    'raceTimes', 'runWeeklyKm', 'longestRunKm', 'canRun30', 'ftp', 'bikeWeeklyHours', 'longestRideKm', 'hasPowerMeter', //
+    'indoorTrainer', 'swim400Sec', 'swim200Sec', 'swimWeeklyKm', 'canSwim400', 'poolLength', 'equipment', 'gymGoal', //
+    'gymSplit', 'oneRm', 'gymAssign', 'gymAB', 'gymPlanA', 'gymPlanB', 'limitations', 'restHr',
+  ];
+  final bm = b.toMap(), am = a.toMap();
+  final otherData =
+      before.level != after.level ||
+      '${before.experience.map((s) => s.name).toList()..sort()}' != '${after.experience.map((s) => s.name).toList()..sort()}' ||
+      sportData.any((k) => !(k == 'raceTimes' && vdot(vb) != vdot(va)) && '${bm[k]}' != '${am[k]}');
+  if (otherData) out.add(l.summarySportDataChanged);
   return out;
 }
 

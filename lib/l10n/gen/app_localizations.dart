@@ -11956,6 +11956,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Creating your plan …'**
   String get planCreating;
+
+  /// No description provided for @summaryRunFitness.
+  ///
+  /// In en, this message translates to:
+  /// **'Running form (VDOT)'**
+  String get summaryRunFitness;
+
+  /// No description provided for @summarySportDataChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport data (level, best times, bike, swim, gym or health): updated'**
+  String get summarySportDataChanged;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
