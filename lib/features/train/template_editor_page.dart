@@ -87,7 +87,7 @@ class _TemplateEditorPageState extends ConsumerState<TemplateEditorPage> {
     final t = _build();
     ref.read(repoProvider)!.saveTemplate(t);
     try {
-      final code = await ref.read(repoProvider)!.shareTemplate(t, ref.read(profileOrDefaultProvider).name);
+      final code = await ref.read(repoProvider)!.shareTemplate(t);
       await Clipboard.setData(ClipboardData(text: code));
       if (!mounted) return;
       toast(context, l.codeCopied(code));

@@ -11422,6 +11422,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} hidden by the sport filter.'**
   String folderDuplicatedHidden(int n);
+
+  /// No description provided for @signOutWorkoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A workout is running'**
+  String get signOutWorkoutTitle;
+
+  /// No description provided for @signOutWorkoutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging out ends it without saving it.'**
+  String get signOutWorkoutBody;
+
+  /// No description provided for @signOutSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing your changes …'**
+  String get signOutSyncing;
+
+  /// No description provided for @signOutUnsyncedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes not synced yet'**
+  String get signOutUnsyncedTitle;
+
+  /// No description provided for @signOutUnsyncedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some changes – e.g. workouts recorded offline – have not reached the server yet. If you log out now, they are lost. Go online and wait a moment to keep them.'**
+  String get signOutUnsyncedBody;
+
+  /// No description provided for @signOutAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out anyway'**
+  String get signOutAnyway;
+
+  /// No description provided for @guestExistsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has Strive data'**
+  String get guestExistsTitle;
+
+  /// No description provided for @guestExistsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.'**
+  String get guestExistsBody;
+
+  /// No description provided for @guestExistsMergeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.'**
+  String get guestExistsMergeInfo;
+
+  /// No description provided for @guestExistsMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Take data along'**
+  String get guestExistsMerge;
+
+  /// No description provided for @guestExistsDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard guest data'**
+  String get guestExistsDiscard;
+
+  /// No description provided for @guestSwitchRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching account …'**
+  String get guestSwitchRunning;
+
+  /// No description provided for @guestSwitchMerged.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to your account – workouts taken along: {count}'**
+  String guestSwitchMerged(int count);
+
+  /// No description provided for @guestSwitchDiscarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to your account. The guest data was deleted.'**
+  String get guestSwitchDiscarded;
+
+  /// No description provided for @guestSwitchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching failed – nothing was changed. Check your internet connection and try again.'**
+  String get guestSwitchFailed;
+
+  /// No description provided for @guestSwitchSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again to continue.'**
+  String get guestSwitchSignInAgain;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

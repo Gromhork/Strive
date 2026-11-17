@@ -4,8 +4,17 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'gcal_api.dart';
 
-/// Google sign-in via Firebase Auth. If the current user is a guest, the Google
-/// account is linked so no data is lost.
+enum GuestLinkOutcome { cancelled, linked, accountExists }
+
+/// Result of [GoogleAuth.linkGuest]; [credential] is set for [GuestLinkOutcome.accountExists].
+class GuestLinkResult {
+  const GuestLinkResult(this.outcome, {this.credential});
+  final GuestLinkOutcome outcome;
+  final AuthCredential? credential;
+}
+
+/// Google sign-in via Firebase Auth. A guest is linked to the Google account ([linkGuest]) so no
+/// data is lost.
 ///
 /// Also provides OAuth access for the Google Calendar sync, independent of how the user
 /// signed in to Firebase (guest, e-mail or Google).
@@ -31,25 +40,48 @@ class GoogleAuth {
     return _client!;
   }
 
-  /// Returns false when the user cancelled.
-  static Future<bool> signIn() async {
+  /// The Google account the user picks, as a Firebase credential (null = cancelled).
+  static Future<AuthCredential?> _pick() async {
     final acc = await _get(calendar: false).signIn();
-    if (acc == null) return false;
+    if (acc == null) return null;
     final a = await acc.authentication;
-    final cred = GoogleAuthProvider.credential(accessToken: a.accessToken, idToken: a.idToken);
+    return GoogleAuthProvider.credential(accessToken: a.accessToken, idToken: a.idToken);
+  }
+
+  /// Signs in with Google (login page: nobody is signed in). Returns false when the user cancelled.
+  /// A signed-in guest goes through [linkGuest] instead – signing in here would drop the guest.
+  static Future<bool> signIn() async {
     final current = FirebaseAuth.instance.currentUser;
-    if (current != null && current.isAnonymous) {
-      try {
-        await current.linkWithCredential(cred);
-        return true;
-      } on FirebaseAuthException catch (e) {
-        // Google account already has a Strive account → switch to it.
-        if (e.code != 'credential-already-in-use') rethrow;
-      }
-    }
+    if (current != null && current.isAnonymous) throw StateError('a guest links with GoogleAuth.linkGuest');
+    final cred = await _pick();
+    if (cred == null) return false;
     await FirebaseAuth.instance.signInWithCredential(cred);
     return true;
   }
+
+  /// Links the signed-in guest with a Google account, so the guest's data stays where it is.
+  ///
+  /// When that Google account already has a Strive account, Firebase refuses the link
+  /// (`credential-already-in-use`). Nothing is switched then: the result carries the credential and
+  /// the caller asks the user what happens with the guest data (`linkGuestWithGoogle`). A silent
+  /// switch used to orphan every guest document under the old uid and still said "Account saved".
+  static Future<GuestLinkResult> linkGuest() async {
+    final current = FirebaseAuth.instance.currentUser;
+    if (current == null || !current.isAnonymous) throw StateError('linkGuest needs a signed-in guest');
+    final cred = await _pick();
+    if (cred == null) return const GuestLinkResult(GuestLinkOutcome.cancelled);
+    try {
+      await current.linkWithCredential(cred);
+      return const GuestLinkResult(GuestLinkOutcome.linked);
+    } on FirebaseAuthException catch (e) {
+      if (!isAccountTakenCode(e.code)) rethrow;
+      // The token credential (not e.credential): it is used again in a second Firebase app.
+      return GuestLinkResult(GuestLinkOutcome.accountExists, credential: cred);
+    }
+  }
+
+  /// Whether a link failure means "this sign-in already belongs to another Strive account".
+  static bool isAccountTakenCode(String code) => code == 'credential-already-in-use' || code == 'email-already-in-use';
 
   /// Signs the current Firebase user in again with Google (sensitive operations such as
   /// deleting the account need a recent login). Returns false when the user cancelled.

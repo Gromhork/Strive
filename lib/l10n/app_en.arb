@@ -4640,5 +4640,28 @@
         "type": "int"
       }
     }
-  }
+  },
+  "signOutWorkoutTitle": "A workout is running",
+  "signOutWorkoutBody": "Logging out ends it without saving it.",
+  "signOutSyncing": "Syncing your changes …",
+  "signOutUnsyncedTitle": "Changes not synced yet",
+  "signOutUnsyncedBody": "Some changes – e.g. workouts recorded offline – have not reached the server yet. If you log out now, they are lost. Go online and wait a moment to keep them.",
+  "signOutAnyway": "Log out anyway",
+  "guestExistsTitle": "This account already has Strive data",
+  "guestExistsBody": "Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.",
+  "guestExistsMergeInfo": "Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.",
+  "guestExistsMerge": "Take data along",
+  "guestExistsDiscard": "Discard guest data",
+  "guestSwitchRunning": "Switching account …",
+  "guestSwitchMerged": "Switched to your account – workouts taken along: {count}",
+  "@guestSwitchMerged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "guestSwitchDiscarded": "Switched to your account. The guest data was deleted.",
+  "guestSwitchFailed": "Switching failed – nothing was changed. Check your internet connection and try again.",
+  "guestSwitchSignInAgain": "Please sign in again to continue."
 }

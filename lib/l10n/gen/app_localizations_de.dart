@@ -6396,4 +6396,54 @@ class AppLocalizationsDe extends AppLocalizations {
   String folderDuplicatedHidden(int n) {
     return '$n davon blendet der Sportfilter aus.';
   }
+
+  @override
+  String get signOutWorkoutTitle => 'Ein Training läuft noch';
+
+  @override
+  String get signOutWorkoutBody => 'Abmelden beendet es, ohne es zu speichern.';
+
+  @override
+  String get signOutSyncing => 'Deine Änderungen werden synchronisiert …';
+
+  @override
+  String get signOutUnsyncedTitle => 'Noch nicht synchronisiert';
+
+  @override
+  String get signOutUnsyncedBody => 'Einige Änderungen – z. B. offline erfasste Einheiten – sind noch nicht auf dem Server. Wenn du dich jetzt abmeldest, gehen sie verloren. Geh online und warte kurz, dann bleiben sie erhalten.';
+
+  @override
+  String get signOutAnyway => 'Trotzdem abmelden';
+
+  @override
+  String get guestExistsTitle => 'Dieses Konto hat schon Strive-Daten';
+
+  @override
+  String get guestExistsBody => 'Dein Gastkonto lässt sich nicht damit verknüpfen. Du kannst zu diesem Konto wechseln und deine Gast-Daten mitnehmen – oder wechseln und die Gast-Daten verwerfen.';
+
+  @override
+  String get guestExistsMergeInfo => 'Mitgenommen werden deine Einheiten, Körperwerte, eigenen Programme und Ziele. Profil und Trainingsplan des Kontos bleiben.';
+
+  @override
+  String get guestExistsMerge => 'Daten mitnehmen';
+
+  @override
+  String get guestExistsDiscard => 'Gast-Daten verwerfen';
+
+  @override
+  String get guestSwitchRunning => 'Konto wird gewechselt …';
+
+  @override
+  String guestSwitchMerged(int count) {
+    return 'Zu deinem Konto gewechselt – übernommene Einheiten: $count';
+  }
+
+  @override
+  String get guestSwitchDiscarded => 'Zu deinem Konto gewechselt. Die Gast-Daten wurden gelöscht.';
+
+  @override
+  String get guestSwitchFailed => 'Wechsel fehlgeschlagen – es wurde nichts geändert. Prüf deine Internetverbindung und versuch es noch einmal.';
+
+  @override
+  String get guestSwitchSignInAgain => 'Bitte melde dich noch einmal an, um weiterzumachen.';
 }
