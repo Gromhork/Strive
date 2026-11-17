@@ -439,4 +439,304 @@ void main() {
     expect(stalePlanWorkouts(withPlanMeta(a.marathoner(), start, 12), plans, const []), isEmpty);
     expect(PlannedWorkout.fromMap('b1', plans[4].toMap()).planGen, genB);
   });
+
+  // ── Verifier round 2 (G4V-1 … G4V-5) ──
+
+  final race16 = addDays(a.simStart, 7 * 16 - 1);
+  UserProfile ride100() => UserProfile(
+    level: 'intermediate',
+    focus: TrainingFocus.ride,
+    birthYear: 1990,
+    experience: const {Sport.ride},
+    trainingDays: const [2, 4, 6, 7],
+  ).copyWith(
+    athlete: const AthleteData().merge({
+      'eventDistance': 'ride100',
+      'eventDate': race16,
+      'sessionMinutes': 90,
+      'dayMinutes': {7: 300},
+      'ftp': 250,
+      'bikeWeeklyHours': 7.0,
+      'longestRideKm': 90.0,
+    }),
+  );
+  UserProfile tri703() => UserProfile(
+    level: 'intermediate',
+    focus: TrainingFocus.triathlon,
+    birthYear: 1990,
+    experience: const {Sport.run, Sport.ride, Sport.swim},
+    trainingDays: const [1, 2, 3, 4, 6, 7],
+  ).copyWith(
+    athlete: const AthleteData().merge({
+      'eventDistance': '70.3',
+      'eventDate': race16,
+      'sessionMinutes': 90,
+      'dayMinutes': {6: 300, 7: 180},
+      'runWeeklyKm': 30.0,
+      'longestRunKm': 16.0,
+      'bikeWeeklyHours': 5.0,
+      'longestRideKm': 80.0,
+      'swimWeeklyKm': 4.0,
+      'cssSecPer100': 110,
+    }),
+  );
+  UserProfile swimmer() => UserProfile(
+    level: 'intermediate',
+    focus: TrainingFocus.swim,
+    birthYear: 1990,
+    experience: const {Sport.swim},
+    trainingDays: const [2, 4, 6],
+  ).copyWith(athlete: const AthleteData().merge({'swimWeeklyKm': 6.0, 'sessionMinutes': 75}));
+
+  double peakRunWeek(Iterable<PlannedWorkout> ws) {
+    final weeks = <DateTime, double>{};
+    for (final w in ws.where((w) => w.sport == Sport.run && w.intensity != 'race')) {
+      weeks.update(startOfWeek(w.date), (v) => v + (w.distanceKm ?? 0), ifAbsent: () => w.distanceKm ?? 0);
+    }
+    return weeks.values.fold(0.0, max);
+  }
+
+  group('G4V-1: the volume ceiling of a re-created plan counts from the old block only for the same race', () {
+    test('a new marathon goal after a finished 10 km plan is not frozen at 1.5 × the 10 km volume', () {
+      final p0 = withPlanMeta(a.tenK(), a.simStart, 10);
+      final gen = PlanGenerator(l, p0, templates, id).generate(start: a.simStart);
+      final day = addDays(p0.athlete.eventDate!, 8);
+      final (trained, ss) = trainUntil(gen, day);
+      final pNew = p0.copyWith(
+        athlete: p0.athlete.merge({
+          'eventDistance': 'm',
+          'eventDate': addDays(day, 7 * 18 - 2),
+          'targetTimeSec': null,
+          'raceTimes': {'10k': 52 * 60 + 30},
+        }),
+      );
+      final rp = withReachedVolume(pNew, plans: trained, sessions: ss, start: day);
+      expect(rp.athlete.planCarry?.baseRunKm, isNull);
+      final withCarry = PlanGenerator(l, rp, templates, id).generate(start: day, weeks: 18);
+      final noCarry = PlanGenerator(
+        l,
+        rp.copyWith(athlete: rp.athlete.merge({'planCarry': null})),
+        templates,
+        id,
+      ).generate(start: day, weeks: 18);
+      expect(peakRunWeek(withCarry), greaterThanOrEqualTo(peakRunWeek(noCarry) - 0.5));
+      expect(peakRunWeek(withCarry), greaterThan(48), reason: "the marathon build grows past 1.5 × the 10 km plan's 25 km");
+    });
+
+    test('a plan without a race re-created twice keeps no block volume (the chain does not freeze it)', () {
+      final p0 = withPlanMeta(
+        UserProfile(
+          level: 'intermediate',
+          focus: TrainingFocus.run,
+          birthYear: 1990,
+          experience: const {Sport.run},
+          trainingDays: const [2, 4, 6, 7],
+        ).copyWith(athlete: const AthleteData().merge({'runWeeklyKm': 25.0, 'longestRunKm': 10.0})),
+        a.simStart,
+        12,
+      );
+      final gen = PlanGenerator(l, p0, templates, id).generate(start: a.simStart, weeks: 12);
+      final d1 = addDays(a.simStart, 7 * 6);
+      final (t1, s1) = trainUntil(gen, d1);
+      final (np1, p1, _) = recreate(p0, t1, s1, d1);
+      expect(p1.athlete.planCarry?.baseRunKm, isNull);
+      final d2 = addDays(d1, 7 * 6);
+      final (t2, s2) = trainUntil(np1, d2);
+      final rp2 = withReachedVolume(p1, plans: t2, sessions: [...s1, ...s2], start: d2);
+      expect(rp2.athlete.planCarry, isNotNull);
+      expect(rp2.athlete.planCarry!.baseRunKm, isNull);
+      expect(rp2.athlete.planCarry!.baseRideH, isNull);
+      expect(rp2.athlete.planCarry!.baseSwimKm, isNull);
+      // The ceiling counts from the volume reached, not from the first setup's 25 km.
+      final g2 = PlanGenerator(l, rp2, templates, id).generate(start: d2, weeks: 12);
+      expect(rp2.athlete.runWeeklyKm, greaterThan(25.0));
+      expect(peakRunWeek(g2), greaterThan(1.5 * 25.0 + 0.5), reason: 'not frozen at 1.5 × the first setup volume');
+    });
+
+    test('the same race without a break keeps the block volume (also re-created twice)', () {
+      final p0 = withPlanMeta(a.marathoner(), a.simStart, 18);
+      final gen = PlanGenerator(l, p0, templates, id).generate(start: a.simStart);
+      final d1 = addDays(a.simStart, 30);
+      final (t1, s1) = trainUntil(gen, d1);
+      final (np1, p1, _) = recreate(p0, t1, s1, d1);
+      expect(p1.athlete.planCarry?.baseRunKm, p0.athlete.runWeeklyKm);
+      final d2 = addDays(d1, 21);
+      final (t2, s2) = trainUntil(np1, d2);
+      final rp2 = withReachedVolume(p1, plans: t2, sessions: [...s1, ...s2], start: d2);
+      expect(rp2.athlete.planCarry?.baseRunKm, p0.athlete.runWeeklyKm);
+    });
+  });
+
+  group('G4V-2: a missed first-week long session does not cancel the stated history', () {
+    final profiles = <String, UserProfile Function()>{
+      'marathon': a.marathoner,
+      '10 km': a.tenK,
+      'ride 100': ride100,
+      '70.3': tri703,
+      'swim': swimmer,
+    };
+    for (final e in profiles.entries) {
+      test('${e.key}: first-week long session skipped, review the next Monday', () {
+        final p = withPlanMeta(e.value(), a.simStart, 16);
+        final gen = PlanGenerator(l, p, templates, id).generate(start: a.simStart, weeks: 16);
+        final day = addDays(a.simStart, 7);
+        final (trained0, ss) = trainUntil(gen, day);
+        // The long sessions of week 1 were not done.
+        final missed = {
+          for (final w in gen)
+            if (w.intensity == 'long' && dayOnly(w.date).isBefore(day)) w.id,
+        };
+        expect(missed, isNotEmpty);
+        final trained = [
+          for (final w in trained0)
+            if (missed.contains(w.id)) gen.firstWhere((x) => x.id == w.id) else w,
+        ];
+        final sessions = ss.where((s) => !missed.contains(s.planId)).toList();
+        final r =
+            Recalibrator(
+              l,
+              p,
+              plans: trained,
+              sessions: sessions,
+              now: day.add(const Duration(hours: 7)),
+              templates: templates,
+              newId: id,
+            ).run();
+        expect(r.reasons, isNot(contains(RecalReason.longCap)), reason: e.key);
+        for (final c in r.changes.where((c) => c.before.intensity == 'long' && c.kind != RecalKind.dropped)) {
+          expect(
+            c.after.durationMin,
+            greaterThanOrEqualTo(c.before.durationMin),
+            reason: '${e.key} ${dayKey(c.before.date)} ${c.before.title}',
+          );
+        }
+      });
+    }
+
+    test('a first long run done far short is still the evidence (R1 from the runs done)', () {
+      final p = withPlanMeta(a.marathoner(), a.simStart, 18);
+      final gen = PlanGenerator(l, p, templates, id).generate(start: a.simStart);
+      final day = addDays(a.simStart, 7);
+      final (trained, ss) = trainUntil(gen, day);
+      final firstLong = trained.firstWhere((w) => w.intensity == 'long' && w.sport == Sport.run);
+      final short = [
+        for (final s in ss)
+          s.planId == firstLong.id
+              ? Session(
+                id: s.id,
+                sport: s.sport,
+                title: s.title,
+                start: s.start,
+                durationSec: s.durationSec ~/ 3,
+                distanceM: s.distanceM / 3,
+                rpe: 8,
+                planId: s.planId,
+              )
+              : s,
+      ];
+      final r =
+          Recalibrator(
+            l,
+            p,
+            plans: trained,
+            sessions: short,
+            now: day.add(const Duration(hours: 7)),
+            templates: templates,
+            newId: id,
+          ).run();
+      expect(r.reasons, contains(RecalReason.longCap));
+    });
+  });
+
+  test("G4V-3: another device's new plan synced before its profile: the old plan's past stays", () {
+    final s0 = DateTime(2026, 11, 2), d = DateTime(2026, 11, 17);
+    final g0 = newPlanGen(DateTime(2026, 11, 1), 'a'), g1 = newPlanGen(DateTime(2026, 11, 17, 9), 'b');
+    PlannedWorkout w(String id, DateTime date, String gen, {String status = 'planned'}) =>
+        PlannedWorkout(id: id, date: date, sport: Sport.run, title: 'Lauf', status: status, planGen: gen);
+    final plans = [
+      w('old-missed', DateTime(2026, 11, 10), g0),
+      w('old-done', DateTime(2026, 11, 12), g0, status: 'done'),
+      w('old-dup', addDays(d, 2), g0),
+      w('new1', d, g1),
+      w('new2', addDays(d, 2), g1),
+    ];
+    // The old profile (transient) and the new one: only the overlapping duplicate goes.
+    for (final p in [withPlanMeta(a.marathoner(), s0, 12, gen: g0), withPlanMeta(a.marathoner(), d, 12, gen: g1)]) {
+      expect(stalePlanWorkouts(p, plans, const []).map((x) => x.id), ['old-dup']);
+    }
+  });
+
+  test('G4V-4: a run/walk ladder re-created early continues at the stage the plan had next', () {
+    final p0 = withPlanMeta(a.beginnerHm(), a.simStart, 20);
+    final gen = PlanGenerator(l, p0, templates, id).generate(start: a.simStart);
+    final day = addDays(a.simStart, 7 * 3);
+    final (trained, ss) = trainUntil(gen, day);
+    final done = trained.where((w) => w.isDone).map(PlanGenerator.runWalkStageOf).whereType<int>().fold(-1, max);
+    final next = gen
+        .where((w) => !dayOnly(w.date).isBefore(day))
+        .map(PlanGenerator.runWalkStageOf)
+        .whereType<int>()
+        .where((s) => s > done)
+        .fold(99, min);
+    expect(next, greaterThan(done + 1), reason: 'the fast ladder skips a stage here');
+    final (_, p1, fresh) = recreate(p0, trained, ss, day);
+    expect(p1.athlete.planCarry?.runWalkStage, next);
+    expect(fresh.map(PlanGenerator.runWalkStageOf).whereType<int>().fold(99, min), next);
+  });
+
+  test('G4V-5: high RPE, three reviews every Monday – ride, triathlon, swim and 10 km: the 2nd one proposes nothing', () {
+    final profiles = <String, UserProfile>{'ride': ride100(), 'tri': tri703(), 'swim': swimmer(), '10k': a.tenK()};
+    for (final e in profiles.entries) {
+      final p = withPlanMeta(e.value, a.simStart, 16);
+      var plans = PlanGenerator(l, p, templates, id).generate(start: a.simStart, weeks: 16);
+      final sessions = <Session>[];
+      var swapped = 0;
+      for (var day = 0; day < 10 * 7; day++) {
+        final d = addDays(a.simStart, day);
+        if (d.weekday == DateTime.monday && day > 0) {
+          for (var k = 1; k <= 3; k++) {
+            final r =
+                Recalibrator(
+                  l,
+                  p,
+                  plans: plans,
+                  sessions: sessions,
+                  now: d.add(const Duration(hours: 7)),
+                  templates: templates,
+                  newId: id,
+                ).run();
+            if (k > 1) {
+              expect(
+                r.changes
+                    .where((c) => c.kind != RecalKind.paces)
+                    .map((c) => '${dayKey(c.before.date)} ${c.before.title} -> ${c.after.title}'),
+                isEmpty,
+                reason: '${e.key} run #$k on ${dayKey(d)}',
+              );
+            }
+            swapped += r.changes.where((c) => c.kind == RecalKind.toEasy).length;
+            final upd = r.updates;
+            plans = [for (final x in plans) upd.containsKey(x.id) ? apply(x, upd[x.id]!) : x, ...r.additions];
+          }
+        }
+        for (final w in plans.where((x) => dayOnly(x.date) == d && x.status == 'planned' && x.intensity != 'race').toList()) {
+          final s = Session(
+            id: 's${w.id}',
+            sport: w.sport,
+            title: w.title,
+            start: DateTime(d.year, d.month, d.day, 18),
+            durationSec: w.durationMin * 60,
+            distanceM: (w.distanceKm ?? 0) * 1000,
+            rpe: w.sport == Sport.gym ? null : (a.nominalRpe(w) + 3).clamp(1, 10),
+            planId: w.id,
+          );
+          sessions.add(s);
+          plans = [
+            for (final x in plans) x.id == w.id ? apply(x, {'status': 'done', 'sessionId': s.id}) : x,
+          ];
+        }
+      }
+      if (e.key == 'swim') expect(swapped, greaterThan(0), reason: 'the swim case swaps a quality session at first');
+    }
+  });
 }

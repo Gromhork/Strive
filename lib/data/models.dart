@@ -552,7 +552,8 @@ class PlanCarry {
 
   /// Weekly volume the training block started with (stated in the setup: run km, bike hours, swim km): the volume
   /// ceilings that count from the athlete's volume (run ≤ 1.5 × it, plans without a goal) keep counting from it – a
-  /// re-created plan starts at the volume reached, but its peak does not grow with every re-creation.
+  /// re-created plan starts at the volume reached, but its peak does not grow with every re-creation. Only for the same
+  /// race without a break; a new goal, a plan without a race or a break starts a new block (null).
   final double? baseRunKm, baseRideH, baseSwimKm;
 
   static PlanCarry? fromMap(dynamic v) {

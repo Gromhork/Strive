@@ -44,16 +44,26 @@ String newPlanGen(DateTime now, String id) => '${now.millisecondsSinceEpoch.toSt
 /// Planned workouts left over from a plan another device replaced with a stale cache (review 2026-11 data-9): of an
 /// older generation ([newPlanGen]) than the newest one – the profile's ([AthleteData.planGen]) or a generated workout's
 /// from its [AthleteData.planStart] on (two devices: the later plan wins, whichever profile write arrived last) –,
-/// dated from that start on, still open and not started from (no session points at them). Empty without a stored
-/// generation. (Workouts the athlete added or the plan review refilled carry none and always stay.)
+/// dated from that start on – and from the newest generation's own first workout on: only the days the newer plan
+/// covers hold duplicates; before them the older plan's workouts are history (missed ones feed the compliance, the
+/// forecast and the next re-creation; review 2026-11 G4V-3: the plans snapshot of another device's replan arriving
+/// before its profile deleted the old plan's past missed workouts) –, still open and not started from (no session
+/// points at them). Empty without a stored generation. (Workouts the athlete added or the plan review refilled carry
+/// none and always stay.)
 List<PlannedWorkout> stalePlanWorkouts(UserProfile p, List<PlannedWorkout> plans, List<Session> sessions) {
-  final start = p.athlete.planStart;
+  final planStart = p.athlete.planStart;
   var gen = p.athlete.planGen;
-  if (gen == null || start == null) return const [];
+  if (gen == null || planStart == null) return const [];
   for (final x in plans) {
     final g = x.planGen;
-    if (g != null && !dayOnly(x.date).isBefore(dayOnly(start)) && g.compareTo(gen!) > 0) gen = g;
+    if (g != null && !dayOnly(x.date).isBefore(dayOnly(planStart)) && g.compareTo(gen!) > 0) gen = g;
   }
+  var start = dayOnly(planStart);
+  DateTime? first;
+  for (final x in plans) {
+    if (x.planGen == gen && (first == null || dayOnly(x.date).isBefore(first))) first = dayOnly(x.date);
+  }
+  if (first != null && first.isAfter(start)) start = first;
   final started = {
     for (final s in sessions)
       if (s.planId != null) s.planId!,
@@ -65,7 +75,7 @@ List<PlannedWorkout> stalePlanWorkouts(UserProfile p, List<PlannedWorkout> plans
           x.status == 'planned' &&
           x.sessionId == null &&
           !started.contains(x.id) &&
-          !dayOnly(x.date).isBefore(dayOnly(start)))
+          !dayOnly(x.date).isBefore(start))
         x,
   ];
 }
@@ -221,15 +231,27 @@ PlanCarry? planCarryOf(UserProfile p, {required List<PlannedWorkout> plans, requ
     if (continuous && !brk) {
       stage = PlanGenerator.runWalkStages;
     } else if (k >= 0) {
-      stage = brk ? max(0, k - 1) : (atK >= 2 ? k + 1 : k);
+      // The next stage: the one the replaced plan scheduled after k (a goal-directed build skips stages – 5 × 3 min →
+      // 2 × 8 min, review 2026-11 G4V-4), else the table's next.
+      final next = phased
+          .where((x) => x.sport == Sport.run && !dayOnly(x.date).isBefore(day))
+          .map(PlanGenerator.runWalkStageOf)
+          .whereType<int>()
+          .where((s) => s > k)
+          .fold<int?>(null, (m, s) => m == null || s < m ? s : m);
+      stage = brk ? max(0, k - 1) : (atK >= 2 ? next ?? k + 1 : k);
     }
     if (brk) longSec = 0;
   }
   // The fitness model's training block: the replaced plan's (or the block it continued).
   final fitnessStart = FitnessState.currentPlanStart(p, phased);
-  // The volume the block started with: the replaced plan's own carry (a plan re-created twice), else the stated one.
-  final prev = a.planCarry != null && a.planStart != null && sameDay(a.planCarry!.start, a.planStart!) ? a.planCarry : null;
-  double? pos(double? v) => v != null && v > 0 ? v : null;
+  // The volume the block started with – only for the same race without a break (the same build-up continues): the
+  // replaced plan's own carry (a plan re-created twice), else its stated start volume. A new goal, a plan without a
+  // race or a break starts a new block: its ceilings count from the new start volume (review 2026-11 G4V-1: a new
+  // marathon after a 10K stayed frozen at 1.5 × the 10K plan's volume).
+  final block = sameGoal && a.eventDate != null && !brk;
+  final prev = block && a.planCarry != null && a.planStart != null && sameDay(a.planCarry!.start, a.planStart!) ? a.planCarry : null;
+  double? pos(double? v) => block && v != null && v > 0 ? v : null;
   return PlanCarry(
     start: day,
     loadWeeks: brk || current == 'recovery' ? 0 : loads,
@@ -240,9 +262,9 @@ PlanCarry? planCarryOf(UserProfile p, {required List<PlannedWorkout> plans, requ
     runWalkLongSec: longSec,
     runWalkLongKm: brk ? 0 : longKm,
     fitnessStart: fitnessStart != null && fitnessStart.isBefore(day) ? fitnessStart : null,
-    baseRunKm: prev != null ? prev.baseRunKm : pos(a.runWeeklyKm),
-    baseRideH: prev != null ? prev.baseRideH : pos(a.bikeWeeklyHours),
-    baseSwimKm: prev != null ? prev.baseSwimKm : pos(a.swimWeeklyKm),
+    baseRunKm: prev?.baseRunKm ?? pos(a.runWeeklyKm),
+    baseRideH: prev?.baseRideH ?? pos(a.bikeWeeklyHours),
+    baseSwimKm: prev?.baseSwimKm ?? pos(a.swimWeeklyKm),
   );
 }
 

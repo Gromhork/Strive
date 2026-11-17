@@ -489,7 +489,12 @@ class Recalibrator {
       ),
       for (final f in fills.values) f.plan,
     ]..sort((x, y) => x.date.compareTo(y.date));
-    final swappedSports = <Sport>{};
+    // (A quality session an earlier review already swapped for easy – still ahead in the horizon – is this sport's swap:
+    // a second review the same week swaps no further one, review 2026-11 G4V-5.)
+    final swappedSports = {
+      for (final p in upcoming)
+        if (daysBetween(today, dayOnly(p.date)) < horizonDays && (p.auto?.reason ?? '').startsWith('recalEasy')) p.sport,
+    };
     final pz = newVdot == null ? null : PaceZones(newVdot);
     final longIndex = <Sport, int>{};
     var capped = false;
@@ -1072,7 +1077,7 @@ class Recalibrator {
     // first logged 5 km run cut a marathoner's 14 km long run to 5.5 km): the plan's first long session of the
     // sport – built from the stated history under R1 – and, for runs, the stated longest run, while the plan
     // start lies within the 30 days.
-    final recent = _max(longest(1, 30), _startReference(p, rw));
+    final recent = _max(longest(1, 30), _startReference(p, rw, linked));
     double? cap;
     if (recent != null) {
       cap = recent * pow(1.1, k + 1);
@@ -1118,20 +1123,24 @@ class Recalibrator {
   }
 
   /// R1 reference the plan start stands for ([_longCap]), in [p]'s unit (by time for run/walk [rw]): the original
-  /// amount of the plan's first long session of [p]'s sport (in its first week) and, for runs by distance, the stated longest run
-  /// ([AthleteData.longestRunKm]) – null when the plan started more than 30 days before [p].
-  double? _startReference(PlannedWorkout p, bool rw) {
+  /// amount of the plan's first long session of [p]'s sport (in its first week) and the stated longest session – runs
+  /// by distance: [AthleteData.longestRunKm]; rides: [AthleteData.longestRideKm] at [p]'s own speed – null when the
+  /// plan started more than 30 days before [p].
+  double? _startReference(PlannedWorkout p, bool rw, Map<String, Session> linked) {
     final start = _planStart();
     if (start == null || daysBetween(start, p.date) > 30 || dayOnly(p.date).isBefore(start)) return null;
-    // Only until the plan's first long session of the sport was due: from then on its outcome is the evidence (done
-    // as planned: the plan's own progression, C2; cut short or missed: the runs actually done).
+    // Only until a long session of the sport of this plan was done: from then on its outcome is the evidence (done as
+    // planned: the plan's own progression, C2; cut short: the sessions actually done). A missed or skipped one is no
+    // evidence of a lower capacity – the stated history keeps counting (review 2026-11 G4V-2: the missed first long
+    // run halved the next ones again).
     if (plans.any(
       (x) =>
           x.sport == p.sport &&
           x.intensity == 'long' &&
           x.id != p.id &&
           !dayOnly(x.date).isBefore(start) &&
-          dayOnly(x.date).isBefore(today),
+          dayOnly(x.date).isBefore(today) &&
+          (x.isDone || linked[x.id] != null),
     )) {
       return null;
     }
@@ -1150,6 +1159,10 @@ class Recalibrator {
     }
     final stated = a.longestRunKm;
     if (p.sport == Sport.run && !rw && _byKm(p) && stated != null && stated > 0) ref = max(ref ?? 0, stated);
+    // A ride by time: the stated longest ride at the plan's own speed for [p] (its km per minute).
+    final ride = a.longestRideKm;
+    final kmPerMin = (p.auto?.distanceKm ?? p.distanceKm ?? 0) / max(1, p.auto?.durationMin ?? p.durationMin);
+    if (p.sport == Sport.ride && !_byKm(p) && ride != null && ride > 0 && kmPerMin > 0) ref = max(ref ?? 0, ride / kmPerMin);
     return ref != null && ref > 0 ? ref : null;
   }
 
