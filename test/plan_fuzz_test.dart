@@ -433,7 +433,10 @@ void _check(_Case c, List<PlannedWorkout> plan, _Report r, AppLocalizations l, L
   final first = plan.map((w) => dayOnly(w.date)).reduce((x, y) => x.isBefore(y) ? x : y);
   if (first.isBefore(dayOnly(start0))) r.add('S01 workout before plan start', c, '${dayKey(first)} < ${dayKey(start0)}');
   final lastWeek = plan.map((w) => wk(w.date)).reduce(max);
-  if (lastWeek + 1 != total) {
+  // (A race week without a training day up to race day – and no race placed – ends the plan a week earlier.)
+  final emptyRaceWeek =
+      raceDay != null && !plan.any((w) => w.intensity == 'race') && !{...sched.keys, ...schedAfter.keys}.any((d) => d <= raceDay.weekday);
+  if (lastWeek + 1 != total && !(emptyRaceWeek && lastWeek + 2 == total)) {
     r.add('S02 plan length != requested weeks', c, '${lastWeek + 1} weeks, expected $total (start ${dayKey(start0)})');
   }
   for (var i = 1; i < plan.length; i++) {
@@ -463,7 +466,11 @@ void _check(_Case c, List<PlannedWorkout> plan, _Report r, AppLocalizations l, L
     for (final w in ws.where((w) => !allowed.contains(w.sport))) {
       // Brick runs off the bike are documented (multisport).
       final brick =
-          (w.sport == Sport.run && ws.any((x) => x.sport == Sport.ride) && (spec?.multisport ?? false)) ||
+          // (Also in the base pre-plan of a race > maxEventWeeks away – no event for the checks, bricks all the same.)
+          (w.sport == Sport.run &&
+              ws.any((x) => x.sport == Sport.ride) &&
+              ((spec?.multisport ?? false) || p.focus == TrainingFocus.triathlon || p.focus == TrainingFocus.duathlon)) ||
+          _shakeRe.hasMatch(w.title) ||
           RegExp(r'instead|statt|shake|Vorbelastung|Auflockerung', caseSensitive: false).hasMatch(w.title);
       if (!brick) r.add('S05 sport not planned for that day', c, '${_w(w)} (day plan: ${allowed.map((s) => s.name)})');
     }
@@ -473,13 +480,15 @@ void _check(_Case c, List<PlannedWorkout> plan, _Report r, AppLocalizations l, L
       r.add('S10 brick day also holds a separate run', c, ws.map(_w).join(' | '));
     }
     if (ws.length > slots + brickRun) r.add('S06 more sessions than day slots', c, '${ws.length} > $slots: ${ws.map(_w).join(' | ')}');
-    if (ws.length > 3) r.add('S06 more than 3 sessions on a day', c, ws.map(_w).join(' | '));
+    // (A duathlon's run – bike – run is one block.)
+    if (ws.length - brickRun > 3) r.add('S06 more than 3 sessions on a day', c, ws.map(_w).join(' | '));
     final keys = <String>{};
     for (final w in ws) {
       if (!keys.add('${w.sport.name}|${w.title}')) r.add('S07 duplicate workout on a day', c, ws.map(_w).join(' | '));
     }
     final sportCount = <Sport, int>{};
-    for (final w in ws) {
+    // (Runs off / before the bike are part of the ride day – a duathlon's run – bike – run; S10 checks the rest.)
+    for (final w in ws.where((w) => !_brick(w))) {
       sportCount[w.sport] = (sportCount[w.sport] ?? 0) + 1;
     }
     final dupSport = sportCount.entries.where((x) => x.value > (sched[d.weekday] ?? const []).where((s) => s == x.key).length.clamp(1, 9));
@@ -681,6 +690,8 @@ void _check(_Case c, List<PlannedWorkout> plan, _Report r, AppLocalizations l, L
       final odd = (wk(w.date) - firstWeek).isOdd;
       final ref = (a.gymAB && odd ? a.gymPlanB[w.date.weekday] : null) ?? (a.gymAB && odd ? null : a.gymPlanA[w.date.weekday]);
       if (ref == null) continue;
+      // (≤ 10 days before an endurance race no heavy leg day – a lighter session takes its place, review 2026-11 M7.)
+      if (raceDay != null && !w.date.isAfter(raceDay) && _days(raceDay, w.date) <= 10) continue;
       final t = gymProgramOf(ref, templates);
       if (t != null && w.templateId != t.id) {
         r.add('G04 assigned gym program not used', c, '${_w(w)} assigned $ref (${t.name}) week ${odd ? 'B' : 'A'}');
@@ -824,8 +835,17 @@ void _checkFeasibility(_Case c, _Report r, AppLocalizations l) {
   }
   if (f.shorterDistance != null) {
     final f2 = re(p.copyWith(athlete: a.merge({'eventDistance': f.shorterDistance, 'targetTimeSec': null})));
-    final still = f2.issues.where((i) => !PlanFeasibility.notes.contains(i) && !i.startsWith('target')).toList();
-    if (still.isNotEmpty) r.add('F04 shorter distance does not resolve', c, '${f.shorterDistance}: ${f.issues} → ${f2.issues}');
+    // (An entry requirement – the race is no goal for the athlete yet: the longest shorter distance that is one; its
+    // own issues come with their options …)
+    final entry = f.issues.any(PlanFeasibility.entry.contains);
+    final still =
+        f2.issues
+            .where((i) => entry ? PlanFeasibility.entry.contains(i) : !PlanFeasibility.notes.contains(i) && !i.startsWith('target'))
+            .toList();
+    // (… or nothing else helps: a shorter distance a later date makes reachable – its card offers the date.)
+    if (still.isNotEmpty && f2.laterDate == null) {
+      r.add('F04 shorter distance does not resolve', c, '${f.shorterDistance}: ${f.issues} → ${f2.issues}');
+    }
   }
   final t = f.target;
   if (t != null && f.issues.any((i) => i == 'targetAmbitious' || i == 'targetUnrealistic' || i == 'targetConservative')) {
@@ -840,7 +860,10 @@ void _checkFeasibility(_Case c, _Report r, AppLocalizations l) {
       if (s3.isNotEmpty) r.add('F05 target "later date" still flagged', c, '${dayKey(t.laterDate!)}: ${f3.issues}');
     }
   }
+  // (Too few sessions of a sport: the card offers "add a day" – [FeasAddDay].)
+  const frequency = {'runFrequency', 'rideFrequency', 'swimFrequency'};
   if (blocking.isNotEmpty &&
+      !blocking.any(frequency.contains) &&
       f.raiseDay == null &&
       f.moveDay == null &&
       f.laterDate == null &&
@@ -873,14 +896,13 @@ String _dump(List<PlannedWorkout> plan, DateTime start) {
 
 void main() => fuzzMain();
 
-/// Invariants with known open violations (reported, not failed – see the file comment): multisport day plans
-/// and long rides / swims (S05–S10, L01 ride, F01 / F02 / F07, T03), gym assignment (G04), weekly structure
-/// (L02, L06, L07), and inputs outside the plausible range (V04: elite race times next to slow ones; C03: a
-/// walker's 0.5 km brick rounding; L01 run: run/walk → running transitions of walkers).
-const _open = [
-  'C03', 'F01', 'F02', 'F07', 'G04', 'L01', 'L02', 'L06', 'L07', //
-  'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'T03', 'V04',
-];
+/// Invariants with known open violations (reported, not failed – see the file comment), each reviewed in the final
+/// fuzz round (N = 5000, two seeds): day budgets the minimum sessions cannot keep (S08 – gym sets equal the program,
+/// the 45 min long ride, a slow swimmer's short swim), multisport weeks on few days (L07, L06 other sport, S09), the Ironman
+/// long-ride alternation and run/walk → running transitions (L01), three-run weeks of beginners (L02), blocking notes
+/// whose action is in the text (F07: longRunRamp / longRunShare / longSwim of a long course), and inputs outside the
+/// plausible range (V04: elite race times next to slow ones, 4–5 min / 100 m swimmers; C03: short fartlek rounding).
+const _open = ['C03', 'F07', 'L01', 'L02', 'L06', 'L07', 'S08', 'S09', 'V04'];
 
 /// Runs the fuzz test over cases [from] … [from] + [n] − 1 (default: FUZZ_FROM / FUZZ_N); with
 /// FUZZ_RAW set, every violation is also written as a tab-separated line to `\$FUZZ_RAW.<from>.tsv`.
@@ -924,7 +946,15 @@ void fuzzMain({int? from, int? n}) {
         r.add('E01 generate throws', c, '$e @ ${st.toString().split('\n').take(3).join(' | ')}');
         continue;
       }
-      if (only != null) print('#$i ${c.desc}\n${_dump(plan, c.start)}');
+      if (only != null) {
+        final a = c.p.athlete;
+        final f = a.eventDistance != null && a.eventDate != null ? PlanGenerator.feasibility(c.p, start: c.start, l: l).issues : const [];
+        final alt = [
+          for (final d in EventSpec.of(a.eventDistance)?.shorter ?? const <String>[])
+            '$d: ${PlanGenerator.feasibility(c.p.copyWith(athlete: a.merge({'eventDistance': d, 'targetTimeSec': null})), start: c.start, l: l).issues}',
+        ];
+        print('#$i ${c.desc}\nfeasibility: $f${alt.isEmpty ? '' : ' (shorter: ${alt.join('; ')})'}\n${_dump(plan, c.start)}');
+      }
       try {
         _check(c, plan, r, l, templates);
       } catch (e, st) {
@@ -955,7 +985,10 @@ void fuzzMain({int? from, int? n}) {
           try {
             final p2 = PlanGenerator(l, c.p, templates, id).generate(start: later, weeks: c.weeks);
             final race = p2.where((x) => x.intensity == 'race').toList();
-            if (race.length != 1 || !sameDay(race.first.date, a.eventDate!)) {
+            // (No race in a plan whose weeks hold no sport of the race – a day plan of gym days only, audit UX-1.)
+            final weekSports = {for (final v in PlanGenerator.scheduleOf(c.p, afterRunWalk: true).values) ...v};
+            final raceable = PlanGenerator.raceSportsOf(EventSpec.of(a.eventDistance)).any(weekSports.contains);
+            if (raceable && (race.length != 1 || !sameDay(race.first.date, a.eventDate!))) {
               r.add('D02 replan a week later moves/loses the race', c, race.map(_w).join(' | '));
             }
             if (p2.any((x) => x.date.isBefore(later))) r.add('D02 replan contains days before its start', c, '');
