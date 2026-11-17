@@ -6667,4 +6667,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String feasLongRideLayout(int min, int target) {
     return 'In your week as it is, your long ride reaches only $min min – this race needs long rides of at least $target min. More time on one day alone does not change that here: check which days carry your rides and which one is your long-session day.';
   }
+
+  @override
+  String get planLogRedate => 'Session date corrected';
+
+  @override
+  String get planLogRedateReason => 'A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off.';
 }

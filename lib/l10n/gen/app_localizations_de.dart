@@ -6667,4 +6667,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String feasLongRideLayout(int min, int target) {
     return 'In deiner Woche, wie sie jetzt ist, erreicht deine lange Ausfahrt nur $min min – dieses Rennen braucht lange Ausfahrten von mindestens $target min. Mehr Zeit an einem einzelnen Tag ändert das hier nicht: Prüfe, an welchen Tagen deine Radeinheiten liegen und welcher dein Tag für die lange Einheit ist.';
   }
+
+  @override
+  String get planLogRedate => 'Datum der Einheit korrigiert';
+
+  @override
+  String get planLogRedateReason => 'Eine Einheit wurde auf einen anderen Tag verschoben: Die Einheit des alten Tages ist wieder offen, die des neuen Tages abgehakt.';
 }

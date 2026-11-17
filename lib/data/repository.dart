@@ -255,6 +255,9 @@ class Repository {
   void savePlan(PlannedWorkout p) => _fire(_plans.doc(p.id).set(p.toMap()));
   void updatePlan(String id, Map<String, dynamic> data) => _fire(_plans.doc(id).update(data));
   void deletePlan(String id) => _fire(_plans.doc(id).delete());
+
+  /// Deletes the planned workouts [ids] (batched).
+  Future<void> deletePlans(Iterable<String> ids) => _batched([for (final id in ids) (b) => b.delete(_plans.doc(id))]);
   Future<void> savePlans(List<PlannedWorkout> list) => _batched([for (final p in list) (b) => b.set(_plans.doc(p.id), p.toMap())]);
 
   Future<void> deletePlansFrom(List<PlannedWorkout> all, DateTime from) =>

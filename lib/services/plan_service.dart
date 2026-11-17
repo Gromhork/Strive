@@ -70,11 +70,15 @@ class PlanService {
       // Done / linked workouts from [day] on stay – and their day is not planned again (a replan
       // "from today" after today's run must not add a second run for today).
       final kept = keptWorkouts(existing, day, sessions);
-      final plan = withoutCoveredDays(generated, kept);
+      // The plan's generation (data-9): its workouts carry it, the profile names the current one.
+      final gen = newPlanGen(DateTime.now(), repo.newId());
+      final plan = [
+        for (final g in withoutCoveredDays(generated, kept)) PlannedWorkout.fromMap(g.id, {...g.toMap(), 'planGen': gen}),
+      ];
       // Written locally at once (offline persistence); the future is the server commit.
       final write = repo.replacePlans(existing, day, plan, keep: {for (final k in kept) k.id});
       // Plan start / length: lets the plan review rebuild the plan to find gaps.
-      if (saveMeta) repo.saveProfile(withPlanMeta(p, day, weeks));
+      if (saveMeta) repo.saveProfile(withPlanMeta(p, day, weeks, gen: gen));
       write.ignore();
       replaced.value++;
       return plan.length;

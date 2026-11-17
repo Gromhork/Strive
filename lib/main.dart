@@ -21,6 +21,7 @@ import 'features/shell/account.dart';
 import 'features/shell/dst_repair_sync.dart';
 import 'features/shell/gym_plan_upgrade_sync.dart';
 import 'features/shell/link_cleanup_sync.dart';
+import 'features/shell/plan_gen_cleanup_sync.dart';
 import 'features/shell/gcal_sync.dart';
 import 'features/shell/program_upgrade_sync.dart';
 import 'features/shell/relocalize_sync.dart';
@@ -94,6 +95,7 @@ class _SyncHost extends ConsumerWidget {
     ref.watch(dstRepairSyncProvider);
     ref.watch(gymPlanUpgradeSyncProvider);
     ref.watch(linkCleanupSyncProvider);
+    ref.watch(planGenCleanupSyncProvider);
     return child;
   }
 }

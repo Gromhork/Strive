@@ -110,6 +110,57 @@ PlannedWorkout retitledRunWalk(PlannedWorkout w) {
   return title == w.title ? w : PlannedWorkout.fromMap(w.id, {...w.toMap(), 'title': title});
 }
 
+/// [w] with the "N × length" of its title (intervals, cruise intervals, goal-pace sets, hill reps, ride and swim
+/// sets – "Intervalle 4 × 800 m", "Schwelle 3 × 10 min") matching its work steps after an adjustment dropped repeats
+/// or shortened them (review 2026-11 adapt-4: "4 × 800 m" with 450 m repeats); run/walk via [retitledRunWalk].
+/// [decimal]: the decimal separator of a km length when the title has none yet (',' in German; default: from the
+/// title – the German km titles are "Zieltempo …" and "Cruise-Intervalle …").
+PlannedWorkout retitledRepeats(PlannedWorkout w, {String? decimal}) {
+  if (isRunWalk(w)) return retitledRunWalk(w);
+  final m = RegExp(r'(\d+) × (\d+(?:[.,]\d+)?) (m|km|min|s)\b').firstMatch(w.title);
+  final work = [for (final i in mainSetIndices(w.steps)) w.steps[i]];
+  if (m == null || work.isEmpty) return w;
+  final f = work.first;
+  final sep =
+      m.group(2)!.contains(',')
+          ? ','
+          : (m.group(2)!.contains('.') ? '.' : (decimal ?? (w.title.contains('Intervalle') || w.title.contains('Zieltempo') ? ',' : '.')));
+  final String len;
+  switch (m.group(3)) {
+    case 'm' when f.distanceM != null:
+      len = '${f.distanceM!.round()}';
+    case 'km' when f.distanceM != null:
+      final km = f.distanceM! / 1000;
+      len = (km - km.roundToDouble()).abs() < 0.05 ? '${km.round()}' : km.toStringAsFixed(1).replaceAll('.', sep);
+    case 'min' when f.durationSec != null && f.durationSec! % 60 == 0:
+      len = '${f.durationSec! ~/ 60}';
+    case 's' when f.durationSec != null:
+      len = '${f.durationSec}';
+    default:
+      return w;
+  }
+  final title = w.title.replaceRange(m.start, m.end, '${work.length} × $len ${m.group(3)}');
+  return title == w.title ? w : PlannedWorkout.fromMap(w.id, {...w.toMap(), 'title': title});
+}
+
+/// Indices of the main set's work steps of [steps] – the repeats a "N × length" title counts: the work steps of
+/// the zone with the most volume (a tie: the later one), so a swim's drills before its CSS set or its "2 × 400 m"
+/// build-up are not part of it. (Volume: metres, a timed step at ~3 m/s.)
+List<int> mainSetIndices(List<WorkoutStep> steps) {
+  final v = <String?, double>{};
+  for (final s in steps) {
+    if (s.isWork) v[s.zone] = (v[s.zone] ?? 0) + (s.distanceM ?? 0) + 3 * (s.durationSec ?? 0);
+  }
+  String? zone;
+  for (final s in steps) {
+    if (s.isWork && (zone == null || v[s.zone]! >= v[zone]!)) zone = s.zone;
+  }
+  return [
+    for (var i = 0; i < steps.length; i++)
+      if (steps[i].isWork && steps[i].zone == zone) i,
+  ];
+}
+
 /// Swim novice ladder session: a swim with continuous endurance (EN) work steps.
 bool _isSwimLadder(PlannedWorkout x) => x.sport == Sport.swim && x.steps.any((s) => s.isWork && s.zone == 'EN');
 

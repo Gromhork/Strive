@@ -560,7 +560,13 @@ class PlanGenerator {
     final schedule = _weekSchedule();
     // Couch-to-5K has no recovery weeks: while a pure runner is still on run/walk (one
     // stage per week, every session easy), recovery weeks are not planned.
-    final rwStart = runWalkStartFor(profile);
+    // A plan re-created mid-plan ([PlanCarry], review 2026-11 adapt-2): the run/walk ladder continues at the stage
+    // the athlete reached instead of starting over at 8 × 1 min (past its end: continuous running).
+    final carry = _carry;
+    final rwStart = switch (runWalkStartFor(profile)) {
+      final s? when carry?.runWalkStage != null => max(s, carry!.runWalkStage!),
+      final s => s,
+    };
     final scheduleAfterRw = rwStart != null ? scheduleOf(profile, afterRunWalk: true) : schedule;
     final endurance = schedule.values.expand((e) => e).where((s) => s != Sport.gym).toSet();
     final pureRun = endurance.length == 1 && endurance.first == Sport.run;
@@ -716,8 +722,8 @@ class PlanGenerator {
     // ~10 min per loading week (Galloway: time on feet with walk breaks), its running ≤ 2 × the
     // regular session's ([rwLongSec] main set s, [rwRunMax] longest regular running s so far).
     int? rwPos = rwStart == null ? null : 0;
-    var rwLongSec = 0, rwRunMax = 0;
-    var rwLongKm = 0.0; // running km of the longest long run/walk (R1 reference afterwards)
+    var rwLongSec = carry?.runWalkLongSec ?? 0, rwRunMax = 0;
+    var rwLongKm = carry?.runWalkLongKm ?? 0.0; // running km of the longest long run/walk (R1 reference afterwards)
     var easyKm = 0.0; // easy-run cap of a former run/walker: the last 30 min run, +10 % a week
     _walkBreaks = rwGoal;
     var lastLongKm = 0.0; // actual long run of the last loading week
@@ -729,7 +735,11 @@ class PlanGenerator {
     var plateauKm = 0.0; // longest planned long run so far (variation once it stops growing)
     var plateau = 0; // loading weeks on the plateau
     var loadWeeks = 0; // loading weeks so far (progression of quality sessions)
-    var block = 0; // loading weeks since the last recovery week (strength RIR wave)
+    // (A re-created plan continues the replaced plan's block – [_phases].)
+    var block =
+        carry == null || carry.recovery
+            ? 0
+            : min(carry.loadWeeks, _loadWeeks - 1); // loading weeks since the last recovery week (strength RIR wave)
     var bricks = 0; // brick sessions so far (run off the bike grows with each)
     final brickRun = (_tri || _du) && runPerWeek > 0 && spec?.brick != null;
     var lastLongRide = 0; // long ride (min) of the last loading week
@@ -1257,7 +1267,12 @@ class PlanGenerator {
         longestRun = _clampedThisWeek ? max(actualLongMax, km) : max(longestRun, km);
         actualLongMax = max(actualLongMax, km);
       }
-      if (!rest) lastLoadRunKm = week.where((p) => p.sport == Sport.run).fold(0.0, (x, p) => x + runningKm(p));
+      // (A plan starting mid-week: the days before the start had their share of the week – a recovery week right
+      // after it would otherwise be cut to 75 % of a partial week.)
+      if (!rest) {
+        final km = week.where((p) => p.sport == Sport.run).fold(0.0, (x, p) => x + runningKm(p));
+        lastLoadRunKm = max(km, skippedRuns > 0 ? wk : 0.0);
+      }
       final longRideW = week.where((p) => p.sport == Sport.ride && p.intensity == 'long').firstOrNull;
       if (!rest && longRideW != null && !imRunWeek) lastLongRide = longRideW.durationMin;
       if (phase == 'recovery') block = 0;
@@ -2083,7 +2098,18 @@ class PlanGenerator {
   }
 
   /// Phases of the plan; no recovery week in the first [noRecoveryBefore] weeks (run/walk).
+  ///
+  /// A plan re-created mid-plan ([PlanCarry], review 2026-11 adapt-7) continues the replaced plan: never a phase
+  /// before the one reached (build / peak: no base weeks again), and the loading / recovery rhythm goes on – the
+  /// loading weeks right before it count, and a start in a planned recovery week keeps that week as recovery.
   List<String> _phases(int total, {int noRecoveryBefore = 0}) {
+    final carry = _carry;
+    // Same race: the replaced plan's own weeks (its taper, recovery weeks and phases) go on unchanged.
+    final layout = carry?.phases;
+    if (layout != null) {
+      final off = daysBetween(startOfWeek(carry!.start), startOfWeek(_start)) ~/ 7;
+      if (off >= 0 && layout.length - off == total) return layout.sublist(off);
+    }
     // An event more than [GoalModel.specificWeeks] away: the weeks before the race-specific
     // plan are a base "pre-plan" block (easy volume, strides, recovery weeks) – build and peak
     // keep their usual length instead of stretching over a whole year.
@@ -2093,8 +2119,11 @@ class PlanGenerator {
     // (a 5-week 70.3 plan gets 1 taper week, not 3 out of 5).
     final taper = weeksToEvent != null ? min(_taperWeeks, min(max(0, spec - 2), max(1, spec ~/ 3))) : 0;
     final body = spec - taper;
-    final base = max(1, (body * (beginner ? 0.5 : 0.42)).round());
-    final peak = weeksToEvent != null ? max(1, (body * 0.18).round()) : 0;
+    // Phase reached by the replaced plan (1 build, 2 peak / taper); not before a base pre-plan of a moved race.
+    final reached = pre == 0 ? (const {'build': 1, 'peak': 2, 'taper': 2}[carry?.phase] ?? 0) : 0;
+    final base = reached > 0 ? 0 : max(1, (body * (beginner ? 0.5 : 0.42)).round());
+    // (From the build on: build and peak share the weeks left as they do in a whole plan, ~0.4 : 0.18.)
+    final peak = weeksToEvent != null ? (reached >= 2 ? body : min(body, max(1, (body * (reached == 1 ? 0.31 : 0.18)).round()))) : 0;
     final build = max(0, body - base - peak);
     final out = <String>[
       ...List.filled(pre + base, 'base'),
@@ -2103,13 +2132,20 @@ class PlanGenerator {
       ...List.filled(taper, 'taper'),
     ];
     // Recovery weeks: after every N loading weeks (never in taper or the final week).
-    var run = 0;
+    // (A re-created plan: the replaced plan's loading weeks before it count – a loading first week stays one.)
+    final carried = carry == null || carry.recovery ? 0 : carry.loadWeeks;
+    var run = noRecoveryBefore == 0 ? min(carried, _loadWeeks - 1) : 0;
     for (var i = 0; i < out.length; i++) {
       if (out[i] == 'taper') break;
+      if (i == 0 && carry != null && carry.recovery && out.length - 1 - taper > 0) {
+        out[0] = 'recovery';
+        run = 0;
+        continue;
+      }
       if (i < noRecoveryBefore) continue;
       // Right after a run/walk ladder of ≥ N weeks: the ladder (with its growing long run/walk) was a
       // loading block, so a recovery week comes first – not 12 loading weeks in a row (IMPORTANT 12).
-      if (i == noRecoveryBefore && noRecoveryBefore >= _loadWeeks) run = _loadWeeks;
+      if (i == noRecoveryBefore && noRecoveryBefore > 0 && noRecoveryBefore + carried >= _loadWeeks) run = _loadWeeks;
       run++;
       if (run > _loadWeeks && i < out.length - 1 - taper) {
         out[i] = 'recovery';
@@ -2197,8 +2233,9 @@ class PlanGenerator {
   /// Volume ceiling (R5, table 1.8) from a (novice, intermediate, advanced) [table] for
   /// the goal; without a goal [start] × [noGoal]. CHALLENGING +15 %, EASY uses the
   /// novice column; never below the athlete's current volume.
-  double _ceiling(List<double> table, double start, double noGoal) {
-    var c = table.isEmpty ? start * noGoal : max(table[_lv], start);
+  /// ([base]: the volume the training block started with, [PlanCarry] – a re-created plan's ceiling does not grow.)
+  double _ceiling(List<double> table, double start, double noGoal, {double? base}) {
+    var c = table.isEmpty ? (base ?? start) * noGoal : max(table[_lv], start);
     if (a.difficulty == 'challenging') c *= 1.15;
     if (a.difficulty == 'easy' && table.isNotEmpty) c = max(table[0], start);
     return max(c, start);
@@ -2216,14 +2253,16 @@ class PlanGenerator {
     final start = _runStartKm(perWeek);
     final c = _ceiling(spec?.runKm ?? const [], start, 1.35);
     final stated = a.runWeeklyKm != null && a.runWeeklyKm! > 0;
-    return stated ? max(start, min(c, max(start * 1.5, start + 10))) : c;
+    // (A plan re-created mid-plan: from the volume the training block started with – review 2026-11 adapt-7.)
+    final base = _carry?.baseRunKm ?? start;
+    return stated ? max(start, min(c, max(base * 1.5, base + 10))) : c;
   }
 
   // Bike hours / swim km ceilings of the event ([EventSpec.rideH] / [EventSpec.swimKm]).
-  double _rideCeilingH(int perWeek) => _ceiling(spec?.rideH ?? const [], _rideStartH(perWeek), 1.5);
+  double _rideCeilingH(int perWeek) => _ceiling(spec?.rideH ?? const [], _rideStartH(perWeek), 1.5, base: _carry?.baseRideH);
 
   double _swimCeilingKm(int perWeek) {
-    final c = _ceiling(spec?.swimKm ?? const [], _swimStartKm(perWeek), 1.4);
+    final c = _ceiling(spec?.swimKm ?? const [], _swimStartKm(perWeek), 1.4, base: _carry?.baseSwimKm);
     // Cannot swim 400 m yet: technique and short repeats – about 1–1.5 km a session (§4.4).
     return _swimNovice ? min(c, max(_swimStartKm(perWeek), 1.4 * perWeek)) : c;
   }
@@ -3018,6 +3057,39 @@ class PlanGenerator {
       desc = l.wEasyDesc;
     }
     return _plan(day, Sport.run, title, desc, 'easy', steps, phase, false);
+  }
+
+  /// The continuation of a replaced plan ([PlanCarry]) – only for the plan that starts on its day (the plan
+  /// review's rebuild from [AthleteData.planStart] too; a preview from another day starts fresh).
+  PlanCarry? get _carry {
+    final c = a.planCarry;
+    return c != null && planStartFor(profile, c.start) == _start ? c : null;
+  }
+
+  /// Stage ([_runWalkTable] index) of a regular run/walk session [p] – its run blocks, walk breaks and repeats –
+  /// or null (no run/walk session, a long run/walk, a shortened taper session).
+  static int? runWalkStageOf(PlannedWorkout p) {
+    if (p.sport != Sport.run || p.intensity != 'easy' || p.steps.isEmpty || p.steps.first.zone != 'walk') return null;
+    final work = p.steps.where((s) => s.kind == 'work' && s.zone != 'walk').toList();
+    final walks = p.steps.where((s) => s.kind == 'recovery' && s.zone == 'walk').toList();
+    if (work.isEmpty) return null;
+    final run = work.first.durationSec ?? 0;
+    if (work.any((s) => s.durationSec != run)) return null;
+    final walk = walks.firstOrNull?.durationSec ?? 0;
+    for (var i = 0; i < _runWalkTable.length; i++) {
+      final (r, w, n) = _runWalkTable[i];
+      if (r == run && n == work.length && (n == 1 || w == walk)) return i;
+    }
+    return null;
+  }
+
+  /// Run/walk stages before continuous running takes over ([runWalkStageOf] past the last: the ladder is done).
+  static int get runWalkStages => _runWalkTable.length;
+
+  /// Main set (s, run blocks and walk breaks) of a long run/walk [p] ([_longRunWalk]), or 0.
+  static int runWalkMainSec(PlannedWorkout p) {
+    if (p.sport != Sport.run || p.intensity != 'long' || p.steps.isEmpty || p.steps.first.zone != 'walk') return 0;
+    return p.steps.where((s) => s.kind == 'work' || s.kind == 'recovery').fold(0, (t, s) => t + (s.durationSec ?? 0));
   }
 
   /// Couch-to-5K style run/walk progression (beginners who cannot run 30 min).

@@ -11728,6 +11728,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'In your week as it is, your long ride reaches only {min} min – this race needs long rides of at least {target} min. More time on one day alone does not change that here: check which days carry your rides and which one is your long-session day.'**
   String feasLongRideLayout(int min, int target);
+
+  /// No description provided for @planLogRedate.
+  ///
+  /// In en, this message translates to:
+  /// **'Session date corrected'**
+  String get planLogRedate;
+
+  /// No description provided for @planLogRedateReason.
+  ///
+  /// In en, this message translates to:
+  /// **'A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off.'**
+  String get planLogRedateReason;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

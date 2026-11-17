@@ -402,6 +402,12 @@ class GoalForecast {
     }
     if (status == ForecastStatus.onTrack) suggested = null;
     if (quietAhead) suggested = null;
+    // The suggested time points the way the status does (review 2026-11 adapt-5: "at risk" after two sick weeks
+    // offered 3:42 for a 3:50 target): behind → only a slower target, ahead → only a faster one. A status that
+    // the long runs, missed sessions or fatigue set (the time model alone would be ahead) gets its reasons, no time.
+    if (suggested != null && target != null && (status == ForecastStatus.ahead ? suggested >= target : suggested <= target)) {
+      suggested = null;
+    }
     if (reasons.contains(ForecastReason.fasterThanPlanned) && status != ForecastStatus.ahead) {
       reasons.remove(ForecastReason.fasterThanPlanned);
     }

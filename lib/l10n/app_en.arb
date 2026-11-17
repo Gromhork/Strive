@@ -4816,5 +4816,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "planLogRedate": "Session date corrected",
+  "planLogRedateReason": "A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off."
 }
