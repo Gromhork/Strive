@@ -26,8 +26,7 @@ class NotificationService {
     if (_ready || kIsWeb) return;
     try {
       tzdata.initializeTimeZones();
-      final info = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(info.identifier));
+      useTimeZone(await deviceTimeZone());
     } catch (e) {
       debugPrint('timezone init failed: $e');
     }
@@ -70,39 +69,96 @@ class NotificationService {
     await android?.deleteNotificationChannel('hydration');
   }
 
-  /// One reminder at [hour]:[minute] on the day of each upcoming planned workout (next 14 days).
+  /// The device's current time zone (IANA id, e.g. "Europe/Berlin"); null when unknown.
+  static Future<String?> deviceTimeZone() async {
+    if (kIsWeb) return null;
+    try {
+      return (await FlutterTimezone.getLocalTimezone()).identifier;
+    } catch (e) {
+      debugPrint('time zone lookup failed: $e');
+      return null;
+    }
+  }
+
+  // Scheduling runs one call at a time: two overlapping runs (cancel, cancel, schedule, schedule)
+  // could leave reminders of the older plan behind.
+  Future<void> _queue = Future.value();
+
+  /// One reminder at [hour]:[minute] local time on the day of each upcoming planned workout
+  /// (next 14 days). [timeZone]: the device's zone now – reminders are absolute instants, so
+  /// after travelling they must be scheduled again in the new zone (reminderSyncProvider does
+  /// that on every zone change and every new day, which also refills the 14-day window).
   Future<void> scheduleTraining({
     required bool enabled,
     required int hour,
     int minute = 0,
+    String? timeZone,
     required List<PlannedWorkout> plans,
     required String Function(PlannedWorkout) title,
     required String Function(PlannedWorkout) body,
-  }) async {
-    await init();
-    for (var i = 0; i < 60; i++) {
-      await _plugin.cancel(_trainingBase + i);
-    }
-    if (!enabled) return;
-    final now = tz.TZDateTime.now(tz.local);
-    final upcoming =
-        plans
-            .where((p) => p.status == 'planned' && !dayOnly(p.date).isBefore(dayOnly(DateTime.now())))
-            .where((p) => daysBetween(DateTime.now(), p.date) <= 14)
-            .take(60)
-            .toList();
-    var idx = 0;
-    for (final p in upcoming) {
-      final t = tz.TZDateTime(tz.local, p.date.year, p.date.month, p.date.day, hour, minute);
-      if (t.isBefore(now)) continue;
-      await _plugin.zonedSchedule(
-        _trainingBase + idx++,
-        title(p),
-        body(p),
-        t,
-        _details('training', 'Training'),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      );
-    }
+  }) {
+    final Future<void> run = _queue.then((_) async {
+      await init();
+      useTimeZone(timeZone ?? await deviceTimeZone());
+      for (var i = 0; i < trainingReminderMax; i++) {
+        await _plugin.cancel(_trainingBase + i);
+      }
+      if (!enabled) return;
+      final times = trainingReminderTimes(plans, hour: hour, minute: minute, now: tz.TZDateTime.now(tz.local));
+      var idx = 0;
+      for (final (p, t) in times) {
+        await _plugin.zonedSchedule(
+          _trainingBase + idx++,
+          title(p),
+          body(p),
+          t,
+          _details('training', 'Training'),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      }
+    });
+    _queue = run.catchError((Object e) {
+      debugPrint('reminder scheduling failed: $e');
+    });
+    return run;
   }
+}
+
+/// At most this many training reminders are scheduled (notification ids 1000–1059).
+const trainingReminderMax = 60;
+
+/// Makes [zoneId] the local zone of the reminder times; true when it changed. Unknown ids are
+/// ignored (the previous zone stays).
+bool useTimeZone(String? zoneId) {
+  if (zoneId == null || zoneId == tz.local.name) return false;
+  try {
+    tz.setLocalLocation(tz.getLocation(zoneId));
+    return true;
+  } catch (e) {
+    debugPrint('unknown time zone $zoneId: $e');
+    return false;
+  }
+}
+
+/// The reminders for [plans]: [hour]:[minute] in [now]'s zone on the day of each planned workout
+/// from today on, at most 14 days ahead and [trainingReminderMax] in all; times already past are
+/// left out. A plan's day is its local calendar day (dayKey), wherever the phone is now.
+List<(PlannedWorkout, tz.TZDateTime)> trainingReminderTimes(
+  List<PlannedWorkout> plans, {
+  required int hour,
+  required int minute,
+  required tz.TZDateTime now,
+}) {
+  final today = DateTime(now.year, now.month, now.day);
+  final out = <(PlannedWorkout, tz.TZDateTime)>[];
+  for (final p in plans) {
+    if (p.status != 'planned') continue;
+    final day = dayOnly(p.date);
+    if (day.isBefore(today) || daysBetween(today, day) > 14) continue;
+    final t = tz.TZDateTime(now.location, day.year, day.month, day.day, hour, minute);
+    if (t.isBefore(now)) continue;
+    out.add((p, t));
+    if (out.length == trainingReminderMax) break;
+  }
+  return out;
 }

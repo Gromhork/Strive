@@ -6396,4 +6396,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String folderDuplicatedHidden(int n) {
     return '$n hidden by the sport filter.';
   }
+
+  @override
+  String get signOutWorkoutTitle => 'A workout is running';
+
+  @override
+  String get signOutWorkoutBody => 'Logging out ends it without saving it.';
+
+  @override
+  String get signOutSyncing => 'Syncing your changes …';
+
+  @override
+  String get signOutUnsyncedTitle => 'Changes not synced yet';
+
+  @override
+  String get signOutUnsyncedBody => 'Some changes – e.g. workouts recorded offline – have not reached the server yet. If you log out now, they are lost. Go online and wait a moment to keep them.';
+
+  @override
+  String get signOutAnyway => 'Log out anyway';
+
+  @override
+  String get guestExistsTitle => 'This Google account already has Strive data';
+
+  @override
+  String get guestExistsBody => 'Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.';
+
+  @override
+  String get guestExistsMergeInfo => 'Taken along: your workouts, body values, own programs and goals. The Google account keeps its profile and training plan.';
+
+  @override
+  String get guestExistsMerge => 'Take data along';
+
+  @override
+  String get guestExistsDiscard => 'Discard guest data';
+
+  @override
+  String get guestSwitchRunning => 'Switching account …';
+
+  @override
+  String guestSwitchMerged(int count) {
+    return 'Switched to your Google account – workouts taken along: $count';
+  }
+
+  @override
+  String get guestSwitchDiscarded => 'Switched to your Google account. The guest data was deleted.';
+
+  @override
+  String get guestSwitchFailed => 'Switching failed – nothing was changed. Check your internet connection and try again.';
+
+  @override
+  String get guestSwitchSignInAgain => 'Please sign in with Google again to continue.';
 }

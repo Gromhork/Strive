@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
@@ -221,6 +222,24 @@ class SavedWorkout {
   Sport get sport => gym != null ? Sport.gym : cardio!.sport;
 }
 
+/// The signed-in account (null when nobody is signed in or Firebase is not set up – tests).
+String? currentAccountUid() {
+  try {
+    return FirebaseAuth.instance.currentUser?.uid;
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Whether a stored file belongs to the account [uid]. Each file carries the uid of the account
+/// that recorded it: a workout or unsaved summary of one account must never be offered to (and
+/// saved into) the next account signed in on this phone. Files of versions before the uid was
+/// stored carry none and stay valid (written by the account signed in at the update).
+bool storedFileOwnedBy(Map m, String? uid) => m['uid'] == null || m['uid'] == uid;
+
+/// The JSON of a stored file: version, owner, payload.
+String _envelope(String? uid, Map<String, Object?> body) => jsonEncode({'v': _version, if (uid != null) 'uid': uid, ...body});
+
 abstract class WorkoutStore {
   Future<SavedWorkout?> loadActive();
 
@@ -234,11 +253,15 @@ abstract class WorkoutStore {
   Future<Session?> loadSummary();
   Future<void> saveSummary(Session draft);
   Future<void> clearSummary();
+
+  /// Hands the stored workout / summary of account [from] to account [to] (the guest's data
+  /// moved into an existing account: it is the same person's workout).
+  Future<void> reassign(String from, String to);
 }
 
 /// File storage in the app's private support directory.
 class FileWorkoutStore implements WorkoutStore {
-  FileWorkoutStore([this._resolveDir = _defaultDir]);
+  FileWorkoutStore([this._resolveDir = _defaultDir, this._owner = currentAccountUid]);
 
   static Future<Directory> _defaultDir() async {
     final base = await getApplicationSupportDirectory();
@@ -246,6 +269,7 @@ class FileWorkoutStore implements WorkoutStore {
   }
 
   final Future<Directory> Function() _resolveDir;
+  final String? Function() _owner;
 
   // Resolved on first use (inside error handling), never eagerly.
   Future<Directory>? _dirFuture;
@@ -284,7 +308,7 @@ class FileWorkoutStore implements WorkoutStore {
       final f = await _file('active.json');
       if (!await f.exists()) return null;
       final m = jsonDecode(await f.readAsString()) as Map;
-      if (m['v'] != _version) return null;
+      if (m['v'] != _version || !storedFileOwnedBy(m, _owner())) return null;
       final data = m['data'] as Map;
       if (m['kind'] == 'gym') return SavedWorkout(gym: activeGymFromJson(data));
       final r = await _file('route.txt');
@@ -301,7 +325,7 @@ class FileWorkoutStore implements WorkoutStore {
 
   @override
   Future<void> saveGym(ActiveGym g) {
-    final json = jsonEncode({'v': _version, 'kind': 'gym', 'data': activeGymToJson(g)});
+    final json = _envelope(_owner(), {'kind': 'gym', 'data': activeGymToJson(g)});
     return _run(() async {
       await _writeAtomic('active.json', json);
       if (_routeOf != null) {
@@ -314,7 +338,7 @@ class FileWorkoutStore implements WorkoutStore {
 
   @override
   Future<void> saveCardio(CardioState s) {
-    final json = jsonEncode({'v': _version, 'kind': 'cardio', 'data': cardioToJson(s)});
+    final json = _envelope(_owner(), {'kind': 'cardio', 'data': cardioToJson(s)});
     // Snapshot of the new points now (the live list keeps growing).
     final pts = s.points;
     final fresh = _routeOf != s.start || pts.length < _routeSaved;
@@ -351,7 +375,7 @@ class FileWorkoutStore implements WorkoutStore {
       final f = await _file('summary.json');
       if (!await f.exists()) return null;
       final m = jsonDecode(await f.readAsString()) as Map;
-      return m['v'] == _version ? sessionDraftFromJson(m['data'] as Map) : null;
+      return m['v'] == _version && storedFileOwnedBy(m, _owner()) ? sessionDraftFromJson(m['data'] as Map) : null;
     } catch (e) {
       debugPrint('WorkoutStore: unreadable summary ($e)');
       return null;
@@ -360,16 +384,30 @@ class FileWorkoutStore implements WorkoutStore {
 
   @override
   Future<void> saveSummary(Session draft) {
-    final json = jsonEncode({'v': _version, 'data': sessionDraftToJson(draft)});
+    final json = _envelope(_owner(), {'data': sessionDraftToJson(draft)});
     return _run(() => _writeAtomic('summary.json', json));
   }
 
   @override
   Future<void> clearSummary() => _run(() => _delete('summary.json'));
+
+  @override
+  Future<void> reassign(String from, String to) => _run(() async {
+    for (final name in const ['active.json', 'summary.json']) {
+      final f = await _file(name);
+      if (!await f.exists()) continue;
+      final m = jsonDecode(await f.readAsString()) as Map;
+      if (m['uid'] == from) await _writeAtomic(name, jsonEncode({...m, 'uid': to}));
+    }
+  });
 }
 
 /// In-memory store (tests); goes through the same JSON as the file store.
 class MemoryWorkoutStore implements WorkoutStore {
+  MemoryWorkoutStore([this.owner = currentAccountUid]);
+
+  /// The signed-in account (see [FileWorkoutStore]).
+  String? Function() owner;
   String? active, route, summary;
   int saves = 0;
 
@@ -377,6 +415,7 @@ class MemoryWorkoutStore implements WorkoutStore {
   Future<SavedWorkout?> loadActive() async {
     if (active == null) return null;
     final m = jsonDecode(active!) as Map;
+    if (!storedFileOwnedBy(m, owner())) return null;
     if (m['kind'] == 'gym') return SavedWorkout(gym: activeGymFromJson(m['data'] as Map));
     final data = m['data'] as Map;
     return SavedWorkout(cardio: cardioFromJson(data, points: decodeRoute(route ?? '')), savedAt: _time(data['savedAt']));
@@ -385,14 +424,14 @@ class MemoryWorkoutStore implements WorkoutStore {
   @override
   Future<void> saveGym(ActiveGym g) async {
     saves++;
-    active = jsonEncode({'v': _version, 'kind': 'gym', 'data': activeGymToJson(g)});
+    active = _envelope(owner(), {'kind': 'gym', 'data': activeGymToJson(g)});
     route = null;
   }
 
   @override
   Future<void> saveCardio(CardioState s) async {
     saves++;
-    active = jsonEncode({'v': _version, 'kind': 'cardio', 'data': cardioToJson(s)});
+    active = _envelope(owner(), {'kind': 'cardio', 'data': cardioToJson(s)});
     route = encodeRoutePoints(s.points);
   }
 
@@ -400,13 +439,29 @@ class MemoryWorkoutStore implements WorkoutStore {
   Future<void> clearActive() async => active = route = null;
 
   @override
-  Future<Session?> loadSummary() async => summary == null ? null : sessionDraftFromJson((jsonDecode(summary!) as Map)['data'] as Map);
+  Future<Session?> loadSummary() async {
+    if (summary == null) return null;
+    final m = jsonDecode(summary!) as Map;
+    return storedFileOwnedBy(m, owner()) ? sessionDraftFromJson(m['data'] as Map) : null;
+  }
 
   @override
-  Future<void> saveSummary(Session draft) async => summary = jsonEncode({'v': _version, 'data': sessionDraftToJson(draft)});
+  Future<void> saveSummary(Session draft) async => summary = _envelope(owner(), {'data': sessionDraftToJson(draft)});
 
   @override
   Future<void> clearSummary() async => summary = null;
+
+  @override
+  Future<void> reassign(String from, String to) async {
+    String? re(String? json) {
+      if (json == null) return null;
+      final m = jsonDecode(json) as Map;
+      return m['uid'] == from ? jsonEncode({...m, 'uid': to}) : json;
+    }
+
+    active = re(active);
+    summary = re(summary);
+  }
 }
 
 final workoutStoreProvider = Provider<WorkoutStore>((ref) => FileWorkoutStore());

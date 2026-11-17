@@ -1887,5 +1887,21 @@
   "programDuplicated": "„{name}“ erstellt.",
   "programDuplicatedTo": "„{name}“ in {folder} erstellt.",
   "folderDuplicated": "{n, plural, =0{Leeren Ordner dupliziert.} =1{Ordner dupliziert (1 Programm).} other{Ordner dupliziert ({n} Programme).}}",
-  "folderDuplicatedHidden": "{n} davon blendet der Sportfilter aus."
+  "folderDuplicatedHidden": "{n} davon blendet der Sportfilter aus.",
+  "signOutWorkoutTitle": "Ein Training läuft noch",
+  "signOutWorkoutBody": "Abmelden beendet es, ohne es zu speichern.",
+  "signOutSyncing": "Deine Änderungen werden synchronisiert …",
+  "signOutUnsyncedTitle": "Noch nicht synchronisiert",
+  "signOutUnsyncedBody": "Einige Änderungen – z. B. offline erfasste Einheiten – sind noch nicht auf dem Server. Wenn du dich jetzt abmeldest, gehen sie verloren. Geh online und warte kurz, dann bleiben sie erhalten.",
+  "signOutAnyway": "Trotzdem abmelden",
+  "guestExistsTitle": "Dieses Google-Konto hat schon Strive-Daten",
+  "guestExistsBody": "Dein Gastkonto lässt sich nicht damit verknüpfen. Du kannst zu diesem Konto wechseln und deine Gast-Daten mitnehmen – oder wechseln und die Gast-Daten verwerfen.",
+  "guestExistsMergeInfo": "Mitgenommen werden deine Einheiten, Körperwerte, eigenen Programme und Ziele. Profil und Trainingsplan des Google-Kontos bleiben.",
+  "guestExistsMerge": "Daten mitnehmen",
+  "guestExistsDiscard": "Gast-Daten verwerfen",
+  "guestSwitchRunning": "Konto wird gewechselt …",
+  "guestSwitchMerged": "Zum Google-Konto gewechselt – übernommene Einheiten: {count}",
+  "guestSwitchDiscarded": "Zum Google-Konto gewechselt. Die Gast-Daten wurden gelöscht.",
+  "guestSwitchFailed": "Wechsel fehlgeschlagen – es wurde nichts geändert. Prüf deine Internetverbindung und versuch es noch einmal.",
+  "guestSwitchSignInAgain": "Bitte melde dich mit Google an, um weiterzumachen."
 }

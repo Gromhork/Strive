@@ -12,7 +12,7 @@ import '../shell/gcal_sync.dart';
 import '../shell/health_sync.dart';
 import 'google_calendar_page.dart';
 import 'health_connect_page.dart';
-import '../../services/google_auth.dart';
+import '../shell/guest_switch.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/settings.dart';
@@ -305,8 +305,9 @@ class ProfilePage extends ConsumerWidget {
                 chevron: false,
                 onTap: () async {
                   if (user?.isAnonymous == true && !await confirmGuestLogout(context)) return;
-                  if (!context.mounted) return;
-                  final out = signOutAndClear(context);
+                  // Running workout, changes not on the server yet: asked here, before the pages close.
+                  if (!context.mounted || !await readyToSignOut(context) || !context.mounted) return;
+                  final out = signOutAndClear(context, checked: true);
                   Navigator.popUntil(context, (r) => r.isFirst);
                   await out;
                 },
@@ -373,16 +374,6 @@ Future<void> linkGuestWithEmail(BuildContext context) async {
     if (context.mounted) toast(context, l.accountLinked);
   } on FirebaseAuthException catch (e) {
     if (context.mounted) toast(context, '${l.authError} (${e.code})');
-  }
-}
-
-/// Links the guest account with Google.
-Future<void> linkGuestWithGoogle(BuildContext context) async {
-  final l = context.l10n;
-  try {
-    if (await GoogleAuth.signIn() && context.mounted) toast(context, l.accountLinked);
-  } catch (e) {
-    if (context.mounted) toast(context, '${l.authError}: $e');
   }
 }
 
