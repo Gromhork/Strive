@@ -1274,6 +1274,17 @@ class PlannedWorkout {
   /// Small automatic adjustment after a completed session (original values for undo).
   final AutoAdjustment? auto;
 
+  /// Order among the workouts of the same day (lower first; 0 = unordered, e.g. plans stored before it existed):
+  /// the generator sets it so a brick run follows its ride and a duathlon's run before the bike comes first (review
+  /// 2026-11 tri-12). [compareByDay] sorts by date, then by it.
+  final int slot;
+
+  /// Date order, same-day workouts by [slot] – for lists of a plan.
+  static int compareByDay(PlannedWorkout a, PlannedWorkout b) {
+    final d = a.date.compareTo(b.date);
+    return d != 0 ? d : a.slot.compareTo(b.slot);
+  }
+
   /// Generation of the plan that created this workout ([AthleteData.planGen]); null for workouts the athlete
   /// added and for plans from before it was stored.
   final String? planGen;
@@ -1296,6 +1307,7 @@ class PlannedWorkout {
     this.exercises = const [],
     this.gymMods = const [],
     this.auto,
+    this.slot = 0,
     this.planGen,
   });
 
@@ -1316,6 +1328,7 @@ class PlannedWorkout {
     List<String>? gymMods,
     AutoAdjustment? auto,
     bool clearAuto = false,
+    int? slot,
   }) => PlannedWorkout(
     id: id,
     date: date ?? this.date,
@@ -1334,6 +1347,7 @@ class PlannedWorkout {
     exercises: exercises ?? this.exercises,
     gymMods: gymMods ?? this.gymMods,
     auto: clearAuto ? null : (auto ?? this.auto),
+    slot: slot ?? this.slot,
     planGen: planGen,
   );
 
@@ -1370,6 +1384,7 @@ class PlannedWorkout {
     exercises: _maps(m['exercises']).map(GymExercise.fromMap).toList(),
     gymMods: _strings(m['gymMods']),
     auto: m['auto'] is Map ? AutoAdjustment.fromMap(m['auto'] as Map) : null,
+    slot: _i(m['slot'], 0),
     planGen: _sn(m['planGen']),
   );
 
@@ -1390,6 +1405,7 @@ class PlannedWorkout {
     'exercises': exercises.map((e) => e.toMap()).toList(),
     if (gymMods.isNotEmpty) 'gymMods': gymMods,
     if (auto != null) 'auto': auto!.toMap(),
+    if (slot != 0) 'slot': slot,
     if (planGen != null) 'planGen': planGen,
   };
 }

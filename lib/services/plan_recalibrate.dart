@@ -1350,6 +1350,11 @@ class Recalibrator {
 
       steps = [for (var i = 0; i < orig.length; i++) shorter(i)];
     }
+    // The share of the work kept – both estimated at the original's paces (the duration / distance it scales are the
+    // original's): a pace step since then would else change it, and a second run would propose a "change" of the
+    // distance alone (merge of G2 + G4: the multisport plan's tempo run, slower paces after high RPE).
+    final before = estimateStepsSec(orig, p.sport, profile), after = estimateStepsSec(steps, p.sport, profile);
+    final g = before <= 0 ? qf : after / before;
     // The targets stay the current ones (a VDOT / FTP / CSS step since the original updated [p]'s paces / power):
     // aligned from the start (warm-up, kept repeats) and from the end (cool-down).
     final cur = p.steps;
@@ -1358,8 +1363,6 @@ class Recalibrator {
       if (j < 0 || j >= cur.length || cur[j].kind != steps[i].kind || cur[j].zone != steps[i].zone) continue;
       steps[i] = _step(steps[i], paceMin: cur[j].paceMin, paceMax: cur[j].paceMax, powerMin: cur[j].powerMin, powerMax: cur[j].powerMax);
     }
-    final before = estimateStepsSec(orig, p.sport, profile), after = estimateStepsSec(steps, p.sport, profile);
-    final g = before <= 0 ? qf : after / before;
     final out = retitledRepeats(
       _copy(
         p,

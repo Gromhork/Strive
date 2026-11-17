@@ -309,7 +309,13 @@ void main() {
       );
       final from = DateTime(2027, 3, 29);
       final f = PlanGenerator.feasibility(p, start: from, l: de);
-      expect(f.issues, contains('longRideTime'));
+      // (Since G2's day selection by dayMinutes the long ride goes on Sunday – the day with the most time – and
+      // Thursday's 105 min no longer limit it: no time issue at all is the better outcome. Otherwise the option
+      // must work.)
+      if (!f.issues.any(timeIssues.contains)) {
+        expect(PlanGenerator.longSessionDays(p)[Sport.ride], 7, reason: '${f.issues}');
+        return;
+      }
       expect(f.raiseDay, isNotNull, reason: '${f.issues}');
       final dm = {...p.athlete.dayMinutes, f.raiseDay!: f.raiseDayMin!, if (f.raiseDay2 != null) f.raiseDay2!: f.raiseDay2Min!};
       final f2 = PlanGenerator.feasibility(p.copyWith(athlete: p.athlete.merge({'dayMinutes': dm})), start: from, l: de);

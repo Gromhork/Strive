@@ -6673,4 +6673,110 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get planLogRedateReason => 'Eine Einheit wurde auf einen anderen Tag verschoben: Die Einheit des alten Tages ist wieder offen, die des neuen Tages abgehakt.';
+
+  @override
+  String feasLongDayDefault2(String day, String day2, String time, String time2) {
+    return 'Die langen Einheiten am $day und am $day2 brauchen bis zu $time bzw. $time2 – deutlich mehr als deine übrigen Einheiten. Der Plan plant sie so ein; trag die Zeit für diese Tage selbst ein, falls sie nicht passt.';
+  }
+
+  @override
+  String get stepRideTempoNote2 => 'Tempo – 76–90 % FTP, gleichmäßig';
+
+  @override
+  String get wRideTempoDescIm2 => 'Tempo bei 75–85 % FTP – eine Stufe über deiner Ironman-Wettkampfleistung (etwa 65–75 % FTP, die Renntempo-Blöcke deiner langen Ausfahrten): So fühlt sich das Renntempo leicht an. Gleichmäßig, aerodynamisch, mit Verpflegung.';
+
+  @override
+  String wRidePickups(int n) {
+    return 'Grundlagenfahrt mit $n Antritten';
+  }
+
+  @override
+  String get wRidePickupsDesc => 'Zone 2 mit ein paar zügigen 1-Minuten-Antritten – für richtige Sweet-Spot- oder Schwellenblöcke (mindestens 2 × 8 min nach dem Einfahren) ist die Zeit an diesem Tag zu kurz. Mit mehr Zeit an diesem Tag kommen sie zurück.';
+
+  @override
+  String get stepRidePickupNote => 'Kurzer Antritt – zügig, nicht maximal, dann wieder locker';
+
+  @override
+  String get wFtpTest => 'FTP-Test (20 min)';
+
+  @override
+  String get wFtpTestDesc => 'Gut einfahren, dann 20 min so hart fahren, wie du es gleichmäßig halten kannst (etwas zurückhaltend beginnen). Deine FTP sind 95 % der Durchschnittsleistung dieser 20 min – trag sie in den Planeinstellungen (Rad) ein: Strive setzt dann deine Wattvorgaben danach.';
+
+  @override
+  String get stepFtpTestNote => '20-min-Zeitfahren: so hart, wie du es gleichmäßig halten kannst – Durchschnittsleistung notieren';
+
+  @override
+  String wFtpEstimateNote(String watts) {
+    return 'Die Wattvorgaben sind geschätzt (FTP etwa $watts W nach Niveau und Gewicht) – trag nach dem FTP-Test deine FTP in den Planeinstellungen ein.';
+  }
+
+  @override
+  String get healthRideKneeNote => 'Knie / Hüfte: hohe Trittfrequenz (85–95 U/min), am Berg leichte Gänge – kein Drücken schwerer Gänge; Sattelhöhe prüfen. Bei Schmerz abbrechen.';
+
+  @override
+  String get wRideOpenersDesc => 'Wettkampfwoche: locker fahren mit ein paar kurzen Antritten – sie halten die Beine spritzig, ohne zu ermüden.';
+
+  @override
+  String get wLongRunWalkDescSingle => 'Langer Lauf/Geh-Wechsel: der Rhythmus deiner aktuellen Stufe, ein paar Wiederholungen mehr – Zeit auf den Beinen für den Wettkampf. Plaudertempo, zügig gehen. Er wächst langsam, jede Woche ein wenig.';
+
+  @override
+  String wLongSwim2(int meters) {
+    return 'Lange Schwimmeinheit: $meters m am Stück';
+  }
+
+  @override
+  String drillsNote50(String a, String b) {
+    return '$a / $b – 50 m Übung, die beiden Übungen abwechselnd';
+  }
+
+  @override
+  String get wSwimContinuousDesc2 => 'Den Hauptteil am Stück in lockerem, gleichmäßigem Tempo schwimmen – beidseitig atmen, ohne Anhalten.';
+
+  @override
+  String feasLongSwimTime(String day, int meters, int target, String time) {
+    return 'Die Zeit am $day reicht neben Ein- und Ausschwimmen nur für etwa $meters m am Stück – dieses Rennen braucht etwa $target m am Stück. Mit etwa $time an diesem Tag ginge es.';
+  }
+
+  @override
+  String feasLongSwim2(int meters, int target, String leg) {
+    return 'Bis zum Wettkampf reicht dein Am-Stück-Schwimmen nur für etwa $meters m – das Training sollte dich bis dahin auf etwa $target m am Stück bringen (die Schwimmstrecke ist $leg m).';
+  }
+
+  @override
+  String feasLongSwimTime2(String day, int meters, int target, String leg, String time) {
+    return 'Die Zeit am $day reicht neben Ein- und Ausschwimmen nur für etwa $meters m am Stück – das Training sollte dich bis dahin auf etwa $target m am Stück bringen (die Schwimmstrecke ist $leg m). Mit etwa $time an diesem Tag ginge es.';
+  }
+
+  @override
+  String wRaceTriForecastDesc(String time) {
+    return 'Prognose etwa $time. Ruhig ins Schwimmen, Rad im geplanten Bereich, den Lauf kontrolliert beginnen – stark finishen. Viel Erfolg!';
+  }
+
+  @override
+  String wRaceTriGoalDesc(String time) {
+    return 'Zielzeit $time. Ruhig ins Schwimmen, Rad im geplanten Bereich, den Lauf kontrolliert beginnen – stark finishen. Viel Erfolg!';
+  }
+
+  @override
+  String wRaceDuForecastDesc(String time) {
+    return 'Prognose etwa $time. Den ersten Lauf kontrolliert, Rad im geplanten Bereich, den zweiten Lauf kontrolliert beginnen – stark finishen. Viel Erfolg!';
+  }
+
+  @override
+  String wRaceDuGoalDesc(String time) {
+    return 'Zielzeit $time. Den ersten Lauf kontrolliert, Rad im geplanten Bereich, den zweiten Lauf kontrolliert beginnen – stark finishen. Viel Erfolg!';
+  }
+
+  @override
+  String wRaceForecastDesc(String time) {
+    return 'Prognose $time. Kontrolliert starten (erster km nicht schneller als das Prognosetempo), stark finishen. Viel Erfolg!';
+  }
+
+  @override
+  String wSwimEnduranceCss(int reps, int meters, int n) {
+    return 'Ausdauer $reps × $meters m + $n × 100 m CSS';
+  }
+
+  @override
+  String get wRideTaperPickupsDesc => 'Tapering: locker fahren mit ein paar kurzen Antritten – sie halten die Beine spritzig, während der Umfang sinkt.';
 }

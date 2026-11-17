@@ -282,7 +282,9 @@ void main() {
           expect(b.phase, isIn(['build', 'peak']));
           expect(plan.any((w) => w.sport == Sport.ride && w.intensity == 'long' && sameDay(w.date, b.date)), isTrue);
           expect(b.isKey, isFalse);
-          expect(b.durationMin, inInclusiveRange(15, maxMin + 5));
+          // (The first brick is 10 min – [EventSpec.brick]; its time is what its title says, review 2026-11 tri-9.)
+          expect(b.durationMin, inInclusiveRange(10, maxMin + 5));
+          expect(b.title, l.wBrickRun(b.durationMin));
         }
         // Every 1–2 weeks once it starts (weekly in the peak phase).
         final weeks = bricks.map((b) => startOfWeek(b.date)).toList();

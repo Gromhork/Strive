@@ -102,6 +102,7 @@ const _inv1 = '1 race day',
     _inv3 = '3 recovery weeks',
     _inv4a = '4a taper length',
     _inv4b = '4b taper cut',
+    _inv4c = '4c taper keeps intensity',
     _inv5 = '5 long session target',
     _inv6a = '6a long session flat',
     _inv6b = '6b last long before taper',
@@ -133,6 +134,7 @@ const _invariants = [
   _inv3,
   _inv4a,
   _inv4b,
+  _inv4c,
   _inv5,
   _inv6a,
   _inv6b,
@@ -681,6 +683,24 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
     }
   }
 
+  // 4c (review 2026-11 tri-1 / G2-V6, §1.7: volume cut, intensity kept): in every taper week before race week, each
+  // run / ride discipline with ≥ 2 sessions keeps some intensity – a (shortened) quality session, or strides /
+  // pick-ups in an easy one when the week's spacing leaves no room for one. Not with a heart limitation (no hard
+  // efforts), not for run/walkers, not for beginners' runs nor runs with a joint limitation (no strides by design).
+  if (ev != null && pl.raceWeek != null && !hf.contains('heart')) {
+    for (final wk in weeks.where((w) => w.phase == 'taper' && w.idx < pl.raceWeek!)) {
+      for (final s in [Sport.run, Sport.ride].where(c.endurance.contains)) {
+        final joint = hf.any(const {'knee', 'hip', 'ankle', 'achilles'}.contains);
+        if (s == Sport.run && (wk.runWalk || p.level == 'beginner' || joint)) continue;
+        final ws = wk.ws.where((w) => w.sport == s && w.intensity != 'moderate').toList();
+        if (ws.length < 2) continue;
+        bool touch(PlannedWorkout w) =>
+            _hard(w) || w.steps.any((x) => x.isWork && const {'R', 'I', 'T', 'Z4', 'Z5', 'SS', 'Z3'}.contains(x.zone));
+        if (!ws.any(touch)) r.add(_inv4c, c, wk.idx, 'no ${s.name} intensity in ${ws.map((w) => w.title).join(' | ')}');
+      }
+    }
+  }
+
   // ── 5. Long sessions reach the race's needs, or the feasibility check warns ──
   if (ev != null && spec != null) {
     final misses = <String>[];
@@ -920,7 +940,8 @@ void _check(_Plan pl, _Report r, AppLocalizations l) {
   for (final w in plan.where((w) => w.sport != Sport.gym && w.intensity != 'race')) {
     final m = nxm.firstMatch(w.title);
     if (m != null) {
-      final n = int.parse(m.group(1)!);
+      // ("Ausdauer 3 × 400 m + 6 × 100 m CSS": the repeats of every "N × M" together.)
+      final n = nxm.allMatches(w.title).fold(0, (x, e) => x + int.parse(e.group(1)!));
       final v = double.parse(m.group(2)!.replaceAll(',', '.'));
       final work = w.steps.where((s) => s.kind == 'work' && s.zone != 'DR').toList();
       if (work.length != n) {
@@ -1117,6 +1138,32 @@ void main() {
     final total = report.v.values.fold(0, (x, v) => x + v.length);
     expect(total, 0, reason: 'invariant violations – see the table above');
   }, timeout: const Timeout(Duration(minutes: 15)));
+
+  // Review 2026-11 G2-V7 / tri-10: a plan of the recommended length ([PlanGenerator.recommendedWeeks] default) with time
+  // enough on its days never warns that the weeks are too few – for every race distance and level.
+  test('recommended plan length: no tooShort / longSwim / long-session warning with time enough', () {
+    final bad = <String>[];
+    for (final d in eventDistances) {
+      for (final level in _levels) {
+        final focus = _focusFor(d.sport, false);
+        final p0 = UserProfile(
+          level: level,
+          focus: focus,
+          birthYear: DateTime.now().year - 35,
+          experience: {...focus.sports},
+          trainingDays: const [1, 2, 4, 6, 7],
+          goals: const ['race'],
+          athlete: AthleteData(sessionMinutes: 120, dayMinutes: const {6: 360, 7: 240}, eventDistance: d.key),
+        );
+        final weeks = PlanGenerator.recommendedWeeks(p0).def;
+        final p = p0.copyWith(athlete: p0.athlete.merge({'eventDate': _raceDate(weeks)}));
+        final f = PlanGenerator.feasibility(p, start: _start, l: l);
+        final issues = f.issues.where((i) => const {'tooShort', 'longSwim', 'longRunTime', 'longRideTime'}.contains(i)).toList();
+        if (issues.isNotEmpty) bad.add('${d.key}/$level ${weeks}w: $issues');
+      }
+    }
+    expect(bad, isEmpty);
+  });
 
   test('sample plans (set PLAN_SAMPLES=1 to print)', () {
     UserProfile p(

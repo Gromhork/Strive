@@ -4818,5 +4818,174 @@
     }
   },
   "planLogRedate": "Session date corrected",
-  "planLogRedateReason": "A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off."
+  "planLogRedateReason": "A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off.",
+  "feasLongDayDefault2": "The long sessions on {day} and {day2} need up to {time} and {time2} – far more than your other sessions. The plan schedules them like that; set those days’ times yourself if they do not fit.",
+  "@feasLongDayDefault2": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "day2": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "time2": {
+        "type": "String"
+      }
+    }
+  },
+  "stepRideTempoNote2": "Tempo – 76–90 % FTP, steady",
+  "wRideTempoDescIm2": "Tempo at 75–85 % FTP – a notch above your Ironman race power (about 65–75 % FTP, the race-pace blocks of your long rides): it makes race pace feel easy. Steady, aero, with fuelling.",
+  "wRidePickups": "Endurance ride with {n} pick-ups",
+  "@wRidePickups": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "wRidePickupsDesc": "Zone 2 with a few 1 min pick-ups – the time on this day is too short for proper sweet-spot or threshold blocks (at least 2 × 8 min after a warm-up). More time on this day brings them back.",
+  "stepRidePickupNote": "Short pick-up – brisk, not all-out, then easy again",
+  "wFtpTest": "FTP test (20 min)",
+  "wFtpTestDesc": "Warm up well, then ride 20 min as hard as you can hold evenly (start a little conservatively). Your FTP is 95 % of the 20 min average power – enter it in the plan settings (cycling): Strive then sets your watt targets from it.",
+  "stepFtpTestNote": "20 min time trial: as hard as you can hold evenly – note the average power",
+  "wFtpEstimateNote": "The watt targets are estimated (FTP about {watts} W from your level and weight) – after the FTP test enter your FTP in the plan settings.",
+  "@wFtpEstimateNote": {
+    "placeholders": {
+      "watts": {
+        "type": "String"
+      }
+    }
+  },
+  "healthRideKneeNote": "Knee / hip: high cadence (85–95 rpm), easy gears on climbs – no grinding in heavy gears; check your saddle height. Stop if it hurts.",
+  "wRideOpenersDesc": "Race week: easy riding with a few short pick-ups – they keep the legs sharp without tiring them.",
+  "wLongRunWalkDescSingle": "Long run/walk: the rhythm of your current stage, a few more repeats – time on your feet for the race. Talking pace, walk briskly. It grows slowly, a little each week.",
+  "wLongSwim2": "Long swim: {meters} m continuous",
+  "@wLongSwim2": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "drillsNote50": "{a} / {b} – 50 m drill, alternate the two drills",
+  "@drillsNote50": {
+    "placeholders": {
+      "a": {
+        "type": "String"
+      },
+      "b": {
+        "type": "String"
+      }
+    }
+  },
+  "wSwimContinuousDesc2": "Swim the main set in one go at an easy, steady pace – breathe on both sides, no stopping.",
+  "feasLongSwimTime": "The time on {day} only fits a continuous swim of about {meters} m next to warm-up and cool-down – this race needs about {target} m in one go. About {time} on that day would hold it.",
+  "@feasLongSwimTime": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "meters": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "feasLongSwim2": "By race day your continuous swim only reaches about {meters} m – the training should take you to about {target} m in one go (the swim leg is {leg} m).",
+  "@feasLongSwim2": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      },
+      "leg": {
+        "type": "String"
+      }
+    }
+  },
+  "feasLongSwimTime2": "The time on {day} only fits a continuous swim of about {meters} m next to warm-up and cool-down – the training should take you to about {target} m in one go (the swim leg is {leg} m). About {time} on that day would hold it.",
+  "@feasLongSwimTime2": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "meters": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      },
+      "leg": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wRaceTriForecastDesc": "Forecast about {time}. Start the swim calmly, ride in your planned range, begin the run controlled – finish strong. Good luck!",
+  "@wRaceTriForecastDesc": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wRaceTriGoalDesc": "Goal time {time}. Start the swim calmly, ride in your planned range, begin the run controlled – finish strong. Good luck!",
+  "@wRaceTriGoalDesc": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wRaceDuForecastDesc": "Forecast about {time}. First run controlled, ride in your planned range, begin the second run controlled – finish strong. Good luck!",
+  "@wRaceDuForecastDesc": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wRaceDuGoalDesc": "Goal time {time}. First run controlled, ride in your planned range, begin the second run controlled – finish strong. Good luck!",
+  "@wRaceDuGoalDesc": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wRaceForecastDesc": "Forecast {time}. Start controlled (first km not faster than the forecast pace), finish strong. Good luck!",
+  "@wRaceForecastDesc": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wSwimEnduranceCss": "Endurance {reps} × {meters} m + {n} × 100 m CSS",
+  "@wSwimEnduranceCss": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      },
+      "meters": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "wRideTaperPickupsDesc": "Taper: easy riding with a few short pick-ups – they keep the legs sharp while the volume comes down."
 }
