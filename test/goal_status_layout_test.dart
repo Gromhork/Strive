@@ -195,10 +195,10 @@ void main() {
     expect(set, f.target!.suggestedSec);
   });
 
-  test('risk notice comes back at most once a week', () {
-    expect(GoalAlertSnooze.visible(atRisk, null, now), isTrue);
-    expect(GoalAlertSnooze.visible(atRisk, now.subtract(const Duration(days: 3)), now), isFalse);
-    expect(GoalAlertSnooze.visible(atRisk, now.subtract(const Duration(days: 7)), now), isTrue);
-    expect(GoalAlertSnooze.visible(ahead, null, now), isFalse);
+  test('risk notice: closed stays closed for the same notice, comes back when it changes', () {
+    expect(GoalAlertSnooze.visible(atRisk, null), isTrue);
+    expect(GoalAlertSnooze.visible(atRisk, GoalAlertSnooze.signature(atRisk)), isFalse);
+    expect(GoalAlertSnooze.visible(atRisk, 'other'), isTrue);
+    expect(GoalAlertSnooze.visible(ahead, null), isFalse);
   });
 }

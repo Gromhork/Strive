@@ -5084,5 +5084,14 @@
       }
     }
   },
-  "startTime": "Start time"
+  "startTime": "Start time",
+  "fcEarlyEndurance": "{count, plural, =1{One more endurance workout (run, ride or swim) and the forecast uses your training data – strength sessions don't count here.} other{{count} more endurance workouts (run, ride or swim) and the forecast uses your training data – strength sessions don't count here.}}",
+  "@fcEarlyEndurance": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planHints": "Plan notes"
 }

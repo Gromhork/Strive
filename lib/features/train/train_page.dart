@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -269,9 +270,10 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                 children: [
                   Text(l.quickStart, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 10),
-                  // Two tiles per row; when a label would not fit a half-width tile in two lines (large text,
-                  // narrow phone), one per row – labels stay whole and in the normal size (no ellipsis, no
-                  // scaleDown: "Radfahr…", "Leere Einh…" at text ×1.3).
+                  // Compact overview: two tiles per row (owner, round 9 – one sport per row looked like a list). At a large
+                  // text scale the labels get up to two lines and, if needed, a slightly smaller size shared by all six tiles
+                  // (never below the normal size); only when even that doesn't fit half a row – extreme scales – one per row.
+                  // Labels stay whole: no ellipsis, no word broken.
                   LayoutBuilder(
                     builder: (context, box) {
                       final sports = [
@@ -279,37 +281,47 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                           if (filter == null || s == filter) s,
                       ];
                       final half = (box.maxWidth - _tileGap) / 2;
-                      return _TileRows(
-                        key: const ValueKey('quickStartTiles'),
-                        columns: sports.every((s) => _QuickTile.fits(context, s, half)) ? 2 : 1,
-                        minHeight: half / 2.2,
-                        children: [for (final s in sports) _QuickTile(sport: s, onTap: () => quickStart(context, ref, s))],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: _tileGap),
-                  // Same style and rule as the quick-start tiles.
-                  LayoutBuilder(
-                    builder: (context, box) {
-                      final half = (box.maxWidth - _tileGap) / 2;
-                      return _TileRows(
-                        key: const ValueKey('actionTiles'),
-                        columns: [l.logManually, l.exercises].every((t) => _ActionTile.fits(context, t, half)) ? 2 : 1,
-                        minHeight: _ActionTile.minHeight,
-                        children: [
-                          _ActionTile(
-                            key: const ValueKey('logManuallyTile'),
-                            icon: Icons.edit_note_rounded,
-                            label: l.logManually,
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManualEntryPage())),
-                          ),
-                          _ActionTile(
-                            key: const ValueKey('exercisesTile'),
-                            icon: Icons.menu_book_rounded,
-                            label: l.exercises,
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryPage())),
-                          ),
-                        ],
+                      final base = MediaQuery.textScalerOf(context);
+                      final labels = [l.logManually, l.exercises];
+                      bool fits(TextScaler sc) =>
+                          sports.every((s) => _QuickTile.fits(context, s, half, sc)) &&
+                          labels.every((t) => _ActionTile.fits(context, t, half, sc));
+                      final scaler = quickStartScaler(base, fits);
+                      final two = scaler != null;
+                      return MediaQuery(
+                        data: MediaQuery.of(context).copyWith(textScaler: scaler ?? base),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _TileRows(
+                              key: const ValueKey('quickStartTiles'),
+                              // A single sport (filter) takes the whole row.
+                              columns: two && sports.length > 1 ? 2 : 1,
+                              minHeight: _QuickTile.minHeight,
+                              children: [for (final s in sports) _QuickTile(sport: s, onTap: () => quickStart(context, ref, s))],
+                            ),
+                            const SizedBox(height: _tileGap),
+                            _TileRows(
+                              key: const ValueKey('actionTiles'),
+                              columns: two ? 2 : 1,
+                              minHeight: _ActionTile.minHeight,
+                              children: [
+                                _ActionTile(
+                                  key: const ValueKey('logManuallyTile'),
+                                  icon: Icons.edit_note_rounded,
+                                  label: l.logManually,
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManualEntryPage())),
+                                ),
+                                _ActionTile(
+                                  key: const ValueKey('exercisesTile'),
+                                  icon: Icons.menu_book_rounded,
+                                  label: l.exercises,
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryPage())),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),
@@ -1194,15 +1206,33 @@ class _DragFeedback extends StatelessWidget {
 
 const _tileGap = 10.0;
 
-/// Whether [text] fits in [maxLines] lines of [maxWidth] at the current text scale (ambient text
-/// style merged with [style]) without breaking a word – a word wider than the line would be split
-/// mid-word ("Radfahr-en").
-bool _fitsLines(BuildContext context, String text, TextStyle? style, double maxWidth, {int maxLines = 2}) {
+/// The text scale for the quick-start tiles two per row: the ambient [base] when [fits] there, else a
+/// slightly smaller one (90 % … 77 %, never below the normal size) – never below the normal size (1.0) – that all tiles fit; null when none
+/// does (one tile per row, labels in the ambient size).
+@visibleForTesting
+TextScaler? quickStartScaler(TextScaler base, bool Function(TextScaler) fits) {
+  if (fits(base)) return base;
+  final b = base.scale(100) / 100;
+  // At most about a quarter smaller and never below the normal size: ×1.3 may end at 1.0 (a 320 dp phone),
+  // ×2 stays at least ×1.54 – larger text gets one tile per row instead.
+  for (final v in {
+    for (final f in const [0.9, 0.85, 0.8, 0.77]) max(1.0, b * f),
+  }) {
+    if (v >= b) continue;
+    final s = TextScaler.linear(v);
+    if (fits(s)) return s;
+  }
+  return null;
+}
+
+/// Whether [text] fits in [maxLines] lines of [maxWidth] at [scaler] (ambient text style merged with [style])
+/// without breaking a word – a word wider than the line would be split mid-word ("Radfahr-en").
+bool _fitsLines(BuildContext context, String text, TextStyle? style, double maxWidth, TextScaler scaler, {int maxLines = 2}) {
   bool fits(String s, int lines) {
     final painter = TextPainter(
       text: TextSpan(text: s, style: DefaultTextStyle.of(context).style.merge(style)),
       textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
+      textScaler: scaler,
       locale: Localizations.maybeLocaleOf(context),
       maxLines: lines,
     )..layout(maxWidth: maxWidth);
@@ -1258,21 +1288,21 @@ class _ActionTile extends StatelessWidget {
   final VoidCallback onTap;
 
   static const minHeight = 48.0;
-  static const _hPad = 12.0, _icon = 22.0, _gap = 8.0;
+  static const _hPad = 10.0, _icon = 22.0, _gap = 8.0;
   static const _style = TextStyle(fontWeight: FontWeight.w600);
 
   /// Whether [label] fits a tile of [width] (at most two lines, no word broken).
-  static bool fits(BuildContext context, String label, double width) =>
-      _fitsLines(context, label, _style, width - 2 * _hPad - _icon - _gap);
+  static bool fits(BuildContext context, String label, double width, TextScaler scaler) =>
+      _fitsLines(context, label, _style, width - 2 * _hPad - _icon - _gap, scaler);
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
       color: scheme.surfaceContainer,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: minHeight),
@@ -1282,8 +1312,7 @@ class _ActionTile extends StatelessWidget {
               children: [
                 Icon(icon, color: scheme.primary, size: _icon),
                 const SizedBox(width: _gap),
-                // Full size, never scaled down (it was shrunk visibly smaller than its neighbour); the
-                // layout gives the tile a whole row when the label doesn't fit half of one.
+                // Whole words, never ellipsized; the layout shrinks all tiles alike or gives each a whole row.
                 Expanded(child: Text(label, style: _style)),
               ],
             ),
@@ -1294,33 +1323,35 @@ class _ActionTile extends StatelessWidget {
   }
 }
 
+/// One sport of the quick start: tinted in the sport's colour, its icon, name and what a tap does.
 class _QuickTile extends StatelessWidget {
   const _QuickTile({required this.sport, required this.onTap});
   final Sport sport;
   final VoidCallback onTap;
 
-  static const _hPad = 14.0, _icon = 28.0, _gap = 10.0, _play = 24.0;
+  static const minHeight = 60.0;
+  static const _hPad = 8.0, _icon = 22.0, _gap = 6.0;
   static const _titleStyle = TextStyle(fontWeight: FontWeight.w700);
 
   static String _subtitle(AppLocalizations l, Sport sport) => sport == Sport.gym ? l.emptyWorkout : l.quickRecord;
 
-  /// Whether the tile's title and subtitle each fit a tile of [width] (at most two lines, no
-  /// word broken).
-  static bool fits(BuildContext context, Sport sport, double width) {
+  /// Whether the tile's title and subtitle each fit a tile of [width] (at most two lines, no word broken).
+  static bool fits(BuildContext context, Sport sport, double width, TextScaler scaler) {
     final l = context.l10n;
-    final text = width - 2 * _hPad - _icon - _gap - _play;
-    return _fitsLines(context, sport.label(l), _titleStyle, text) &&
-        _fitsLines(context, _subtitle(l, sport), Theme.of(context).textTheme.bodySmall, text);
+    final text = width - 2 * _hPad - _icon - _gap;
+    return _fitsLines(context, sport.label(l), _titleStyle, text, scaler) &&
+        _fitsLines(context, _subtitle(l, sport), Theme.of(context).textTheme.bodySmall, text, scaler);
   }
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     return Material(
+      key: ValueKey('quickTile-${sport.name}'),
       color: sport.color.withValues(alpha: 0.14),
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: _hPad, vertical: 8),
@@ -1333,14 +1364,11 @@ class _QuickTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Whole words in the normal size; the layout gives the tile a whole row when a
-                    // label doesn't fit half of one.
                     Text(sport.label(l), style: _titleStyle),
                     Text(_subtitle(l, sport), style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ),
               ),
-              Icon(Icons.play_arrow_rounded, color: sport.color, size: _play),
             ],
           ),
         ),

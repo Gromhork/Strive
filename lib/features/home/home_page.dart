@@ -35,7 +35,6 @@ import '../goals/goal_mismatch_card.dart';
 import '../onboarding/onboarding_page.dart';
 import '../session/start_helpers.dart';
 import '../stats/body_page.dart';
-import '../../services/plan_text.dart';
 import '../../services/plan_service.dart';
 import '../../widgets/whole_words_text.dart';
 import '../stats/session_detail_page.dart';
@@ -59,8 +58,7 @@ class HomePage extends ConsumerWidget {
           _BannerSlot(),
           TodayCard(),
           SizedBox(height: 12),
-          GoalStatusCard(),
-          _EventLine(),
+          // Order (owner, round 9): what's next and this week first, then body values, then the goal.
           ComingUpCard(),
           SizedBox(height: 12),
           IntrinsicHeight(
@@ -70,11 +68,12 @@ class HomePage extends ConsumerWidget {
             ),
           ),
           SizedBox(height: 12),
-          _VitalsCard(),
-          _RecoveryCard(),
+          _WeightCard(key: ValueKey('weightCard')),
           SizedBox(height: 12),
-          _WeightCard(),
-          SizedBox(height: 12),
+          _VitalsCard(key: ValueKey('vitalsCard')),
+          _RecoveryCard(key: ValueKey('recoveryCard')),
+          GoalStatusCard(),
+          _EventLine(),
           _GoalsPreview(),
           SizedBox(height: 12),
           _LevelCard(),
@@ -324,7 +323,13 @@ class _TodayCardState extends ConsumerState<TodayCard> {
     // A start too short to count (< 10 % of the plan) leaves the workout open: start it again.
     final notCounted = p.isDone && c.notCounted;
     final done = p.isDone && !notCounted;
+    final small = Theme.of(context).textTheme.bodySmall;
+    void open() => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id)));
+    // Compact (owner, round 9: the card with its description paragraph filled the screen – the tiles below were out
+    // of view): title, amount and intensity, the start button; edit / add and the switch between several workouts
+    // of the day in the header line. The description stays on the workout page.
     return Card(
+      key: const ValueKey('todayCard'),
       clipBehavior: Clip.antiAlias,
       child: Container(
         decoration: BoxDecoration(
@@ -334,129 +339,110 @@ class _TodayCardState extends ConsumerState<TodayCard> {
             end: Alignment.bottomRight,
           ),
         ),
-        padding: const EdgeInsets.fromLTRB(8, 12, 12, 12),
-        child: Row(
-          children: [
-            if (plans.length <= 1) const SizedBox(width: 8),
-            if (plans.length > 1)
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                tooltip: l.previousWorkout,
-                onPressed: () => setState(() => _i = (_i - 1) % plans.length),
-                icon: const Icon(Icons.chevron_left),
-              ),
-            Expanded(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id))),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        child: InkWell(
+          onTap: open,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 4, 6, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            l.todaysWorkout,
-                            style: Theme.of(context).textTheme.labelMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (plans.length > 1) Text('  ${_i + 1}/${plans.length}', style: Theme.of(context).textTheme.labelSmall),
-                        if (hidden > 0)
-                          Flexible(
-                            child: Text(
-                              '  · ${l.todayHiddenByFilter(hidden)}',
-                              style: Theme.of(context).textTheme.labelSmall,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        SportBadge(p.sport, size: 48, filled: true),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(glueTitle(p.title), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, height: 1.2)),
-                              Text(
-                                [
-                                  if (skipped) l.recalDropped,
-                                  if (partly) c.shortLabel(l),
-                                  if (notCounted) l.notCountedShort(Units.pct(c.pct!.toDouble())),
-                                  planAmountText(p, ref.watch(profileOrDefaultProvider), templates: ref.watch(templateListProvider)),
-                                  intensityLabel(l, p.intensity),
-                                ].join(' · '),
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (p.steps.isNotEmpty) ...[const SizedBox(height: 10), WorkoutProfileBar(steps: p.steps, sport: p.sport, height: 26)],
-                    if (p.description.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      // The first paragraph in full (the rest – notes, health hints – is on the detail page).
-                      Text(
-                        planDescription(p.description, l).split('\n').first,
-                        style: Theme.of(context).textTheme.bodySmall,
-                        maxLines: 4,
+                    Expanded(
+                      child: Text(
+                        hidden > 0 ? '${l.todaysWorkout} · ${l.todayHiddenByFilter(hidden)}' : l.todaysWorkout,
+                        style: Theme.of(context).textTheme.labelMedium,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                    ),
+                    if (plans.length > 1) ...[
+                      IconButton(
+                        key: const ValueKey('todayPrev'),
+                        visualDensity: VisualDensity.compact,
+                        tooltip: l.previousWorkout,
+                        onPressed: () => setState(() => _i = (_i - 1) % plans.length),
+                        icon: const Icon(Icons.chevron_left, size: 20),
+                      ),
+                      Text('${_i + 1}/${plans.length}', style: Theme.of(context).textTheme.labelSmall),
+                      IconButton(
+                        key: const ValueKey('todayNextWorkout'),
+                        visualDensity: VisualDensity.compact,
+                        tooltip: l.nextWorkout,
+                        onPressed: () => setState(() => _i = (_i + 1) % plans.length),
+                        icon: const Icon(Icons.chevron_right, size: 20),
+                      ),
                     ],
+
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: l.edit,
+                      onPressed: () => showPlanEditor(context, ref, existing: p),
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: l.add,
+                      onPressed: () => showPlanEditor(context, ref, date: today),
+                      icon: const Icon(Icons.add, size: 20),
+                    ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton.filled(
-                  key: const ValueKey('todayStart'),
-                  style: IconButton.styleFrom(
-                    backgroundColor:
-                        done ? c.color(context) : (skipped ? Theme.of(context).colorScheme.surfaceContainerHighest : p.sport.color),
-                    foregroundColor: Colors.black87,
-                  ),
-                  tooltip: skipped ? l.recalDropped : l.start,
-                  onPressed:
-                      skipped
-                          ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id)))
-                          : done
-                          ? (p.sessionId == null
-                              ? null
-                              : () =>
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: p.sessionId!))))
-                          : () => startPlanned(context, ref, p),
-                  icon: Icon(done ? Icons.check_rounded : (skipped ? Icons.block_rounded : Icons.play_arrow_rounded)),
+                Row(
+                  children: [
+                    SportBadge(p.sport, size: 44, filled: true),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(glueTitle(p.title), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, height: 1.2)),
+                          Text(
+                            [
+                              if (skipped) l.recalDropped,
+                              if (partly) c.shortLabel(l),
+                              if (notCounted) l.notCountedShort(Units.pct(c.pct!.toDouble())),
+                              planAmountText(p, ref.watch(profileOrDefaultProvider), templates: ref.watch(templateListProvider)),
+                              intensityLabel(l, p.intensity),
+                            ].join(' · '),
+                            style: small,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      key: const ValueKey('todayStart'),
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(52, 52),
+                        backgroundColor:
+                            done ? c.color(context) : (skipped ? Theme.of(context).colorScheme.surfaceContainerHighest : p.sport.color),
+                        foregroundColor: Colors.black87,
+                      ),
+                      tooltip: skipped ? l.recalDropped : l.start,
+                      onPressed:
+                          skipped
+                              ? open
+                              : done
+                              ? (p.sessionId == null
+                                  ? null
+                                  : () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: p.sessionId!)),
+                                  ))
+                              : () => startPlanned(context, ref, p),
+                      icon: Icon(done ? Icons.check_rounded : (skipped ? Icons.block_rounded : Icons.play_arrow_rounded), size: 28),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
                 ),
-                IconButton(
-                  tooltip: l.edit,
-                  onPressed: () => showPlanEditor(context, ref, existing: p),
-                  icon: const Icon(Icons.edit_outlined, size: 20),
-                ),
-                IconButton(
-                  tooltip: l.add,
-                  onPressed: () => showPlanEditor(context, ref, date: today),
-                  icon: const Icon(Icons.add, size: 20),
-                ),
+                if (p.steps.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Padding(padding: const EdgeInsets.only(right: 6), child: WorkoutProfileBar(steps: p.steps, sport: p.sport, height: 22)),
+                ],
               ],
             ),
-            if (plans.length > 1)
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                tooltip: l.nextWorkout,
-                onPressed: () => setState(() => _i = (_i + 1) % plans.length),
-                icon: const Icon(Icons.chevron_right),
-              ),
-          ],
+          ),
         ),
       ),
     );
@@ -843,7 +829,7 @@ class _WeekCard extends ConsumerWidget {
 // ───────────────────────────── Recovery ─────────────────────────────
 
 class _RecoveryCard extends ConsumerWidget {
-  const _RecoveryCard();
+  const _RecoveryCard({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
@@ -856,36 +842,39 @@ class _RecoveryCard extends ConsumerWidget {
       Readiness.high => (AppColors.warning, Icons.warning_amber_rounded, l.readyHigh, l.readyHighText),
       Readiness.overreaching => (AppColors.danger, Icons.hotel_rounded, l.readyOver, l.readyOverText),
     };
-    return SectionCard(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RecoveryPage())),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(16)),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: color)),
-                    const Spacer(),
-                    if (r.readiness != Readiness.building)
-                      Text('ACWR ${Units.fixed(r.ratio, 2)}', style: Theme.of(context).textTheme.labelSmall),
-                    if (r.readiness != Readiness.building) const TermInfoButton(Term.acwr, size: 14),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(text, style: Theme.of(context).textTheme.bodySmall),
-              ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: SectionCard(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RecoveryPage())),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(16)),
+              child: Icon(icon, color: color),
             ),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: color)),
+                      const Spacer(),
+                      if (r.readiness != Readiness.building)
+                        Text('ACWR ${Units.fixed(r.ratio, 2)}', style: Theme.of(context).textTheme.labelSmall),
+                      if (r.readiness != Readiness.building) const TermInfoButton(Term.acwr, size: 14),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(text, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -894,7 +883,7 @@ class _RecoveryCard extends ConsumerWidget {
 // ───────────────────────────── Weight ─────────────────────────────
 
 class _WeightCard extends ConsumerStatefulWidget {
-  const _WeightCard();
+  const _WeightCard({super.key});
   @override
   ConsumerState<_WeightCard> createState() => _WeightCardState();
 }
@@ -1108,7 +1097,7 @@ class _LevelCard extends ConsumerWidget {
 // ───────────────────────────── Watch vitals (Health Connect) ─────────────────────────────
 
 class _VitalsCard extends ConsumerWidget {
-  const _VitalsCard();
+  const _VitalsCard({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;

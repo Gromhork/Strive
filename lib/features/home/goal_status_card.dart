@@ -10,33 +10,50 @@ import '../calendar/recalibrate_sheet.dart';
 import '../goals/goal_forecast_widgets.dart';
 import '../goals/goal_status_page.dart';
 
-/// When the "goal at risk" notice was last dismissed – it comes back at most once a week.
-class GoalAlertSnooze extends Notifier<DateTime?> {
-  static const key = 'goalRiskSnoozed';
-  static const every = Duration(days: 7); // time span
+/// Which "goal at risk" notice was closed (×, or an option taken), per account and across restarts: the same
+/// notice – race, target, the reasons it names – stays closed; a new reason, another target or race brings it
+/// back (owner round 9: one policy for the recurring notes – the plan notes, "Später" of the goal mismatch). The
+/// status chip of the card still says "at risk" meanwhile.
+class GoalAlertSnooze extends Notifier<String?> {
+  static const key = 'goalRiskDismissed';
+  String _account = '';
+  String get _key => _account.isEmpty ? key : '$key/$_account';
 
   @override
-  DateTime? build() {
+  String? build() {
     try {
-      final ms = ref.watch(prefsProvider).getInt(key);
-      return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+      _account = ref.watch(authProvider).value?.uid ?? '';
+    } catch (_) {
+      _account = '';
+    }
+    try {
+      return ref.watch(prefsProvider).getString(_key);
     } catch (_) {
       return null; // no preferences (tests)
     }
   }
 
-  void snooze(DateTime now) {
-    state = now;
+  void snooze(GoalForecast f) {
+    state = signature(f);
     try {
-      ref.read(prefsProvider).setInt(key, now.millisecondsSinceEpoch);
+      ref.read(prefsProvider).setString(_key, state!);
     } catch (_) {}
   }
 
-  /// The notice is shown for an at-risk forecast unless it was dismissed in the last 7 days.
-  static bool visible(GoalForecast f, DateTime? snoozed, DateTime now) => f.alert && (snoozed == null || now.difference(snoozed) >= every);
+  /// Identity of the notice: race, date, target and the reasons it gives.
+  static String signature(GoalForecast f) => [
+    f.event,
+    f.eventName,
+    dayKey(f.raceDate),
+    f.targetSec,
+    ([for (final r in f.reasons) r.name]..sort()).join(','),
+  ].join('|');
+
+  /// The notice is shown for an at-risk forecast unless this very notice was closed.
+  static bool visible(GoalForecast f, String? dismissed) => f.alert && dismissed != signature(f);
 }
 
-final goalAlertSnoozeProvider = NotifierProvider<GoalAlertSnooze, DateTime?>(GoalAlertSnooze.new);
+final goalAlertSnoozeProvider = NotifierProvider<GoalAlertSnooze, String?>(GoalAlertSnooze.new);
 
 /// "Where I stand" on the home screen – only for athletes with an upcoming event.
 class GoalStatusCard extends ConsumerWidget {
@@ -48,7 +65,7 @@ class GoalStatusCard extends ConsumerWidget {
     if (f == null) return const SizedBox.shrink();
     final now = DateTime.now();
     final plans = ref.watch(planListProvider);
-    final alert = GoalAlertSnooze.visible(f, ref.watch(goalAlertSnoozeProvider), now);
+    final alert = GoalAlertSnooze.visible(f, ref.watch(goalAlertSnoozeProvider));
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GoalStatusCardView(
@@ -59,13 +76,13 @@ class GoalStatusCard extends ConsumerWidget {
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalStatusPage())),
         onAdjustTarget: (sec) {
           applyTargetTime(context, ref, sec);
-          ref.read(goalAlertSnoozeProvider.notifier).snooze(now);
+          ref.read(goalAlertSnoozeProvider.notifier).snooze(f);
         },
         onRecalibrate: () {
-          ref.read(goalAlertSnoozeProvider.notifier).snooze(now);
+          ref.read(goalAlertSnoozeProvider.notifier).snooze(f);
           showRecalibration(context, ref);
         },
-        onDismiss: () => ref.read(goalAlertSnoozeProvider.notifier).snooze(now),
+        onDismiss: () => ref.read(goalAlertSnoozeProvider.notifier).snooze(f),
       ),
     );
   }
