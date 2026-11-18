@@ -1,0 +1,3 @@
+{
+ 'fcEarlyEnduranceSport': ["{count, plural, =1{One more endurance workout (ideally {sport}) and the forecast uses your training data – strength sessions don't count here.} other{{count} more endurance workouts (ideally {sport}) and the forecast uses your training data – strength sessions don't count here.}}", '{count, plural, =1{Noch eine Ausdauereinheit (am besten {sport}), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.} other{Noch {count} Ausdauereinheiten (am besten {sport}), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.}}'],
+}

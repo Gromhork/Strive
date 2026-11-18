@@ -6886,4 +6886,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planHints => 'Plan notes';
+
+  @override
+  String fcEarlyEnduranceSport(String sport, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more endurance workouts (ideally $sport) and the forecast uses your training data – strength sessions don\'t count here.',
+      one: 'One more endurance workout (ideally $sport) and the forecast uses your training data – strength sessions don\'t count here.',
+    );
+    return '$_temp0';
+  }
 }

@@ -10,7 +10,9 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/goal_forecast.dart';
 import '../../services/progression_check.dart';
-import '../../core/event_distances.dart' show raceLabel;
+import '../../core/event_distances.dart' show EventSport, eventDistanceOf, raceLabel;
+import '../../core/event_sport_x.dart';
+import '../../core/sport.dart';
 
 /// Goal forecast of the signed-in athlete (null without an upcoming event).
 final goalForecastProvider = Provider<GoalForecast?>((ref) {
@@ -73,7 +75,14 @@ String forecastEarlyText(AppLocalizations l, GoalForecast f) {
   if (f.planStart == null) return l.fcEarlySub;
   // Only endurance sessions since the plan start count (owner round 9: "after your first workouts" was shown
   // after a done gym session) – the text says which and how many are still missing.
-  return l.fcEarlyEndurance(max(1, needed - f.doneSessions));
+  final missing = max(1, needed - f.doneSessions);
+  // A single-sport race names its sport ("am besten Laufen" for a marathon); any endurance session still counts.
+  final race = eventDistanceOf(f.event)?.sport;
+  if (race == EventSport.run || race == EventSport.ride || race == EventSport.swim) {
+    final sport = race!.sport.label(l);
+    return l.fcEarlyEnduranceSport(l.localeName.startsWith('de') ? sport : sport.toLowerCase(), missing);
+  }
+  return l.fcEarlyEndurance(missing);
 }
 
 /// Colour, icon and label of a forecast status.

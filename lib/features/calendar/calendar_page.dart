@@ -120,7 +120,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final l = context.l10n;
     final (goal, planStart) = _goalCheck();
     // Calm notes (owner round 9: the hint came back on every start): closed, a set of notes stays closed until it
-    // changes; information only is a card once, then the small entry next to "Plan überprüfen".
+    // changes; information only is a card once, then the small entry in the ⋮ menu (a dot on it).
     final hintSig = planStart == null ? '' : planHintSignature(goal, planStart);
     final hint = planStart == null ? PlanHintMode.none : PlanHintMemory.mode(goal, hintSig, ref.watch(planHintMemoryProvider));
     if (hint == PlanHintMode.card && goal.onlyNotes && !PlanHintMemory.shownThisRun.contains(hintSig)) {
@@ -153,17 +153,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     label: FittedBox(fit: BoxFit.scaleDown, child: Text(l.recalButton, maxLines: 1)),
                   ),
                 ),
-                // Closed / already seen plan notes: one tap away, unobtrusive.
-                if (hint == PlanHintMode.entry)
-                  IconButton(
-                    key: const ValueKey('planHints'),
-                    tooltip: l.planHints,
-                    icon: Icon(
-                      goal.onlyNotes ? Icons.info_outline_rounded : Icons.warning_amber_rounded,
-                      color: goal.onlyNotes ? null : AppColors.warning,
-                    ),
-                    onPressed: () => FeasibilityCard.showDetails(context, goal, onOption: option, onOpenSettings: openSettings),
-                  ),
                 // Race day ahead: one tap there (audit UX-16: 17 weeks of scrolling by hand).
                 if (_raceDay() case final race?)
                   IconButton(
@@ -176,15 +165,37 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 PopupMenuButton<String>(
                   key: const ValueKey('calendarMore'),
                   tooltip: l.recalMore,
-                  icon: const Icon(Icons.more_vert_rounded),
+                  // Closed / already seen plan notes: one tap away, unobtrusive – a dot on ⋮ (warning colour for a
+                  // problem) and the first item in its menu. Next to the button they shrank its label.
+                  icon:
+                      hint == PlanHintMode.entry
+                          ? Badge(
+                            key: const ValueKey('planHintsBadge'),
+                            backgroundColor: goal.onlyNotes ? AppColors.brand : AppColors.warning,
+                            child: const Icon(Icons.more_vert_rounded),
+                          )
+                          : const Icon(Icons.more_vert_rounded),
                   onSelected:
                       (v) => switch (v) {
+                        'hints' => FeasibilityCard.showDetails(context, goal, onOption: option, onOpenSettings: openSettings),
                         'new' => showPlanGenerator(context, ref),
                         'history' => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlanHistoryPage())),
                         _ => _exportIcs(),
                       },
                   itemBuilder:
                       (_) => [
+                        if (hint == PlanHintMode.entry)
+                          PopupMenuItem(
+                            key: const ValueKey('planHints'),
+                            value: 'hints',
+                            child: ListTile(
+                              leading: Icon(
+                                goal.onlyNotes ? Icons.info_outline_rounded : Icons.warning_amber_rounded,
+                                color: goal.onlyNotes ? null : AppColors.warning,
+                              ),
+                              title: Text(l.planHints),
+                            ),
+                          ),
                         PopupMenuItem(
                           value: 'new',
                           child: ListTile(leading: const Icon(Icons.restart_alt_rounded), title: Text(l.recalNewPlan)),

@@ -12058,6 +12058,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plan notes'**
   String get planHints;
+
+  /// No description provided for @fcEarlyEnduranceSport.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{One more endurance workout (ideally {sport}) and the forecast uses your training data – strength sessions don\'t count here.} other{{count} more endurance workouts (ideally {sport}) and the forecast uses your training data – strength sessions don\'t count here.}}'**
+  String fcEarlyEnduranceSport(String sport, int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

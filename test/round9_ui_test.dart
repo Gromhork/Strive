@@ -211,15 +211,22 @@ void main() {
       final prefs = await _prefs();
       await pumpCalendar(t, prefs);
       expect(find.byKey(const ValueKey('feasibility')), findsOneWidget);
-      expect(find.byKey(const ValueKey('planHints')), findsNothing);
+      expect(find.byKey(const ValueKey('planHintsBadge')), findsNothing);
+      // The label of "Plan überprüfen" keeps its size when the small entry joins the row (it shrank before).
+      final label = find.descendant(of: find.byKey(const ValueKey('recalibrate')), matching: find.text(de.recalButton));
+      final labelWidth = t.getRect(label).width; // as drawn (after the FittedBox)
       await t.tap(find.descendant(of: find.byKey(const ValueKey('feasibility')), matching: find.byIcon(Icons.close_rounded)));
       await t.pumpAndSettle();
       expect(find.byKey(const ValueKey('feasibility')), findsNothing);
-      expect(find.byKey(const ValueKey('planHints')), findsOneWidget);
+      expect(find.byKey(const ValueKey('planHintsBadge')), findsOneWidget);
+      expect(find.byKey(const ValueKey('jumpToRace')), findsOneWidget);
+      expect(t.getRect(label).width, closeTo(labelWidth, 0.01));
 
       // Restart: still closed.
       await pumpCalendar(t, prefs);
       expect(find.byKey(const ValueKey('feasibility')), findsNothing);
+      await t.tap(find.byKey(const ValueKey('calendarMore')));
+      await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey('planHints')));
       await t.pumpAndSettle();
       expect(find.text(de.feasOptions), findsOneWidget, reason: 'the notes with their options in a sheet');

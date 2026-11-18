@@ -5093,5 +5093,16 @@
       }
     }
   },
-  "planHints": "Plan notes"
+  "planHints": "Plan notes",
+  "fcEarlyEnduranceSport": "{count, plural, =1{One more endurance workout (ideally {sport}) and the forecast uses your training data – strength sessions don't count here.} other{{count} more endurance workouts (ideally {sport}) and the forecast uses your training data – strength sessions don't count here.}}",
+  "@fcEarlyEnduranceSport": {
+    "placeholders": {
+      "sport": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

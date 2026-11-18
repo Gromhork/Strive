@@ -227,90 +227,134 @@ class _TodayCardState extends ConsumerState<TodayCard> {
       final upcoming = all.where((p) => p.status == 'planned' && p.date.isAfter(today)).toList()..sort((a, b) => a.date.compareTo(b.date));
       final next = upcoming.where((p) => filter == null || p.sport == filter).firstOrNull ?? upcoming.firstOrNull;
       final small = Theme.of(context).textTheme.bodySmall;
-      final (IconData icon, Color color, String title, String sub) =
+      final (IconData icon, Color color, String title) =
           hidden > 0
-              ? (Icons.filter_alt_outlined, AppColors.brand, l.todayHiddenByFilter(hidden), l.todayHiddenByFilterSub)
+              ? (Icons.filter_alt_outlined, AppColors.brand, l.todayHiddenByFilter(hidden))
               : doneToday.isNotEmpty
-              ? (Icons.check_circle_rounded, AppColors.success, l.doneToday(doneToday.length), doneToday.map((s) => s.title).join(', '))
+              ? (Icons.check_circle_rounded, AppColors.success, l.doneToday(doneToday.length))
               : noPlan && creating
-              ? (Icons.hourglass_top_rounded, AppColors.brand, l.planCreating, l.noPlanYetSub)
+              ? (Icons.hourglass_top_rounded, AppColors.brand, l.planCreating)
               : noPlan
-              ? (Icons.event_note_rounded, AppColors.brand, l.noPlanYet, l.noPlanYetSub)
-              : (Icons.self_improvement_rounded, AppColors.brand, l.restDay, l.restDaySub);
-      return SectionCard(
-        title: l.todaysWorkout,
-        trailing: IconButton(
-          visualDensity: VisualDensity.compact,
-          tooltip: l.planWorkout,
-          icon: const Icon(Icons.add_circle_outline),
-          onPressed: () => showPlanEditor(context, ref, date: today),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(18)),
-                  child: Icon(icon, color: color, size: 30),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, key: const ValueKey('todayTitle'), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                      Text(sub, style: small, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      if (next != null && hidden == 0)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            l.todayNext(next.title, DateFormat.EEEE(context.localeName).format(next.date)),
+              ? (Icons.event_note_rounded, AppColors.brand, l.noPlanYet)
+              : (Icons.self_improvement_rounded, AppColors.brand, l.restDay);
+      // Compact like the planned-workout card (owner, round 9: the tiles below must stay in view): the header
+      // line with "+", then the icon with one or two short lines and a small action – no explanation sentence.
+      final String? sub =
+          hidden > 0
+              ? null
+              : doneToday.isNotEmpty
+              ? doneToday.map((s) => s.title).join(', ')
+              : noPlan
+              ? l.noPlanYetSub
+              : null;
+      final nextLine =
+          next != null && hidden == 0 && doneToday.isEmpty && !noPlan
+              ? l.todayNext(next.title, DateFormat.EEEE(context.localeName).format(next.date))
+              : null;
+      const compact = ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12)),
+        minimumSize: WidgetStatePropertyAll(Size(0, 36)),
+      );
+      final Widget? action =
+          hidden > 0
+              ? TextButton(
+                key: const ValueKey('todayShowAll'),
+                style: compact,
+                onPressed: () => ref.read(sportFilterProvider.notifier).set(null),
+                child: Text(l.showAllSports),
+              )
+              : noPlan && creating
+              ? const Padding(
+                key: ValueKey('todayPlanCreating'),
+                padding: EdgeInsets.all(6),
+                child: SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 3)),
+              )
+              : noPlan
+              ? FilledButton.tonalIcon(
+                key: const ValueKey('todayCreatePlan'),
+                style: compact,
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
+                icon: const Icon(Icons.auto_graph_rounded, size: 18),
+                label: Text(l.generatePlan),
+              )
+              : doneToday.isNotEmpty
+              ? null
+              : TextButton(
+                key: const ValueKey('todayTrain'),
+                style: compact,
+                onPressed: () => showQuickStart(context, ref),
+                child: Text(l.train),
+              );
+      return Card(
+        key: const ValueKey('todayCard'),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 4, 6, 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l.todaysWorkout,
+                      style: Theme.of(context).textTheme.labelMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: l.planWorkout,
+                    icon: const Icon(Icons.add, size: 20),
+                    onPressed: () => showPlanEditor(context, ref, date: today),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                    child: Icon(icon, color: color, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          key: const ValueKey('todayTitle'),
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (nextLine != null)
+                          Text(
+                            nextLine,
                             key: const ValueKey('todayNext'),
                             style: small?.copyWith(fontWeight: FontWeight.w600),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
+                          )
+                        else if (sub != null)
+                          Text(sub, style: small, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child:
-                  hidden > 0
-                      ? FilledButton.tonal(
-                        style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
-                        onPressed: () => ref.read(sportFilterProvider.notifier).set(null),
-                        child: Text(l.showAllSports),
-                      )
-                      : noPlan && creating
-                      ? const Padding(
-                        key: ValueKey('todayPlanCreating'),
-                        padding: EdgeInsets.all(8),
-                        child: SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 3)),
-                      )
-                      : noPlan
-                      ? FilledButton.icon(
-                        key: const ValueKey('todayCreatePlan'),
-                        style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
-                        onPressed:
-                            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
-                        icon: const Icon(Icons.auto_graph_rounded, size: 18),
-                        label: Text(l.generatePlan),
-                      )
-                      : FilledButton.tonal(
-                        style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
-                        onPressed: () => showQuickStart(context, ref),
-                        child: Text(l.train),
-                      ),
-            ),
-          ],
+                  if (action != null && !noPlan) ...[const SizedBox(width: 6), action],
+                  const SizedBox(width: 6),
+                ],
+              ),
+              // "Plan erstellen" (the only way forward without a plan) is too wide for the line: below it.
+              if (action != null && noPlan)
+                Padding(padding: const EdgeInsets.only(top: 6, right: 6), child: Align(alignment: Alignment.centerRight, child: action)),
+            ],
+          ),
         ),
       );
     }
@@ -782,12 +826,18 @@ class _WeekCard extends ConsumerWidget {
                     for (final s in sports)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 2),
-                        child: Row(
-                          children: [
-                            Icon(s.icon, size: 13, color: s.color),
-                            const SizedBox(width: 4),
-                            Text(countText(s), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                          ],
+                        // Half the width of a 320 dp phone with text ×1.3: shrinks instead of overflowing.
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(s.icon, size: 13, color: s.color),
+                              const SizedBox(width: 4),
+                              Text(countText(s), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
                         ),
                       ),
                     if (sports.isEmpty) Text('–', style: Theme.of(context).textTheme.bodySmall),

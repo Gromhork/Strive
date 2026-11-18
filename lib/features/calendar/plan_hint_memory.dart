@@ -13,7 +13,7 @@ enum PlanHintMode {
   /// The compact card above the calendar.
   card,
 
-  /// Only the small "plan notes" button next to "Plan überprüfen" – the notes stay one tap away.
+  /// Only the "plan notes" entry in the ⋮ menu (marked with a dot) – the notes stay close at hand.
   entry,
 }
 
