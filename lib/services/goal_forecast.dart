@@ -298,7 +298,10 @@ class GoalForecast {
     if (fatigue) reasons.add(ForecastReason.fatigue);
 
     // ── Status from the target time ([paceStatus], C1: persists two weeks)
-    final target = a.targetTimeSec != null && a.targetTimeSec! > 0 && raceSec != null ? a.targetTimeSec : null;
+    // A target the plan does not race at ([PlanGenerator.targetSetAside] – the same rule as feasibility and race day,
+    // also with race times or a measured effort): no delta and no status against it (review of final-open).
+    final setAside = PlanGenerator.targetSetAside(p, start: from);
+    final target = !setAside && a.targetTimeSec != null && a.targetTimeSec! > 0 && raceSec != null ? a.targetTimeSec : null;
     var pace = ForecastStatus.onTrack;
     int? suggested;
     var quietAhead = false;
@@ -459,7 +462,7 @@ class GoalForecast {
       progression: progression,
       paceStatus: target == null ? null : pace,
       finishOnly: finishOnly,
-      setAsideTargetSec: finishOnly && (a.targetTimeSec ?? 0) > 0 ? a.targetTimeSec : null,
+      setAsideTargetSec: setAside ? a.targetTimeSec : null,
       eventName: a.eventName,
       sessionsDue: fit.recentDue,
       sessionsDone: fit.recentDone,

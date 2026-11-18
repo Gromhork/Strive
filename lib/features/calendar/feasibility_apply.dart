@@ -34,7 +34,7 @@ UserProfile? profileWithFeasibility(UserProfile p, FeasibilityAction x, AppLocal
   if (m == null) return null;
   final a = p.athlete;
   final old = a.eventDistance;
-  final autoName = old != null && (a.eventName ?? '').trim() == eventDistanceLabel(l, old);
+  final autoName = isAutoRaceName(l, old, a.eventName);
   return p.copyWith(athlete: a.merge({...m, if (x is FeasShorter && autoName) 'eventName': null}));
 }
 
@@ -61,7 +61,7 @@ Future<void> applyFeasibilityOption(BuildContext context, WidgetRef ref, Feasibi
     final goals = ref.read(goalsProvider).value ?? const <Goal>[];
     final g = goals.where((g) => g.type == GoalType.event && g.deadline != null && sameDay(g.deadline!, a0.eventDate!)).firstOrNull;
     if (g != null) {
-      final renamed = a0.eventDistance != a1.eventDistance && g.title.trim() == eventDistanceLabel(l, a0.eventDistance!);
+      final renamed = a0.eventDistance != a1.eventDistance && isAutoRaceName(l, a0.eventDistance, g.title);
       repo.saveGoal(
         Goal.fromMap(g.id, {
           ...g.toMap(),

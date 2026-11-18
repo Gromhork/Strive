@@ -32,6 +32,7 @@ import 'package:strive/services/active_workout.dart';
 import 'package:strive/services/tracker.dart';
 import 'package:strive/services/weather_service.dart';
 import 'package:strive/services/workout_store.dart';
+import 'package:strive/widgets/duration_picker.dart';
 
 const _profile = UserProfile(name: 'Alex', onboarded: true, weightKg: 75, birthYear: 1990);
 
@@ -375,6 +376,27 @@ void main() {
       await t.pumpAndSettle();
       expect(find.byType(ManualEntryPage), findsNothing);
       expect(find.text('open'), findsOneWidget);
+    });
+
+    testWidgets('manual entry: a longer duration starts earlier, still ends now, Save stays enabled', (t) async {
+      _platformCalls(t);
+      await _pump(t, _launcher(() => const ManualEntryPage()), _overrides(await _prefs(), MemoryWorkoutStore()));
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      String hm(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+      for (final min in [90, 150, 20]) {
+        t.widget<DurationField>(find.byKey(const ValueKey('manualDuration'))).onChanged(min * 60);
+        await t.pump();
+        final now = DateTime.now();
+        final text = t.widget<Text>(find.byKey(const ValueKey('manualTime'))).data!;
+        expect(text.endsWith(hm(now)) || text.endsWith(hm(now.subtract(const Duration(minutes: 1)))), isTrue, reason: '$min min: $text');
+        final start = text.split(' · ').last.split('–').first;
+        final s0 = now.subtract(Duration(minutes: min));
+        expect([hm(s0), hm(s0.subtract(const Duration(minutes: 1)))], contains(start), reason: '$min min: $text');
+        await t.scrollUntilVisible(find.byKey(const ValueKey('manualSave')), 200, scrollable: find.byType(Scrollable).first);
+        expect(t.widget<FilledButton>(find.byKey(const ValueKey('manualSave'))).onPressed, isNotNull, reason: '$min min');
+        await t.scrollUntilVisible(find.byKey(const ValueKey('manualDuration')), -200, scrollable: find.byType(Scrollable).first);
+      }
     });
 
     testWidgets('edit session: unsaved changes are protected', (t) async {

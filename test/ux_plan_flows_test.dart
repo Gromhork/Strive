@@ -47,8 +47,9 @@ class _FakeRepo extends Repository {
   void deleteGoal(String id) => deletedGoals.add(id);
   @override
   void logPlanChange(PlanLogEntry e) => log.add(e);
+  UserProfile? savedProfile;
   @override
-  void saveProfile(UserProfile p) {}
+  void saveProfile(UserProfile p) => savedProfile = p;
 }
 
 void _phone(WidgetTester t) {
@@ -342,6 +343,56 @@ void main() {
       await t.pumpAndSettle();
       expect(t.widget<ChoiceChip>(find.byKey(const ValueKey('distance-olympic'))).selected, isFalse);
       expect(t.takeException(), isNull);
+    });
+
+    testWidgets('renaming the plan\'s race on the goal page carries the name to the plan ($lang)', (t) async {
+      _phone(t);
+      final repo = _FakeRepo();
+      final race = addDays(today, 120);
+      final goal = Goal(
+        id: 'g',
+        type: GoalType.event,
+        title: 'Hamburg',
+        target: 42.195,
+        eventKm: 42.195,
+        eventKey: 'm',
+        created: today,
+        deadline: race,
+      );
+      final o = await _overrides(
+        repo,
+        profile: UserProfile(
+          level: 'intermediate',
+          birthYear: 1990,
+          focus: TrainingFocus.run,
+          athlete: AthleteData(eventDistance: 'm', eventDate: race, eventName: 'Hamburg'),
+        ),
+        goals: [goal],
+      );
+      await t.pumpWidget(
+        _app(
+          Consumer(
+            builder: (c, ref, _) {
+              ref.watch(profileProvider);
+              return Scaffold(body: TextButton(onPressed: () => showGoalEditor(c, ref, existing: goal), child: const Text('open')));
+            },
+          ),
+          lang,
+          o,
+        ),
+      );
+      await t.pumpAndSettle();
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      await t.enterText(find.widgetWithText(TextField, 'Hamburg'), 'Berlin');
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.byKey(const ValueKey('saveGoal')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('saveGoal')));
+      await t.pumpAndSettle();
+      expect(repo.savedGoals.single.title, 'Berlin');
+      expect(repo.savedProfile?.athlete.eventName, 'Berlin', reason: 'Home and race day show "Berlin · Marathon", not "Hamburg"');
+      expect(repo.planUpdates, isEmpty, reason: 'a new name alone rebuilds no plan');
     });
 
     testWidgets('QA goal delete asks first and can be undone ($lang)', (t) async {

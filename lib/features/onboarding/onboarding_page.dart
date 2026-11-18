@@ -285,7 +285,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     a = a.merge(changes);
     // An automatic race name ("Halbmarathon" – the distance's own name, filled in from the goal)
     // follows the distance; only a name the athlete typed stays ("Halbmarathon · Marathon" never).
-    if (a.eventDistance != before && _eventName.text.trim() == _distanceLabel(context.l10n, before)) _eventName.clear();
+    if (a.eventDistance != before && isAutoRaceName(context.l10n, before, _eventName.text)) _eventName.clear();
     _syncRaceDay();
   });
 

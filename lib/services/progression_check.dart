@@ -102,11 +102,11 @@ bool isRunWalk(PlannedWorkout x) => x.sport == Sport.run && x.steps.isNotEmpty &
 PlannedWorkout retitledRunWalk(PlannedWorkout w) {
   if (!isRunWalk(w)) return w;
   final work = w.steps.where((s) => s.isWork && s.zone != 'walk').toList();
-  final m = RegExp(r'(\d+) × (\d+) min').firstMatch(w.title);
+  final m = RegExp(r'(\d+) × (\d+)[  ]min').firstMatch(w.title);
   if (work.isEmpty || m == null) return w;
   final sec = work.first.durationSec ?? 0;
   if (sec <= 0 || sec % 60 != 0) return w;
-  final title = w.title.replaceRange(m.start, m.end, '${work.length} × ${sec ~/ 60} min');
+  final title = w.title.replaceRange(m.start, m.end, '${work.length} × ${sec ~/ 60} min');
   return title == w.title ? w : PlannedWorkout.fromMap(w.id, {...w.toMap(), 'title': title});
 }
 
@@ -117,7 +117,7 @@ PlannedWorkout retitledRunWalk(PlannedWorkout w) {
 /// title – the German km titles are "Zieltempo …" and "Cruise-Intervalle …").
 PlannedWorkout retitledRepeats(PlannedWorkout w, {String? decimal}) {
   if (isRunWalk(w)) return retitledRunWalk(w);
-  final m = RegExp(r'(\d+) × (\d+(?:[.,]\d+)?) (m|km|min|s)\b').firstMatch(w.title);
+  final m = RegExp(r'(\d+) × (\d+(?:[.,]\d+)?)[  ](m|km|min|s)\b').firstMatch(w.title);
   final work = [for (final i in mainSetIndices(w.steps)) w.steps[i]];
   if (m == null || work.isEmpty) return w;
   final f = work.first;

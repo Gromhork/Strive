@@ -343,8 +343,16 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
     if (_planAligned && sameDay(a.eventDate!, _deadline!) && a.eventDistance == key && a.targetTimeSec == _targetSec) return null;
     // Goal and plan stay consistent: a triathlon is planned with the triathlon focus.
     final focus = _focusFor(key, p.focus);
-    return p.copyWith(focus: focus, athlete: a.merge({'eventDate': _deadline, 'eventDistance': key, 'targetTimeSec': _targetSec}));
+    return p.copyWith(
+      focus: focus,
+      athlete: a.merge({'eventDate': _deadline, 'eventDistance': key, 'targetTimeSec': _targetSec, 'eventName': _raceName()}),
+    );
   }
+
+  /// The race's own name from the title field (null when empty or just the distance's name, [ownRaceName]) – the plan
+  /// shows it on Home, the goal page and race day ([raceLabel]), so aligning or renaming here carries it over
+  /// (review of final-open: "Berlin" aligned here still showed the previous "Hamburg · Marathon").
+  String? _raceName() => ownRaceName(context.l10n, _key, _title.text);
 
   /// Aligning needs another focus (triathlon goal, hybrid focus): the week of the current
   /// settings has no cycling – the plan settings are opened instead of guessing.
@@ -485,6 +493,12 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
       ),
     );
     if (aligned != null) _alignPlan(aligned, planStart!);
+    // The plan's race renamed (nothing else changed – no new plan): the plan settings carry the new name.
+    if (aligned == null && !wizard && _type == GoalType.event && _align && _planAligned) {
+      final p = ref.read(profileOrDefaultProvider);
+      final name = _raceName();
+      if ((p.athlete.eventName ?? '').trim() != (name ?? '')) repo.saveProfile(p.copyWith(athlete: p.athlete.merge({'eventName': name})));
+    }
     final nav = Navigator.of(context);
     nav.pop();
     // The plan settings read the saved goal (race, date, distance, focus of the race).

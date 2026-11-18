@@ -56,7 +56,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
   late final String _planDistance = _initialDistance();
   late final _distance = TextEditingController(text: _planDistance);
 
-  DateTime _initialStart() => manualEntryStart(now: DateTime.now(), minutes: _planMinutes, planDate: widget.plan?.date);
+  DateTime _initialStart() => manualEntryStart(now: DateTime.now(), minutes: _minutes, planDate: widget.plan?.date);
 
   /// The athlete picked the date / time: the start no longer follows the duration.
   bool _startPicked = false;

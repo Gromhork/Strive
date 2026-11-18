@@ -93,11 +93,26 @@ String eventDistanceLabel(AppLocalizations l, String key) => glueUnits(_distance
 /// race day) uses it – the user's "Berlin" showed as "Marathon" (final QA).
 String raceLabel(AppLocalizations l, String? key, {String? name}) {
   final dist = key == null || eventDistanceOf(key) == null ? null : eventDistanceLabel(l, key);
-  final n = name?.trim() ?? '';
+  final n = (name ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
   if (n.isEmpty) return dist ?? key ?? '';
   if (dist == null) return glueUnits(n);
-  final plain = dist.replaceAll(nbsp, ' ').toLowerCase();
-  return n.toLowerCase().contains(plain) ? glueUnits(n) : '${glueUnits(n)} · $dist';
+  return _plainName(n).contains(_plainName(dist)) ? glueUnits(n) : '${glueUnits(n)} · $dist';
+}
+
+/// [s] for comparing names: every whitespace (also the non-breaking space of [glueUnits]) one plain space, lower case.
+String _plainName(String s) => s.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+
+/// [name] is just the distance's own name ([eventDistanceLabel] of [key]) – an automatic race name, filled in from
+/// the distance, not one the athlete typed. Whitespace-insensitive: names stored before the labels used a
+/// non-breaking space ("10 km") match the new label and vice versa (review of final-open: "10 km · 10 km").
+bool isAutoRaceName(AppLocalizations l, String? key, String? name) =>
+    key != null && eventDistanceOf(key) != null && name != null && _plainName(name) == _plainName(eventDistanceLabel(l, key));
+
+/// The athlete's own race name from a goal title / name field: null when empty or just the distance's name
+/// ([isAutoRaceName]).
+String? ownRaceName(AppLocalizations l, String? key, String? name) {
+  final n = name?.trim() ?? '';
+  return n.isEmpty || isAutoRaceName(l, key, n) ? null : n;
 }
 
 String _distanceLabel(AppLocalizations l, String key) => switch (key) {
