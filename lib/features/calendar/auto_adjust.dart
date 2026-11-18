@@ -88,10 +88,10 @@ void undoAutoAdjust(Repository repo, List<PlannedWorkout> plans) {
 
 /// "8 km" for runs, "1500 m" for swims, else "45 min" (as [AutoAdjuster] measures them).
 String amountLabel(PlannedWorkout p, UserProfile profile) => switch (p.sport) {
-  _ when (p.distanceKm ?? 0) <= 0 => '${p.durationMin} min',
+  _ when (p.distanceKm ?? 0) <= 0 => '${p.durationMin} min',
   Sport.run => profile.units.dist(p.distanceKm! * 1000, digits: 1),
   Sport.swim => profile.units.swimDist(p.distanceKm! * 1000),
-  _ => '${p.durationMin} min',
+  _ => '${p.durationMin} min',
 };
 
 /// Reason text of an automatic adjustment.
@@ -149,7 +149,7 @@ class AutoAdjustCard extends StatelessWidget {
                   l.autoAdjOriginal(
                     [
                       amountLabel(original, profile),
-                      if ((a.distanceKm ?? 0) > 0 && plan.sport != Sport.ride) '${a.durationMin} min',
+                      if ((a.distanceKm ?? 0) > 0 && plan.sport != Sport.ride) '${a.durationMin} min',
                     ].join(' · '),
                   ),
                   style: Theme.of(context).textTheme.bodySmall,

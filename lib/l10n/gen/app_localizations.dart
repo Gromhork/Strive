@@ -11992,6 +11992,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Advanced lifters train longer blocks before a recovery week – for experienced athletes.'**
   String get diffChallengingSubGym;
+
+  /// No description provided for @wRaceFinishTargetSetAside.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish goal: with this build-up the plan has no race pace – your target time {goal} stays saved. Start slower than feels right, keep your rhythm and enjoy reaching the finish.'**
+  String wRaceFinishTargetSetAside(String goal);
+
+  /// No description provided for @feasTargetSetAside.
+  ///
+  /// In en, this message translates to:
+  /// **'With this build-up, finishing is the goal – your target time {goal} stays saved, but the plan runs without race pace.'**
+  String feasTargetSetAside(String goal);
+
+  /// No description provided for @feasClearTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the target time'**
+  String get feasClearTarget;
+
+  /// No description provided for @targetSuggestSetAside.
+  ///
+  /// In en, this message translates to:
+  /// **'With this build-up, finishing is the goal – your {goal} stays saved, but the plan runs without race pace.'**
+  String targetSuggestSetAside(String goal);
+
+  /// No description provided for @targetSuggestFinishKept.
+  ///
+  /// In en, this message translates to:
+  /// **'No realistic estimate: without a target, finishing would be the goal. The plan takes your {goal} as its goal – the check below shows what it still lacks.'**
+  String targetSuggestFinishKept(String goal);
+
+  /// No description provided for @targetRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get targetRemove;
+
+  /// No description provided for @goalTargetSetAsideSub.
+  ///
+  /// In en, this message translates to:
+  /// **'{goal} not raced'**
+  String goalTargetSetAsideSub(String goal);
+
+  /// No description provided for @applyChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change: {change}'**
+  String applyChange(String change);
+
+  /// No description provided for @startTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time'**
+  String get startTime;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

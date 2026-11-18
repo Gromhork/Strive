@@ -1912,4 +1912,13 @@ const l10nPairs = <(String, String)>[
   ('A recovery week every 3rd week – more time to recover between loading weeks.', 'Jede 3. Woche eine Entlastungswoche – mehr Erholung zwischen den Belastungswochen.'),
   ('A recovery week every 4th week – steady progress for most athletes.', 'Jede 4. Woche eine Entlastungswoche – stetiger Fortschritt für die meisten.'),
   ('Advanced lifters train longer blocks before a recovery week – for experienced athletes.', 'Profis trainieren längere Blöcke bis zur Entlastungswoche – für Erfahrene.'),
+  ('Finish goal: with this build-up the plan has no race pace – your target time {goal} stays saved. Start slower than feels right, keep your rhythm and enjoy reaching the finish.', 'Ziel ist das Ankommen: Mit diesem Aufbau läuft der Plan ohne Renntempo – deine Zielzeit {goal} bleibt gespeichert. Starte langsamer als es sich richtig anfühlt, halte deinen Rhythmus und genieß das Finish.'),
+  ('With this build-up, finishing is the goal – your target time {goal} stays saved, but the plan runs without race pace.', 'Mit diesem Aufbau ist Ankommen das Ziel – deine Zielzeit {goal} bleibt gespeichert, der Plan läuft aber ohne Renntempo.'),
+  ('Remove the target time', 'Zielzeit entfernen'),
+  ('With this build-up, finishing is the goal – your {goal} stays saved, but the plan runs without race pace.', 'Mit diesem Aufbau ist Ankommen das Ziel – deine {goal} bleibt gespeichert, der Plan läuft aber ohne Renntempo.'),
+  ('No realistic estimate: without a target, finishing would be the goal. The plan takes your {goal} as its goal – the check below shows what it still lacks.', 'Kein Richtwert: Ohne Zielzeit wäre Ankommen das Ziel. Der Plan nimmt deine {goal} als Ziel – die Prüfung unten zeigt, was dafür noch fehlt.'),
+  ('Remove', 'Entfernen'),
+  ('{goal} not raced', '{goal} ohne Renntempo'),
+  ('Change: {change}', 'Änderung: {change}'),
+  ('Start time', 'Startzeit'),
 ];

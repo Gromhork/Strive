@@ -26,7 +26,13 @@ class _FakeRepo extends Repository {
   @override
   String newId() => 'id${_n++}';
   @override
-  Future<void> replacePlans(List<PlannedWorkout> all, DateTime from, List<PlannedWorkout> plan, {Set<String> keep = const {}}) async {
+  Future<void> replacePlans(
+    List<PlannedWorkout> all,
+    DateTime from,
+    List<PlannedWorkout> plan, {
+    Set<String> keep = const {},
+    Set<String> drop = const {},
+  }) async {
     replaced++;
     saved.addAll(plan);
   }

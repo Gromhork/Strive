@@ -137,7 +137,7 @@ class GoalStatusView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      eventLabel(l, f.event),
+                      eventLabel(l, f.event, name: f.eventName),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
@@ -183,6 +183,12 @@ class GoalStatusView extends StatelessWidget {
                 Text('${l.fcRange(clock(f.fastSec!), clock(f.slowSec!))} · $conf', style: small),
               ],
               if (f.early) ...[const SizedBox(height: 8), Text(forecastEarlyText(l, f), style: small)],
+              // The athlete's target next to a finish-only plan: said plainly, with the way out (final QA: the goal page
+              // said "Ankommen" while the setup showed 3:27).
+              if (f.setAsideTargetSec != null) ...[
+                const SizedBox(height: 8),
+                Text(l.feasTargetSetAside(clock(f.setAsideTargetSec!)), key: const ValueKey('targetSetAside'), style: small),
+              ],
               if (!f.early && f.status == ForecastStatus.atRisk && f.targetSec != null && f.raceDaySec != null) ...[
                 const SizedBox(height: 8),
                 Text(l.fcRiskBody(clock(f.raceDaySec!), clock(f.targetSec!)), style: TextStyle(color: color, fontSize: 13)),
@@ -257,7 +263,7 @@ class GoalStatusView extends StatelessWidget {
                 const SizedBox(height: 14),
                 _Meter(
                   label: l.goalLongestRun,
-                  value: f.longestRunKm == null ? '–' : '${Units.num(f.longestRunKm!, 1)} km',
+                  value: f.longestRunKm == null ? '–' : '${Units.num(f.longestRunKm!, 1)} km',
                   progress: (f.longestRunKm ?? 0) / f.longRunNeededKm!,
                   color: AppColors.run,
                   sub: l.goalLongRunNeed(f.longRunNeededKm!.round()),

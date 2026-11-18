@@ -155,10 +155,10 @@ class SessionDetailPage extends ConsumerWidget {
                       context,
                       StatTile(
                         label: l.elevation,
-                        value: u.imperial ? '${(s.elevationM / 0.3048).round()} ft' : '${s.elevationM.round()} m',
+                        value: u.imperial ? '${(s.elevationM / 0.3048).round()} ft' : '${s.elevationM.round()} m',
                       ),
                     ),
-                  if (s.sport == Sport.swim && s.laps > 0) _half(context, StatTile(label: l.laps, value: '${s.laps} × ${s.poolLengthM} m')),
+                  if (s.sport == Sport.swim && s.laps > 0) _half(context, StatTile(label: l.laps, value: '${s.laps} × ${s.poolLengthM} m')),
                 ],
                 if (s.avgHr != null) _half(context, StatTile(label: l.avgHrShort, value: '${s.avgHr} bpm', color: AppColors.danger)),
                 if (s.maxHr != null) _half(context, StatTile(label: l.maxHr, value: '${s.maxHr} bpm')),
@@ -251,7 +251,7 @@ class SessionDetailPage extends ConsumerWidget {
                       l.distance,
                       s.sport == Sport.swim ? u.swimDist(s.distanceM) : u.dist(s.distanceM),
                       s.sport == Sport.swim
-                          ? delta(s.distanceM, prev.distanceM, fmt: (d) => '${d.round()} m')
+                          ? delta(s.distanceM, prev.distanceM, fmt: (d) => '${d.round()} m')
                           : delta(u.distOut(s.distanceM), u.distOut(prev.distanceM), fmt: (d) => Units.num(d, 2)),
                     ),
                     _CompareRow(
@@ -274,7 +274,7 @@ class SessionDetailPage extends ConsumerWidget {
                             return _CompareRow(
                               exName(context, e.exId, e.name),
                               formatHold(e.longestHold),
-                              delta(e.longestHold.toDouble(), pe.longestHold.toDouble(), fmt: (d) => '${d.round()} s'),
+                              delta(e.longestHold.toDouble(), pe.longestHold.toDouble(), fmt: (d) => '${d.round()} s'),
                             );
                           }
                           // Only like with like: a set logged before bodyweight mode existed (or

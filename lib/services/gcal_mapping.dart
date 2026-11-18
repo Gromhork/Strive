@@ -85,7 +85,7 @@ String gcalDescription(PlannedWorkout p, AppLocalizations l, Units u) {
   final head = [
     p.sport.label(l),
     if (p.sport.isCardio) intensityLabel(l, p.intensity),
-    '${p.durationMin} min',
+    formatMinutes(p.durationMin),
     if (p.distanceKm != null && p.distanceKm! > 0)
       p.sport == Sport.swim ? u.swimDist(p.distanceKm! * 1000) : u.dist(p.distanceKm! * 1000, digits: 1),
   ];

@@ -1,4 +1,5 @@
 import '../l10n/gen/app_localizations.dart';
+import 'format.dart';
 
 /// Discipline of a race distance.
 enum EventSport { run, triathlon, duathlon, ride, swim }
@@ -52,7 +53,69 @@ EventDistance? eventDistanceOf(String? key) => eventDistances.where((d) => d.key
 
 List<EventDistance> eventDistancesFor(EventSport sport) => eventDistances.where((d) => d.sport == sport).toList();
 
-String eventDistanceLabel(AppLocalizations l, String key) => switch (key) {
+/// Months (inclusive, northern hemisphere) a race of [sport] is usually held in: open-water swims and triathlons need
+/// warm water (June – mid-September), cycling marathons and duathlons the road season; running races are held all
+/// year (null). Day precision: (month, day) of the first and the last day.
+((int, int), (int, int))? raceSeason(EventSport sport) => switch (sport) {
+  EventSport.swim || EventSport.triathlon => ((6, 1), (9, 15)),
+  EventSport.ride => ((5, 1), (9, 30)),
+  EventSport.duathlon => ((4, 1), (10, 15)),
+  EventSport.run => null,
+};
+
+/// Where the race date picker opens for [eventKey] (audit final QA: an open-water swim / a triathlon was suggested for
+/// January / March): at least [weeks] (the race's recommended plan length, lower end) after [today] – so the
+/// recommended plan always fits –, inside the race's season ([raceSeason]: the next summer weekend for open water and
+/// triathlon), on the long-session day when that is a weekend day, else on Sunday (running: the long day, as before).
+DateTime defaultRaceDateFor(String? eventKey, DateTime today, int weeks, {int? longDay}) {
+  final d = eventDistanceOf(eventKey);
+  final season = d == null ? null : raceSeason(d.sport);
+  if (season == null) return defaultRaceDate(today, weeks, longDay: longDay);
+  final weekend = longDay == DateTime.saturday || longDay == DateTime.sunday ? longDay! : DateTime.sunday;
+  var from = addDays(dayOnly(today), 7 * weeks);
+  for (var i = 0; i < 3; i++) {
+    final ((m0, d0), (m1, d1)) = season;
+    final start = DateTime(from.year, m0, d0), end = DateTime(from.year, m1, d1);
+    final first = from.isBefore(start) ? start : from;
+    final day = addDays(first, (weekend - first.weekday) % 7);
+    if (!day.isAfter(end)) return day;
+    from = DateTime(from.year + 1, m0, d0);
+  }
+  return defaultRaceDate(today, weeks, longDay: longDay);
+}
+
+/// The race distance's own name ("Halbmarathon", "Freiwasser 1,5 km") – number and unit never wrap apart
+/// ([glueUnits]: "1,5" / "km" broke onto two lines on Home, final QA).
+String eventDistanceLabel(AppLocalizations l, String key) => glueUnits(_distanceLabel(l, key));
+
+/// The race as the athlete named it, else the distance's name: "Berlin · Marathon" (the name alone when it already
+/// names the distance – "Berlin-Marathon"); every place that shows the race goal (Home, goal page, recalibration,
+/// race day) uses it – the user's "Berlin" showed as "Marathon" (final QA).
+String raceLabel(AppLocalizations l, String? key, {String? name}) {
+  final dist = key == null || eventDistanceOf(key) == null ? null : eventDistanceLabel(l, key);
+  final n = (name ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (n.isEmpty) return dist ?? key ?? '';
+  if (dist == null) return glueUnits(n);
+  return _plainName(n).contains(_plainName(dist)) ? glueUnits(n) : '${glueUnits(n)} · $dist';
+}
+
+/// [s] for comparing names: every whitespace (also the non-breaking space of [glueUnits]) one plain space, lower case.
+String _plainName(String s) => s.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+
+/// [name] is just the distance's own name ([eventDistanceLabel] of [key]) – an automatic race name, filled in from
+/// the distance, not one the athlete typed. Whitespace-insensitive: names stored before the labels used a
+/// non-breaking space ("10 km") match the new label and vice versa (review of final-open: "10 km · 10 km").
+bool isAutoRaceName(AppLocalizations l, String? key, String? name) =>
+    key != null && eventDistanceOf(key) != null && name != null && _plainName(name) == _plainName(eventDistanceLabel(l, key));
+
+/// The athlete's own race name from a goal title / name field: null when empty or just the distance's name
+/// ([isAutoRaceName]).
+String? ownRaceName(AppLocalizations l, String? key, String? name) {
+  final n = name?.trim() ?? '';
+  return n.isEmpty || isAutoRaceName(l, key, n) ? null : n;
+}
+
+String _distanceLabel(AppLocalizations l, String key) => switch (key) {
   '5k' => '5 km',
   '10k' => '10 km',
   'hm' => l.halfMarathon,

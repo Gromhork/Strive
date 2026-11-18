@@ -126,6 +126,17 @@ class FeasAddDay extends FeasibilityAction {
   final Sport sport;
 }
 
+/// Set the target time to [sec] (the realistic one of a target issue).
+class FeasSetTarget extends FeasibilityAction {
+  const FeasSetTarget(this.sec);
+  final int sec;
+}
+
+/// Remove the target time the finish-only plan sets aside (`targetSetAside`).
+class FeasClearTarget extends FeasibilityAction {
+  const FeasClearTarget();
+}
+
 /// Name of an event distance key (the shared catalogue, [eventDistanceLabel]).
 String eventDistanceName(AppLocalizations l, String d) => eventDistanceLabel(l, d);
 
@@ -144,6 +155,7 @@ class FeasibilityCard extends StatelessWidget {
     this.showTargetOk = false,
     this.onExtendLongRun,
     this.onAction,
+    this.onOption,
     this.compact = false,
     this.onOpenSettings,
   });
@@ -151,6 +163,9 @@ class FeasibilityCard extends StatelessWidget {
 
   /// Applies a tapped option ([FeasibilityAction]); without it the options are plain text.
   final ValueChanged<FeasibilityAction>? onAction;
+
+  /// As [onAction], with the option's text – where it is applied after a confirmation that names it (the calendar).
+  final void Function(FeasibilityAction action, String text)? onOption;
 
   /// Only the title and the first issue, the rest in a sheet (the calendar: the full card took half the screen).
   final bool compact;
@@ -274,8 +289,9 @@ class FeasibilityCard extends StatelessWidget {
       if (f.laterDate != null) (l.feasLaterDate(df.format(f.laterDate!)), FeasLaterDate(f.laterDate!)),
       if (f.shorterDistance != null) (l.feasShorter(eventDistanceName(l, f.shorterDistance!)), FeasShorter(f.shorterDistance!)),
       if (f.runWalkFinish) (l.feasRunWalkFinish, null),
-      if (targetIssue && onAdjustTarget == null) (l.feasTargetSuggest(clock(t.suggestedSec)), null),
-      if (targetIssue && t.laterDate != null) (l.feasTargetLater(clock(t.targetSec), df.format(t.laterDate!)), null),
+      if (targetIssue && onAdjustTarget == null) (l.feasTargetSuggest(clock(t.suggestedSec)), FeasSetTarget(t.suggestedSec)),
+      if (targetIssue && t.laterDate != null) (l.feasTargetLater(clock(t.targetSec), df.format(t.laterDate!)), FeasLaterDate(t.laterDate!)),
+      if (issues.contains('targetSetAside')) (l.feasClearTarget, const FeasClearTarget()),
     ];
     // Notes only (the goal itself is fine): a neutral info look, not a warning (user report 2026-11: the
     // long-run cap note read as a warning that contradicted the time the athlete had set).
@@ -343,13 +359,22 @@ class FeasibilityCard extends StatelessWidget {
                 if (options.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(l.feasOptions, style: small?.copyWith(fontWeight: FontWeight.w600)),
-                  for (final (text, action) in options)
-                    if (action != null && onAction != null)
-                      _OptionButton(text: text, onTap: () => onAction!(action))
+                  for (final (i, (text, action)) in options.indexed)
+                    if (action != null && (onAction != null || onOption != null))
+                      _OptionButton(
+                        // (Several "add days" options can be shown – one per sport: the index keeps the keys apart.)
+                        key: ValueKey(
+                          i == options.indexWhere((o) => o.$2.runtimeType == action.runtimeType)
+                              ? 'feasOption-${action.runtimeType}'
+                              : 'feasOption-$i',
+                        ),
+                        text: text,
+                        onTap: () => onAction != null ? onAction!(action) : onOption!(action, text),
+                      )
                     else
                       Text('• $text', style: const TextStyle(fontSize: 13)),
                 ],
-                if (onOpenSettings != null && options.any((o) => o.$2 != null))
+                if (onOpenSettings != null && options.any((o) => o.$2 != null) && onAction == null && onOption == null)
                   Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: TextButton.icon(
@@ -410,6 +435,14 @@ class FeasibilityCard extends StatelessWidget {
                       child: FeasibilityCard(
                         f,
                         onAction: onAction,
+                        // (The sheet closes first: the option asks before it rebuilds the plan.)
+                        onOption:
+                            onOption == null
+                                ? null
+                                : (x, text) {
+                                  Navigator.pop(ctx);
+                                  onOption!(x, text);
+                                },
                         onAdjustTarget: onAdjustTarget,
                         onOpenSettings:
                             onOpenSettings == null
@@ -464,7 +497,7 @@ class FeasibilityCard extends StatelessWidget {
 
 /// A tappable option of the [FeasibilityCard] – the change it names is applied at once.
 class _OptionButton extends StatelessWidget {
-  const _OptionButton({required this.text, required this.onTap});
+  const _OptionButton({super.key, required this.text, required this.onTap});
   final String text;
   final VoidCallback onTap;
 

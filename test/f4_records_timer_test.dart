@@ -594,11 +594,11 @@ void main() {
         expect(holdPerSide(n), isFalse, reason: n);
       }
       final side = GymExercise(exId: '0705', name: 'side bridge v. 2', sets: [GymSet(sec: 20), GymSet(sec: 20), GymSet(sec: 20)]);
-      expect(exerciseSummary(de, side, kg, range: side.holdRange), '3 × 20 s ${de.perSide}');
+      expect(exerciseSummary(de, side, kg, range: side.holdRange), '3 × 20 s ${de.perSide}');
       final front = GymExercise(exId: '2135', name: 'weighted front plank', sets: [GymSet(sec: 30)]);
-      expect(exerciseSummary(de, front, kg, range: front.holdRange), '1 × 30 s');
+      expect(exerciseSummary(de, front, kg, range: front.holdRange), '1 × 30 s');
       const rx = Prescription(weight: 0, reps: 20, source: LoadSource.bodyweight, timed: true);
-      expect(prescriptionToday(de, rx, kg, sets: 3, perSide: true), contains('3 × 20 s ${de.perSide}'));
+      expect(prescriptionToday(de, rx, kg, sets: 3, perSide: true), contains('3 × 20 s ${de.perSide}'));
     });
 
     testWidgets('planned workout page shows the superset like the program and the workout', (t) async {

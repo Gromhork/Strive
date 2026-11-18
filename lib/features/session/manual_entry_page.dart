@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -58,14 +56,10 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
   late final String _planDistance = _initialDistance();
   late final _distance = TextEditingController(text: _planDistance);
 
-  /// When the workout was done: a past plan day at 18:00, today (and a workout planned for a later
-  /// day – it can't have been done in the future) an hour ago. Either way it completes [widget.plan].
-  DateTime _initialStart() {
-    final now = DateTime.now();
-    final p = widget.plan;
-    if (p == null || sameDay(p.date, now) || p.date.isAfter(now)) return now.subtract(Duration(minutes: max(60, _planMinutes)));
-    return DateTime(p.date.year, p.date.month, p.date.day, 18);
-  }
+  DateTime _initialStart() => manualEntryStart(now: DateTime.now(), minutes: _minutes, planDate: widget.plan?.date);
+
+  /// The athlete picked the date / time: the start no longer follows the duration.
+  bool _startPicked = false;
 
   String _initialDistance() {
     final km = _fill?.km;
@@ -179,7 +173,6 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final u = ref.watch(profileOrDefaultProvider).units;
-    final df = DateFormat.yMMMEd(context.localeName).add_Hm();
     final gymFromPlan = _sport == Sport.gym && _planExercises.isNotEmpty;
     return DiscardGuard(
       isDirty: () => _snapshot() != _initial,
@@ -202,7 +195,9 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.event),
-              title: Text(df.format(_start)),
+              // Start and end ("Di., 17. Nov. · 21:30–22:12"): a lone time read as "now" was an hour off (final QA: 21:12
+              // shown at 22:12 – it was the start, an hour before, not a clock error).
+              title: Text(manualEntryTimeText(context.localeName, _start, _minutes), key: const ValueKey('manualTime')),
               // A workout planned for a later day, logged today: still completes that workout.
               subtitle:
                   widget.plan != null && !sameDay(widget.plan!.date, _start)
@@ -214,8 +209,11 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
               onTap: () async {
                 final d = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2015), lastDate: DateTime.now());
                 if (d == null || !context.mounted) return;
-                final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_start));
-                setState(() => _start = DateTime(d.year, d.month, d.day, t?.hour ?? _start.hour, t?.minute ?? _start.minute));
+                final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_start), helpText: l.startTime);
+                setState(() {
+                  _startPicked = true;
+                  _start = DateTime(d.year, d.month, d.day, t?.hour ?? _start.hour, t?.minute ?? _start.minute);
+                });
               },
             ),
             // The same duration input as everywhere else (no slider).
@@ -227,7 +225,12 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
               min: 60,
               max: 10 * 3600,
               clearable: false,
-              onChanged: (v) => setState(() => _minutes = ((v ?? _minutes * 60) / 60).round().clamp(1, 600)),
+              onChanged:
+                  (v) => setState(() {
+                    _minutes = ((v ?? _minutes * 60) / 60).round().clamp(1, 600);
+                    // A workout just finished keeps ending now: a longer duration starts it earlier.
+                    if (!_startPicked) _start = _initialStart();
+                  }),
             ),
             const SizedBox(height: 12),
             if (_sport != Sport.gym) ...[
@@ -371,4 +374,26 @@ class _GymFromPlan extends StatelessWidget {
       ),
     );
   }
+}
+
+/// When a manually logged workout started: a past plan day at 18:00; today (and a workout planned for a later day – it
+/// cannot have been done in the future) so that it ends now – [minutes] before the current minute. Absolute time
+/// arithmetic (a [Duration] back from now), so the end is the current wall-clock time also on the night of a DST change.
+DateTime manualEntryStart({required DateTime now, required int minutes, DateTime? planDate}) {
+  if (planDate == null || sameDay(planDate, now) || planDate.isAfter(now)) {
+    // (The current minute without building a DateTime from wall-clock fields – ambiguous in the repeated hour.)
+    final end = now.subtract(Duration(seconds: now.second, milliseconds: now.millisecond, microseconds: now.microsecond));
+    return end.subtract(Duration(minutes: minutes));
+  }
+  return DateTime(planDate.year, planDate.month, planDate.day, 18);
+}
+
+/// "Di., 17. Nov. 2026 · 21:30–22:12": the day, start and end of a logged workout ([minutes] after [start]).
+String manualEntryTimeText(String locale, DateTime start, int minutes) {
+  final end = start.add(Duration(minutes: minutes));
+  final hm = DateFormat.Hm(locale);
+  final day = DateFormat.yMMMEd(locale).format(start);
+  return sameDay(start, end)
+      ? '$day · ${hm.format(start)}–${hm.format(end)}'
+      : '$day · ${hm.format(start)}–${DateFormat.E(locale).add_Hm().format(end)}';
 }

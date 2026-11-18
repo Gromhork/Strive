@@ -5033,5 +5033,56 @@
   },
   "diffEasySubGym": "A recovery week every 3rd week – more time to recover between loading weeks.",
   "diffBalancedSubGym": "A recovery week every 4th week – steady progress for most athletes.",
-  "diffChallengingSubGym": "Advanced lifters train longer blocks before a recovery week – for experienced athletes."
+  "diffChallengingSubGym": "Advanced lifters train longer blocks before a recovery week – for experienced athletes.",
+  "wRaceFinishTargetSetAside": "Finish goal: with this build-up the plan has no race pace – your target time {goal} stays saved. Start slower than feels right, keep your rhythm and enjoy reaching the finish.",
+  "@wRaceFinishTargetSetAside": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "feasTargetSetAside": "With this build-up, finishing is the goal – your target time {goal} stays saved, but the plan runs without race pace.",
+  "@feasTargetSetAside": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "feasClearTarget": "Remove the target time",
+  "targetSuggestSetAside": "With this build-up, finishing is the goal – your {goal} stays saved, but the plan runs without race pace.",
+  "@targetSuggestSetAside": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "targetSuggestFinishKept": "No realistic estimate: without a target, finishing would be the goal. The plan takes your {goal} as its goal – the check below shows what it still lacks.",
+  "@targetSuggestFinishKept": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "targetRemove": "Remove",
+  "goalTargetSetAsideSub": "{goal} not raced",
+  "@goalTargetSetAsideSub": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "applyChange": "Change: {change}",
+  "@applyChange": {
+    "placeholders": {
+      "change": {
+        "type": "String"
+      }
+    }
+  },
+  "startTime": "Start time"
 }

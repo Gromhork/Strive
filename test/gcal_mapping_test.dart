@@ -36,7 +36,7 @@ void main() {
     expect((b['end'] as Map)['dateTime'], startsWith('2026-11-10T07:50:00'));
     expect(b['summary'], '🏃 Easy run');
     expect(b['colorId'], '10');
-    expect(b['description'], contains('50 min · 8 km'));
+    expect(b['description'], contains('50 min · 8 km'));
     final priv = (b['extendedProperties'] as Map)['private'] as Map;
     expect(priv['striveId'], 'p1');
     expect(priv['striveHash'], hasLength(8));

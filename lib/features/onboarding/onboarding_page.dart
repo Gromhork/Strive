@@ -13,6 +13,7 @@ import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../data/default_programs.dart';
 import '../../data/repository.dart' show deepEquals;
+import '../calendar/feasibility_apply.dart';
 import '../calendar/feasibility_card.dart';
 import '../calendar/replace_plan_dialog.dart';
 import 'gym_assign_section.dart';
@@ -260,15 +261,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   /// Applies a tapped option of the feasibility card (audit UX-9) – right here in the setup.
   void _applyFeasibility(FeasibilityAction x) {
     switch (x) {
-      case FeasLaterDate(:final date):
+      // (The athlete settings an option changes: one mapping with the calendar's – feasibilityAthleteChanges.)
+      case FeasLaterDate():
         setState(() => _raceByWeeks = false);
-        _setA({'eventDate': date});
-      case FeasShorter(:final distance):
-        _setA({'eventDistance': distance, 'targetTimeSec': null});
-      case FeasDayMinutes(:final minutes):
-        _setA({
-          'dayMinutes': {...a.dayMinutes, ...minutes},
-        });
+        _setA(feasibilityAthleteChanges(x, a)!);
+      case FeasShorter() || FeasClearTarget() || FeasSetTarget() || FeasDayMinutes():
+        _setA(feasibilityAthleteChanges(x, a)!);
       case FeasLongDay(:final weekday):
         _setLongDay(weekday);
       case FeasAddDay():
@@ -287,7 +285,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     a = a.merge(changes);
     // An automatic race name ("Halbmarathon" – the distance's own name, filled in from the goal)
     // follows the distance; only a name the athlete typed stays ("Halbmarathon · Marathon" never).
-    if (a.eventDistance != before && _eventName.text.trim() == _distanceLabel(context.l10n, before)) _eventName.clear();
+    if (a.eventDistance != before && isAutoRaceName(context.l10n, before, _eventName.text)) _eventName.clear();
     _syncRaceDay();
   });
 
@@ -1387,9 +1385,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _raceTimeField(l, 'hm', '${Units.num(21.1)} km')),
+            Expanded(child: _raceTimeField(l, 'hm', '${Units.num(21.1)} km')),
             const SizedBox(width: 12),
-            Expanded(child: _raceTimeField(l, 'm', '${Units.num(42.2)} km')),
+            Expanded(child: _raceTimeField(l, 'm', '${Units.num(42.2)} km')),
           ],
         ),
         if (vdot != null) ...[const SizedBox(height: 12), _ZonesPreview(vdot: vdot)],
@@ -1400,7 +1398,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           min: 0,
           max: 120,
           divisions: 60,
-          format: (v) => v == 0 ? l.notSure : '${v.round()} km',
+          format: (v) => v == 0 ? l.notSure : '${v.round()} km',
           onChanged: (v) => _setA({'runWeeklyKm': v == 0 ? null : v.roundToDouble()}),
         ),
         LabeledSlider(
@@ -1409,7 +1407,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           min: 0,
           max: 42,
           divisions: 84,
-          format: (v) => v == 0 ? l.notSure : '${Units.num(v)} km',
+          format: (v) => v == 0 ? l.notSure : '${Units.num(v)} km',
           onChanged: (v) => _setA({'longestRunKm': v == 0 ? null : (v * 2).round() / 2}),
         ),
       ],
@@ -1458,7 +1456,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         min: 0,
         max: 20,
         divisions: 40,
-        format: (v) => v == 0 ? l.notSure : '${Units.num(v)} h',
+        format: (v) => v == 0 ? l.notSure : '${Units.num(v)} h',
         onChanged: (v) => _setA({'bikeWeeklyHours': v == 0 ? null : (v * 2).round() / 2}),
       ),
       LabeledSlider(
@@ -1467,7 +1465,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         min: 0,
         max: 250,
         divisions: 50,
-        format: (v) => v == 0 ? l.notSure : '${v.round()} km',
+        format: (v) => v == 0 ? l.notSure : '${v.round()} km',
         onChanged: (v) => _setA({'longestRideKm': v == 0 ? null : v.roundToDouble()}),
       ),
     ],
@@ -1526,7 +1524,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           min: 0,
           max: 25,
           divisions: 50,
-          format: (v) => v == 0 ? l.notSure : '${Units.num(v)} km',
+          format: (v) => v == 0 ? l.notSure : '${Units.num(v)} km',
           onChanged: (v) => _setA({'swimWeeklyKm': v == 0 ? null : (v * 2).round() / 2}),
         ),
       ],
@@ -1828,7 +1826,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   /// Where the race date picker opens: the start of the race's recommended plan length, moved to
   /// the following race day – the long-session day, else Sunday (most races are on a weekend).
-  DateTime _defaultRaceDate(DateTime today) => defaultRaceDate(today, _recommendedRange.$1, longDay: p.longDay);
+  DateTime _defaultRaceDate(DateTime today) => defaultRaceDateFor(a.eventDistance, today, _recommendedRange.$1, longDay: p.longDay);
 
   /// The profile the plan is generated from (the quick setup's view of it in the quick setup).
   UserProfile get _planProfile => _advanced ? _profile : _quickProfile;
@@ -1866,7 +1864,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Widget _targetTimeField(AppLocalizations l) {
     final key = a.eventDistance!;
     final bounds = eventTimeBounds(key);
-    final date = a.eventDate ?? addDays(dayOnly(DateTime.now()), 7 * _recommendedRange.$1);
+    final date = a.eventDate ?? _defaultRaceDate(dayOnly(DateTime.now()));
     final suggested = suggestTargetTime(_planProfile, key, date, sessions: _sessions).sec;
     return DurationField(
       key: const ValueKey('targetTime'),
@@ -1894,6 +1892,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       sessions: _sessions,
       current: a.targetTimeSec,
       onApply: (sec) => _setA({'targetTimeSec': sec}),
+      onClear: () => _setA({'targetTimeSec': null}),
     );
   }
 

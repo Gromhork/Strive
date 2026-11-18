@@ -112,9 +112,9 @@ void main() {
       expect(defaultHoldRange('wall sit'), (30, 90));
       expect(defaultHoldRange('l-sit on floor'), (10, 30));
       expect(defaultHoldRange('hamstring stretch'), (30, 60));
-      expect(formatHold(45), '45 s');
-      expect(formatHold(90), '1:30 min');
-      expect(formatHold(120), '2 min');
+      expect(formatHold(45), '45 s');
+      expect(formatHold(90), '1:30 min');
+      expect(formatHold(120), '2 min');
       expect(holdTakesLoad('weighted front plank'), isTrue);
       expect(holdTakesLoad('hamstring stretch'), isFalse);
       expect(holdTakesLoad('l-sit on floor'), isFalse);
@@ -281,7 +281,7 @@ void main() {
       expect(list.firstWhere((s) => s.id == 'old').volume, closeTo(0.64 * 75 * 10, 1e-6));
     });
 
-    test('bodyweight leg and core work gets a body load when the workout starts (no 0 kg)', () {
+    test('bodyweight leg and core work gets a body load when the workout starts (no 0 kg)', () {
       final out = lp(const []).apply([
         GymExercise(exId: '9001', name: 'bodyweight squat', sets: [GymSet(reps: 15)]),
         GymExercise(exId: '9002', name: 'sit-up', sets: [GymSet(reps: 15)]),
@@ -339,10 +339,10 @@ void main() {
       expect(p.reps, 30);
       expect(p.weight, 0);
       expect(p.fromHistory, isFalse);
-      expect(prescriptionToday(de, p, kg, sets: 3), 'Heute: 3 × 30 s');
+      expect(prescriptionToday(de, p, kg, sets: 3), 'Heute: 3 × 30 s');
     });
 
-    test('every set held: +10 s (+5 s below 30 s), from what was held', () {
+    test('every set held: +10 s (+5 s below 30 s), from what was held', () {
       final h = [
         gym(3, [
           hold('2135', 'weighted front plank', [(0, 30, 30), (0, 32, 30), (0, 30, 30)]),
@@ -360,7 +360,7 @@ void main() {
       expect(lp(short).forExercise(GymExercise(exId: '0705', name: 'side bridge v. 2', sets: [GymSet()]))!.reps, 25);
     });
 
-    test('top of the range: +2.5 kg and back to the bottom; stretches stay at the top', () {
+    test('top of the range: +2.5 kg and back to the bottom; stretches stay at the top', () {
       final h = [
         gym(3, [
           hold('2135', 'weighted front plank', [(0, 60, 60), (0, 60, 60)]),
@@ -370,7 +370,7 @@ void main() {
       expect(p.weight, 2.5);
       expect(p.reps, 30);
       expect(p.reason, ProgressReason.holdAddLoad);
-      expect(prescriptionToday(de, p, kg, sets: 2), 'Heute: 2 × 30 s @ +2.5 kg');
+      expect(prescriptionToday(de, p, kg, sets: 2), 'Heute: 2 × 30 s @ +2.5 kg');
       final st = [
         gym(3, [
           hold('x5', 'hamstring stretch', [(0, 60, 60)]),
@@ -603,7 +603,7 @@ void main() {
       expect(find.byKey(const ValueKey('holdStart')), findsOneWidget);
       expect(find.text(de.holdStartBtn('0:45')), findsOneWidget);
       expect(find.text(de.holdTime), findsOneWidget);
-      expect(find.text('45 s'), findsNWidgets(2), reason: 'sets show their hold time');
+      expect(find.text('45 s'), findsNWidgets(2), reason: 'sets show their hold time');
       await t.tap(find.byKey(const ValueKey('holdStart')));
       await t.pump();
       expect(find.byKey(const ValueKey('holdRunning')), findsOneWidget);
@@ -653,10 +653,10 @@ void main() {
       await t.pump(const Duration(seconds: 2));
     });
 
-    testWidgets('overview tile: "2 × 45 s"', (t) async {
+    testWidgets('overview tile: "2 × 45 s"', (t) async {
       final p = await prefs();
       await pump(t, const GymSessionPage(), overrides(p, g: ActiveGym(title: 'Core', start: now, exercises: [plank()])));
-      expect(find.textContaining('2 × 45 s'), findsWidgets);
+      expect(find.textContaining('2 × 45 s'), findsWidgets);
     });
 
     testWidgets('program editor: hold range chip and hold fields; toggling timed converts the sets', (t) async {
@@ -666,7 +666,7 @@ void main() {
       ];
       await pump(t, Scaffold(body: SingleChildScrollView(child: GymExerciseEditor(exercises: list, onChanged: () {}))), overrides(p));
       expect(find.byKey(const ValueKey('holdRangeChip')), findsOneWidget);
-      expect(find.text('30–60 s'), findsOneWidget);
+      expect(find.text('30–60 s'), findsOneWidget);
       expect(find.text('0:40'), findsOneWidget);
       expect(find.text(de.holdTime), findsOneWidget);
       await t.tap(find.byIcon(Icons.more_vert));
@@ -690,9 +690,9 @@ void main() {
         id: 's1',
       );
       await pump(t, const SessionDetailPage(sessionId: 's1'), overrides(p, history: [s]));
-      expect(find.text('45 s'), findsOneWidget);
-      expect(find.text('+5 kg · 40 s'), findsOneWidget);
-      expect(find.text(de.volumeInclBodyKg('80 kg')), findsOneWidget);
+      expect(find.text('45 s'), findsOneWidget);
+      expect(find.text('+5 kg · 40 s'), findsOneWidget);
+      expect(find.text(de.volumeInclBodyKg('80 kg')), findsOneWidget);
       expect(find.byKey(const ValueKey('detailHold')), findsOneWidget);
       expect(find.text('1:25'), findsWidgets);
       expect(find.text('10 ×'), findsOneWidget);
@@ -700,16 +700,16 @@ void main() {
 
     test('labels: sets, legacy reps and summaries', () {
       final e = plank();
-      expect(setLabelOf(de, e, e.sets.first, kg), '45 s');
-      expect(setLabelOf(de, e, GymSet(weight: 10, sec: 90), kg), '+10 kg · 1:30 min');
+      expect(setLabelOf(de, e, e.sets.first, kg), '45 s');
+      expect(setLabelOf(de, e, GymSet(weight: 10, sec: 90), kg), '+10 kg · 1:30 min');
       expect(
         setLabelOf(de, e, GymSet(reps: 60, done: true), kg),
         '${de.bodyweightShort} × 60',
         reason: 'stored as reps before hold times existed',
       );
-      expect(exerciseSummary(de, e, kg, range: (8, 12)), '2 × 45 s');
+      expect(exerciseSummary(de, e, kg, range: (8, 12)), '2 × 45 s');
       final carry = GymExercise(exId: '2133', name: 'farmers walk', sets: [GymSet(weight: 24, sec: 40)]);
-      expect(exerciseSummary(de, carry, kg, range: (8, 12)), '1 × 40 s · 24 kg');
+      expect(exerciseSummary(de, carry, kg, range: (8, 12)), '1 × 40 s · 24 kg');
     });
   });
 }

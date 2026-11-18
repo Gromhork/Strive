@@ -262,7 +262,7 @@ class _ChangeTile extends StatelessWidget {
     final df = DateFormat.MMMEd(context.localeName);
     final (icon, color, label) = RecalibrationSheet.kindStyle(l, c.kind);
     String amount(PlannedWorkout p) =>
-        ['${p.durationMin} min', if (p.distanceKm != null && p.sport != Sport.gym) '${Units.num(p.distanceKm!)} km'].join(' · ');
+        ['${p.durationMin} min', if (p.distanceKm != null && p.sport != Sport.gym) '${Units.num(p.distanceKm!)} km'].join(' · ');
     final detail = switch (c.kind) {
       RecalKind.moved => '${df.format(c.before.date)} → ${df.format(c.after.date)}',
       RecalKind.dropped || RecalKind.paces => amount(c.before),
@@ -318,7 +318,7 @@ class _GapTile extends StatelessWidget {
     final p = change.after;
     final g = change.gap;
     final df = DateFormat.MMMEd(context.localeName);
-    final amount = ['${p.durationMin} min', if (p.distanceKm != null && p.sport != Sport.gym) '${Units.num(p.distanceKm!)} km'].join(' · ');
+    final amount = ['${p.durationMin} min', if (p.distanceKm != null && p.sport != Sport.gym) '${Units.num(p.distanceKm!)} km'].join(' · ');
     final why = [
       switch (g?.why) {
         GapWhy.emptyWeek => l.recalGapEmptyWeek,

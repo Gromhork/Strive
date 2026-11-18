@@ -5417,6 +5417,8 @@ class PlanGenerator {
       // it): the realistic plan replaces the goal, said plainly.
       if (behind && pace != null)
         l.wRaceGoalBehind(clock(a.targetTimeSec ?? raceSec), '${clock(pace)}/km', clock(GoalModel.roundTarget(raceSec)))
+      else if (finish && (a.targetTimeSec ?? 0) > 0)
+        l.wRaceFinishTargetSetAside(clock(a.targetTimeSec!))
       else if (finish && (runWalkStartFor(profile) != null || _raceFinish))
         l.wRaceFinishDesc
       else if (byFeel)
@@ -5594,6 +5596,12 @@ class PlanGenerator {
   /// same). [start] is the plan start (default today).
   static bool finishOnly(UserProfile p, {DateTime? start}) => _finishBase(p) || longRunShortFor(p, start: start ?? DateTime.now());
 
+  /// The athlete set a target time, but the plan races the event as a finish goal all the same ([finishOnly] with
+  /// the target: run/walk start, no time model, a beginner's non-beginner distance, long runs far short of the
+  /// race's) – the target stays stored, the plan has no race pace. Every place that shows the target says so
+  /// (setup line, feasibility, race day, goal page) instead of silently showing "finish" next to the entered time.
+  static bool targetSetAside(UserProfile p, {DateTime? start}) => (p.athlete.targetTimeSec ?? 0) > 0 && finishOnly(p, start: start);
+
   static bool _finishBase(UserProfile p) =>
       runWalkStartFor(p) != null ||
       !GoalModel.hasModel(p) ||
@@ -5731,8 +5739,13 @@ class PlanGenerator {
   int _expectedRaceSec() => _raceEstSec;
   late final int _raceEstSec = GoalModel.predict(profile, Vdot.of(a) ?? Vdot.defaultFor(level)) ?? 3600;
 
-  String _eventName() =>
-      a.eventDistance == null || eventDistanceOf(a.eventDistance) == null ? l.eventTitle : eventDistanceLabel(l, a.eventDistance!);
+  /// The race as the athlete named it ("Berlin · Marathon", [raceLabel]) – the race day's title in the calendar,
+  /// on Home, in reminders and the calendar export.
+  String _eventName() {
+    final name = a.eventName?.trim() ?? '';
+    if (a.eventDistance == null || eventDistanceOf(a.eventDistance) == null) return name.isEmpty ? l.eventTitle : name;
+    return raceLabel(l, a.eventDistance, name: name);
+  }
 
   // ───────────────────────────── Helpers ─────────────────────────────
 
@@ -5936,8 +5949,12 @@ class PlanGenerator {
     // Target time (§1.12): required vs. achievable VDOT gain – not for goals that are out of
     // reach anyway (entry requirements).
     final notAllowed = c.issues.any(PlanFeasibility.entry.contains);
-    final t = notAllowed ? null : GoalModel.check(p, start: from, fitness: fitness);
+    // A target the plan does not race at ([targetSetAside]): no check of a pace nobody trains for – the card says the
+    // target is set aside (and offers to remove it) instead of "3:27 is ambitious" next to a finish-only plan.
+    final setAside = targetSetAside(p, start: from);
+    final t = notAllowed || setAside ? null : GoalModel.check(p, start: from, fitness: fitness);
     final targetIssue = switch (t?.status) {
+      _ when setAside => 'targetSetAside',
       TargetStatus.ambitious => 'targetAmbitious',
       TargetStatus.unrealistic => 'targetUnrealistic',
       // Clearly slower than realistic (> 5 %): the race-pace work runs at the realistic pace.
@@ -5951,6 +5968,7 @@ class PlanGenerator {
         issues: [...c.issues, if (targetIssue != null) targetIssue],
         weeks: weeks,
         target: t,
+        setAsideTargetSec: setAside ? p.athlete.targetTimeSec : null,
         longDayWeekday: c.longDayWeekday,
         longDayNeedMin: c.longDayNeedMin,
         longDay2Weekday: c.longDay2Weekday,
@@ -6042,6 +6060,7 @@ class PlanGenerator {
     return PlanFeasibility(
       issues: [...issues.toSet(), if (targetIssue != null) targetIssue],
       target: t,
+      setAsideTargetSec: setAside ? p.athlete.targetTimeSec : null,
       weeks: weeks,
       laterDate: later,
       shorterDistance: shorter,
@@ -6734,7 +6753,11 @@ class PlanFeasibility {
     this.planLongRideMin,
     this.planLongRideTargetMin,
     this.timeUnresolved = false,
+    this.setAsideTargetSec,
   });
+
+  /// `targetSetAside`: the athlete's target (s) the finish-only plan does not race at ([PlanGenerator.targetSetAside]).
+  final int? setAsideTargetSec;
 
   /// The plan races the event as a finish goal without a time because its long runs stay short of the race's at
   /// too few runs a week / the time cap and no target is set ([PlanGenerator] `_capShort`): the `runFrequency`
@@ -6869,6 +6892,7 @@ class PlanFeasibility {
           _kmText(l, planLongKm!),
           _kmText(l, planLongTargetKm!),
         ),
+        'targetSetAside' when setAsideTargetSec != null => l.feasTargetSetAside(clock(setAsideTargetSec!)),
         'targetConservative' when target != null => l.feasTargetConservative(
           clock(target!.targetSec),
           clock(target!.currentSec),

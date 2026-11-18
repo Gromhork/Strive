@@ -506,7 +506,7 @@ class _DataPage extends ConsumerWidget {
           _F(distValue, distLabel, color: s.sport.color),
           _F(avg, l.avgSpeed),
           if (!s.structured) _F(s.bestPace == null ? '–' : speedOf(s.bestPace), l.maxSpeed),
-          _F('${s.elevationM.round()} m', l.elevation),
+          _F('${s.elevationM.round()} m', l.elevation),
           if (!s.structured) kcal,
         ],
         footer: footer,
@@ -548,7 +548,7 @@ class _DataPage extends ConsumerWidget {
         if (paced) _F(distValue, distLabel, color: s.sport.color) else _F(livePace(), l.currentPace, color: s.sport.color),
         _F(u.paceOrSpeed(s.sport, dist, s.elapsed), l.avgPace),
         _F(s.splits.isEmpty ? '–' : clock(s.splits.last), l.lastSplit),
-        if (!s.structured) ...[if (!swim) _F('${s.elevationM.round()} m', l.elevation), kcal],
+        if (!s.structured) ...[if (!swim) _F('${s.elevationM.round()} m', l.elevation), kcal],
       ],
       footer: footer,
     );
@@ -915,7 +915,7 @@ class _StepCard extends ConsumerWidget {
     final (m, sec) = s.stepRemaining;
     final remaining =
         m != null
-            ? (m >= 1000 && s.sport != Sport.swim ? '${Units.num(u.distOut(m), 2)} ${u.distUnit}' : '${m.round()} m')
+            ? (m >= 1000 && s.sport != Sport.swim ? '${Units.num(u.distOut(m), 2)} ${u.distUnit}' : '${m.round()} m')
             // Indoors a distance step runs on its estimated time (no distance source): "≈ 11:20".
             : (sec != null ? '${s.blindDistanceStep ? '≈ ' : ''}${clock(sec)}' : clock(s.stepElapsed));
     final lengthsLeft = s.lengthsLeft;
@@ -1625,7 +1625,7 @@ class _LengthButton extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 1.5, height: 1.1),
                   ),
-                  Text('+${s.poolLengthM} m', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text('+${s.poolLengthM} m', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
@@ -1793,7 +1793,7 @@ class _GpsChip extends StatelessWidget {
           Icon(Icons.gps_fixed, size: 11, color: color),
           const SizedBox(width: 4),
           Text(
-            hasFix ? '±${accuracy?.round() ?? '?'} m' : 'GPS…',
+            hasFix ? '±${accuracy?.round() ?? '?'} m' : 'GPS…',
             style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
           ),
         ],

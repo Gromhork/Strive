@@ -26,7 +26,14 @@ class TargetSuggestion {
     this.slowSec,
     this.vdotNow,
     this.vdotRaceDay,
+    this.targetRaced,
   });
+
+  /// A finish goal ([finishOnly]) next to a target the athlete entered: true when the plan races at that target
+  /// all the same (it survives the finish rule of capped / too few long runs – [PlanGenerator.generate]), false
+  /// when the plan stays finish-only and the target is set aside ([PlanGenerator.targetSetAside]); null without
+  /// a target or with a suggested time.
+  final bool? targetRaced;
 
   /// Suggested target (s, rounded on the slow side); null for a finish goal.
   final int? sec;
@@ -75,6 +82,7 @@ TargetSuggestion suggestTargetTime(
   List<Session> sessions = const [],
   List<PlannedWorkout>? plans,
   DateTime? now,
+  int? target,
 }) {
   final today = now ?? DateTime.now();
   final q = p.copyWith(athlete: p.athlete.merge({'eventDistance': eventKey, 'eventDate': eventDate, 'targetTimeSec': null}));
@@ -87,8 +95,14 @@ TargetSuggestion suggestTargetTime(
           ? FitnessState.fromProfile(q, now: today)
           : FitnessState.of(q, plans: plans, sessions: sessions, now: today, race: eventDate);
   // Same plan as the forecast's: from the running plan's start (C6 finish goals depend on its long runs).
-  if (PlanGenerator.finishOnly(q, start: fit.planStart ?? dayOnly(today))) {
-    return TargetSuggestion(basis: TargetBasis.finishOnly, confidence: TargetConfidence.low, weeks: weeks);
+  final from = fit.planStart ?? dayOnly(today);
+  if (PlanGenerator.finishOnly(q, start: from)) {
+    // With the athlete's own target the plan may race after all (the target survives some finish rules) – or not.
+    final raced =
+        (target ?? 0) > 0
+            ? !PlanGenerator.targetSetAside(q.copyWith(athlete: q.athlete.merge({'targetTimeSec': target})), start: from)
+            : null;
+    return TargetSuggestion(basis: TargetBasis.finishOnly, confidence: TargetConfidence.low, weeks: weeks, targetRaced: raced);
   }
   final guessed = fit.guessed;
   var vdot = fit.current;

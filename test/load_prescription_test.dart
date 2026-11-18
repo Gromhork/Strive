@@ -73,7 +73,7 @@ void main() {
       expect(applied.sets.every((s) => s.weight == 60 && !s.done), isTrue);
     });
 
-    test('outlier session (typo 600 kg) is ignored', () {
+    test('outlier session (typo 600 kg) is ignored', () {
       final h = [
         gym(2, [
           done('0025', 'x', [(600, 10), (600, 10), (600, 10)]),
@@ -199,7 +199,7 @@ void main() {
       final x = lp(const [], prof);
       final db = x.forExercise(planned('0289', 'dumbbell bench press', lo: 8, hi: 12))!;
       expect(db.perHand, isTrue);
-      expect(db.weight, inInclusiveRange(24, 30)); // 37 kg e1RM per dumbbell
+      expect(db.weight, inInclusiveRange(24, 30)); // 37 kg e1RM per dumbbell
       expect(db.weight % 2, 0);
       final lp45 = x.forExercise(planned('0739', 'sled 45° leg press', lo: 10, hi: 15))!;
       expect(lp45.weight, inInclusiveRange(140, 160));
@@ -227,7 +227,7 @@ void main() {
   });
 
   group('estimate', () {
-    test('intermediate 80 kg male bench 8 reps ≈ 50–70 kg', () {
+    test('intermediate 80 kg male bench 8 reps ≈ 50–70 kg', () {
       final p = lp(const []).forExercise(planned('0025', 'x', lo: 8, hi: 12))!;
       expect(p.source, LoadSource.estimate);
       expect(p.weight, inInclusiveRange(50, 70));
@@ -254,7 +254,7 @@ void main() {
 
     test('deload week: ~90 % load, the program\'s sets', () {
       final p = lp(h).forExercise(bench, phase: 'recovery')!;
-      expect(p.weight, 52.5); // 60 × 0.9 = 54 → 52.5 on the 2.5 kg grid
+      expect(p.weight, 52.5); // 60 × 0.9 = 54 → 52.5 on the 2.5 kg grid
       expect(p.phaseAdjusted, isTrue);
       final applied = lp(h).apply([bench], phase: 'recovery').single;
       // The plan never changes set counts: a deload is lighter, not shorter.
@@ -278,7 +278,7 @@ void main() {
       ];
       // Again 90 % of the loading prescription – not 90 % of the first deload session.
       expect(lp(hist.sublist(1)).forExercise(bench, phase: 'recovery')!.weight, 52.5);
-      // The next loading week resumes at the loading level (60 kg, reps from the loading session).
+      // The next loading week resumes at the loading level (60 kg, reps from the loading session).
       final next = lp(hist).forExercise(bench)!;
       expect(next.weight, 60);
       expect(next.setReps, [10, 9, 9]);
@@ -334,7 +334,7 @@ void main() {
       expect(p.setReps, [9, 8, 7]);
     });
 
-    test('rounding: dumbbells 2 kg, machines 2.5 kg, odd real weights kept', () {
+    test('rounding: dumbbells 2 kg, machines 2.5 kg, odd real weights kept', () {
       final x = lp(const []);
       expect(x.forExercise(planned('0289', 'dumbbell bench press'))!.weight % 2, 0);
       expect(x.forExercise(planned('0585', 'lever leg extension', lo: 10, hi: 15))!.weight % 2.5, 0);
@@ -344,7 +344,7 @@ void main() {
         ]),
       ];
       final p = lp(h).forExercise(planned('0289', 'x', lo: 8, hi: 12))!;
-      expect(p.weight, 24.5); // 22.5 + 2 kg step
+      expect(p.weight, 24.5); // 22.5 + 2 kg step
     });
 
     test('warm-up sets derive from the work weight', () {
@@ -365,10 +365,10 @@ void main() {
   test('prescriptionLabel', () {
     final de = lookupAppLocalizations(const Locale('de'));
     const u = Units(false);
-    expect(prescriptionLabel(de, const Prescription(weight: 62.5, reps: 8, source: LoadSource.history), u), '≈ 62.5 kg × 8');
+    expect(prescriptionLabel(de, const Prescription(weight: 62.5, reps: 8, source: LoadSource.history), u), '≈ 62.5 kg × 8');
     expect(
       prescriptionLabel(de, const Prescription(weight: 12, reps: 10, source: LoadSource.estimate, perHand: true), u),
-      '≈ 12 kg × 10 pro Hand',
+      '≈ 12 kg × 10 pro Hand',
     );
     expect(prescriptionLabel(de, const Prescription(weight: 0, reps: 8, source: LoadSource.bodyweight), u), 'Körpergewicht × 8');
     final reason = prescriptionReason(

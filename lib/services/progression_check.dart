@@ -102,7 +102,7 @@ bool isRunWalk(PlannedWorkout x) => x.sport == Sport.run && x.steps.isNotEmpty &
 PlannedWorkout retitledRunWalk(PlannedWorkout w) {
   if (!isRunWalk(w)) return w;
   final work = w.steps.where((s) => s.isWork && s.zone != 'walk').toList();
-  final m = RegExp(r'(\d+) × (\d+) min').firstMatch(w.title);
+  final m = RegExp(r'(\d+) × (\d+)[  ]min').firstMatch(w.title);
   if (work.isEmpty || m == null) return w;
   final sec = work.first.durationSec ?? 0;
   if (sec <= 0 || sec % 60 != 0) return w;
@@ -117,7 +117,7 @@ PlannedWorkout retitledRunWalk(PlannedWorkout w) {
 /// title – the German km titles are "Zieltempo …" and "Cruise-Intervalle …").
 PlannedWorkout retitledRepeats(PlannedWorkout w, {String? decimal}) {
   if (isRunWalk(w)) return retitledRunWalk(w);
-  final m = RegExp(r'(\d+) × (\d+(?:[.,]\d+)?) (m|km|min|s)\b').firstMatch(w.title);
+  final m = RegExp(r'(\d+) × (\d+(?:[.,]\d+)?)[  ](m|km|min|s)\b').firstMatch(w.title);
   final work = [for (final i in mainSetIndices(w.steps)) w.steps[i]];
   if (m == null || work.isEmpty) return w;
   final f = work.first;
@@ -271,7 +271,8 @@ ProgressionCheck? progressionCheck(
     final w = x.durationMin > 0 ? x.durationMin.toDouble() : 1.0;
     planned += w;
     final s = linked[x.id];
-    if (s == null && !x0.isDone) {
+    // (A start too short to count, < 10 % of the plan, is a missed session too.)
+    if (!planCompleted(x0, linked, profile: p)) {
       missed++;
       continue;
     }

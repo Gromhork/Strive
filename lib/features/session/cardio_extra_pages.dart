@@ -544,7 +544,7 @@ class _StepRow extends StatelessWidget {
     ].join(' · ');
     // Actual: time, plus distance (time steps) and average pace / speed when measurable.
     final pace = measurable ? resultPace(r, s.sport) : null;
-    String distText(double m) => swim ? '${m.round()} m' : u.dist(m);
+    String distText(double m) => swim ? '${m.round()} m' : u.dist(m);
     final paceText =
         pace == null
             ? null

@@ -302,7 +302,7 @@ class _ExerciseEditCard extends ConsumerWidget {
                           _MiniChip(
                             key: const ValueKey('holdRangeChip'),
                             icon: Icons.timer_outlined,
-                            text: '${e.holdRange.$1}–${e.holdRange.$2} s',
+                            text: '${e.holdRange.$1}–${e.holdRange.$2} s',
                             onTap: () async {
                               final r = await _askHoldRange(context, e.holdRange.$1, e.holdRange.$2);
                               if (r == null) return;
@@ -610,7 +610,7 @@ class _ExerciseEditCard extends ConsumerWidget {
                           spacing: 8,
                           children: [
                             for (final p in const [(10, 30), (20, 45), (30, 60), (45, 90), (60, 120)])
-                              ActionChip(label: Text('${p.$1}–${p.$2} s'), onPressed: () => setS(() => (a, b) = p)),
+                              ActionChip(label: Text('${p.$1}–${p.$2} s'), onPressed: () => setS(() => (a, b) = p)),
                           ],
                         ),
                         const SizedBox(height: 12),

@@ -60,7 +60,7 @@ void main() {
       expect(stepTitle(de, cssSet, 4, sport: Sport.swim), 'Intervall 2/4');
       expect(stepTitle(de, cssSet, 4, sport: Sport.swim, spoken: true), 'Intervall 2 von 4');
       expect(stepTitle(de, cssSet, 3, sport: Sport.swim), 'Pause');
-      expect(stepSetLabel(en, cssSet, 4, u, Sport.swim), '4 × 100 m · CSS pace');
+      expect(stepSetLabel(en, cssSet, 4, u, Sport.swim), '4 × 100 m · CSS pace');
     });
   });
 

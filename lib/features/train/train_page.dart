@@ -1372,9 +1372,9 @@ class _TemplateTile extends ConsumerWidget {
     final l = context.l10n;
     final sub =
         t.sport == Sport.gym
-            ? '${t.exercises.length} ${l.exercises} · ≈ ${t.estimatedMinutes} min'
+            ? '${t.exercises.length} ${l.exercises} · ≈ ${t.estimatedMinutes} min'
             : [
-              '≈ ${programMinutes(t, ref.watch(profileOrDefaultProvider))} min',
+              '≈ ${programMinutes(t, ref.watch(profileOrDefaultProvider))} min',
               if (stepsDistance(t.steps, ref.watch(profileOrDefaultProvider).units, t.sport) case final d?)
                 d
               else if (t.steps.where((s) => s.isWork).length > 1)

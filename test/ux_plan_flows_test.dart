@@ -47,8 +47,9 @@ class _FakeRepo extends Repository {
   void deleteGoal(String id) => deletedGoals.add(id);
   @override
   void logPlanChange(PlanLogEntry e) => log.add(e);
+  UserProfile? savedProfile;
   @override
-  void saveProfile(UserProfile p) {}
+  void saveProfile(UserProfile p) => savedProfile = p;
 }
 
 void _phone(WidgetTester t) {
@@ -144,22 +145,22 @@ void main() {
     test('German', () {
       Units.decimalComma = true;
       expect(compactNumber(8432), '8.432');
-      expect(const Units(false).volume(1593), '1.593 kg');
-      expect(const Units(false).volume(12400), '12,4 t');
+      expect(const Units(false).volume(1593), '1.593 kg');
+      expect(const Units(false).volume(12400), '12,4 t');
       expect(Units.fixed(2), '2,0');
       expect(Units.fixed(43.44), '43,4');
       expect(Units.pct(26.2), '26 %');
     });
     test('English', () {
       expect(compactNumber(8432), '8,432');
-      expect(const Units(false).volume(1593), '1,593 kg');
+      expect(const Units(false).volume(1593), '1,593 kg');
       expect(Units.fixed(2), '2.0');
       expect(Units.pct(26.2), '26%');
     });
   });
 
   group('C2 race presets', () {
-    test('51,5 km is the olympic triathlon, never "Ultra 50 km"', () {
+    test('51,5 km is the olympic triathlon, never "Ultra 50 km"', () {
       expect(eventKeyForKm(51.5), 'olympic');
       expect(eventKeyForKm(51), isNull);
       expect(eventKeyForKm(50.5), isNull);
@@ -337,11 +338,61 @@ void main() {
       await t.tap(find.byKey(const ValueKey('distance-olympic')));
       await t.pumpAndSettle();
       expect(t.widget<ChoiceChip>(find.byKey(const ValueKey('distance-olympic'))).selected, isTrue);
-      // 51 km is no preset: nothing is auto-selected.
+      // 51 km is no preset: nothing is auto-selected.
       await t.enterText(find.widgetWithText(TextField, l.eventDistance), '51');
       await t.pumpAndSettle();
       expect(t.widget<ChoiceChip>(find.byKey(const ValueKey('distance-olympic'))).selected, isFalse);
       expect(t.takeException(), isNull);
+    });
+
+    testWidgets('renaming the plan\'s race on the goal page carries the name to the plan ($lang)', (t) async {
+      _phone(t);
+      final repo = _FakeRepo();
+      final race = addDays(today, 120);
+      final goal = Goal(
+        id: 'g',
+        type: GoalType.event,
+        title: 'Hamburg',
+        target: 42.195,
+        eventKm: 42.195,
+        eventKey: 'm',
+        created: today,
+        deadline: race,
+      );
+      final o = await _overrides(
+        repo,
+        profile: UserProfile(
+          level: 'intermediate',
+          birthYear: 1990,
+          focus: TrainingFocus.run,
+          athlete: AthleteData(eventDistance: 'm', eventDate: race, eventName: 'Hamburg'),
+        ),
+        goals: [goal],
+      );
+      await t.pumpWidget(
+        _app(
+          Consumer(
+            builder: (c, ref, _) {
+              ref.watch(profileProvider);
+              return Scaffold(body: TextButton(onPressed: () => showGoalEditor(c, ref, existing: goal), child: const Text('open')));
+            },
+          ),
+          lang,
+          o,
+        ),
+      );
+      await t.pumpAndSettle();
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      await t.enterText(find.widgetWithText(TextField, 'Hamburg'), 'Berlin');
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.byKey(const ValueKey('saveGoal')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('saveGoal')));
+      await t.pumpAndSettle();
+      expect(repo.savedGoals.single.title, 'Berlin');
+      expect(repo.savedProfile?.athlete.eventName, 'Berlin', reason: 'Home and race day show "Berlin · Marathon", not "Hamburg"');
+      expect(repo.planUpdates, isEmpty, reason: 'a new name alone rebuilds no plan');
     });
 
     testWidgets('QA goal delete asks first and can be undone ($lang)', (t) async {
@@ -554,7 +605,7 @@ void main() {
       await t.tap(find.byKey(const ValueKey('durationApply')));
       await t.pumpAndSettle();
       expect(find.byKey(const ValueKey('raceTime-10k')), findsOneWidget, reason: 'still on the running step');
-      expect(find.textContaining(l.yourPaceZones), findsOneWidget, reason: 'zones from the new 10 km time');
+      expect(find.textContaining(l.yourPaceZones), findsOneWidget, reason: 'zones from the new 10 km time');
       expect(t.takeException(), isNull);
     });
   });

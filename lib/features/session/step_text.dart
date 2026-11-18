@@ -90,8 +90,8 @@ String stepTitle(AppLocalizations l, List<WorkoutStep> steps, int i, {Sport? spo
 
 String stepAmount(WorkoutStep s, Units u, Sport sport) {
   if (s.distanceM != null) {
-    if (sport == Sport.swim || s.distanceM! < 1000) return '${s.distanceM!.round()} m';
-    return '${Units.num(u.distOut(s.distanceM!), 1)} ${u.distUnit}';
+    if (sport == Sport.swim || s.distanceM! < 1000) return '${s.distanceM!.round()} m';
+    return '${Units.num(u.distOut(s.distanceM!), 1)} ${u.distUnit}';
   }
   if (s.durationSec != null) return clock(s.durationSec!);
   return '';

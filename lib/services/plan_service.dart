@@ -5,6 +5,7 @@ import '../data/default_programs.dart';
 import '../data/models.dart';
 import '../data/repository.dart';
 import '../l10n/gen/app_localizations.dart';
+import 'compliance.dart';
 import 'plan_gaps.dart';
 import 'plan_generator.dart';
 
@@ -73,14 +74,17 @@ class PlanService {
       ], repo.newId).generate(start: day, weeks: weeks, gymHistory: gymHistory(existing, sessions, day));
       // Done / linked workouts from [day] on stay – and their day is not planned again (a replan
       // "from today" after today's run must not add a second run for today).
-      final kept = keptWorkouts(existing, day, sessions);
+      final kept = keptWorkouts(existing, day, sessions, profile: p);
+      // A start too short to count leaves its workout open: it is replaced like any open one.
+      final reopened = notCountedWorkouts(existing, day, sessions, profile: p);
       // The plan's generation (data-9): its workouts carry it, the profile names the current one.
       final gen = newPlanGen(DateTime.now(), repo.newId());
       final plan = [
-        for (final g in withoutCoveredDays(generated, kept)) PlannedWorkout.fromMap(g.id, {...g.toMap(), 'planGen': gen}),
+        for (final g in relinkNotCounted(withoutCoveredDays(generated, kept), reopened, sessions))
+          PlannedWorkout.fromMap(g.id, {...g.toMap(), 'planGen': gen}),
       ];
       // Written locally at once (offline persistence); the future is the server commit.
-      final write = repo.replacePlans(existing, day, plan, keep: {for (final k in kept) k.id});
+      final write = repo.replacePlans(existing, day, plan, keep: {for (final k in kept) k.id}, drop: {for (final r in reopened) r.id});
       // Plan start / length: lets the plan review rebuild the plan to find gaps.
       if (saveMeta) repo.saveProfile(withPlanMeta(p, day, weeks, gen: gen));
       write.ignore();
@@ -99,16 +103,61 @@ class PlanService {
       gymHistoryBefore(existing, sessions, day, days: days);
 
   /// Workouts on or after [day] a new plan keeps: done ones, and planned ones a session is
-  /// linked to (started from them – also a start too short to count, its data stays attached).
-  static List<PlannedWorkout> keptWorkouts(List<PlannedWorkout> existing, DateTime day, List<Session> sessions) {
+  /// linked to (started from them) – but not one whose linked session was too short to count
+  /// ([sessionCounts], < 10 % of the plan): that workout is still open ([notCountedWorkouts]) and
+  /// is replaced like every open one (audit: an aborted 3-min start "replaced" Wednesday's gym
+  /// session, and after "Plan neu aufsetzen" Wednesday had no gym session any more).
+  static List<PlannedWorkout> keptWorkouts(List<PlannedWorkout> existing, DateTime day, List<Session> sessions, {UserProfile? profile}) {
+    final open = {for (final p in notCountedWorkouts(existing, day, sessions, profile: profile)) p.id};
+    return [
+      for (final p in _linkedFrom(existing, day, sessions))
+        if (!open.contains(p.id)) p,
+    ];
+  }
+
+  /// Workouts on or after [day] with a linked session (or marked done) – the candidates to keep.
+  static Iterable<PlannedWorkout> _linkedFrom(List<PlannedWorkout> existing, DateTime day, List<Session> sessions) {
     final linked = {
       for (final s in sessions)
         if (s.planId != null) s.planId!,
     };
+    return existing.where(
+      (p) => !p.date.isBefore(day) && (p.isDone || p.sessionId != null || (p.status == 'planned' && linked.contains(p.id))),
+    );
+  }
+
+  /// Workouts on or after [day] whose linked session does not count (< [ComplianceScale.countMin]
+  /// of the plan): open for every purpose of the plan – a new plan replaces them and plans their day.
+  static List<PlannedWorkout> notCountedWorkouts(
+    List<PlannedWorkout> existing,
+    DateTime day,
+    List<Session> sessions, {
+    UserProfile? profile,
+  }) {
+    final links = linkPlanSessions(existing, sessions, profile: profile);
     return [
-      for (final p in existing)
-        if (!p.date.isBefore(day) && (p.isDone || p.sessionId != null || (p.status == 'planned' && linked.contains(p.id)))) p,
+      for (final p in _linkedFrom(existing, day, sessions))
+        if (links[p.id] case final s? when p.status != 'skipped' && !sessionCounts(p, s, profile: profile)) p,
     ];
+  }
+
+  /// [plan] with the ids of [reopened] workouts reused where the attempt stays attached: the new
+  /// plan's workout of the same sport on the day the too-short session was done on (an aborted start of
+  /// today's run stays visible on today's new run as "nicht gewertet"). A session done on another day
+  /// (started early from a later workout) is not attached to the new plan – it is just a short session.
+  static List<PlannedWorkout> relinkNotCounted(List<PlannedWorkout> plan, List<PlannedWorkout> reopened, List<Session> sessions) {
+    if (reopened.isEmpty) return plan;
+    final out = [...plan];
+    final used = <int>{};
+    for (final r in reopened) {
+      final s = sessions.where((s) => s.planId == r.id || s.id == r.sessionId).firstOrNull;
+      if (s == null || !sameDay(s.start, r.date) || s.planId != r.id) continue;
+      final i = out.indexWhere((g) => g.sport == r.sport && sameDay(g.date, r.date));
+      if (i < 0 || !used.add(i)) continue;
+      final g = out[i];
+      out[i] = PlannedWorkout.fromMap(r.id, {...g.toMap(), 'status': 'planned', 'sessionId': null});
+    }
+    return out;
   }
 
   /// [generated] without the workouts on days that already have a kept workout ([keptWorkouts]):

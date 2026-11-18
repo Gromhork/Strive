@@ -7,6 +7,7 @@ import '../core/sport.dart';
 import '../data/exercise_names_de.dart';
 import '../data/models.dart';
 import 'app_check.dart';
+import 'compliance.dart';
 import 'goal_alignment.dart';
 import 'goal_forecast.dart';
 import 'insights.dart';
@@ -137,10 +138,13 @@ class CoachService {
     final today = dayOnly(now);
     final monday = startOfWeek(today);
     final sorted = [...plans]..sort((x, y) => x.date.compareTo(y.date));
+    // The app's one notion of "done" (a start too short to count is not – compliance.dart).
+    final linked = linkPlanSessions(plans, sessions, profile: p);
+    String line(PlannedWorkout x) => _planLine(x, done: planCompleted(x, linked, profile: p));
     final thisWeek = sorted.where((x) => !x.date.isBefore(monday) && x.date.isBefore(addDays(monday, 7)) && x.status != 'skipped').toList();
     final upcoming = sorted
         .where((x) => x.status == 'planned' && !x.date.isBefore(addDays(monday, 7)) && x.date.isBefore(addDays(monday, 14)))
-        .map(_planLine)
+        .map(line)
         .join('\n');
     final weekDays = {for (final x in thisWeek) _weekday(x.date)};
     // Thresholds, event, fitness/form and adherence – so answers account for race timing,
@@ -176,8 +180,13 @@ class CoachService {
             : 'BASELINE NOT READY: less than $baselineDays days of training history. Do NOT quote any load ratio, fitness, fatigue or form numbers '
                 'and do not describe the training base as long-standing; say that you are still getting to know the athlete\'s baseline.';
     final past = plans.where((x) => !x.date.isBefore(addDays(dayOnly(now), -14)) && x.date.isBefore(dayOnly(now)));
-    final missed = past.where((x) => x.status == 'planned').map((x) => '${dayKey(x.date)} ${x.sport.name} "${x.title}"').take(6).join('; ');
-    final done = past.where((x) => x.status == 'done').length;
+    // The app's one notion of "done" (a start too short to count is not – compliance.dart).
+    final missed = past
+        .where((x) => x.status != 'skipped' && !planCompleted(x, linked, profile: p))
+        .map((x) => '${dayKey(x.date)} ${x.sport.name} "${x.title}"')
+        .take(6)
+        .join('; ');
+    final done = past.where((x) => planCompleted(x, linked, profile: p)).length;
     return '''
 Athlete profile:
 - name: ${p.name}, age: ${p.age ?? 'unknown'}, gender: ${p.gender}, height ${p.heightCm} cm, weight ${p.weightKg} kg${p.fatPct != null ? ', body fat ${p.fatPct}%' : ''}
@@ -193,7 +202,7 @@ ${prs.isEmpty ? '' : 'Top strength estimates (e1RM): ${prs.take(5).map((r) => '$
 Target event: $event
 Plan adherence last 14 days: $done of ${past.length} planned workouts done${missed.isEmpty ? '' : '; missed: $missed'}
 This week (Mon-Sun, as planned now - use these weekdays, never work them out from the dates):
-${thisWeek.isEmpty ? '- nothing planned' : thisWeek.map(_planLine).join('\n')}
+${thisWeek.isEmpty ? '- nothing planned' : thisWeek.map(line).join('\n')}
 Next week:
 ${upcoming.isEmpty ? '- nothing planned' : upcoming}
 Today: ${_weekday(today)} ${dayKey(today)}''';
@@ -203,10 +212,10 @@ Today: ${_weekday(today)} ${dayKey(today)}''';
   static String _weekday(DateTime d) => _weekdays[d.weekday - 1];
 
   /// "- Sat 2026-11-21: run "Langer Lauf" 73 min, 12.0 km (long, key)" – plus "done" for a done one.
-  static String _planLine(PlannedWorkout x) =>
+  static String _planLine(PlannedWorkout x, {required bool done}) =>
       '- ${_weekday(x.date)} ${dayKey(x.date)}: ${x.sport.name} "${x.title}" ${x.durationMin} min'
       '${(x.distanceKm ?? 0) > 0 ? ', ${x.distanceKm!.toStringAsFixed(1)} km' : ''}'
-      ' (${[x.intensity, if (x.isKey) 'key', if (x.isDone) 'done'].join(', ')})';
+      ' (${[x.intensity, if (x.isKey) 'key', if (done) 'done'].join(', ')})';
 
   /// Abbreviations the app explains in its glossary (lib/widgets/term_info.dart) - the
   /// only ones the coach may use, each explained on first use.

@@ -1,0 +1,3 @@
+{
+ 'startTime': ['Start time', 'Startzeit'],
+}
