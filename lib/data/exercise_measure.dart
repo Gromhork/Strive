@@ -187,9 +187,9 @@ bool holdPerSide(String name) {
 
 /// "45 s", "1:30 min", "2 min" – one set's hold time.
 String formatHold(int sec) {
-  if (sec < 60) return '$sec s';
+  if (sec < 60) return '$sec${_nbsp}s';
   final m = sec ~/ 60, s = sec % 60;
-  return s == 0 ? '$m min' : '$m:${s.toString().padLeft(2, '0')} min';
+  return s == 0 ? '$m${_nbsp}min' : '$m:${s.toString().padLeft(2, '0')} min';
 }
 
 // ───────────────────────────── Body load of bodyweight exercises ─────────────────────────────
@@ -333,3 +333,6 @@ double _bodyShare(String exId, String name, String? equipment) {
   }
   return 0;
 }
+
+/// Non-breaking space (number and unit never wrap apart; pure Dart – not core/format.dart's).
+const _nbsp = ' ';

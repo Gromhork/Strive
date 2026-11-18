@@ -275,13 +275,22 @@ PlanCarry? planCarryOf(UserProfile p, {required List<PlannedWorkout> plans, requ
 List<(DateTime, String)> gymHistoryBefore(List<PlannedWorkout> existing, List<Session> sessions, DateTime day, {int days = 21}) {
   final from = addDays(dayOnly(day), -days);
   bool inWindow(DateTime d) => !dayOnly(d).isBefore(from) && dayOnly(d).isBefore(dayOnly(day));
+  // A start too short to count (< 10 % of its planned workout) is no workout of the rotation: the
+  // next program would otherwise skip the one that was aborted.
+  final linked = linkPlanSessions(existing.where((p) => p.sport == Sport.gym).toList(), sessions);
+  final notCounted = <String>{
+    for (final p in existing)
+      if (linked[p.id] case final s? when !sessionCounts(p, s)) s.id,
+  };
   final out = <(DateTime, String)>[
     for (final s in sessions)
-      if (s.sport == Sport.gym && s.templateId != null && inWindow(s.start)) (dayOnly(s.start), s.templateId!),
+      if (s.sport == Sport.gym && s.templateId != null && inWindow(s.start) && !notCounted.contains(s.id))
+        (dayOnly(s.start), s.templateId!),
   ];
   final seen = {for (final (d, id) in out) '${dayKey(d)}|$id'};
   for (final p in existing) {
     if (p.sport != Sport.gym || !p.isDone || p.templateId == null || !inWindow(p.date)) continue;
+    if (linked[p.id] case final s? when notCounted.contains(s.id)) continue;
     if (seen.add('${dayKey(p.date)}|${p.templateId}')) out.add((dayOnly(p.date), p.templateId!));
   }
   return out..sort((x, y) => x.$1.compareTo(y.$1));

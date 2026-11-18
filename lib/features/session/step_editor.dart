@@ -505,7 +505,7 @@ class _StepSheetState extends State<_StepSheet> {
                       ),
                       Expanded(
                         child: Text(
-                          _m >= 1000 && widget.sport != Sport.swim ? '${Units.num(_m / 1000, 2)} km' : '${_m.round()} m',
+                          _m >= 1000 && widget.sport != Sport.swim ? '${Units.num(_m / 1000, 2)} km' : '${_m.round()} m',
                           textAlign: TextAlign.center,
                           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
                         ),

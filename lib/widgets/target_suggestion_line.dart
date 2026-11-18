@@ -17,7 +17,10 @@ class TargetSuggestionLine extends StatelessWidget {
     required this.current,
     required this.onApply,
     this.plans,
+    this.onClear,
   });
+
+  /// Removes the target (offered when the finish-only plan sets it aside).
 
   final UserProfile profile;
   final String eventKey;
@@ -25,6 +28,7 @@ class TargetSuggestionLine extends StatelessWidget {
   final List<Session> sessions;
   final int? current;
   final ValueChanged<int> onApply;
+  final VoidCallback? onClear;
 
   /// The plan that runs (mid-plan the suggestion starts from its fitness – the goal forecast's model).
   final List<PlannedWorkout>? plans;
@@ -32,12 +36,17 @@ class TargetSuggestionLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final sug = suggestTargetTime(profile, eventKey, eventDate, sessions: sessions, plans: plans);
+    final sug = suggestTargetTime(profile, eventKey, eventDate, sessions: sessions, plans: plans, target: current);
     final t = Theme.of(context).textTheme;
+    // A finish goal next to an entered target says what the plan does with it – never "no target time" under the
+    // time just entered (final QA: "Ziel: ankommen – noch keine Zielzeit" under 3:27).
+    final setAside = sug.targetRaced == false;
     final basis = switch (sug.basis) {
       TargetBasis.raceTimes => l.targetSuggestBasisRace,
       TargetBasis.bestEfforts => l.targetSuggestBasisEfforts,
       TargetBasis.levelEstimate => l.targetSuggestBasisLevel,
+      TargetBasis.finishOnly when sug.targetRaced == true => l.targetSuggestFinishKept(clock(current!)),
+      TargetBasis.finishOnly when setAside => l.targetSuggestSetAside(clock(current!)),
       TargetBasis.finishOnly => l.targetSuggestFinish,
     };
     return Container(
@@ -66,6 +75,7 @@ class TargetSuggestionLine extends StatelessWidget {
           ),
           if (sug.sec != null && current != sug.sec)
             TextButton(key: const ValueKey('takeSuggestion'), onPressed: () => onApply(sug.sec!), child: Text(l.apply)),
+          if (setAside && onClear != null) TextButton(key: const ValueKey('clearTarget'), onPressed: onClear, child: Text(l.targetRemove)),
         ],
       ),
     );

@@ -20,9 +20,12 @@ DateTime nextMonday(DateTime now) {
 /// over", plan settings, aligning the plan to a goal). Returns the day the new plan starts
 /// – today or next Monday – or null when cancelled. Without planned workouts from today
 /// nothing is lost: no dialog, the plan starts today.
-Future<DateTime?> confirmReplacePlan(BuildContext context, List<PlannedWorkout> plans, {DateTime? now}) async {
+///
+/// [change]: what is changed with the new plan (a feasibility option applied from the calendar, "Übernehmen: …") –
+/// shown first, and the dialog is shown even when no planned workout would be lost (the change is confirmed).
+Future<DateTime?> confirmReplacePlan(BuildContext context, List<PlannedWorkout> plans, {DateTime? now, String? change}) async {
   final today = dayOnly(now ?? DateTime.now());
-  if (plannedFrom(plans, today) == 0) return today;
+  if (plannedFrom(plans, today) == 0 && change == null) return today;
   final monday = nextMonday(today);
   return showDialog<DateTime>(
     context: context,
@@ -42,6 +45,10 @@ Future<DateTime?> confirmReplacePlan(BuildContext context, List<PlannedWorkout> 
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (change != null) ...[
+                    Text(l.applyChange(change), key: const ValueKey('replaceChange'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 8),
+                  ],
                   Text(l.replacePlanBody(date, plannedFrom(plans, start))),
                   const SizedBox(height: 4),
                   Text(l.replacePlanKeeps, style: Theme.of(c).textTheme.bodySmall),

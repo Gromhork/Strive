@@ -74,8 +74,13 @@ class _FakeRepo extends Repository {
   @override
   Future<void> deletePlansFrom(List<PlannedWorkout> all, DateTime from) async {}
   @override
-  Future<void> replacePlans(List<PlannedWorkout> all, DateTime from, List<PlannedWorkout> plan, {Set<String> keep = const {}}) async =>
-      savePlans(plan);
+  Future<void> replacePlans(
+    List<PlannedWorkout> all,
+    DateTime from,
+    List<PlannedWorkout> plan, {
+    Set<String> keep = const {},
+    Set<String> drop = const {},
+  }) async => savePlans(plan);
   @override
   Future<List<WorkoutTemplate>?> templatesFromServer() async => null;
 }

@@ -70,4 +70,4 @@ TrainingFocus focusForRace(String? key, TrainingFocus current) {
 
 /// Legs or total distance of a race distance, e.g. "0,75 / 20 / 5 km" or "21,1 km".
 String eventDistanceDetail(EventDistance d) =>
-    d.legs.isNotEmpty ? '${d.legs.map((v) => Units.num(v, 2)).join(' / ')} km' : '${Units.num(d.km, 1)} km';
+    d.legs.isNotEmpty ? '${d.legs.map((v) => Units.num(v, 2)).join(' / ')} km' : '${Units.num(d.km, 1)} km';

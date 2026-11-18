@@ -38,7 +38,13 @@ class _FakeRepo extends Repository {
   Future<void> deletePlansFrom(List<PlannedWorkout> all, DateTime from) async =>
       deleted.addAll(all.where((p) => !p.date.isBefore(from) && p.status == 'planned').map((p) => p.id));
   @override
-  Future<void> replacePlans(List<PlannedWorkout> all, DateTime from, List<PlannedWorkout> plan, {Set<String> keep = const {}}) async {
+  Future<void> replacePlans(
+    List<PlannedWorkout> all,
+    DateTime from,
+    List<PlannedWorkout> plan, {
+    Set<String> keep = const {},
+    Set<String> drop = const {},
+  }) async {
     await deletePlansFrom(all, from);
     await savePlans(plan);
   }

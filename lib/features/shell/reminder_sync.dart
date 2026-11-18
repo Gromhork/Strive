@@ -53,7 +53,7 @@ final reminderSyncProvider = Provider<void>((ref) {
       timeZone: zone,
       plans: plans,
       title: (p) => l.trainingReminderTitle(p.sport.label(l)),
-      body: (p) => '${p.title} · ${p.durationMin} min',
+      body: (p) => '${p.title} · ${p.durationMin} min',
     );
   }).catchError((Object e) {
     debugPrint('reminder sync failed: $e');

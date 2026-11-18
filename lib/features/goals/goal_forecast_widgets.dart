@@ -10,7 +10,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/goal_forecast.dart';
 import '../../services/progression_check.dart';
-import '../calendar/feasibility_card.dart' show eventDistanceName;
+import '../../core/event_distances.dart' show raceLabel;
 
 /// Goal forecast of the signed-in athlete (null without an upcoming event).
 final goalForecastProvider = Provider<GoalForecast?>((ref) {
@@ -116,7 +116,8 @@ String deltaText(int sec) => '${sec > 0 ? '+' : (sec < 0 ? '−' : '±')}${clock
 String countdownText(AppLocalizations l, int daysLeft) =>
     daysLeft <= 0 ? l.goalCountdownToday : (daysLeft < 14 ? l.goalCountdownDays(daysLeft) : l.goalCountdown(daysLeft ~/ 7, daysLeft % 7));
 
-String eventLabel(AppLocalizations l, String event) => eventDistanceName(l, event);
+/// The race as the athlete named it, with its distance ([raceLabel]: "Berlin · Marathon").
+String eventLabel(AppLocalizations l, String event, {String? name}) => raceLabel(l, event, name: name);
 
 /// Weeks of the plan by phase, from the stored planned workouts: each week takes the phase of
 /// most of its workouts (recovery weeks belong to the phase around them).
@@ -307,6 +308,7 @@ class PhaseTimeline extends StatelessWidget {
           return ok;
         }
 
+        final allFit = segments.every((s) => fits(phaseShort(l, s.$1), s.$2));
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -353,7 +355,10 @@ class PhaseTimeline extends StatelessWidget {
                 ],
               ),
             ),
-            if (labels) ...[
+            // Every phase is named (final QA: "Tapering" was missing under the 70.3 bar – the short last phase had no
+            // room): under its segment when all labels fit whole, else as a legend of coloured dots in one wrapping
+            // line – never a phase without its name, never a clipped one.
+            if (labels && allFit) ...[
               const SizedBox(height: 4),
               Row(
                 children: [
@@ -361,12 +366,34 @@ class PhaseTimeline extends StatelessWidget {
                     Expanded(
                       flex: s.$2,
                       child: Text(
-                        fits(phaseShort(l, s.$1), s.$2) ? phaseShort(l, s.$1) : '',
+                        phaseShort(l, s.$1),
                         maxLines: 1,
                         overflow: TextOverflow.clip,
                         softWrap: false,
                         style: labelStyle.copyWith(color: scheme.onSurfaceVariant),
                       ),
+                    ),
+                ],
+              ),
+            ] else if (labels) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                key: const ValueKey('phaseLegend'),
+                spacing: 12,
+                runSpacing: 2,
+                children: [
+                  for (final ph in {for (final s in segments) s.$1})
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(color: phaseColor(ph).withValues(alpha: 0.85), shape: BoxShape.circle),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(phaseShort(l, ph), style: labelStyle.copyWith(color: scheme.onSurfaceVariant)),
+                      ],
                     ),
                 ],
               ),
@@ -458,7 +485,11 @@ class ForecastTimes extends StatelessWidget {
         cell(
           l.goalTargetLabel,
           target == null ? l.goalFinish : clock(target),
-          sub: target == null || race == null || f.early ? null : deltaText(race - target),
+          // A target the finish-only plan does not race at: shown, not dropped ("3:27:00 ohne Renntempo").
+          sub:
+              f.setAsideTargetSec != null
+                  ? l.goalTargetSetAsideSub(clock(f.setAsideTargetSec!))
+                  : (target == null || race == null || f.early ? null : deltaText(race - target)),
           c: null,
         ),
       ],
@@ -487,7 +518,7 @@ class ForecastSummary extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '${l.fcInRecal} · ${eventLabel(l, f.event)}',
+                  '${l.fcInRecal} · ${eventLabel(l, f.event, name: f.eventName)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w700),

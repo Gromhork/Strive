@@ -129,7 +129,7 @@ class GoalStatusCardView extends StatelessWidget {
                         // Name over two lines when needed, the date on its own: a long name never
                         // hides the race day ("Halbmarathon · …").
                         Text(
-                          eventLabel(l, f.event),
+                          eventLabel(l, f.event, name: f.eventName),
                           key: const ValueKey('goalStatusName'),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,

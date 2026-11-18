@@ -106,7 +106,7 @@ PlannedWorkout retitledRunWalk(PlannedWorkout w) {
   if (work.isEmpty || m == null) return w;
   final sec = work.first.durationSec ?? 0;
   if (sec <= 0 || sec % 60 != 0) return w;
-  final title = w.title.replaceRange(m.start, m.end, '${work.length} × ${sec ~/ 60} min');
+  final title = w.title.replaceRange(m.start, m.end, '${work.length} × ${sec ~/ 60} min');
   return title == w.title ? w : PlannedWorkout.fromMap(w.id, {...w.toMap(), 'title': title});
 }
 
@@ -271,7 +271,8 @@ ProgressionCheck? progressionCheck(
     final w = x.durationMin > 0 ? x.durationMin.toDouble() : 1.0;
     planned += w;
     final s = linked[x.id];
-    if (s == null && !x0.isDone) {
+    // (A start too short to count, < 10 % of the plan, is a missed session too.)
+    if (!planCompleted(x0, linked, profile: p)) {
       missed++;
       continue;
     }

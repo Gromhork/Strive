@@ -82,7 +82,7 @@ class GoalsPage extends ConsumerWidget {
               )
               .fold<double>(0, (a, s) => a + s.distanceM) /
           1000;
-      return (km, g.target <= 0 ? 0 : (km / g.target).clamp(0.0, 1.0), '${Units.num(km, 1)} / ${Units.num(g.target)} km');
+      return (km, g.target <= 0 ? 0 : (km / g.target).clamp(0.0, 1.0), '${Units.num(km, 1)} / ${Units.num(g.target)} km');
     case GoalType.frequency:
       final weekStart = startOfWeek(DateTime.now());
       final n = sessions.where((s) => !s.start.isBefore(weekStart) && (g.sport == null || s.sport == g.sport)).length.toDouble();
@@ -462,7 +462,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
             ? _title.text.trim()
             : switch (_type) {
               GoalType.weight => l.goalTypeWeight,
-              GoalType.distance => '${Units.num(target)} km ${_sport?.label(l) ?? ''}'.trim(),
+              GoalType.distance => '${Units.num(target)} km ${_sport?.label(l) ?? ''}'.trim(),
               GoalType.frequency => l.perWeekProgress(0, target.toInt()).split('/').last.trim(),
               GoalType.strength => _exName ?? l.goalTypeStrength,
               // Named after the race distance ("Halbmarathon") when it is a known one.
@@ -627,7 +627,12 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                         initialDate:
                             _deadline ??
                             (_type == GoalType.event
-                                ? defaultRaceDate(DateTime.now(), _raceWeeks(), longDay: ref.read(profileOrDefaultProvider).longDay)
+                                ? defaultRaceDateFor(
+                                  _key,
+                                  DateTime.now(),
+                                  _raceWeeks(),
+                                  longDay: ref.read(profileOrDefaultProvider).longDay,
+                                )
                                 : DateTime.now().add(const Duration(days: 60))), // time span
                       );
                       if (d != null) setState(() => _deadline = d);
@@ -674,6 +679,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                         plans: ref.watch(planListProvider),
                         current: _targetSec,
                         onApply: (sec) => setState(() => _targetSec = sec),
+                        onClear: () => setState(() => _targetSec = null),
                       ),
                     // Never a check computed with the wrong focus (its week has no cycling:
                     // "long ride only 0 min") – the plan settings check it with the new week.
@@ -691,6 +697,10 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                               setState(() => _deadline = date);
                             case FeasShorter(:final distance):
                               _pickDistance(distance);
+                            case FeasClearTarget():
+                              setState(() => _targetSec = null);
+                            case FeasSetTarget(:final sec):
+                              setState(() => _targetSec = sec);
                             default:
                               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
                           }

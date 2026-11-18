@@ -22,6 +22,7 @@ import '../../widgets/plan_amount.dart';
 import '../stats/session_detail_page.dart';
 import '../../services/fitness_state.dart';
 import '../onboarding/onboarding_page.dart';
+import 'feasibility_apply.dart';
 import 'feasibility_card.dart';
 import 'plan_editor.dart';
 import 'plan_history_page.dart';
@@ -200,6 +201,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 goal,
                 compact: true,
                 onClose: () => setState(() => _hideFeasibility = true),
+                // The options as buttons, as in the setup: applied with the usual "Plan neu aufsetzen?" confirmation.
+                onOption: (x, text) => applyFeasibilityOption(context, ref, x, text),
                 onOpenSettings:
                     () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
               ),
@@ -510,6 +513,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final dayPlans = idx.plansOn(_selected);
     final daySessions = idx.sessionsOn(_selected);
     final linked = idx.linked;
+    final profile = ref.watch(profileOrDefaultProvider);
     final marks = _marks(idx.plans, idx.sessions);
     return ListView(
       controller: _scroll,
@@ -607,10 +611,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         const SizedBox(height: 8),
         if (dayPlans.isEmpty && daySessions.isEmpty) Text(l.nothingPlanned, style: Theme.of(context).textTheme.bodySmall),
         for (final s in daySessions) _SessionChip(session: s),
-        for (final p in dayPlans.where((p) => !p.isDone || p.sessionId == null))
+        for (final p in dayPlans.where((p) => !p.isDone || p.sessionId == null || _startedElsewhereNotCounted(p, linked, profile)))
           Padding(padding: const EdgeInsets.only(bottom: 6), child: PlanCard(plan: p)),
-        for (final p in dayPlans.where((p) => p.isDone && p.sessionId != null))
-          if (linked[p.id] case final s? when !sameDay(s.start, p.date)) DoneElsewhereLine(plan: p, session: s),
+        for (final p in dayPlans.where((p) => _doneElsewhere(p, linked, profile))) DoneElsewhereLine(plan: p, session: linked[p.id]!),
       ],
     );
   }
@@ -781,6 +784,19 @@ class JumpToTodayButton extends StatelessWidget {
   }
 }
 
+/// [p] was done on another day (its session counts): its own day shows a "done on Mo" line instead
+/// of the card. A start too short to count leaves the workout open on its day.
+bool _doneElsewhere(PlannedWorkout p, Map<String, Session> linked, UserProfile profile) {
+  final s = linked[p.id];
+  return p.isDone && s != null && !sameDay(s.start, p.date) && sessionCounts(p, s, profile: profile);
+}
+
+/// [p] is marked done by a session on another day that is too short to count: still open on its day.
+bool _startedElsewhereNotCounted(PlannedWorkout p, Map<String, Session> linked, UserProfile profile) {
+  final s = linked[p.id];
+  return p.isDone && s != null && !sameDay(s.start, p.date) && !sessionCounts(p, s, profile: profile);
+}
+
 /// Short weekday names ("Mo") per locale – one DateFormat, not a new one for every day row.
 final _weekdayFormats = <String, DateFormat>{};
 DateFormat _weekdayFormat(String locale) => _weekdayFormats[locale] ??= DateFormat.E(locale);
@@ -833,7 +849,9 @@ class _DayRow extends ConsumerWidget {
     final linked = index.linked;
     // A workout done on another day (early / late, as a replacement) is shown once: as the
     // session on the day it was done ("ersetzt Sa-Einheit"), not again on its planned day.
-    bool doneElsewhere(PlannedWorkout x) => x.isDone && linked[x.id] != null && !sameDay(linked[x.id]!.start, x.date);
+    // (A start too short to count is no replacement: the workout stays open on its own day.)
+    final profile = ref.watch(profileOrDefaultProvider);
+    bool doneElsewhere(PlannedWorkout x) => _doneElsewhere(x, linked, profile);
     final dayPlans = index.plansOn(day);
     final p = dayPlans.where((x) => !doneElsewhere(x)).toList();
     // … but its own day says where it went ("erledigt am Mo") instead of "Pause".
@@ -842,7 +860,7 @@ class _DayRow extends ConsumerWidget {
     final s = index.sessionsOn(day).where((x) => !p.any((pl) => pl.sessionId == x.id || linked[pl.id]?.id == x.id)).toList();
     PlannedWorkout? replaced(Session x) {
       final pl = index.byId[index.sessionPlan[x.id]?.id];
-      return pl != null && !sameDay(pl.date, x.start) ? pl : null;
+      return pl != null && !sameDay(pl.date, x.start) && sessionCounts(pl, x, profile: profile) ? pl : null;
     }
 
     final today = sameDay(day, DateTime.now());
@@ -940,7 +958,9 @@ class PlanCard extends ConsumerWidget {
     final l = context.l10n;
     final p = plan;
     final profile = ref.watch(profileOrDefaultProvider);
-    final c = planCompliance(p, ref.watch(planSessionsProvider)[p.id], profile: profile);
+    final c0 = planCompliance(p, ref.watch(planSessionsProvider)[p.id], profile: profile);
+    // A start too short to count leaves the workout open – until its day has passed it is shown as open.
+    final c = c0.notCounted && !dayOnly(p.date).isBefore(dayOnly(DateTime.now())) ? Compliance.none : c0;
     return Material(
       // Missed or not counted (red ✕): neutral, not the sport's tint of an open / done workout.
       color: c.level == ComplianceLevel.red ? Theme.of(context).colorScheme.surfaceContainerHighest : p.sport.color.withValues(alpha: 0.12),
@@ -1148,6 +1168,10 @@ Map<String, List<DayMark>> monthMarks(
     final s = linked[p.id];
     if (p.status == 'skipped' && s == null) continue;
     final c = planCompliance(p, s, now: now, profile: profile);
+    // Started on another day but too short to count: the workout is still open on its own day.
+    if (s != null && c.notCounted && !sameDay(s.start, p.date) && !dayOnly(p.date).isBefore(dayOnly(now))) {
+      add(p.date, DayMark(p.sport, compliance: Compliance.none));
+    }
     if (s != null && !shown.contains(s.id)) continue;
     add(s?.start ?? p.date, DayMark(p.sport, compliance: c));
   }

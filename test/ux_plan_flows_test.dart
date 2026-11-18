@@ -144,22 +144,22 @@ void main() {
     test('German', () {
       Units.decimalComma = true;
       expect(compactNumber(8432), '8.432');
-      expect(const Units(false).volume(1593), '1.593 kg');
-      expect(const Units(false).volume(12400), '12,4 t');
+      expect(const Units(false).volume(1593), '1.593 kg');
+      expect(const Units(false).volume(12400), '12,4 t');
       expect(Units.fixed(2), '2,0');
       expect(Units.fixed(43.44), '43,4');
       expect(Units.pct(26.2), '26 %');
     });
     test('English', () {
       expect(compactNumber(8432), '8,432');
-      expect(const Units(false).volume(1593), '1,593 kg');
+      expect(const Units(false).volume(1593), '1,593 kg');
       expect(Units.fixed(2), '2.0');
       expect(Units.pct(26.2), '26%');
     });
   });
 
   group('C2 race presets', () {
-    test('51,5 km is the olympic triathlon, never "Ultra 50 km"', () {
+    test('51,5 km is the olympic triathlon, never "Ultra 50 km"', () {
       expect(eventKeyForKm(51.5), 'olympic');
       expect(eventKeyForKm(51), isNull);
       expect(eventKeyForKm(50.5), isNull);
@@ -337,7 +337,7 @@ void main() {
       await t.tap(find.byKey(const ValueKey('distance-olympic')));
       await t.pumpAndSettle();
       expect(t.widget<ChoiceChip>(find.byKey(const ValueKey('distance-olympic'))).selected, isTrue);
-      // 51 km is no preset: nothing is auto-selected.
+      // 51 km is no preset: nothing is auto-selected.
       await t.enterText(find.widgetWithText(TextField, l.eventDistance), '51');
       await t.pumpAndSettle();
       expect(t.widget<ChoiceChip>(find.byKey(const ValueKey('distance-olympic'))).selected, isFalse);
@@ -554,7 +554,7 @@ void main() {
       await t.tap(find.byKey(const ValueKey('durationApply')));
       await t.pumpAndSettle();
       expect(find.byKey(const ValueKey('raceTime-10k')), findsOneWidget, reason: 'still on the running step');
-      expect(find.textContaining(l.yourPaceZones), findsOneWidget, reason: 'zones from the new 10 km time');
+      expect(find.textContaining(l.yourPaceZones), findsOneWidget, reason: 'zones from the new 10 km time');
       expect(t.takeException(), isNull);
     });
   });

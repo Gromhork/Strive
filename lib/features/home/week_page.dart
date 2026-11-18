@@ -76,7 +76,7 @@ class _WeekPageState extends ConsumerState<WeekPage> {
               Expanded(
                 child:
                     sessions.any((s) => s.sport != Sport.gym) || plans.any((p) => p.sport != Sport.gym)
-                        ? StatTile(label: l.distance, value: '${Units.num(u.distOut(totalKm * 1000), 1)} ${u.distUnit}')
+                        ? StatTile(label: l.distance, value: '${Units.num(u.distOut(totalKm * 1000), 1)} ${u.distUnit}')
                         : StatTile(
                           label: l.volume,
                           value: u.volume(sessions.fold<double>(0, (a, s) => a + s.volume)),

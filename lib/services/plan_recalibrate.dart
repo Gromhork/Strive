@@ -1142,7 +1142,8 @@ class Recalibrator {
           x.id != p.id &&
           !dayOnly(x.date).isBefore(start) &&
           dayOnly(x.date).isBefore(today) &&
-          (x.isDone || linked[x.id] != null),
+          // (A start too short to count is no outcome either.)
+          planCompleted(x, linked, profile: profile),
     )) {
       return null;
     }

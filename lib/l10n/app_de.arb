@@ -1982,5 +1982,14 @@
   "startedOnDayNotCounted": "am {day} begonnen – nicht gewertet",
   "diffEasySubGym": "Jede 3. Woche eine Entlastungswoche – mehr Erholung zwischen den Belastungswochen.",
   "diffBalancedSubGym": "Jede 4. Woche eine Entlastungswoche – stetiger Fortschritt für die meisten.",
-  "diffChallengingSubGym": "Profis trainieren längere Blöcke bis zur Entlastungswoche – für Erfahrene."
+  "diffChallengingSubGym": "Profis trainieren längere Blöcke bis zur Entlastungswoche – für Erfahrene.",
+  "wRaceFinishTargetSetAside": "Ziel ist das Ankommen: Mit diesem Aufbau läuft der Plan ohne Renntempo – deine Zielzeit {goal} bleibt gespeichert. Starte langsamer als es sich richtig anfühlt, halte deinen Rhythmus und genieß das Finish.",
+  "feasTargetSetAside": "Mit diesem Aufbau ist Ankommen das Ziel – deine Zielzeit {goal} bleibt gespeichert, der Plan läuft aber ohne Renntempo.",
+  "feasClearTarget": "Zielzeit entfernen",
+  "targetSuggestSetAside": "Mit diesem Aufbau ist Ankommen das Ziel – deine {goal} bleibt gespeichert, der Plan läuft aber ohne Renntempo.",
+  "targetSuggestFinishKept": "Kein Richtwert: Ohne Zielzeit wäre Ankommen das Ziel. Der Plan nimmt deine {goal} als Ziel – die Prüfung unten zeigt, was dafür noch fehlt.",
+  "targetRemove": "Entfernen",
+  "goalTargetSetAsideSub": "{goal} ohne Renntempo",
+  "applyChange": "Änderung: {change}",
+  "startTime": "Startzeit"
 }

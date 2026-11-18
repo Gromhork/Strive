@@ -753,14 +753,14 @@ void main() {
         overrides(await prefs()),
       );
       expect(lines, [
-        'Uno: 2 × 20 kg × 10',
+        'Uno: 2 × 20 kg × 10',
         'Supersatz A:',
-        '  A1 Dos: 2 × 20 kg × 10',
-        '  A2 Tres: 20 kg × 10, 20 kg × 8',
-        'Cuatro: 2 × 20 kg × 10',
+        '  A1 Dos: 2 × 20 kg × 10',
+        '  A2 Tres: 20 kg × 10, 20 kg × 8',
+        'Cuatro: 2 × 20 kg × 10',
         'Supersatz B:',
-        '  B1 Cinco: 2 × 20 kg × 10',
-        '  B2 Seis: 2 × 20 kg × 10',
+        '  B1 Cinco: 2 × 20 kg × 10',
+        '  B2 Seis: 2 × 20 kg × 10',
       ]);
       // Only one member done → listed like a straight set, without a group line.
       for (final s in ex[5].sets) {
@@ -778,7 +778,7 @@ void main() {
         ),
         overrides(await prefs()),
       );
-      expect(single.sublist(4), ['Cuatro: 2 × 20 kg × 10', 'Cinco: 2 × 20 kg × 10']);
+      expect(single.sublist(4), ['Cuatro: 2 × 20 kg × 10', 'Cinco: 2 × 20 kg × 10']);
     });
 
     testWidgets('program preview frames the supersets (and ignores a stale lone letter)', (t) async {

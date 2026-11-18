@@ -89,6 +89,8 @@ class GoalForecast {
     this.progression,
     this.paceStatus,
     this.finishOnly = false,
+    this.setAsideTargetSec,
+    this.eventName,
     this.sessionsDue = 0,
     this.sessionsDone = 0,
     this.keysDue = 0,
@@ -146,6 +148,13 @@ class GoalForecast {
   /// No time prediction: a run/walk beginner (finish goal) without a measured effort (C6) – the
   /// level-default VDOT predicts a half marathon in ~1:54 for someone whose easy pace is 7:40/km.
   final bool finishOnly;
+
+  /// A finish goal ([finishOnly]) although the athlete set a target: that target (s) – stored, but not raced at
+  /// ([PlanGenerator.targetSetAside]); the goal page says so next to "Ankommen" instead of dropping it silently.
+  final int? setAsideTargetSec;
+
+  /// The race's name as the athlete typed it ("Berlin"; [AthleteData.eventName]) – shown with the distance.
+  final String? eventName;
 
   /// Due / done endurance sessions and key sessions of the last 4 weeks ([ForecastReason.sessionsSkipped],
   /// [ForecastReason.keySessionsMissed]).
@@ -450,6 +459,8 @@ class GoalForecast {
       progression: progression,
       paceStatus: target == null ? null : pace,
       finishOnly: finishOnly,
+      setAsideTargetSec: finishOnly && (a.targetTimeSec ?? 0) > 0 ? a.targetTimeSec : null,
+      eventName: a.eventName,
       sessionsDue: fit.recentDue,
       sessionsDone: fit.recentDone,
       keysDue: fit.keyDue,

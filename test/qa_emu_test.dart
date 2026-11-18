@@ -63,7 +63,13 @@ class _FakeRepo extends Repository {
     Map<String, Map<String, dynamic>> sessions = const {},
   }) async => planUpdates.addAll(plans);
   @override
-  Future<void> replacePlans(List<PlannedWorkout> all, DateTime from, List<PlannedWorkout> plan, {Set<String> keep = const {}}) async {
+  Future<void> replacePlans(
+    List<PlannedWorkout> all,
+    DateTime from,
+    List<PlannedWorkout> plan, {
+    Set<String> keep = const {},
+    Set<String> drop = const {},
+  }) async {
     kept = keep;
     written = plan;
   }
@@ -160,8 +166,13 @@ void main() {
       );
       expect(n, greaterThan(0));
       expect(repo.written.where((p) => sameDay(p.date, _today)), isEmpty, reason: 'today was trained: no second workout');
-      expect(repo.written.where((p) => sameDay(p.date, addDays(_today, 2))), isEmpty);
-      expect(repo.kept, containsAll(['done', 'linked']));
+      // A start too short to count leaves its workout open (final QA): its day is planned again, and the new run of
+      // that day takes over its id – the 2-min attempt stays attached ("nicht gewertet") instead of the day vanishing.
+      final day2 = repo.written.where((p) => sameDay(p.date, addDays(_today, 2))).toList();
+      expect(day2.map((p) => p.id), contains('linked'));
+      expect(day2.firstWhere((p) => p.id == 'linked').status, 'planned');
+      expect(repo.kept, contains('done'));
+      expect(repo.kept, isNot(contains('linked')));
       expect(repo.kept, isNot(contains('open')), reason: 'open planned workouts are replaced');
       PlanService.reset();
     });

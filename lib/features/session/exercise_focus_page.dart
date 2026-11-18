@@ -1180,7 +1180,7 @@ class _PlateCalcState extends State<_PlateCalc> {
             children: [
               IconButton.filledTonal(onPressed: () => setState(() => _kg = max(_bar, _kg - 2.5)), icon: const Icon(Icons.remove)),
               Expanded(
-                child: Center(child: Text('${Units.num(_kg, 2)} kg', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700))),
+                child: Center(child: Text('${Units.num(_kg, 2)} kg', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700))),
               ),
               IconButton.filledTonal(onPressed: () => setState(() => _kg += 2.5), icon: const Icon(Icons.add)),
             ],
@@ -1192,7 +1192,7 @@ class _PlateCalcState extends State<_PlateCalc> {
               for (final b in const [20.0, 15.0, 10.0])
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
-                  child: ChoiceChip(label: Text('${Units.num(b)} kg'), selected: _bar == b, onSelected: (_) => setState(() => _bar = b)),
+                  child: ChoiceChip(label: Text('${Units.num(b)} kg'), selected: _bar == b, onSelected: (_) => setState(() => _bar = b)),
                 ),
             ],
           ),
@@ -1217,12 +1217,12 @@ class _PlateCalcState extends State<_PlateCalc> {
           ),
           const SizedBox(height: 12),
           Text(
-            plates.isEmpty ? '–' : '${plates.map((p) => Units.num(p, 2)).join(' + ')} kg ${l.perSide}',
+            plates.isEmpty ? '–' : '${plates.map((p) => Units.num(p, 2)).join(' + ')} kg ${l.perSide}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           if (rest > 0.01) ...[
             const SizedBox(height: 6),
-            Text(l.notLoadable('${Units.num(rest, 2)} kg'), style: const TextStyle(color: AppColors.warning)),
+            Text(l.notLoadable('${Units.num(rest, 2)} kg'), style: const TextStyle(color: AppColors.warning)),
           ],
         ],
       ),

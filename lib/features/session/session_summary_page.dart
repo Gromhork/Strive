@@ -296,7 +296,7 @@ class _SessionSummaryPageState extends ConsumerState<SessionSummaryPage> {
                         icon: Icons.speed,
                       ),
                     ),
-                    if (s.elevationM > 0) _cell(StatTile(label: l.elevation, value: '${s.elevationM.round()} m', icon: Icons.terrain)),
+                    if (s.elevationM > 0) _cell(StatTile(label: l.elevation, value: '${s.elevationM.round()} m', icon: Icons.terrain)),
                   ],
                 ],
               ),

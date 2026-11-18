@@ -520,7 +520,10 @@ class ComingUpCard extends ConsumerWidget {
                 final dim = Theme.of(context).colorScheme.outline;
                 // Done already (early / as a replacement): ticked like in the calendar, with the
                 // day it was done ("erledigt am Mo") instead of looking still open.
-                final doneSession = dayPlans.length == 1 && dayPlans.first.isDone ? linked[dayPlans.first.id] : null;
+                // (A start too short to count leaves it open: no tick, no "erledigt am".)
+                final profile = ref.watch(profileOrDefaultProvider);
+                final doneOne = dayPlans.length == 1 && dayPlans.first.isDone && planCompleted(dayPlans.first, linked, profile: profile);
+                final doneSession = doneOne ? linked[dayPlans.first.id] : null;
                 return Expanded(
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
@@ -548,14 +551,7 @@ class ComingUpCard extends ConsumerWidget {
                                       ? Text('–', style: TextStyle(fontSize: 18, color: dim, fontWeight: FontWeight.w700))
                                       : _DayBadges(
                                         plans: dayPlans,
-                                        done:
-                                            dayPlans.length == 1 && dayPlans.first.isDone
-                                                ? planCompliance(
-                                                  dayPlans.first,
-                                                  linked[dayPlans.first.id],
-                                                  profile: ref.watch(profileOrDefaultProvider),
-                                                )
-                                                : null,
+                                        done: doneOne ? planCompliance(dayPlans.first, linked[dayPlans.first.id], profile: profile) : null,
                                       ),
                             ),
                           ),

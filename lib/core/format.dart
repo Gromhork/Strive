@@ -55,25 +55,26 @@ class Units {
   double distOut(double meters) => imperial ? meters / mPerMi : meters / 1000;
   double distIn(double v) => imperial ? v * mPerMi : v * 1000;
 
-  String weight(double kg, {int digits = 1}) => '${num(weightOut(kg), digits)} $weightUnit';
-  String dist(double meters, {int digits = 2}) => '${num(distOut(meters), digits)} $distUnit';
+  // (Number and unit with a non-breaking space everywhere – "1,5" / "km" never wrap apart, final QA.)
+  String weight(double kg, {int digits = 1}) => '${num(weightOut(kg), digits)}$nbsp$weightUnit';
+  String dist(double meters, {int digits = 2}) => '${num(distOut(meters), digits)}$nbsp$distUnit';
 
   /// Swim distances are usually shown in meters / yards.
-  String swimDist(double meters) => imperial ? '${(meters / 0.9144).round()} yd' : '${meters.round()} m';
+  String swimDist(double meters) => imperial ? '${(meters / 0.9144).round()}${nbsp}yd' : '${meters.round()}${nbsp}m';
 
   /// Pace in min per km (run) / min per 100m (swim); speed in km/h for ride.
   String paceOrSpeed(Sport sport, double meters, int seconds) {
     if (meters <= 0 || seconds <= 0) return '–';
     if (sport == Sport.swim) {
       final secPer100 = seconds / (meters / 100);
-      return '${clock(secPer100.round())} /100 m';
+      return '${clock(secPer100.round())}$nbsp/100${nbsp}m';
     }
     if (sport == Sport.run) {
       final perUnit = seconds / distOut(meters);
       return '${clock(perUnit.round())} /$distUnit';
     }
     final speed = distOut(meters) / (seconds / 3600);
-    return '${num(speed, 1)} ${imperial ? 'mph' : 'km/h'}';
+    return '${num(speed, 1)}$nbsp${imperial ? 'mph' : 'km/h'}';
   }
 
   /// Decimal comma for the app language (set by the MaterialApp builder; German → ",").
@@ -112,8 +113,8 @@ class Units {
 
   /// Lifted volume: "1.593 kg", from 10 t on "12,4 t" (imperial: "3,512 lb").
   String volume(double kg) {
-    if (imperial) return '${grouped(weightOut(kg))} lb';
-    return kg >= 10000 ? '${fixed(kg / 1000, 1)} t' : '${grouped(kg)} kg';
+    if (imperial) return '${grouped(weightOut(kg))}${nbsp}lb';
+    return kg >= 10000 ? '${fixed(kg / 1000, 1)}${nbsp}t' : '${grouped(kg)}${nbsp}kg';
   }
 }
 
@@ -196,4 +197,10 @@ String capFirst(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1)
 /// Line-break friendly title: short connectors ("+", "–", "&", "/", "·") stick to the
 /// preceding word with a non-breaking space, so a wrapped title never shows a lone "+"
 /// on its own line ("Lockerer Lauf +" / "Steigerungen").
-String glueTitle(String s) => s.replaceAllMapped(RegExp(r' ([+–&/·]) '), (m) => ' ${m[1]} ');
+/// Numbers stick to their unit too ("Freiwasser 1,5 km" never breaks between "1,5" and "km" – [glueUnits]).
+String glueTitle(String s) => glueUnits(s.replaceAllMapped(RegExp(r' ([+–&/·]) '), (m) => ' ${m[1]} '));
+
+/// A number and the unit after it joined by a non-breaking space ("1,5 km", "400 m", "45 min", "3 h") – for labels
+/// built from translations ("Freiwasser 1,5 km") and anything else not formatted by [Units] / [formatMinutes].
+String glueUnits(String s) => s.contains(' ') ? s.replaceAllMapped(_unitGap, (m) => '${m[1]}$nbsp') : s;
+final _unitGap = RegExp(r'(\d) (?=(?:km/h|km|mi|mph|yd|kg|lb|min|h|m|s|t)\b)');

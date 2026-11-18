@@ -6833,4 +6833,43 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get diffChallengingSubGym => 'Profis trainieren längere Blöcke bis zur Entlastungswoche – für Erfahrene.';
+
+  @override
+  String wRaceFinishTargetSetAside(String goal) {
+    return 'Ziel ist das Ankommen: Mit diesem Aufbau läuft der Plan ohne Renntempo – deine Zielzeit $goal bleibt gespeichert. Starte langsamer als es sich richtig anfühlt, halte deinen Rhythmus und genieß das Finish.';
+  }
+
+  @override
+  String feasTargetSetAside(String goal) {
+    return 'Mit diesem Aufbau ist Ankommen das Ziel – deine Zielzeit $goal bleibt gespeichert, der Plan läuft aber ohne Renntempo.';
+  }
+
+  @override
+  String get feasClearTarget => 'Zielzeit entfernen';
+
+  @override
+  String targetSuggestSetAside(String goal) {
+    return 'Mit diesem Aufbau ist Ankommen das Ziel – deine $goal bleibt gespeichert, der Plan läuft aber ohne Renntempo.';
+  }
+
+  @override
+  String targetSuggestFinishKept(String goal) {
+    return 'Kein Richtwert: Ohne Zielzeit wäre Ankommen das Ziel. Der Plan nimmt deine $goal als Ziel – die Prüfung unten zeigt, was dafür noch fehlt.';
+  }
+
+  @override
+  String get targetRemove => 'Entfernen';
+
+  @override
+  String goalTargetSetAsideSub(String goal) {
+    return '$goal ohne Renntempo';
+  }
+
+  @override
+  String applyChange(String change) {
+    return 'Änderung: $change';
+  }
+
+  @override
+  String get startTime => 'Startzeit';
 }

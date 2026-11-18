@@ -123,7 +123,7 @@ String prescriptionToday(AppLocalizations l, Prescription p, Units u, {int sets 
     final secs = [for (var i = 0; i < (sets > 0 ? sets : max(1, p.setReps.length)); i++) p.repsForSet(i)];
     final load = prescriptionLoad(l, p, u);
     final time =
-        (secs.toSet().length == 1 ? '${secs.length} × ${formatHold(secs.first)}' : '${secs.join(' · ')} s') +
+        (secs.toSet().length == 1 ? '${secs.length} × ${formatHold(secs.first)}' : '${secs.join(' · ')} s') +
         (perSide ? ' ${l.perSide}' : '');
     return l.rxTodayText(load.isEmpty ? time : '$time @ $load');
   }

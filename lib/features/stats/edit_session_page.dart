@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/format.dart';
 import '../../core/sport.dart';
@@ -16,6 +15,7 @@ import '../../providers.dart';
 import '../../services/supersets.dart';
 import '../../widgets/superset_group.dart';
 import '../../widgets/common.dart';
+import '../session/manual_entry_page.dart' show manualEntryTimeText;
 import '../../widgets/discard_guard.dart';
 import '../../widgets/duration_picker.dart';
 import '../../services/insights.dart' show xpForSession;
@@ -249,7 +249,6 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final df = DateFormat.yMMMEd(context.localeName).add_Hm();
     final cardio = s.sport != Sport.gym;
     final swim = s.sport == Sport.swim;
     const num = TextInputType.numberWithOptions(decimal: true);
@@ -278,11 +277,12 @@ class _EditSessionPageState extends ConsumerState<EditSessionPage> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.event),
-              title: Text(df.format(_start)),
+              // Start and end, as when it was logged ([manualEntryTimeText]) – a lone time is not read as the start.
+              title: Text(manualEntryTimeText(context.localeName, _start, (_durationSec / 60).round()), key: const ValueKey('editTime')),
               onTap: () async {
                 final d = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2015), lastDate: DateTime.now());
                 if (d == null || !context.mounted) return;
-                final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_start));
+                final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_start), helpText: l.startTime);
                 setState(() => _start = DateTime(d.year, d.month, d.day, t?.hour ?? _start.hour, t?.minute ?? _start.minute));
               },
             ),
