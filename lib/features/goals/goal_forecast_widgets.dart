@@ -10,7 +10,9 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/goal_forecast.dart';
 import '../../services/progression_check.dart';
-import '../../core/event_distances.dart' show raceLabel;
+import '../../core/event_distances.dart' show EventSport, eventDistanceOf, raceLabel;
+import '../../core/event_sport_x.dart';
+import '../../core/sport.dart';
 
 /// Goal forecast of the signed-in athlete (null without an upcoming event).
 final goalForecastProvider = Provider<GoalForecast?>((ref) {
@@ -70,8 +72,17 @@ List<String> progressionLines(AppLocalizations l, GoalForecast f) {
 /// after one the number still missing – never "after your first workouts" once some are done.
 String forecastEarlyText(AppLocalizations l, GoalForecast f) {
   const needed = 2; // GoalForecast.early: fewer than 2 done endurance sessions since the plan start
-  if (f.planStart == null || f.doneSessions <= 0) return l.fcEarlySub;
-  return l.fcEarlyMore(max(1, needed - f.doneSessions));
+  if (f.planStart == null) return l.fcEarlySub;
+  // Only endurance sessions since the plan start count (owner round 9: "after your first workouts" was shown
+  // after a done gym session) – the text says which and how many are still missing.
+  final missing = max(1, needed - f.doneSessions);
+  // A single-sport race names its sport ("am besten Laufen" for a marathon); any endurance session still counts.
+  final race = eventDistanceOf(f.event)?.sport;
+  if (race == EventSport.run || race == EventSport.ride || race == EventSport.swim) {
+    final sport = race!.sport.label(l);
+    return l.fcEarlyEnduranceSport(l.localeName.startsWith('de') ? sport : sport.toLowerCase(), missing);
+  }
+  return l.fcEarlyEndurance(missing);
 }
 
 /// Colour, icon and label of a forecast status.
@@ -276,6 +287,9 @@ class EventGoalLine extends ConsumerWidget {
   }
 }
 
+/// Free space a phase label leaves to the next one.
+const _labelGap = 8.0;
+
 /// Base → build → peak → taper bar with a marker at [position] (0…1).
 class PhaseTimeline extends StatelessWidget {
   const PhaseTimeline({super.key, required this.segments, required this.position, this.height = 10, this.labels = true});
@@ -296,14 +310,18 @@ class PhaseTimeline extends StatelessWidget {
         const labelStyle = TextStyle(fontSize: 10, fontWeight: FontWeight.w600);
         // A phase label only where it fits whole (audit UX-12: "Spitz" / "Taper" clipped side by side, also
         // at a larger font scale) – measured, never cut off.
+        // Measured in the font the label is drawn in (the theme's – it was measured in the default font, narrower
+        // than Poppins: "SpitzeTapering" ran together, owner round 9) and with a gap to the next label.
+        final style = DefaultTextStyle.of(context).style.merge(labelStyle);
         bool fits(String text, int weeks) {
           final tp = TextPainter(
-            text: TextSpan(text: text, style: labelStyle),
+            text: TextSpan(text: text, style: style),
             textDirection: Directionality.of(context),
             textScaler: MediaQuery.textScalerOf(context),
+            locale: Localizations.maybeLocaleOf(context),
             maxLines: 1,
           )..layout();
-          final ok = tp.width <= c.maxWidth * weeks / total - 2;
+          final ok = tp.width <= c.maxWidth * weeks / total - _labelGap;
           tp.dispose();
           return ok;
         }

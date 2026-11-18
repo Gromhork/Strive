@@ -24,6 +24,7 @@ import '../../services/fitness_state.dart';
 import '../onboarding/onboarding_page.dart';
 import 'feasibility_apply.dart';
 import 'feasibility_card.dart';
+import 'plan_hint_memory.dart';
 import 'plan_editor.dart';
 import 'plan_history_page.dart';
 import 'planned_workout_page.dart';
@@ -48,7 +49,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       if (mounted) setState(() {});
     },
   );
-  bool _hideFeasibility = false;
 
   /// Scroll controller of the week list and the month view: the tab's primary one (tapping the
   /// tab again scrolls back), an own one where there is none.
@@ -94,12 +94,12 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
   /// Feasibility of the event goal for the generated plan leading to it: checked from the
   /// plan's first week (the plan's own start), not from today.
-  PlanFeasibility _goalCheck() {
+  (PlanFeasibility, DateTime?) _goalCheck() {
     final profile = ref.watch(profileOrDefaultProvider);
     final event = profile.athlete.eventDate;
-    if (_hideFeasibility || event == null || profile.athlete.eventDistance == null) return const PlanFeasibility();
+    if (event == null || profile.athlete.eventDistance == null) return (const PlanFeasibility(), null);
     final race = dayOnly(event);
-    if (race.isBefore(dayOnly(DateTime.now()))) return const PlanFeasibility();
+    if (race.isBefore(dayOnly(DateTime.now()))) return (const PlanFeasibility(), null);
     final earliest = addDays(race, -(7 * 30));
     // The CURRENT plan's start – not the first workout of an older plan still in the history (QA 2026-11:
     // its weeks counted as trained and the plan was checked from the wrong start).
@@ -108,17 +108,26 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         if (p.phase != null && !p.date.isAfter(race) && !p.date.isBefore(earliest)) p,
     ]..sort((x, y) => x.date.compareTo(y.date));
     final start = FitnessState.currentPlanStart(profile, phased);
-    if (start == null) return const PlanFeasibility();
+    if (start == null) return (const PlanFeasibility(), null);
     // The target check on the one fitness model of the running plan (= the goal forecast's race day),
     // computed once per data change – not on every rebuild of the page.
-    return _feasibility.of(profile, start, context.l10n, fitness: ref.watch(currentFitnessProvider));
+    return (_feasibility.of(profile, start, context.l10n, fitness: ref.watch(currentFitnessProvider)), start);
   }
 
   @override
   Widget build(BuildContext context) {
     ref.watch(todayProvider); // "today" / missed workouts change at midnight
     final l = context.l10n;
-    final goal = _goalCheck();
+    final (goal, planStart) = _goalCheck();
+    // Calm notes (owner round 9: the hint came back on every start): closed, a set of notes stays closed until it
+    // changes; information only is a card once, then the small entry in the ⋮ menu (a dot on it).
+    final hintSig = planStart == null ? '' : planHintSignature(goal, planStart);
+    final hint = planStart == null ? PlanHintMode.none : PlanHintMemory.mode(goal, hintSig, ref.watch(planHintMemoryProvider));
+    if (hint == PlanHintMode.card && goal.onlyNotes && !PlanHintMemory.shownThisRun.contains(hintSig)) {
+      ref.read(planHintMemoryProvider.notifier).markSeen(hintSig);
+    }
+    void openSettings() => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+    void option(FeasibilityAction x, String text) => applyFeasibilityOption(context, ref, x, text);
     // Content, view or month changed: is the current week still in view?
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateJump());
     return Scaffold(
@@ -156,15 +165,37 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 PopupMenuButton<String>(
                   key: const ValueKey('calendarMore'),
                   tooltip: l.recalMore,
-                  icon: const Icon(Icons.more_vert_rounded),
+                  // Closed / already seen plan notes: one tap away, unobtrusive – a dot on ⋮ (warning colour for a
+                  // problem) and the first item in its menu. Next to the button they shrank its label.
+                  icon:
+                      hint == PlanHintMode.entry
+                          ? Badge(
+                            key: const ValueKey('planHintsBadge'),
+                            backgroundColor: goal.onlyNotes ? AppColors.brand : AppColors.warning,
+                            child: const Icon(Icons.more_vert_rounded),
+                          )
+                          : const Icon(Icons.more_vert_rounded),
                   onSelected:
                       (v) => switch (v) {
+                        'hints' => FeasibilityCard.showDetails(context, goal, onOption: option, onOpenSettings: openSettings),
                         'new' => showPlanGenerator(context, ref),
                         'history' => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlanHistoryPage())),
                         _ => _exportIcs(),
                       },
                   itemBuilder:
                       (_) => [
+                        if (hint == PlanHintMode.entry)
+                          PopupMenuItem(
+                            key: const ValueKey('planHints'),
+                            value: 'hints',
+                            child: ListTile(
+                              leading: Icon(
+                                goal.onlyNotes ? Icons.info_outline_rounded : Icons.warning_amber_rounded,
+                                color: goal.onlyNotes ? null : AppColors.warning,
+                              ),
+                              title: Text(l.planHints),
+                            ),
+                          ),
                         PopupMenuItem(
                           value: 'new',
                           child: ListTile(leading: const Icon(Icons.restart_alt_rounded), title: Text(l.recalNewPlan)),
@@ -193,18 +224,17 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               ],
             ),
           ),
-          if (!goal.ok)
+          if (hint == PlanHintMode.card)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               // Compact (audit UX-9: the full card took half the calendar); details and options in a sheet.
               child: FeasibilityCard(
                 goal,
                 compact: true,
-                onClose: () => setState(() => _hideFeasibility = true),
+                onClose: () => ref.read(planHintMemoryProvider.notifier).dismiss(hintSig),
                 // The options as buttons, as in the setup: applied with the usual "Plan neu aufsetzen?" confirmation.
-                onOption: (x, text) => applyFeasibilityOption(context, ref, x, text),
-                onOpenSettings:
-                    () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
+                onOption: option,
+                onOpenSettings: openSettings,
               ),
             ),
           Expanded(

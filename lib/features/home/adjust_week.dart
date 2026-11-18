@@ -15,9 +15,16 @@ import '../../widgets/common.dart';
 
 const adjustWeekDismissedKey = 'adjustWeekDismissed';
 
-/// Whether [AdjustWeekBanner] shows: missed workouts to absorb and not dismissed today.
-bool adjustWeekBannerVisible(SharedPreferences prefs, List<PlannedWorkout> plans, DateTime now) =>
-    prefs.getString(adjustWeekDismissedKey) != dayKey(now) && proposeWeekAdjustment(plans, now).isNotEmpty;
+/// Identity of a proposal: the missed workouts it is about. Closed ("Not now"), the banner stays away for these
+/// workouts – also the next days and after a restart – and comes back when another one is missed (owner round 9:
+/// it came back every day for the same workouts).
+String adjustWeekSignature(List<PlanChange> changes) => ([for (final c in changes) c.plan.id]..sort()).join(',');
+
+/// Whether [AdjustWeekBanner] shows: missed workouts to absorb and this set not dismissed.
+bool adjustWeekBannerVisible(SharedPreferences prefs, List<PlannedWorkout> plans, DateTime now) {
+  final changes = proposeWeekAdjustment(plans, now);
+  return changes.isNotEmpty && prefs.getString(adjustWeekDismissedKey) != adjustWeekSignature(changes);
+}
 
 /// Before / after of every workout "adjust my week" changes (for the plan history).
 List<(PlannedWorkout, PlannedWorkout)> weekChangeLog(List<PlanChange> changes) {
@@ -69,7 +76,12 @@ class _AdjustWeekBannerState extends ConsumerState<AdjustWeekBanner> {
                 IconButton(
                   tooltip: l.notNow,
                   icon: Icon(Icons.close_rounded, color: c.onSurfaceVariant),
-                  onPressed: () => setState(() => prefs.setString(_key, dayKey(now))),
+                  onPressed: () {
+                    // (Not inside setState: its callback must not return the write's Future – in debug that threw and
+                    // the banner stayed.)
+                    prefs.setString(_key, adjustWeekSignature(changes));
+                    setState(() {});
+                  },
                 ),
               ],
             ),

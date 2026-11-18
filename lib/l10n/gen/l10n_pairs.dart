@@ -1921,4 +1921,5 @@ const l10nPairs = <(String, String)>[
   ('{goal} not raced', '{goal} ohne Renntempo'),
   ('Change: {change}', 'Änderung: {change}'),
   ('Start time', 'Startzeit'),
+  ('Plan notes', 'Hinweise zum Plan'),
 ];

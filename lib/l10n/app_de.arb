@@ -1991,5 +1991,8 @@
   "targetRemove": "Entfernen",
   "goalTargetSetAsideSub": "{goal} ohne Renntempo",
   "applyChange": "Änderung: {change}",
-  "startTime": "Startzeit"
+  "startTime": "Startzeit",
+  "fcEarlyEndurance": "{count, plural, =1{Noch eine Ausdauereinheit (Laufen, Rad oder Schwimmen), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.} other{Noch {count} Ausdauereinheiten (Laufen, Rad oder Schwimmen), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.}}",
+  "planHints": "Hinweise zum Plan",
+  "fcEarlyEnduranceSport": "{count, plural, =1{Noch eine Ausdauereinheit (am besten {sport}), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.} other{Noch {count} Ausdauereinheiten (am besten {sport}), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.}}"
 }

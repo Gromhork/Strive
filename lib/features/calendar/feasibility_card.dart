@@ -412,6 +412,46 @@ class FeasibilityCard extends StatelessWidget {
     );
   }
 
+  /// The whole card with its options in a bottom sheet (the compact card, the calendar's "plan notes" entry).
+  static Future<void> showDetails(
+    BuildContext context,
+    PlanFeasibility f, {
+    ValueChanged<FeasibilityAction>? onAction,
+    void Function(FeasibilityAction action, String text)? onOption,
+    ValueChanged<int>? onAdjustTarget,
+    VoidCallback? onOpenSettings,
+  }) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder:
+        (ctx) => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: FeasibilityCard(
+              f,
+              onAction: onAction,
+              // (The sheet closes first: the option asks before it rebuilds the plan.)
+              onOption:
+                  onOption == null
+                      ? null
+                      : (x, text) {
+                        Navigator.pop(ctx);
+                        onOption(x, text);
+                      },
+              onAdjustTarget: onAdjustTarget,
+              onOpenSettings:
+                  onOpenSettings == null
+                      ? null
+                      : () {
+                        Navigator.pop(ctx);
+                        onOpenSettings();
+                      },
+            ),
+          ),
+        ),
+  );
+
   /// The calendar's one-glance version: title and the first issue in two lines; the whole card in a sheet.
   Widget _compact(BuildContext context, String title, String first, bool note) {
     final l = context.l10n;
@@ -424,36 +464,13 @@ class FeasibilityCard extends StatelessWidget {
         key: const ValueKey('feasCompact'),
         borderRadius: BorderRadius.circular(16),
         onTap:
-            () => showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              showDragHandle: true,
-              builder:
-                  (ctx) => SafeArea(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: FeasibilityCard(
-                        f,
-                        onAction: onAction,
-                        // (The sheet closes first: the option asks before it rebuilds the plan.)
-                        onOption:
-                            onOption == null
-                                ? null
-                                : (x, text) {
-                                  Navigator.pop(ctx);
-                                  onOption!(x, text);
-                                },
-                        onAdjustTarget: onAdjustTarget,
-                        onOpenSettings:
-                            onOpenSettings == null
-                                ? null
-                                : () {
-                                  Navigator.pop(ctx);
-                                  onOpenSettings!();
-                                },
-                      ),
-                    ),
-                  ),
+            () => showDetails(
+              context,
+              f,
+              onAction: onAction,
+              onOption: onOption,
+              onAdjustTarget: onAdjustTarget,
+              onOpenSettings: onOpenSettings,
             ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),

@@ -109,36 +109,40 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const _ActiveBanner(),
-              NavigationBar(
-                selectedIndex: index,
-                onDestinationSelected: _select,
-                destinations: [
-                  NavigationDestination(
-                    icon: const Icon(Icons.home_outlined),
-                    selectedIcon: const Icon(Icons.home_rounded),
-                    label: l.navHome,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.bolt_outlined),
-                    selectedIcon: const Icon(Icons.bolt_rounded),
-                    label: l.navTrain,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.calendar_month_outlined),
-                    selectedIcon: const Icon(Icons.calendar_month_rounded),
-                    label: l.navCalendar,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.insights_outlined),
-                    selectedIcon: const Icon(Icons.insights_rounded),
-                    label: l.navStats,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.auto_awesome_outlined),
-                    selectedIcon: const Icon(Icons.auto_awesome),
-                    label: l.navCoach,
-                  ),
-                ],
+              // Labels stay on one line ("Kalende/r" broke at 320 dp with text ×1.3): their scale is capped here.
+              MediaQuery.withClampedTextScaling(
+                maxScaleFactor: 1.1,
+                child: NavigationBar(
+                  selectedIndex: index,
+                  onDestinationSelected: _select,
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.home_outlined),
+                      selectedIcon: const Icon(Icons.home_rounded),
+                      label: l.navHome,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.bolt_outlined),
+                      selectedIcon: const Icon(Icons.bolt_rounded),
+                      label: l.navTrain,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.calendar_month_outlined),
+                      selectedIcon: const Icon(Icons.calendar_month_rounded),
+                      label: l.navCalendar,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.insights_outlined),
+                      selectedIcon: const Icon(Icons.insights_rounded),
+                      label: l.navStats,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.auto_awesome_outlined),
+                      selectedIcon: const Icon(Icons.auto_awesome),
+                      label: l.navCoach,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -223,32 +227,43 @@ class StriveTopBar extends ConsumerWidget implements PreferredSizeWidget {
                   ),
                 ),
               ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(color: scheme.surfaceContainer, borderRadius: BorderRadius.circular(24)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _FilterButton(
-                      selected: filter == null,
-                      color: AppColors.brand,
-                      icon: Icons.all_inclusive_rounded,
-                      tooltip: l.allSports,
-                      onTap: () => ref.read(sportFilterProvider.notifier).set(null),
-                    ),
-                    for (final s in Sport.values)
-                      _FilterButton(
-                        selected: filter == s,
-                        color: s.color,
-                        icon: s.icon,
-                        tooltip: s.label(l),
-                        onTap: () => ref.read(sportFilterProvider.notifier).set(filter == s ? null : s),
+              // On a narrow screen with large text the filter pill shrinks instead of pushing the avatar out
+              // (320 dp, text ×1.3 overflowed by a fraction of a pixel).
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Center(
+                    child: FittedBox(
+                      key: const ValueKey('sportFilterPill'),
+                      fit: BoxFit.scaleDown,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(color: scheme.surfaceContainer, borderRadius: BorderRadius.circular(24)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _FilterButton(
+                              selected: filter == null,
+                              color: AppColors.brand,
+                              icon: Icons.all_inclusive_rounded,
+                              tooltip: l.allSports,
+                              onTap: () => ref.read(sportFilterProvider.notifier).set(null),
+                            ),
+                            for (final s in Sport.values)
+                              _FilterButton(
+                                selected: filter == s,
+                                color: s.color,
+                                icon: s.icon,
+                                tooltip: s.label(l),
+                                onTap: () => ref.read(sportFilterProvider.notifier).set(filter == s ? null : s),
+                              ),
+                          ],
+                        ),
                       ),
-                  ],
+                    ),
+                  ),
                 ),
               ),
-              const Spacer(),
               // XP progress as a ring around the avatar – a number badge looked like unread
               // notifications.
               Tooltip(
