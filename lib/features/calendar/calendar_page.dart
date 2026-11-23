@@ -250,7 +250,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               ),
             ),
           // No plan (never created, ended or deleted – "Plan löschen"): the way to a new one, as on Home.
-          if (!ref.watch(planListProvider).any((p) => !p.date.isBefore(ref.watch(todayProvider))))
+          // (Only once the plans have loaded: no flash of "Noch kein Plan" on a cold start.)
+          if (ref.watch(plansProvider.select((v) => v.hasValue)) &&
+              !ref.watch(planListProvider).any((p) => !p.date.isBefore(ref.watch(todayProvider))))
             const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 8), child: NoPlanCard()),
           Expanded(
             child: Stack(

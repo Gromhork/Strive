@@ -62,7 +62,10 @@ void main() {
       [w('past', -3), w('done', 1, status: 'done')],
       interact: () async {
         expect(find.byType(AlertDialog), findsOneWidget);
-        expect(find.textContaining('Dein bisheriger Plan wird ersetzt – 1 offene Einheit wird gelöscht'), findsOneWidget);
+        expect(
+          find.textContaining('Dein bisheriger Plan wird ersetzt – 1 offene Einheit (auch selbst hinzugefügte) wird gelöscht'),
+          findsOneWidget,
+        );
         await tester.tap(find.text(de.replacePlanOk));
         await tester.pumpAndSettle();
       },
@@ -87,12 +90,28 @@ void main() {
       plans,
       interact: () async {
         expect(find.byType(AlertDialog), findsOneWidget);
-        expect(find.textContaining('Dein bisheriger Plan wird ersetzt – 6 offene Einheiten werden gelöscht'), findsOneWidget);
+        expect(
+          find.textContaining('Dein bisheriger Plan wird ersetzt – 6 offene Einheiten (auch selbst hinzugefügte) werden gelöscht'),
+          findsOneWidget,
+        );
         expect(find.text(de.replacePlanKeeps), findsOneWidget);
         await tester.tap(find.text(de.replaceFromMonday));
         await tester.pumpAndSettle();
-        // The count does not depend on the start: the whole old plan goes either way.
-        expect(find.textContaining('6 offene Einheiten werden gelöscht. Der neue Plan beginnt am Mo., 16. Nov.'), findsOneWidget);
+        // Review r10-N3: from next Monday the old plan runs until then – this week's open workouts (a, b, skip) stay,
+        // only the rest goes (c on Monday, d, the missed one); the count is per choice.
+        expect(
+          find.textContaining('3 offene Einheiten (auch selbst hinzugefügte) werden gelöscht. Der neue Plan beginnt am Mo., 16. Nov.'),
+          findsOneWidget,
+        );
+        expect(find.text(de.replacePlanBridge(3)), findsOneWidget);
+        expect(find.textContaining('dieser Woche bleiben'), findsOneWidget);
+        // Back to "from today": everything open goes, no bridge note.
+        await tester.tap(find.text(de.replaceFromToday));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('6 offene Einheiten (auch selbst hinzugefügte) werden gelöscht'), findsOneWidget);
+        expect(find.byKey(const ValueKey('replaceBridge')), findsNothing);
+        await tester.tap(find.text(de.replaceFromMonday));
+        await tester.pumpAndSettle();
         await tester.tap(find.text(de.replacePlanOk));
         await tester.pumpAndSettle();
       },

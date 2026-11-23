@@ -6903,8 +6903,8 @@ class AppLocalizationsDe extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: 'Dein bisheriger Plan wird ersetzt – $n offene Einheiten werden gelöscht. Der neue Plan beginnt am $date.',
-      one: 'Dein bisheriger Plan wird ersetzt – 1 offene Einheit wird gelöscht. Der neue Plan beginnt am $date.',
+      other: 'Dein bisheriger Plan wird ersetzt – $n offene Einheiten (auch selbst hinzugefügte) werden gelöscht. Der neue Plan beginnt am $date.',
+      one: 'Dein bisheriger Plan wird ersetzt – 1 offene Einheit (auch selbst hinzugefügte) wird gelöscht. Der neue Plan beginnt am $date.',
       zero: 'Der neue Plan beginnt am $date.',
     );
     return '$_temp0';
@@ -6921,8 +6921,8 @@ class AppLocalizationsDe extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n offene Einheiten deines Plans werden gelöscht.',
-      one: '1 offene Einheit deines Plans wird gelöscht.',
+      other: '$n offene Einheiten werden gelöscht – auch selbst hinzugefügte.',
+      one: '1 offene Einheit wird gelöscht – auch selbst hinzugefügte.',
     );
     return '$_temp0';
   }
@@ -6965,6 +6965,17 @@ class AppLocalizationsDe extends AppLocalizations {
       locale: localeName,
       other: '$n Einheiten wieder im Kalender.',
       one: '1 Einheit wieder im Kalender.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String replacePlanBridge(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Bis dahin läuft dein bisheriger Plan weiter – $n offene Einheiten dieser Woche bleiben.',
+      one: 'Bis dahin läuft dein bisheriger Plan weiter – 1 offene Einheit dieser Woche bleibt.',
     );
     return '$_temp0';
   }

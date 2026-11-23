@@ -5105,7 +5105,7 @@
       }
     }
   },
-  "replacePlanBodyAll": "{n, plural, =0{The new plan starts {date}.} =1{Your current plan will be replaced – 1 open workout is deleted. The new plan starts {date}.} other{Your current plan will be replaced – {n} open workouts are deleted. The new plan starts {date}.}}",
+  "replacePlanBodyAll": "{n, plural, =0{The new plan starts {date}.} =1{Your current plan will be replaced – 1 open workout (also one you added yourself) is deleted. The new plan starts {date}.} other{Your current plan will be replaced – {n} open workouts (also ones you added yourself) are deleted. The new plan starts {date}.}}",
   "@replacePlanBodyAll": {
     "placeholders": {
       "date": {
@@ -5118,7 +5118,7 @@
   },
   "deletePlan": "Delete plan",
   "deletePlanTitle": "Delete plan?",
-  "deletePlanBody": "{n, plural, =1{1 open workout of your plan will be deleted.} other{{n} open workouts of your plan will be deleted.}}",
+  "deletePlanBody": "{n, plural, =1{1 open workout will be deleted – also one you added yourself.} other{{n} open workouts will be deleted – also ones you added yourself.}}",
   "@deletePlanBody": {
     "placeholders": {
       "n": {
@@ -5147,6 +5147,14 @@
   "planLogRestored": "Plan restored",
   "planLogRestoredReason": "{n, plural, =1{1 workout back in the calendar.} other{{n} workouts back in the calendar.}}",
   "@planLogRestoredReason": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "replacePlanBridge": "{n, plural, =1{Until then your current plan continues – 1 open workout this week stays.} other{Until then your current plan continues – {n} open workouts this week stay.}}",
+  "@replacePlanBridge": {
     "placeholders": {
       "n": {
         "type": "int"

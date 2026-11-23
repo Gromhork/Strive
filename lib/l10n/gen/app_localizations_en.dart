@@ -6903,8 +6903,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: 'Your current plan will be replaced – $n open workouts are deleted. The new plan starts $date.',
-      one: 'Your current plan will be replaced – 1 open workout is deleted. The new plan starts $date.',
+      other: 'Your current plan will be replaced – $n open workouts (also ones you added yourself) are deleted. The new plan starts $date.',
+      one: 'Your current plan will be replaced – 1 open workout (also one you added yourself) is deleted. The new plan starts $date.',
       zero: 'The new plan starts $date.',
     );
     return '$_temp0';
@@ -6921,8 +6921,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n open workouts of your plan will be deleted.',
-      one: '1 open workout of your plan will be deleted.',
+      other: '$n open workouts will be deleted – also ones you added yourself.',
+      one: '1 open workout will be deleted – also one you added yourself.',
     );
     return '$_temp0';
   }
@@ -6965,6 +6965,17 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other: '$n workouts back in the calendar.',
       one: '1 workout back in the calendar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String replacePlanBridge(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Until then your current plan continues – $n open workouts this week stay.',
+      one: 'Until then your current plan continues – 1 open workout this week stays.',
     );
     return '$_temp0';
   }

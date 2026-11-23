@@ -128,9 +128,8 @@ void main() {
       expect(open, {'short', 'missed', 'skipped', 'future', 'refill', 'own', 'old-leftover'});
     });
 
-    test('a new plan from next Monday removes all open workouts – not only the planned ones from its start', () async {
+    test('a new plan from today removes all open workouts – not only the planned ones from its start', () async {
       final repo = _Repo(calendar);
-      final monday = addDays(today, 8 - today.weekday);
       final n = await PlanService.replacePlan(
         repo: repo,
         l: de,
@@ -138,8 +137,9 @@ void main() {
         templates: const [],
         existing: calendar,
         sessions: sessions,
-        start: monday,
+        start: today,
         weeks: 8,
+        now: today,
       );
       expect(n, greaterThan(0));
       expect(repo.removed.toSet(), {'short', 'missed', 'skipped', 'future', 'refill', 'own', 'old-leftover'});
@@ -149,6 +149,78 @@ void main() {
       expect(gen.compareTo(gen1), greaterThan(0));
       expect(repo.all.where((p) => !p.isDone && p.planGen != gen && !['linked'].contains(p.id)), isEmpty);
       expect(stalePlanWorkouts(repo.savedProfile!, repo.all, sessions), isEmpty);
+    });
+
+    test('review r10-N3: a plan starting later keeps the open workouts until then (the athlete finishes the week)', () async {
+      final repo = _Repo(calendar);
+      final start = addDays(today, 6);
+      final n = await PlanService.replacePlan(
+        repo: repo,
+        l: de,
+        profile: profile,
+        templates: const [],
+        existing: calendar,
+        sessions: sessions,
+        start: start,
+        weeks: 8,
+        now: today,
+      );
+      expect(n, greaterThan(0));
+      // Missed past ones go (the old plan is deleted); today .. start-1 stay.
+      expect(repo.removed.toSet(), {'short', 'missed'});
+      expect(repo.docs.keys, containsAll(['done', 'linked', 'skipped', 'future', 'refill', 'own', 'old-leftover']));
+      expect(repo.docs['skipped']!.status, 'skipped');
+      expect(repo.all.where((p) => p.planGen != null && dayOnly(p.date).isBefore(start) && !p.isDone && p.id != 'linked').length, 3);
+      // They move to the new generation: no device removes them as left over.
+      final gen = repo.savedProfile!.athlete.planGen!;
+      for (final id in ['skipped', 'future', 'old-leftover']) {
+        expect(repo.docs[id]!.planGen, gen, reason: id);
+      }
+      expect(repo.docs['own']!.planGen, isNull, reason: "the athlete's own workout keeps no generation");
+      expect(stalePlanWorkouts(repo.savedProfile!, repo.all, sessions), isEmpty);
+      // The new plan starts on [start]: nothing of it before.
+      expect(repo.all.where((p) => p.planGen == gen && dayOnly(p.date).isBefore(start)).map((p) => p.id).toSet(), {
+        'skipped',
+        'future',
+        'old-leftover',
+      });
+      expect(PlanService.replacedWorkouts(calendar, sessions, profile: profile, start: start, now: today).map((p) => p.id).toSet(), {
+        'short',
+        'missed',
+      });
+      expect(PlanService.bridgeWorkouts(calendar, sessions, profile: profile, start: today, now: today), isEmpty);
+    });
+
+    test('review r10-N3: a done workout with a newer generation (clock ahead) never marks the new plan as left over', () async {
+      // The old plan was made on a device whose clock ran 10 minutes ahead; one of its workouts is done.
+      final ahead = newPlanGen(DateTime.now().add(const Duration(minutes: 10)), 'ahead');
+      final cal = [
+        w('done-ahead', -2, status: 'done', gen: ahead, sessionId: 's-a'),
+        w('started-ahead', -1, gen: ahead),
+        w('open-ahead', 1, gen: ahead),
+      ];
+      final ss = [run('s-a', -2, planId: 'done-ahead'), run('s-b', -1, planId: 'started-ahead')];
+      final repo = _Repo(cal);
+      await PlanService.replacePlan(
+        repo: repo,
+        l: de,
+        profile: withPlanMeta(profile, addDays(today, -10), 8, gen: ahead),
+        templates: const [],
+        existing: cal,
+        sessions: ss,
+        start: today,
+        weeks: 8,
+        now: today,
+      );
+      final stale = stalePlanWorkouts(repo.savedProfile!, repo.all, ss);
+      expect(stale, isEmpty, reason: 'done / started workouts must not decide the newest generation');
+      // An open workout of a newer generation still wins (two devices: the later plan).
+      final newer = newPlanGen(DateTime.now().add(const Duration(hours: 1)), 'newer');
+      final withNewer = [...repo.all, w('newer', 3, gen: newer)];
+      expect(
+        stalePlanWorkouts(repo.savedProfile!, withNewer, ss).length,
+        repo.all.where((p) => !p.isDone && p.id != 'started-ahead').length,
+      );
     });
   });
 
@@ -284,6 +356,34 @@ void main() {
       await t.tap(find.byKey(const ValueKey('calendarMore')));
       await t.pumpAndSettle();
       expect(find.byKey(const ValueKey('deletePlanItem')), findsNothing);
+      expect(find.byKey(const ValueKey('calendarNoPlan')), findsOneWidget);
+    });
+
+    testWidgets('review r10-N3: no "Noch kein Plan" flash while the plans are still loading', (t) async {
+      t.view.physicalSize = const Size(360, 740);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      final plans = StreamController<List<PlannedWorkout>>();
+      addTearDown(plans.close);
+      await t.pumpWidget(
+        ProviderScope(
+          overrides: [
+            repoProvider.overrideWithValue(_Repo(const [])),
+            profileProvider.overrideWith((ref) => Stream.value(profile)),
+            plansProvider.overrideWith((ref) => plans.stream),
+            sessionsProvider.overrideWith((ref) => Stream.value(sessions)),
+            templatesProvider.overrideWith((ref) => Stream.value(const <WorkoutTemplate>[])),
+            goalsProvider.overrideWith((ref) => Stream.value(const <Goal>[])),
+          ],
+          child: material(const Scaffold(body: CalendarPage())),
+        ),
+      );
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 100));
+      expect(find.byKey(const ValueKey('calendarNoPlan')), findsNothing, reason: 'plans not loaded yet');
+      plans.add(const []);
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 100));
       expect(find.byKey(const ValueKey('calendarNoPlan')), findsOneWidget);
     });
 

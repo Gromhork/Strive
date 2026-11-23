@@ -1995,14 +1995,15 @@
   "fcEarlyEndurance": "{count, plural, =1{Noch eine Ausdauereinheit (Laufen, Rad oder Schwimmen), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.} other{Noch {count} Ausdauereinheiten (Laufen, Rad oder Schwimmen), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.}}",
   "planHints": "Hinweise zum Plan",
   "fcEarlyEnduranceSport": "{count, plural, =1{Noch eine Ausdauereinheit (am besten {sport}), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.} other{Noch {count} Ausdauereinheiten (am besten {sport}), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.}}",
-  "replacePlanBodyAll": "{n, plural, =0{Der neue Plan beginnt am {date}.} =1{Dein bisheriger Plan wird ersetzt – 1 offene Einheit wird gelöscht. Der neue Plan beginnt am {date}.} other{Dein bisheriger Plan wird ersetzt – {n} offene Einheiten werden gelöscht. Der neue Plan beginnt am {date}.}}",
+  "replacePlanBodyAll": "{n, plural, =0{Der neue Plan beginnt am {date}.} =1{Dein bisheriger Plan wird ersetzt – 1 offene Einheit (auch selbst hinzugefügte) wird gelöscht. Der neue Plan beginnt am {date}.} other{Dein bisheriger Plan wird ersetzt – {n} offene Einheiten (auch selbst hinzugefügte) werden gelöscht. Der neue Plan beginnt am {date}.}}",
   "deletePlan": "Plan löschen",
   "deletePlanTitle": "Plan löschen?",
-  "deletePlanBody": "{n, plural, =1{1 offene Einheit deines Plans wird gelöscht.} other{{n} offene Einheiten deines Plans werden gelöscht.}}",
+  "deletePlanBody": "{n, plural, =1{1 offene Einheit wird gelöscht – auch selbst hinzugefügte.} other{{n} offene Einheiten werden gelöscht – auch selbst hinzugefügte.}}",
   "deletePlanKeeps": "Erledigte Einheiten, Aufzeichnungen und Statistik bleiben erhalten. Deine Ziele bleiben auch – du kannst jederzeit einen neuen Plan erstellen.",
   "planDeletedToast": "{n, plural, =1{Plan gelöscht · 1 offene Einheit entfernt} other{Plan gelöscht · {n} offene Einheiten entfernt}}",
   "planLogDeleted": "Plan gelöscht",
   "planLogDeletedReason": "{n, plural, =1{1 offene Einheit entfernt – erledigte bleiben.} other{{n} offene Einheiten entfernt – erledigte bleiben.}}",
   "planLogRestored": "Plan wiederhergestellt",
-  "planLogRestoredReason": "{n, plural, =1{1 Einheit wieder im Kalender.} other{{n} Einheiten wieder im Kalender.}}"
+  "planLogRestoredReason": "{n, plural, =1{1 Einheit wieder im Kalender.} other{{n} Einheiten wieder im Kalender.}}",
+  "replacePlanBridge": "{n, plural, =1{Bis dahin läuft dein bisheriger Plan weiter – 1 offene Einheit dieser Woche bleibt.} other{Bis dahin läuft dein bisheriger Plan weiter – {n} offene Einheiten dieser Woche bleiben.}}"
 }

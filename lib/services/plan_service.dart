@@ -59,6 +59,7 @@ class PlanService {
     required int weeks,
     bool saveMeta = true,
     List<Session> sessions = const [],
+    DateTime? now,
   }) async {
     if (busy) return null;
     _busy = true;
@@ -81,9 +82,17 @@ class PlanService {
       final reopened = notCountedWorkouts(existing, day, sessions, profile: p);
       // The plan's generation (data-9): its workouts carry it, the profile names the current one.
       final gen = newPlanGen(DateTime.now(), repo.newId());
+      // A plan from next Monday: the old plan's open workouts until then (today to Sunday) stay – the athlete
+      // finishes the week (review r10-N3). They move to the new generation, so no device removes them as left
+      // over ([stalePlanWorkouts]); the athlete's own workouts (no generation) stay as they are.
+      final bridge = [
+        for (final x in bridgeWorkouts(existing, sessions, profile: p, start: day, now: now))
+          if (x.planGen != null) PlannedWorkout.fromMap(x.id, {...x.toMap(), 'planGen': gen}),
+      ];
       final plan = [
         for (final g in relinkNotCounted(withoutCoveredDays(generated, kept), reopened, sessions))
           PlannedWorkout.fromMap(g.id, {...g.toMap(), 'planGen': gen}),
+        ...bridge,
       ];
       // The old plan goes entirely (owner round 10: "when a new plan is created, the old one is deleted"): every
       // open workout – also the missed ones before [day], skipped ones, refills and leftovers of older plans –, not
@@ -92,7 +101,7 @@ class PlanService {
       // (A reopened workout whose id the new plan's run of that day took over is overwritten, not deleted.)
       final ids = {for (final g in plan) g.id};
       final remove = [
-        for (final x in openWorkouts(existing, sessions, profile: p))
+        for (final x in replacedWorkouts(existing, sessions, profile: p, start: day, now: now))
           if (!ids.contains(x.id)) x.id,
       ];
       final write = repo.replacePlans(remove, plan);
@@ -100,7 +109,7 @@ class PlanService {
       if (saveMeta) repo.saveProfile(withPlanMeta(p, day, weeks, gen: gen));
       write.ignore();
       replaced.value++;
-      return plan.length;
+      return plan.length - bridge.length;
     } finally {
       _busy = false;
       _last = DateTime.now();
@@ -123,6 +132,41 @@ class PlanService {
     return [
       for (final p in existing)
         if (!kept.contains(p.id)) p,
+    ];
+  }
+
+  /// The open workouts ([openWorkouts]) a new plan from [start] removes: all of them, except those from today until
+  /// the day before [start] ([bridgeWorkouts]).
+  static List<PlannedWorkout> replacedWorkouts(
+    List<PlannedWorkout> existing,
+    List<Session> sessions, {
+    UserProfile? profile,
+    required DateTime start,
+    DateTime? now,
+  }) {
+    final keep = {for (final x in bridgeWorkouts(existing, sessions, profile: profile, start: start, now: now)) x.id};
+    return [
+      for (final x in openWorkouts(existing, sessions, profile: profile))
+        if (!keep.contains(x.id)) x,
+    ];
+  }
+
+  /// The open workouts that stay when a new plan starts later than today ("ab nächstem Montag", review r10-N3): those
+  /// from today until the day before [start] – the old plan runs until the new one begins and they never overlap it.
+  /// (Missed past ones go: the old plan is deleted, owner round 10.) Empty for a plan from today.
+  static List<PlannedWorkout> bridgeWorkouts(
+    List<PlannedWorkout> existing,
+    List<Session> sessions, {
+    UserProfile? profile,
+    required DateTime start,
+    DateTime? now,
+  }) {
+    final today = dayOnly(now ?? DateTime.now());
+    final day = dayOnly(start);
+    if (!day.isAfter(today)) return const [];
+    return [
+      for (final x in openWorkouts(existing, sessions, profile: profile))
+        if (!dayOnly(x.date).isBefore(today) && dayOnly(x.date).isBefore(day)) x,
     ];
   }
 

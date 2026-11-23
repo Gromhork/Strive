@@ -52,22 +52,21 @@ String newPlanGen(DateTime now, String id) => '${now.millisecondsSinceEpoch.toSt
 List<PlannedWorkout> stalePlanWorkouts(UserProfile p, List<PlannedWorkout> plans, List<Session> sessions) {
   var gen = p.athlete.planGen;
   if (gen == null) return const [];
-  for (final x in plans) {
-    final g = x.planGen;
-    if (g != null && g.compareTo(gen!) > 0) gen = g;
-  }
   final started = {
     for (final s in sessions)
       if (s.planId != null) s.planId!,
   };
+  bool open(PlannedWorkout x) => (x.status == 'planned' || x.status == 'skipped') && x.sessionId == null && !started.contains(x.id);
+  // The newest generation: the profile's or an open workout's. Done / started workouts never decide it (review
+  // r10-N3): one done workout of an old plan made on a device whose clock ran ahead would otherwise mark the whole
+  // new plan as left over.
+  for (final x in plans) {
+    final g = x.planGen;
+    if (g != null && open(x) && g.compareTo(gen!) > 0) gen = g;
+  }
   return [
     for (final x in plans)
-      if (x.planGen != null &&
-          x.planGen!.compareTo(gen!) < 0 &&
-          (x.status == 'planned' || x.status == 'skipped') &&
-          x.sessionId == null &&
-          !started.contains(x.id))
-        x,
+      if (x.planGen != null && x.planGen!.compareTo(gen!) < 0 && open(x)) x,
   ];
 }
 
