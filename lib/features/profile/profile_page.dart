@@ -21,6 +21,7 @@ import '../onboarding/onboarding_page.dart';
 import '../stats/body_page.dart';
 import '../../widgets/term_info.dart';
 import '../stats/stats_page.dart' show BadgeView;
+import '../../widgets/nav.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -81,7 +82,7 @@ class ProfilePage extends ConsumerWidget {
               IconButton(
                 tooltip: l.editProfile,
                 icon: const Icon(Icons.edit_outlined),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.profile))),
+                onPressed: () => openPage(context, const OnboardingPage(mode: SetupMode.profile), id: SetupMode.profile.name),
               ),
             ],
           ),
@@ -165,29 +166,21 @@ class ProfilePage extends ConsumerWidget {
                 icon: Icons.person_outline_rounded,
                 title: l.editProfile,
                 subtitle: l.editProfileSub,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.profile))),
+                onTap: () => openPage(context, const OnboardingPage(mode: SetupMode.profile), id: SetupMode.profile.name),
               ),
               SettingsTile(
                 icon: Icons.tune_rounded,
                 title: l.planSettings,
                 subtitle: l.editPlanSettingsSub,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
+                onTap: () => openPage(context, const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name),
               ),
-              SettingsTile(
-                icon: Icons.flag_outlined,
-                title: l.goals,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())),
-              ),
-              SettingsTile(
-                icon: Icons.monitor_weight_outlined,
-                title: l.bodyComposition,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BodyPage())),
-              ),
+              SettingsTile(icon: Icons.flag_outlined, title: l.goals, onTap: () => openPage(context, const GoalsPage())),
+              SettingsTile(icon: Icons.monitor_weight_outlined, title: l.bodyComposition, onTap: () => openPage(context, const BodyPage())),
               SettingsTile(
                 icon: Icons.menu_book_outlined,
                 title: l.glossary,
                 subtitle: l.glossaryHint,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GlossaryPage())),
+                onTap: () => openPage(context, const GlossaryPage()),
               ),
             ],
           ),
@@ -284,14 +277,14 @@ class ProfilePage extends ConsumerWidget {
                 iconColor: AppColors.danger,
                 title: 'Health Connect',
                 subtitle: ref.watch(healthServiceProvider).connected ? l.hcConnectedShort : l.hcTileSub,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthConnectPage())),
+                onTap: () => openPage(context, const HealthConnectPage()),
               ),
               SettingsTile(
                 icon: Icons.calendar_month_outlined,
                 iconColor: AppColors.swim,
                 title: l.googleCalendar,
                 subtitle: gcal.enabled && gcal.account != null ? l.gcalConnectedSub(gcal.account!) : l.googleCalendarSub,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoogleCalendarPage())),
+                onTap: () => openPage(context, const GoogleCalendarPage()),
               ),
             ],
           ),

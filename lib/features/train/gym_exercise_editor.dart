@@ -16,6 +16,7 @@ import '../../widgets/exercise_media.dart';
 import '../session/gym_session_page.dart' show SetTypeBadge;
 import 'exercise_detail_page.dart';
 import 'exercise_picker.dart';
+import '../../widgets/nav.dart';
 
 /// Editable list of gym exercises (sets, rep ranges, set types, supersets, rest,
 /// notes). Mutates [exercises] in place and calls [onChanged] after every change.
@@ -272,7 +273,7 @@ class _ExerciseEditCard extends ConsumerWidget {
                   final db = await ref.read(exerciseDbProvider.future);
                   final ex = db.byId(e.exId);
                   if (ex != null && context.mounted) {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: ex)));
+                    openPage(context, ExerciseDetailPage(exercise: ex), id: ex.id);
                   }
                 },
                 child: ExerciseMedia(exId: e.exId, animated: false, size: 44, radius: 12),

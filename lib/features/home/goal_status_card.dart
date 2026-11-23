@@ -9,6 +9,7 @@ import '../../services/goal_forecast.dart';
 import '../calendar/recalibrate_sheet.dart';
 import '../goals/goal_forecast_widgets.dart';
 import '../goals/goal_status_page.dart';
+import '../../widgets/nav.dart';
 
 /// Which "goal at risk" notice was closed (×, or an option taken), per account and across restarts: the same
 /// notice – race, target, the reasons it names – stays closed; a new reason, another target or race brings it
@@ -73,7 +74,7 @@ class GoalStatusCard extends ConsumerWidget {
         segments: f.planStart == null ? const [] : phaseSegments(plans, f.planStart!, f.raceDate),
         now: now,
         showAlert: alert,
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalStatusPage())),
+        onTap: () => openPage(context, const GoalStatusPage()),
         onAdjustTarget: (sec) {
           applyTargetTime(context, ref, sec);
           ref.read(goalAlertSnoozeProvider.notifier).snooze(f);

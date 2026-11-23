@@ -8,6 +8,7 @@ import '../../data/exercise_names_de.dart';
 import '../../providers.dart';
 import '../../widgets/exercise_media.dart';
 import 'exercise_detail_page.dart';
+import '../../widgets/nav.dart';
 
 /// Opens the library in selection mode and returns the chosen exercises.
 Future<List<Exercise>> pickExercises(BuildContext context, {bool single = false}) async {
@@ -186,10 +187,10 @@ class _ExerciseLibraryPageState extends ConsumerState<ExerciseLibraryPage> {
                         } else if (widget.selectMode) {
                           setState(() => sel ? _selected.remove(e) : _selected.add(e));
                         } else {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: e)));
+                          openPage(context, ExerciseDetailPage(exercise: e), id: e.id);
                         }
                       },
-                      onLongPress: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: e))),
+                      onLongPress: () => openPage(context, ExerciseDetailPage(exercise: e), id: e.id),
                     );
                   },
                 ),

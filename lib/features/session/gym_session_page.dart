@@ -26,6 +26,7 @@ import 'music.dart';
 import '../../services/supersets.dart';
 import '../../widgets/superset_group.dart';
 import 'session_summary_page.dart';
+import '../../widgets/nav.dart';
 
 /// Workout overview: progress, "up next" hero and the exercise list.
 /// Tapping an exercise opens the focus view (one exercise per screen).
@@ -47,7 +48,7 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
 
   void _openFocus(int i) {
     ref.read(activeGymProvider.notifier).setFocus(i);
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseFocusPage()));
+    openPage(context, const ExerciseFocusPage());
   }
 
   Future<void> _finish(ActiveGym w) async {

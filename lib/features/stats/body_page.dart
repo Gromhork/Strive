@@ -9,6 +9,7 @@ import '../../data/models.dart';
 import '../../providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/segments.dart';
+import '../../widgets/nav.dart';
 
 /// Body composition: weight, BMI, body fat, muscle.
 class BodyPage extends ConsumerWidget {
@@ -26,7 +27,8 @@ class BodyPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const BodyCompositionCard(),
+          // Already on the body page: the card is no link to itself (it stacked the page again).
+          const BodyCompositionCard(opensPage: false),
           const SizedBox(height: 16),
           Text(l.entries, style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
@@ -60,7 +62,10 @@ class BodyPage extends ConsumerWidget {
 }
 
 class BodyCompositionCard extends ConsumerStatefulWidget {
-  const BodyCompositionCard({super.key});
+  const BodyCompositionCard({super.key, this.opensPage = true});
+
+  /// Tapping opens the [BodyPage] – off on that page itself.
+  final bool opensPage;
   @override
   ConsumerState<BodyCompositionCard> createState() => _BodyCompositionCardState();
 }
@@ -89,7 +94,7 @@ class _BodyCompositionCardState extends ConsumerState<BodyCompositionCard> {
     final colors = [AppColors.brand, AppColors.swim, AppColors.gym, AppColors.run];
     return SectionCard(
       title: l.bodyComposition,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BodyPage())),
+      onTap: widget.opensPage ? () => openPage(context, const BodyPage()) : null,
       trailing: IconButton(
         visualDensity: VisualDensity.compact,
         icon: const Icon(Icons.add),

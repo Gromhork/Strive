@@ -22,6 +22,7 @@ import 'edit_session_page.dart';
 import 'plan_link_card.dart';
 import '../session/gym_session_page.dart' show setLabelOf;
 import '../../widgets/rpe_picker.dart' show rpeLabel;
+import '../../widgets/nav.dart';
 
 class SessionDetailPage extends ConsumerWidget {
   const SessionDetailPage({super.key, required this.sessionId});
@@ -56,7 +57,7 @@ class SessionDetailPage extends ConsumerWidget {
           IconButton(
             tooltip: l.editSession,
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditSessionPage(session: s))),
+            onPressed: () => openPage(context, EditSessionPage(session: s)),
           ),
           IconButton(
             tooltip: l.delete,

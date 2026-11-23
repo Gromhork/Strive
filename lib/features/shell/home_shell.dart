@@ -19,6 +19,7 @@ import '../stats/stats_page.dart';
 import '../train/train_page.dart';
 import 'streak_sheet.dart';
 import 'workout_restore.dart';
+import '../../widgets/nav.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -271,7 +272,7 @@ class StriveTopBar extends ConsumerWidget implements PreferredSizeWidget {
                 child: InkWell(
                   key: const ValueKey('profileAvatar'),
                   customBorder: const CircleBorder(),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())),
+                  onTap: () => openPage(context, const ProfilePage()),
                   child: SizedBox(
                     width: 44,
                     height: 44,
@@ -350,11 +351,7 @@ class _ActiveBanner extends ConsumerWidget {
     return Material(
       color: sport.color.withValues(alpha: 0.18),
       child: InkWell(
-        onTap:
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => gym != null ? const GymSessionPage() : const CardioSessionPage()),
-            ),
+        onTap: () => openPage(context, gym != null ? const GymSessionPage() : const CardioSessionPage()),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
