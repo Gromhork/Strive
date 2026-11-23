@@ -29,6 +29,7 @@ import '../../widgets/term_info.dart';
 import 'not_fit_sheet.dart';
 import 'plan_editor.dart';
 import '../../services/plan_exercises.dart';
+import '../../widgets/nav.dart';
 
 String phaseLabel(AppLocalizations l, String? phase) => switch (phase) {
   'base' => l.phaseBase,
@@ -150,7 +151,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
               if (!done)
                 OutlinedButton.icon(
                   key: const ValueKey('logManuallyButton'),
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ManualEntryPage(plan: p))),
+                  onPressed: () => openPage(context, ManualEntryPage(plan: p)),
                   icon: const Icon(Icons.playlist_add_check_rounded, size: 18),
                   label: Text(l.logAsDone),
                 ),
@@ -185,7 +186,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 borderRadius: BorderRadius.circular(14),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: linked.id))),
+                onTap: () => openPage(context, SessionDetailPage(sessionId: linked.id), id: linked.id),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
                   child: Row(
@@ -368,9 +369,7 @@ class PlannedWorkoutPage extends ConsumerWidget {
           style: FilledButton.styleFrom(backgroundColor: done ? AppColors.success : p.sport.color, foregroundColor: Colors.black87),
           onPressed:
               done
-                  ? (p.sessionId == null
-                      ? null
-                      : () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: p.sessionId!))))
+                  ? (p.sessionId == null ? null : () => openPage(context, SessionDetailPage(sessionId: p.sessionId!), id: p.sessionId))
                   : () => startPlanned(context, ref, p),
           icon: Icon(done ? Icons.check_rounded : Icons.play_arrow_rounded),
           label: Text(done ? l.viewSession : l.startWorkout, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),

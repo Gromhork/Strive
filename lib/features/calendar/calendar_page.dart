@@ -32,6 +32,7 @@ import 'planned_workout_page.dart';
 import 'recalibrate_sheet.dart';
 import '../../widgets/segments.dart';
 import '../../widgets/term_info.dart';
+import '../../widgets/nav.dart';
 
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
@@ -127,7 +128,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     if (hint == PlanHintMode.card && goal.onlyNotes && !PlanHintMemory.shownThisRun.contains(hintSig)) {
       ref.read(planHintMemoryProvider.notifier).markSeen(hintSig);
     }
-    void openSettings() => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+    void openSettings() => openPage(context, const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name);
     void option(FeasibilityAction x, String text) => applyFeasibilityOption(context, ref, x, text);
     // Content, view or month changed: is the current week still in view?
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateJump());
@@ -180,7 +181,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       (v) => switch (v) {
                         'hints' => FeasibilityCard.showDetails(context, goal, onOption: option, onOpenSettings: openSettings),
                         'new' => showPlanGenerator(context, ref),
-                        'history' => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlanHistoryPage())),
+                        'history' => openPage(context, const PlanHistoryPage()),
                         'delete' => confirmDeletePlan(context, ref),
                         _ => _exportIcs(),
                       },
@@ -752,9 +753,7 @@ class NoPlanCard extends StatelessWidget {
                           FilledButton.tonal(
                             key: const ValueKey('calendarCreatePlan'),
                             style: const ButtonStyle(visualDensity: VisualDensity.compact),
-                            onPressed:
-                                () =>
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
+                            onPressed: () => openPage(context, const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name),
                             child: Text(l.generatePlan),
                           ),
                         ],
@@ -944,7 +943,7 @@ class DoneElsewhereLine extends ConsumerWidget {
     return InkWell(
       key: ValueKey('doneElsewhere_${plan.id}'),
       borderRadius: BorderRadius.circular(10),
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: session.id))),
+      onTap: () => openPage(context, SessionDetailPage(sessionId: session.id), id: session.id),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         child: Row(
@@ -1099,7 +1098,7 @@ class PlanCard extends ConsumerWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id))),
+        onTap: () => openPage(context, PlannedWorkoutPage(planId: p.id), id: p.id),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Row(
@@ -1176,7 +1175,7 @@ class _SessionChip extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: s.id))),
+          onTap: () => openPage(context, SessionDetailPage(sessionId: s.id), id: s.id),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             child: Row(

@@ -16,6 +16,7 @@ import 'data/exercise_names_de.dart';
 import 'features/auth/login_page.dart';
 import 'features/calendar/auto_adjust.dart' show rootMessengerKey;
 import 'features/onboarding/onboarding_page.dart';
+import 'features/shell/builtin_dup_cleanup_sync.dart';
 import 'features/shell/home_shell.dart';
 import 'features/shell/account.dart';
 import 'features/shell/dst_repair_sync.dart';
@@ -92,6 +93,7 @@ class _SyncHost extends ConsumerWidget {
     ref.watch(gcalAutoSyncProvider);
     ref.watch(relocalizeSyncProvider);
     ref.watch(programUpgradeSyncProvider);
+    ref.watch(builtinDupCleanupSyncProvider);
     ref.watch(dstRepairSyncProvider);
     ref.watch(gymPlanUpgradeSyncProvider);
     ref.watch(linkCleanupSyncProvider);

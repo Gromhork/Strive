@@ -38,6 +38,7 @@ import '../stats/body_page.dart';
 import '../../services/plan_service.dart';
 import '../../widgets/whole_words_text.dart';
 import '../stats/session_detail_page.dart';
+import '../../widgets/nav.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -275,7 +276,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
               ? FilledButton.tonalIcon(
                 key: const ValueKey('todayCreatePlan'),
                 style: compact,
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
+                onPressed: () => openPage(context, const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name),
                 icon: const Icon(Icons.auto_graph_rounded, size: 18),
                 label: Text(l.generatePlan),
               )
@@ -368,7 +369,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
     final notCounted = p.isDone && c.notCounted;
     final done = p.isDone && !notCounted;
     final small = Theme.of(context).textTheme.bodySmall;
-    void open() => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id)));
+    void open() => openPage(context, PlannedWorkoutPage(planId: p.id), id: p.id);
     // Compact (owner, round 9: the card with its description paragraph filled the screen – the tiles below were out
     // of view): title, amount and intensity, the start button; edit / add and the switch between several workouts
     // of the day in the header line. The description stays on the workout page.
@@ -470,10 +471,7 @@ class _TodayCardState extends ConsumerState<TodayCard> {
                               : done
                               ? (p.sessionId == null
                                   ? null
-                                  : () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: p.sessionId!)),
-                                  ))
+                                  : () => openPage(context, SessionDetailPage(sessionId: p.sessionId!), id: p.sessionId))
                               : () => startPlanned(context, ref, p),
                       icon: Icon(done ? Icons.check_rounded : (skipped ? Icons.block_rounded : Icons.play_arrow_rounded), size: 28),
                     ),
@@ -561,7 +559,7 @@ class ComingUpCard extends ConsumerWidget {
                       if (dayPlans.isEmpty) {
                         showPlanEditor(context, ref, date: d);
                       } else if (dayPlans.length == 1) {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: dayPlans.first.id)));
+                        openPage(context, PlannedWorkoutPage(planId: dayPlans.first.id), id: dayPlans.first.id);
                       } else {
                         _showDay(context, ref, d, dayPlans);
                       }
@@ -661,7 +659,7 @@ class ComingUpCard extends ConsumerWidget {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           Navigator.pop(c);
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id)));
+                          openPage(context, PlannedWorkoutPage(planId: p.id), id: p.id);
                         },
                       ),
                     ),
@@ -795,7 +793,7 @@ class _WeekCard extends ConsumerWidget {
     if (quickSports.isEmpty) quickSports.addAll(Sport.values);
     return SectionCard(
       padding: const EdgeInsets.all(14),
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeekPage())),
+      onTap: () => openPage(context, const WeekPage()),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -895,7 +893,7 @@ class _RecoveryCard extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: SectionCard(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RecoveryPage())),
+        onTap: () => openPage(context, const RecoveryPage()),
         child: Row(
           children: [
             Container(
@@ -1001,7 +999,7 @@ class _WeightCardState extends ConsumerState<_WeightCard> {
     final step = u.imperial ? Units.kgPerLb * 0.2 : 0.1;
     return SectionCard(
       title: l.weight,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BodyPage())),
+      onTap: () => openPage(context, const BodyPage()),
       trailing:
           delta == null
               ? null
@@ -1069,7 +1067,7 @@ class _EventLine extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (ref.watch(goalForecastProvider) != null) return const SizedBox.shrink();
-    return EventGoalLine(onTap: (_) => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())));
+    return EventGoalLine(onTap: (_) => openPage(context, const GoalsPage()));
   }
 }
 
@@ -1084,7 +1082,7 @@ class _GoalsPreview extends ConsumerWidget {
     if (goals.isEmpty && event != null) return const SizedBox.shrink();
     return SectionCard(
       title: l.goals,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())),
+      onTap: () => openPage(context, const GoalsPage()),
       trailing: const Icon(Icons.chevron_right, size: 18),
       child:
           goals.isEmpty
@@ -1103,7 +1101,7 @@ class _LevelCard extends ConsumerWidget {
     final l = context.l10n;
     final g = ref.watch(gameStatsProvider);
     return SectionCard(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())),
+      onTap: () => openPage(context, const ProfilePage()),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1167,7 +1165,7 @@ class _VitalsCard extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: SectionCard(
         padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthConnectPage())),
+        onTap: () => openPage(context, const HealthConnectPage()),
         child: Row(
           children: [
             item(Icons.directions_walk_rounded, AppColors.run, v.steps == null ? '–' : compactNumber(v.steps!.toDouble()), l.steps),

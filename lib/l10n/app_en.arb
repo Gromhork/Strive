@@ -5105,6 +5105,7 @@
       }
     }
   },
+  "standardCopySuffix": "standard",
   "replacePlanBodyAll": "{n, plural, =0{The new plan starts {date}.} =1{Your current plan will be replaced – 1 open workout (also one you added yourself) is deleted. The new plan starts {date}.} other{Your current plan will be replaced – {n} open workouts (also ones you added yourself) are deleted. The new plan starts {date}.}}",
   "@replacePlanBodyAll": {
     "placeholders": {

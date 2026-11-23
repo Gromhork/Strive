@@ -16,6 +16,7 @@ import '../session/gym_session_page.dart' show exerciseSummary;
 import '../session/start_helpers.dart';
 import '../session/step_list.dart';
 import 'template_editor_page.dart';
+import '../../widgets/nav.dart';
 
 /// "Today: 3 × 6 @ 72.5 kg" for an exercise whose sets were filled by the load
 /// prescriber – the same line the workout shows, so preview and workout agree.
@@ -65,7 +66,7 @@ class ProgramPreviewPage extends ConsumerWidget {
             key: const ValueKey('editProgram'),
             tooltip: l.edit,
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TemplateEditorPage(template: p))),
+            onPressed: () => openPage(context, TemplateEditorPage(template: p)),
           ),
         ],
       ),

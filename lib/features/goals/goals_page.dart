@@ -28,6 +28,7 @@ import '../train/exercise_picker.dart';
 import 'goal_forecast_widgets.dart';
 import 'goal_mismatch_card.dart';
 import '../onboarding/onboarding_page.dart';
+import '../../widgets/nav.dart';
 
 class GoalsPage extends ConsumerWidget {
   const GoalsPage({super.key});
@@ -507,7 +508,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
     final nav = Navigator.of(context);
     nav.pop();
     // The plan settings read the saved goal (race, date, distance, focus of the race).
-    if (wizard) nav.push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+    if (wizard) nav.push(pageRoute(const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name));
   }
 
   @override
@@ -721,7 +722,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                             case FeasSetTarget(:final sec):
                               setState(() => _targetSec = sec);
                             default:
-                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+                              Navigator.of(context).push(pageRoute(const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name));
                           }
                         },
                       ),

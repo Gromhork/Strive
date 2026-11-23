@@ -13,6 +13,7 @@ import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../providers.dart';
 import '../../services/weather_service.dart';
+import '../../widgets/nav.dart';
 
 String skyLabel(AppLocalizations l, int code) => switch (skyOf(code)) {
   Sky.clear => l.skyClear,
@@ -96,7 +97,7 @@ class WeatherCard extends ConsumerWidget {
       data: (w) {
         return _Shell(
           colors: skyGradient(w.code, w.isDay),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeatherPage())),
+          onTap: () => openPage(context, const WeatherPage()),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

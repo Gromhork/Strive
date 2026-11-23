@@ -170,6 +170,14 @@ class Repository {
 
   // ── Sessions
   Stream<List<Session>> sessions() => parsedSnapshots(_sessions.orderBy('start', descending: true), Session.tryFromMap);
+
+  /// Recorded workouts straight from the server (not a possibly incomplete local cache) – the
+  /// duplicate cleanup only deletes a program no workout on the server refers to.
+  Future<List<Session>> sessionsFromServer() async {
+    final q = await _sessions.get(const GetOptions(source: Source.server)).timeout(const Duration(seconds: 15));
+    return parseDocs(q.docs, Session.tryFromMap);
+  }
+
   void saveSession(Session s) => _fire(_sessions.doc(s.id).set(s.toMap()));
   void updateSession(String id, Map<String, dynamic> data) => _fire(_sessions.doc(id).update(data));
 

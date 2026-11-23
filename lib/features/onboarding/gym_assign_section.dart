@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/format.dart';
 import '../../core/sport.dart';
 import '../../core/theme.dart';
+import '../../data/builtin_upgrade.dart';
 import '../../data/default_programs.dart';
 import '../../data/models.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -57,11 +58,11 @@ class _GymAssignSectionState extends State<GymAssignSection> {
       for (final t in widget.templates)
         if (t.sport == Sport.gym) t,
     ];
-    final keys = {for (final t in own) t.key};
+    // (Not the original next to the athlete's own version of it – [programForBuiltin].)
     return [
       ...own,
       for (final t in _builtins)
-        if (!keys.contains(t.key)) t,
+        if (programForBuiltin(widget.templates, t.key!) == null) t,
     ];
   }
 
@@ -440,7 +441,10 @@ class _ProgramPickerState extends State<_ProgramPicker> {
                                 title: Text(t.name),
                                 subtitle: ownIds.contains(t.id) ? null : Text(l.gymAssignBuiltin),
                                 trailing:
-                                    widget.current == gymProgramRef(t, among: widget.own)
+                                    widget.current == gymProgramRef(t, among: widget.own) ||
+                                            (ownIds.contains(t.id) &&
+                                                widget.current != null &&
+                                                gymProgramOf(widget.current!, widget.own)?.id == t.id)
                                         ? const Icon(Icons.check_rounded, color: AppColors.gym)
                                         : null,
                                 onTap: () => Navigator.pop(context, gymProgramRef(t, among: widget.own)),

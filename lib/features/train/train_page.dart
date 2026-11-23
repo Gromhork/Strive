@@ -28,6 +28,7 @@ import 'program_duplicate.dart';
 import 'program_order.dart';
 import 'program_preview_page.dart';
 import 'template_editor_page.dart';
+import '../../widgets/nav.dart';
 
 /// Train tab: quick start, exercise library and the program library (folders).
 ///
@@ -252,7 +253,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
         heroTag: 'newTemplate',
         isExtended: _fabExtended,
         tooltip: l.newProgram,
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TemplateEditorPage(sport: filter ?? Sport.gym))),
+        onPressed: () => openPage(context, TemplateEditorPage(sport: filter ?? Sport.gym)),
         icon: const Icon(Icons.add),
         label: Text(l.newProgram),
       ),
@@ -310,13 +311,13 @@ class _TrainPageState extends ConsumerState<TrainPage> {
                                   key: const ValueKey('logManuallyTile'),
                                   icon: Icons.edit_note_rounded,
                                   label: l.logManually,
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManualEntryPage())),
+                                  onTap: () => openPage(context, const ManualEntryPage()),
                                 ),
                                 _ActionTile(
                                   key: const ValueKey('exercisesTile'),
                                   icon: Icons.menu_book_rounded,
                                   label: l.exercises,
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryPage())),
+                                  onTap: () => openPage(context, const ExerciseLibraryPage()),
                                 ),
                               ],
                             ),
@@ -628,10 +629,7 @@ class _TrainPageState extends ConsumerState<TrainPage> {
       case 'dup':
         _duplicateFolder(folder, all, full);
       case 'add':
-        await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => TemplateEditorPage(sport: ref.read(sportFilterProvider) ?? Sport.gym, folder: folder)),
-        );
+        await openPage(context, TemplateEditorPage(sport: ref.read(sportFilterProvider) ?? Sport.gym, folder: folder));
       case 'rename':
         final name = (await askText(context, l.rename, initial: folder))?.trim();
         if (name == null || name.isEmpty || name == folder) return;
@@ -1414,7 +1412,7 @@ class _TemplateTile extends ConsumerWidget {
       switch (v) {
         case 'edit':
           _ProgramUsed(t.id).dispatch(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => TemplateEditorPage(template: t)));
+          openPage(context, TemplateEditorPage(template: t));
         case 'dup':
           onDuplicate(false);
         case 'dupTo':
@@ -1442,7 +1440,7 @@ class _TemplateTile extends ConsumerWidget {
           // Tapping opens the read-only preview (big "Start"); editing sits behind its pencil.
           onTap: () {
             _ProgramUsed(t.id).dispatch(context);
-            Navigator.push(context, MaterialPageRoute(builder: (_) => ProgramPreviewPage(template: t)));
+            openPage(context, ProgramPreviewPage(template: t));
           },
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),

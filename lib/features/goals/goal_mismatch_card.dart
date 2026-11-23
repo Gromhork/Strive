@@ -7,6 +7,7 @@ import '../../core/theme.dart';
 import '../../providers.dart';
 import '../../services/goal_alignment.dart';
 import '../onboarding/onboarding_page.dart';
+import '../../widgets/nav.dart';
 
 /// How the next race goal fits the focus and the plan (null without a race goal).
 final goalAlignmentProvider = Provider<GoalAlignment?>(
@@ -20,8 +21,7 @@ final goalAlignmentProvider = Provider<GoalAlignment?>(
 
 /// Opens the plan settings prefilled with the race goal (focus of the race, its date and
 /// distance); finishing them replaces the upcoming plan after the usual confirmation.
-void openAlignPlan(BuildContext context) =>
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+void openAlignPlan(BuildContext context) => openPage(context, const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name);
 
 /// "Dein Ziel Hamburg Triathlon passt nicht zu deinem Fokus Hybrid – Fokus auf Triathlon
 /// ändern und Plan anpassen?" [Anpassen] [Später] – on Home, in Ziele and in "Plan neu

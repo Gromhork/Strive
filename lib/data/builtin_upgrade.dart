@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../core/sport.dart';
 import 'default_programs.dart';
 import 'models.dart';
@@ -100,6 +102,87 @@ Set<String> builtinKeysNamed(String name) {
 /// The built-in programs (English, general goal) by key.
 final Map<String, WorkoutTemplate> _builtinByKey = {for (final t in defaultTemplates(() => '')) t.key!: t};
 
+/// Old (pre-key) program names, so athletes whose programs were stored before the built-in key
+/// existed keep their programs ("Upper" stood for both upper days).
+const legacyBuiltinNames = {
+  'fb_a': 'Full Body A',
+  'fb_b': 'Full Body B',
+  'ul_upper_a': 'Upper',
+  'ul_upper_b': 'Upper',
+  'ul_lower_a': 'Lower',
+  'ul_lower_b': 'Lower',
+  'ppl_push': 'Push',
+  'ppl_pull': 'Pull',
+  'ppl_legs': 'Legs',
+};
+
+/// The athlete's program that stands for the built-in program [key], or null when they have none:
+/// 1. the program carrying the key (the first in list order, as stored);
+/// 2. else their own version of it that "restore the originals" or the guest transfer took the
+///    key from ([WorkoutTemplate.origKey]);
+/// 3. else an own program of that sport without key under one of the built-in's shipped names
+///    (either language, ignoring case) – a name shared by two built-ins ("Legs": PPL and bro
+///    split) only in that built-in's standard folder;
+/// 4. else a pre-key program under its old name ([legacyBuiltinNames]).
+/// Several candidates of one step: the one in the folder with the shortest name, then folder name
+/// and id – never the document order.
+///
+/// The plan uses this program for [key], and built-ins are only added automatically
+/// ([missingBuiltins]) when there is none – so an athlete's changed version is never joined by a
+/// second, automatically re-added original of the same name (owner report r10: "2× Push").
+WorkoutTemplate? programForBuiltin(List<WorkoutTemplate> templates, String key) {
+  final keyed = templates.where((t) => t.key == key).firstOrNull;
+  if (keyed != null) return keyed;
+  final sport = _builtinByKey[key]?.sport;
+  WorkoutTemplate? best(bool Function(WorkoutTemplate t) test) {
+    WorkoutTemplate? out;
+    for (final t in templates) {
+      if (t.key != null || !test(t)) continue;
+      if (out == null || _folderRank(t, out) < 0) out = t;
+    }
+    return out;
+  }
+
+  final own = best((t) => t.origKey == key && (sport == null || t.sport == sport));
+  if (own != null) return own;
+  final names = _builtinNames[key];
+  if (names != null && sport != null) {
+    final lower = {for (final n in names) n.toLowerCase()};
+    final folders = builtinFolderNames(builtinFolderOf[key]!);
+    final named = best((t) {
+      if (t.origKey != null || t.sport != sport) return false;
+      final n = t.name.trim().toLowerCase();
+      if (!lower.contains(n)) return false;
+      return builtinKeysNamed(n).length == 1 || folders.contains(t.folder.trim());
+    });
+    if (named != null) return named;
+  }
+  final legacy = legacyBuiltinNames[key];
+  return legacy == null ? null : best((t) => t.origKey == null && t.sport == Sport.gym && t.name == legacy);
+}
+
+/// The built-in key [t] stands for ([programForBuiltin]), or null for an own program.
+String? builtinKeyOf(List<WorkoutTemplate> templates, WorkoutTemplate t) {
+  final candidates = [
+    if (t.key != null) t.key!,
+    if (t.origKey != null) t.origKey!,
+    ...builtinKeysNamed(t.name),
+    for (final e in legacyBuiltinNames.entries)
+      if (e.value == t.name) e.key,
+  ];
+  for (final k in candidates) {
+    if (programForBuiltin(templates, k)?.id == t.id) return k;
+  }
+  return null;
+}
+
+int _folderRank(WorkoutTemplate a, WorkoutTemplate b) {
+  final length = a.folder.length.compareTo(b.folder.length);
+  if (length != 0) return length;
+  final folder = a.folder.compareTo(b.folder);
+  return folder != 0 ? folder : a.id.compareTo(b.id);
+}
+
 /// Every shipped exercise signature per gym key (v1 and the current version for each goal).
 final Map<String, Set<String>> _knownGym = () {
   final out = <String, Set<String>>{};
@@ -132,6 +215,55 @@ bool isUntouchedBuiltin(WorkoutTemplate t) {
   }
   return stepsSignature(t.steps) == stepsSignature(original.steps);
 }
+
+/// Every shipped description and exercise / step note per built-in key (both languages, every
+/// goal) – what an untouched copy can carry ([isPristineBuiltin]).
+final Map<String, ({Set<String> descriptions, Set<String> notes})> _shippedTexts = () {
+  final out = <String, ({Set<String> descriptions, Set<String> notes})>{};
+  for (final de in [false, true]) {
+    for (final g in gymGoals) {
+      for (final t in defaultTemplates(() => '', de: de, goal: g)) {
+        final e = out.putIfAbsent(t.key!, () => (descriptions: {''}, notes: {''}));
+        e.descriptions.add(t.description.trim());
+        for (final x in t.exercises) {
+          e.notes.add(x.note.trim());
+        }
+        for (final x in t.steps) {
+          e.notes.add(x.note.trim());
+        }
+      }
+    }
+  }
+  return out;
+}();
+
+/// Whether [t] is a built-in program exactly as an automatic add left it – stricter than
+/// [isUntouchedBuiltin], which only looks at what the plan uses (name, work sets, rep ranges, rest):
+/// also no warm-up / drop / failure set, no done set, no own weights or prescribed loads, every
+/// exercise / step note and the description empty or as shipped (any language, any goal) and, for
+/// an endurance program, the shipped intensity and targets. Only such a copy may ever be deleted
+/// as an automatically added duplicate ([builtinDuplicateCleanup]) – an athlete's warm-ups, notes or
+/// description are never lost.
+bool isPristineBuiltin(WorkoutTemplate t) {
+  if (!isUntouchedBuiltin(t)) return false;
+  final key = t.key!;
+  final texts = _shippedTexts[key]!;
+  if (!texts.descriptions.contains(t.description.trim())) return false;
+  if (t.sport == Sport.gym) {
+    for (final e in t.exercises) {
+      if (!texts.notes.contains(e.note.trim()) || e.rxKg != null || e.effort != null || e.bodyKg > 0) return false;
+      if (e.sets.any((s) => s.type != SetType.normal || s.done || s.weight != 0 || s.rpe != null)) return false;
+    }
+    return true;
+  }
+  final original = _builtinByKey[key]!;
+  if (t.intensity != original.intensity || t.targetKm != original.targetKm || t.targetMin != original.targetMin) return false;
+  return t.steps.every((s) => texts.notes.contains(s.note.trim()));
+}
+
+/// [t]'s stored fields without those that differ between automatically added copies of one
+/// built-in (id, position, folder) – equal for identical twins.
+Map<String, dynamic> _content(WorkoutTemplate t) => {...t.toMap()}..removeWhere((k, _) => k == 'order' || k == 'folder');
 
 /// What restoring built-in programs changes.
 class BuiltinRestore {
@@ -214,7 +346,13 @@ BuiltinRestore planBuiltinRestore(
   for (final b in defaultTemplates(id, de: de, goal: goal)) {
     final fk = builtinFolderOf[b.key]!;
     if (folderKeys != null && !folderKeys.contains(fk)) continue;
-    final same = existing.where((t) => t.key == b.key).toList();
+    // The athlete's versions of it: those with the key – else their version of a former restore /
+    // the guest transfer ([WorkoutTemplate.origKey], [programForBuiltin]). An own program that only
+    // shares the name (a duplicated folder's copy) stays as it is.
+    final keyed = existing.where((t) => t.key == b.key).toList();
+    final stands = keyed.isEmpty ? programForBuiltin(existing, b.key!) : null;
+    final ownVersion = stands != null && stands.origKey == b.key ? stands : null;
+    final same = [...keyed, if (ownVersion != null) ownVersion];
     if (same.any(isUntouchedBuiltin)) continue;
     final folder = builtinTargetFolder(existing, fk, de: de);
     if (same.isNotEmpty) changed.add(b.key!);
@@ -248,7 +386,7 @@ Map<String, dynamic>? restoreAssignmentPatch(AthleteData a, BuiltinRestore plan,
   // The program a `key:` reference stood for so far: the first with that key (gymProgramOf).
   final target = <String, String>{
     for (final k in plan.changed)
-      if (existing.where((t) => t.key == k).firstOrNull case final t? when kept.contains(t.id)) k: t.id,
+      if (programForBuiltin(existing, k) case final t? when kept.contains(t.id)) k: t.id,
   };
   Map<int, String>? rewrite(Map<int, String> week) {
     var changed = false;
@@ -279,4 +417,141 @@ List<int> restoreKeptDays(AthleteData a, Map<String, dynamic>? patch) {
     }
   }
   return days.toList()..sort();
+}
+
+// ──────────────────────── Automatically re-added duplicates ────────────────────────
+
+/// What [builtinDuplicateCleanup] changes (all empty: nothing to do).
+class BuiltinDuplicateCleanup {
+  const BuiltinDuplicateCleanup({this.delete = const {}, this.templates = const {}, this.plans = const {}});
+
+  /// Automatically added copies that nothing else refers to.
+  final Set<String> delete;
+
+  /// Copies that are kept (a recorded workout, a done / skipped plan entry or the plan settings
+  /// refer to them): without the built-in key, named "Name (Standard)" (origKey: the built-in, when
+  /// the athlete's version keeps the key) – program id → fields.
+  final Map<String, Map<String, dynamic>> templates;
+
+  /// Open planned workouts of a removed or renamed copy, now pointing to the athlete's version –
+  /// plan id → fields.
+  final Map<String, Map<String, dynamic>> plans;
+
+  bool get isEmpty => delete.isEmpty && templates.isEmpty && plans.isEmpty;
+}
+
+/// One-off repair of the built-in programs that older versions added automatically next to the
+/// athlete's own version (owner report r10: "2× Push" – the changed one and the standard program,
+/// without a restore): the plan added a built-in again whenever no program carried its key, e.g.
+/// after "restore the originals" or the guest transfer had moved the key off the athlete's
+/// version, or from an empty, not yet loaded program list.
+///
+/// Per built-in key, only a pristine copy ([isPristineBuiltin]: no warm-ups, notes, own description
+/// or weights – an athlete's edits of any kind make it their version) is a duplicate when
+/// * another program with that key is not pristine (two programs never carry one key on purpose –
+///   a restore and a duplicate take the key off), or
+/// * the athlete's own version standing for it without the key ([programForBuiltin]: from a
+///   restore / the guest transfer, or under its name in the same folder) has the copy's name
+///   (ignoring case) – a restore names the athlete's version "Name (eigene)", so an original
+///   restored on purpose stays; or
+/// * it is an identical twin of another pristine copy (equal apart from id, position and folder):
+///   the one a workout or the plan settings refer to stays, else the first.
+/// A duplicate's open planned workouts move to the athlete's version. It is deleted when nothing
+/// else refers to it (no recorded workout, no done / skipped plan entry, no `id:` assignment in the
+/// plan settings); otherwise it stays as an own program without the key, named
+/// "Name ([suffix])" – nothing the athlete did with it is lost.
+BuiltinDuplicateCleanup builtinDuplicateCleanup(
+  List<WorkoutTemplate> templates, {
+  required List<PlannedWorkout> plans,
+  required List<Session> sessions,
+  required AthleteData athlete,
+  required String suffix,
+}) {
+  final delete = <String>{};
+  final renames = <String, Map<String, dynamic>>{};
+  final relink = <String, Map<String, dynamic>>{};
+  final taken = {for (final t in templates) '${t.folder}\n${t.name.trim().toLowerCase()}'};
+  final assigned = {
+    for (final r in [...athlete.gymPlanA.values, ...athlete.gymPlanB.values])
+      if (r.startsWith('id:')) r.substring(3),
+  };
+  final used = {
+    for (final s in sessions)
+      if (s.templateId != null) s.templateId!,
+    for (final p in plans)
+      if (p.templateId != null && p.status != 'planned') p.templateId!,
+    ...assigned,
+  };
+  String norm(String n) => n.trim().toLowerCase();
+
+  for (final key in _builtinByKey.keys) {
+    final keyed = templates.where((t) => t.key == key).toList();
+    if (keyed.isEmpty) continue;
+    // Only a pristine copy can be an automatic add: one with the athlete's warm-ups, notes,
+    // description or weights is their version, whatever the plan-relevant fields say.
+    final pristine = keyed.where(isPristineBuiltin).toList();
+    if (pristine.isEmpty) continue;
+    final changed = keyed.where((t) => !pristine.contains(t)).toList();
+    final groups = <(WorkoutTemplate, List<WorkoutTemplate>)>[];
+    if (changed.isNotEmpty) {
+      groups.add((changed.first, pristine));
+    } else {
+      final own = programForBuiltin([
+        for (final t in templates)
+          if (t.key == null) t,
+      ], key);
+      // Same name – and, for an own program that only shares the name (no origKey: e.g. a duplicated
+      // folder's copy), also the same folder: a copy elsewhere next to the original is on purpose.
+      bool twin(WorkoutTemplate t) => own != null && norm(t.name) == norm(own.name) && (own.origKey == key || t.folder == own.folder);
+      if (own != null && pristine.any(twin)) {
+        groups.add((
+          own,
+          [
+            for (final t in pristine)
+              if (twin(t)) t,
+          ],
+        ));
+      } else {
+        // Identical twins (equal apart from id, position and folder – e.g. added twice from an
+        // empty list): one stays – the one a workout or the plan settings refer to, else the first.
+        // Copies that differ in anything (language, version) all stay.
+        final left = [...pristine];
+        while (left.isNotEmpty) {
+          final c = jsonEncode(_content(left.first));
+          final same = left.where((t) => jsonEncode(_content(t)) == c).toList();
+          left.removeWhere(same.contains);
+          if (same.length < 2) continue;
+          final keep = same.where((t) => used.contains(t.id)).firstOrNull ?? same.first;
+          groups.add((
+            keep,
+            [
+              for (final t in same)
+                if (t != keep) t,
+            ],
+          ));
+        }
+      }
+    }
+    for (final (keep, dups) in groups) {
+      for (final d in dups) {
+        for (final p in plans) {
+          if (p.templateId == d.id && p.status == 'planned') relink[p.id] = {'templateId': keep.id};
+        }
+        if (!used.contains(d.id)) {
+          delete.add(d.id);
+          continue;
+        }
+        var name = '${d.name.trim()} ($suffix)';
+        for (var i = 2; taken.contains('${d.folder}\n${name.toLowerCase()}'); i++) {
+          name = '${d.name.trim()} ($suffix $i)';
+        }
+        taken.add('${d.folder}\n${name.toLowerCase()}');
+        // Workouts done with it still count for the gym rotation as that built-in (origKey) – unless
+        // the athlete's version has no key: then the copy would stand for the built-in instead of
+        // their version ([programForBuiltin] step 2).
+        renames[d.id] = {'key': null, 'name': name, if (keep.key == key) 'origKey': key};
+      }
+    }
+  }
+  return BuiltinDuplicateCleanup(delete: delete, templates: renames, plans: relink);
 }

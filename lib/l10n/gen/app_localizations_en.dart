@@ -6899,6 +6899,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get standardCopySuffix => 'standard';
+
+  @override
   String replacePlanBodyAll(String date, int n) {
     String _temp0 = intl.Intl.pluralLogic(
       n,

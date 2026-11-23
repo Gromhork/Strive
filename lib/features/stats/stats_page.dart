@@ -21,6 +21,7 @@ import 'body_page.dart';
 import 'session_detail_page.dart';
 import '../../widgets/term_info.dart';
 import '../../widgets/segments.dart';
+import '../../widgets/nav.dart';
 
 class StatsPage extends ConsumerWidget {
   const StatsPage({super.key});
@@ -427,7 +428,7 @@ class _Records extends ConsumerWidget {
                             onTap: () {
                               final e = db?.byId(r.exId);
                               if (e != null) {
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: e)));
+                                openPage(context, ExerciseDetailPage(exercise: e), id: e.id);
                               }
                             },
                           ),
@@ -544,7 +545,7 @@ class _History extends ConsumerWidget {
                     ].join(' · '),
                   ),
                   trailing: Text('+${xp[s.id] ?? 0}', style: const TextStyle(color: AppColors.brand, fontWeight: FontWeight.w700)),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: s.id))),
+                  onTap: () => openPage(context, SessionDetailPage(sessionId: s.id), id: s.id),
                 ),
               ),
             ),

@@ -1922,6 +1922,7 @@ const l10nPairs = <(String, String)>[
   ('Change: {change}', 'Änderung: {change}'),
   ('Start time', 'Startzeit'),
   ('Plan notes', 'Hinweise zum Plan'),
+  ('standard', 'Standard'),
   ('Delete plan', 'Plan löschen'),
   ('Delete plan?', 'Plan löschen?'),
   ('Completed workouts, recordings and stats stay. Your goals stay too – you can create a new plan any time.', 'Erledigte Einheiten, Aufzeichnungen und Statistik bleiben erhalten. Deine Ziele bleiben auch – du kannst jederzeit einen neuen Plan erstellen.'),

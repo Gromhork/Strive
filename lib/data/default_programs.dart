@@ -1,5 +1,6 @@
 import '../core/sport.dart';
 import '../services/exercise_class.dart';
+import 'builtin_upgrade.dart';
 import 'models.dart';
 
 /// Built-in, evidence-based programs (see docs/training-science.md §5 "Strength").
@@ -700,8 +701,12 @@ final Map<String, String> builtinFolderOf = {
   for (final t in defaultTemplates(() => '')) t.key!: _folders.entries.firstWhere((e) => e.value.$1 == t.folder).key,
 };
 
-/// Built-in programs whose key is not yet present in [existing] (for adding missing ones).
-List<WorkoutTemplate> missingBuiltins(List<WorkoutTemplate> existing, String Function() id, {bool de = false, Set<String>? only}) {
-  final have = existing.map((t) => t.key).whereType<String>().toSet();
-  return defaultTemplates(id, de: de).where((t) => !have.contains(t.key) && (only == null || only.contains(t.key))).toList();
-}
+/// Built-in programs [existing] has no program for (for adding missing ones): no program with the
+/// key and none that stands for it otherwise ([programForBuiltin]: the athlete's own version of it
+/// from a restore / guest transfer, an own program under its shipped name, a pre-key program) – an
+/// athlete's changed version must never get the original added next to it automatically.
+List<WorkoutTemplate> missingBuiltins(List<WorkoutTemplate> existing, String Function() id, {bool de = false, Set<String>? only}) =>
+    defaultTemplates(
+      id,
+      de: de,
+    ).where((t) => (only == null || only.contains(t.key)) && programForBuiltin(existing, t.key!) == null).toList();
