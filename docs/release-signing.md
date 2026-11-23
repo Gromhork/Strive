@@ -4,6 +4,9 @@ Release builds are signed with `android/key.properties` if it exists, otherwise 
 testing) with the debug key. Both `android/key.properties` and `*.jks` are in `.gitignore` – never
 commit them.
 
+Automated builds on GitHub (tag → signed APK/AAB release) read the same key from repository
+secrets – see `docs/ci-release.md`.
+
 ## 1. Create the upload key (once)
 
 PowerShell (keytool ships with the JDK / Android Studio's `jbr\bin`):
