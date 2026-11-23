@@ -56,13 +56,7 @@ class _Repo extends Repository {
   @override
   Future<void> saveTemplates(List<WorkoutTemplate> list) async => saved.addAll(list);
   @override
-  Future<void> replacePlans(
-    List<PlannedWorkout> all,
-    DateTime from,
-    List<PlannedWorkout> plan, {
-    Set<String> keep = const {},
-    Set<String> drop = const {},
-  }) async {}
+  Future<void> replacePlans(Iterable<String> remove, List<PlannedWorkout> plan) async {}
   @override
   void saveProfile(UserProfile p) {}
 }

@@ -13,8 +13,18 @@ class PlanLogEntry {
   final DateTime at;
 
   /// auto | recal | week | readiness | move | replace (a session counted as replacement for a
-  /// workout days away) | unlink (old links > ±1 day reopened by the one-off cleanup)
+  /// workout days away) | unlink (old links > ±1 day reopened by the one-off cleanup) | planDelete /
+  /// planRestore ("Plan löschen" and its undo – [summarySources]: no items, [reason] = the number of workouts)
   final String source;
+
+  /// "Plan löschen" and its undo: logged as one line with the number of workouts ([reason]), without items (a
+  /// whole plan of full workout documents would bloat the history).
+  static const planDelete = 'planDelete', planRestore = 'planRestore';
+  static const summarySources = {planDelete, planRestore};
+
+  /// [summarySources] entry for [count] workouts.
+  factory PlanLogEntry.summary(String source, int count, {DateTime? at}) =>
+      PlanLogEntry(at: at ?? DateTime.now(), source: source, reason: '$count', items: const []);
 
   /// Source-specific code: the AutoAdjuster reason, the readiness kind (sick, pain, tired, time).
   final String reason;
@@ -148,7 +158,7 @@ List<PlanLogEntry> visiblePlanLog(List<PlanLogEntry> entries, Map<String, Planne
   String sig(PlanLogEntry e) => '${e.source}|${e.reason}|${[for (final i in e.items) '${i.planId}:${i.after}'].join(',')}';
   for (final e in entries) {
     if (e.items.isNotEmpty && e.items.every((i) => !current.containsKey(i.planId))) continue;
-    if (out.isNotEmpty && sig(out.last) == sig(e) && out.last.at.difference(e.at).inMinutes.abs() < 30) continue;
+    if (e.items.isNotEmpty && out.isNotEmpty && sig(out.last) == sig(e) && out.last.at.difference(e.at).inMinutes.abs() < 30) continue;
     out.add(e);
   }
   return out;

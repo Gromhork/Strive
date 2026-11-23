@@ -7766,7 +7766,7 @@ abstract class AppLocalizations {
   /// No description provided for @replacePlanKeeps.
   ///
   /// In en, this message translates to:
-  /// **'Completed workouts and stats stay.'**
+  /// **'Completed workouts stay – with their recordings, stats and records.'**
   String get replacePlanKeeps;
 
   /// No description provided for @replaceFromToday.
@@ -12070,6 +12070,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'standard'**
   String get standardCopySuffix;
+
+  /// No description provided for @replacePlanBodyAll.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =0{The new plan starts {date}.} =1{Your current plan will be replaced – 1 open workout (also one you added yourself) is deleted. The new plan starts {date}.} other{Your current plan will be replaced – {n} open workouts (also ones you added yourself) are deleted. The new plan starts {date}.}}'**
+  String replacePlanBodyAll(String date, int n);
+
+  /// No description provided for @deletePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete plan'**
+  String get deletePlan;
+
+  /// No description provided for @deletePlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete plan?'**
+  String get deletePlanTitle;
+
+  /// No description provided for @deletePlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 open workout will be deleted – also one you added yourself.} other{{n} open workouts will be deleted – also ones you added yourself.}}'**
+  String deletePlanBody(int n);
+
+  /// No description provided for @deletePlanKeeps.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed workouts, recordings and stats stay. Your goals stay too – you can create a new plan any time.'**
+  String get deletePlanKeeps;
+
+  /// No description provided for @planDeletedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{Plan deleted · 1 open workout removed} other{Plan deleted · {n} open workouts removed}}'**
+  String planDeletedToast(int n);
+
+  /// No description provided for @planLogDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan deleted'**
+  String get planLogDeleted;
+
+  /// No description provided for @planLogDeletedReason.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 open workout removed – completed ones stay.} other{{n} open workouts removed – completed ones stay.}}'**
+  String planLogDeletedReason(int n);
+
+  /// No description provided for @planLogRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan restored'**
+  String get planLogRestored;
+
+  /// No description provided for @planLogRestoredReason.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 workout back in the calendar.} other{{n} workouts back in the calendar.}}'**
+  String planLogRestoredReason(int n);
+
+  /// No description provided for @replacePlanBridge.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{Until then your current plan continues – 1 open workout this week stays.} other{Until then your current plan continues – {n} open workouts this week stay.}}'**
+  String replacePlanBridge(int n);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

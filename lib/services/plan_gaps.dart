@@ -42,42 +42,31 @@ UserProfile withPlanMeta(UserProfile p, DateTime start, int weeks, {String? gen}
 /// A new plan generation id ([AthleteData.planGen]): ordered by time, so the newer of two plans is known.
 String newPlanGen(DateTime now, String id) => '${now.millisecondsSinceEpoch.toString().padLeft(15, '0')}-$id';
 
-/// Planned workouts left over from a plan another device replaced with a stale cache (review 2026-11 data-9): of an
-/// older generation ([newPlanGen]) than the newest one – the profile's ([AthleteData.planGen]) or a generated workout's
-/// from its [AthleteData.planStart] on (two devices: the later plan wins, whichever profile write arrived last) –,
-/// dated from that start on – and from the newest generation's own first workout on: only the days the newer plan
-/// covers hold duplicates; before them the older plan's workouts are history (missed ones feed the compliance, the
-/// forecast and the next re-creation; review 2026-11 G4V-3: the plans snapshot of another device's replan arriving
-/// before its profile deleted the old plan's past missed workouts) –, still open and not started from (no session
-/// points at them). Empty without a stored generation. (Workouts the athlete added or the plan review refilled carry
-/// none and always stay.)
+/// Planned workouts left over from a plan another device replaced or deleted with a stale cache (review 2026-11 data-9):
+/// of an older generation ([newPlanGen]) than the newest one – the profile's ([AthleteData.planGen], also the marker of a
+/// deleted plan, [AthleteData.planDeleted]) or a generated workout's (two devices: the later plan wins, whichever profile
+/// write arrived last) –, still open (planned or skipped) and not started from (no session points at them). Of every
+/// date: a new plan removes all open workouts of the plan it replaces, also the missed past ones (owner round 10: "the
+/// old plan is deleted" – completed workouts stay). Empty without a stored generation. (Workouts the athlete added carry
+/// none and stay; the plan review's refills carry the plan's generation.)
 List<PlannedWorkout> stalePlanWorkouts(UserProfile p, List<PlannedWorkout> plans, List<Session> sessions) {
-  final planStart = p.athlete.planStart;
   var gen = p.athlete.planGen;
-  if (gen == null || planStart == null) return const [];
-  for (final x in plans) {
-    final g = x.planGen;
-    if (g != null && !dayOnly(x.date).isBefore(dayOnly(planStart)) && g.compareTo(gen!) > 0) gen = g;
-  }
-  var start = dayOnly(planStart);
-  DateTime? first;
-  for (final x in plans) {
-    if (x.planGen == gen && (first == null || dayOnly(x.date).isBefore(first))) first = dayOnly(x.date);
-  }
-  if (first != null && first.isAfter(start)) start = first;
+  if (gen == null) return const [];
   final started = {
     for (final s in sessions)
       if (s.planId != null) s.planId!,
   };
+  bool open(PlannedWorkout x) => (x.status == 'planned' || x.status == 'skipped') && x.sessionId == null && !started.contains(x.id);
+  // The newest generation: the profile's or an open workout's. Done / started workouts never decide it (review
+  // r10-N3): one done workout of an old plan made on a device whose clock ran ahead would otherwise mark the whole
+  // new plan as left over.
+  for (final x in plans) {
+    final g = x.planGen;
+    if (g != null && open(x) && g.compareTo(gen!) > 0) gen = g;
+  }
   return [
     for (final x in plans)
-      if (x.planGen != null &&
-          x.planGen!.compareTo(gen!) < 0 &&
-          x.status == 'planned' &&
-          x.sessionId == null &&
-          !started.contains(x.id) &&
-          !dayOnly(x.date).isBefore(start))
-        x,
+      if (x.planGen != null && x.planGen!.compareTo(gen!) < 0 && open(x)) x,
   ];
 }
 
@@ -415,7 +404,10 @@ class PlanGaps {
           // (Never a strength refill without a program to show.)
           if (p.sport == Sport.gym && p.exercises.isEmpty && ![...templates, ..._missing].any((t) => t.id == p.templateId)) continue;
           final why = ext.contains(p.id) ? GapWhy.planEnded : (have.isEmpty ? GapWhy.emptyWeek : GapWhy.missing);
-          out.add(GapFill(PlannedWorkout.fromMap(_newId(), _withProgram(p).toMap()), why, budgetKey: key));
+          // The refill belongs to the running plan (its generation): a new plan or "Plan löschen" on another device
+          // removes it with the plan's other open workouts ([stalePlanWorkouts]).
+          final m = {..._withProgram(p).toMap(), 'planGen': profile.athlete.planGen};
+          out.add(GapFill(PlannedWorkout.fromMap(_newId(), m), why, budgetKey: key));
         }
       }
     }

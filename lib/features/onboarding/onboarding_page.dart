@@ -15,6 +15,7 @@ import '../../data/default_programs.dart';
 import '../../data/repository.dart' show deepEquals;
 import '../calendar/feasibility_apply.dart';
 import '../calendar/feasibility_card.dart';
+import '../calendar/delete_plan.dart';
 import '../calendar/replace_plan_dialog.dart';
 import 'gym_assign_section.dart';
 import '../shell/account.dart';
@@ -341,7 +342,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     // Asked first: cancelling leaves everything as it was.
     var start = dayOnly(DateTime.now());
     if (_generatePlan && widget.mode != SetupMode.profile) {
-      final s = await confirmReplacePlan(context, ref.read(planListProvider));
+      final s = await confirmReplacePlan(
+        context,
+        ref.read(planListProvider),
+        sessions: ref.read(sessionListProvider),
+        profile: ref.read(profileOrDefaultProvider),
+      );
       if (s == null || !mounted) return;
       start = s;
     }
@@ -501,6 +507,26 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           }),
           actions: [
             if (!widget.edit) IconButton(tooltip: l.logout, onPressed: () => signOutAndClear(context), icon: const Icon(Icons.logout)),
+            // "Plan löschen" (owner round 10): in the plan settings' ⋮ menu, in the danger colour – the settings close
+            // after it (nothing left to set up for a deleted plan; "Plan erstellen" brings them back).
+            if (widget.mode == SetupMode.plan && hasPlanToDelete(ref))
+              PopupMenuButton<String>(
+                key: const ValueKey('planSettingsMore'),
+                onSelected: (_) async {
+                  if (await confirmDeletePlan(context, ref) && context.mounted) Navigator.of(context).pop();
+                },
+                itemBuilder:
+                    (_) => [
+                      PopupMenuItem(
+                        key: const ValueKey('planSettingsDelete'),
+                        value: 'delete',
+                        child: ListTile(
+                          leading: const Icon(Icons.delete_sweep_outlined, color: AppColors.danger),
+                          title: Text(l.deletePlan, style: const TextStyle(color: AppColors.danger)),
+                        ),
+                      ),
+                    ],
+              ),
           ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(4),

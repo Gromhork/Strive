@@ -54,7 +54,8 @@ class PlanHistoryPage extends ConsumerWidget {
     final a = ref.watch(profileOrDefaultProvider).athlete;
     // Older plans have no stored start: the first workout of the plan stands in.
     final firstPlan = ref.watch(planListProvider).map((p) => p.date).fold<DateTime?>(null, (m, d) => m == null || d.isBefore(m) ? d : m);
-    final planStart = a.planStart ?? firstPlan;
+    // A deleted plan ("Plan löschen") has no creation to show – its remaining (done) workouts are history.
+    final planStart = a.planDeleted ? null : a.planStart ?? firstPlan;
     // The oldest entry: when the current plan was created.
     final created =
         planStart == null
@@ -118,6 +119,8 @@ class PlanLogCard extends ConsumerWidget {
     'replace' => (Icons.swap_horiz_rounded, AppColors.success, l.planLogReplace),
     'unlink' => (Icons.link_off_rounded, AppColors.warning, l.planLogUnlink),
     'redate' => (Icons.event_available_rounded, AppColors.brand, l.planLogRedate),
+    PlanLogEntry.planDelete => (Icons.delete_sweep_outlined, AppColors.danger, l.planLogDeleted),
+    PlanLogEntry.planRestore => (Icons.restore_rounded, AppColors.success, l.planLogRestored),
     _ => (Icons.edit_calendar_outlined, AppColors.brand, entry.source),
   };
 
@@ -127,6 +130,8 @@ class PlanLogCard extends ConsumerWidget {
     'replace' => l.planLogReplaceReason,
     'unlink' => l.planLogUnlinkReason,
     'redate' => l.planLogRedateReason,
+    PlanLogEntry.planDelete => l.planLogDeletedReason(int.tryParse(entry.reason) ?? 0),
+    PlanLogEntry.planRestore => l.planLogRestoredReason(int.tryParse(entry.reason) ?? 0),
     // Stored as rendered text (the recalibration's findings) in the language of that day: shown in today's
     // (audit T12 – German findings inside the English history).
     _ => _relocalized(l, entry.note),
@@ -160,19 +165,23 @@ class PlanLogCard extends ConsumerWidget {
             if (reason.isNotEmpty) ...[const SizedBox(height: 4), Text(reason, style: t.bodySmall?.copyWith(height: 1.3))],
             const SizedBox(height: 6),
             for (final i in entry.items) _ItemLine(item: i, profile: profile),
-            Align(
-              alignment: Alignment.centerRight,
-              child: switch (state) {
-                PlanLogState.undoable => TextButton.icon(
-                  key: ValueKey('planLogUndo_${entry.id}'),
-                  onPressed: onUndo,
-                  icon: const Icon(Icons.undo_rounded, size: 18),
-                  label: Text(l.undo),
-                ),
-                PlanLogState.undone => Padding(padding: const EdgeInsets.all(8), child: Text(l.planLogUndone, style: t.bodySmall)),
-                PlanLogState.changed => Padding(padding: const EdgeInsets.all(8), child: Text(l.planLogChanged, style: t.bodySmall)),
-              },
-            ),
+            // A summary ("Plan gelöscht") has no workouts to undo or compare: no state line.
+            if (entry.items.isEmpty)
+              const SizedBox(height: 6)
+            else
+              Align(
+                alignment: Alignment.centerRight,
+                child: switch (state) {
+                  PlanLogState.undoable => TextButton.icon(
+                    key: ValueKey('planLogUndo_${entry.id}'),
+                    onPressed: onUndo,
+                    icon: const Icon(Icons.undo_rounded, size: 18),
+                    label: Text(l.undo),
+                  ),
+                  PlanLogState.undone => Padding(padding: const EdgeInsets.all(8), child: Text(l.planLogUndone, style: t.bodySmall)),
+                  PlanLogState.changed => Padding(padding: const EdgeInsets.all(8), child: Text(l.planLogChanged, style: t.bodySmall)),
+                },
+              ),
           ],
         ),
       ),

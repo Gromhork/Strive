@@ -47,7 +47,7 @@ class _FakeRepo extends Repository {
   _FakeRepo() : super('test');
   final saved = <Session>[];
   final planUpdates = <String, Map<String, dynamic>>{};
-  Set<String> kept = {};
+  Set<String> removed = {};
   List<PlannedWorkout> written = [];
   var _id = 0;
   @override
@@ -63,14 +63,8 @@ class _FakeRepo extends Repository {
     Map<String, Map<String, dynamic>> sessions = const {},
   }) async => planUpdates.addAll(plans);
   @override
-  Future<void> replacePlans(
-    List<PlannedWorkout> all,
-    DateTime from,
-    List<PlannedWorkout> plan, {
-    Set<String> keep = const {},
-    Set<String> drop = const {},
-  }) async {
-    kept = keep;
+  Future<void> replacePlans(Iterable<String> remove, List<PlannedWorkout> plan) async {
+    removed = {...remove};
     written = plan;
   }
 
@@ -171,9 +165,9 @@ void main() {
       final day2 = repo.written.where((p) => sameDay(p.date, addDays(_today, 2))).toList();
       expect(day2.map((p) => p.id), contains('linked'));
       expect(day2.firstWhere((p) => p.id == 'linked').status, 'planned');
-      expect(repo.kept, contains('done'));
-      expect(repo.kept, isNot(contains('linked')));
-      expect(repo.kept, isNot(contains('open')), reason: 'open planned workouts are replaced');
+      expect(repo.removed, isNot(contains('done')), reason: 'completed workouts stay');
+      expect(repo.removed, isNot(contains('linked')), reason: 'its id is taken over by the new run of that day');
+      expect(repo.removed, contains('open'), reason: 'open planned workouts are replaced');
       PlanService.reset();
     });
   });

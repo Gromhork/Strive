@@ -4245,7 +4245,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get replacePlanKeeps => 'Completed workouts and stats stay.';
+  String get replacePlanKeeps => 'Completed workouts stay – with their recordings, stats and records.';
 
   @override
   String get replaceFromToday => 'From today';
@@ -6900,4 +6900,86 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get standardCopySuffix => 'standard';
+
+  @override
+  String replacePlanBodyAll(String date, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Your current plan will be replaced – $n open workouts (also ones you added yourself) are deleted. The new plan starts $date.',
+      one: 'Your current plan will be replaced – 1 open workout (also one you added yourself) is deleted. The new plan starts $date.',
+      zero: 'The new plan starts $date.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletePlan => 'Delete plan';
+
+  @override
+  String get deletePlanTitle => 'Delete plan?';
+
+  @override
+  String deletePlanBody(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n open workouts will be deleted – also ones you added yourself.',
+      one: '1 open workout will be deleted – also one you added yourself.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletePlanKeeps => 'Completed workouts, recordings and stats stay. Your goals stay too – you can create a new plan any time.';
+
+  @override
+  String planDeletedToast(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Plan deleted · $n open workouts removed',
+      one: 'Plan deleted · 1 open workout removed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planLogDeleted => 'Plan deleted';
+
+  @override
+  String planLogDeletedReason(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n open workouts removed – completed ones stay.',
+      one: '1 open workout removed – completed ones stay.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planLogRestored => 'Plan restored';
+
+  @override
+  String planLogRestoredReason(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n workouts back in the calendar.',
+      one: '1 workout back in the calendar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String replacePlanBridge(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Until then your current plan continues – $n open workouts this week stay.',
+      one: 'Until then your current plan continues – 1 open workout this week stays.',
+    );
+    return '$_temp0';
+  }
 }

@@ -22,6 +22,7 @@ import '../../widgets/plan_amount.dart';
 import '../stats/session_detail_page.dart';
 import '../../services/fitness_state.dart';
 import '../onboarding/onboarding_page.dart';
+import 'delete_plan.dart';
 import 'feasibility_apply.dart';
 import 'feasibility_card.dart';
 import 'plan_hint_memory.dart';
@@ -181,6 +182,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                         'hints' => FeasibilityCard.showDetails(context, goal, onOption: option, onOpenSettings: openSettings),
                         'new' => showPlanGenerator(context, ref),
                         'history' => openPage(context, const PlanHistoryPage()),
+                        'delete' => confirmDeletePlan(context, ref),
                         _ => _exportIcs(),
                       },
                   itemBuilder:
@@ -209,6 +211,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                           value: 'export',
                           child: ListTile(leading: const Icon(Icons.ios_share_rounded), title: Text(l.syncCalendar)),
                         ),
+                        // Destructive, so last and in the danger colour (owner round 10); only with a plan to delete.
+                        if (hasPlanToDelete(ref))
+                          PopupMenuItem(
+                            key: const ValueKey('deletePlanItem'),
+                            value: 'delete',
+                            child: ListTile(
+                              leading: const Icon(Icons.delete_sweep_outlined, color: AppColors.danger),
+                              title: Text(l.deletePlan, style: const TextStyle(color: AppColors.danger)),
+                            ),
+                          ),
                       ],
                 ),
                 const SizedBox(width: 4),
@@ -238,6 +250,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 onOpenSettings: openSettings,
               ),
             ),
+          // No plan (never created, ended or deleted – "Plan löschen"): the way to a new one, as on Home.
+          // (Only once the plans have loaded: no flash of "Noch kein Plan" on a cold start.)
+          if (ref.watch(plansProvider.select((v) => v.hasValue)) &&
+              !ref.watch(planListProvider).any((p) => !p.date.isBefore(ref.watch(todayProvider))))
+            const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 8), child: NoPlanCard()),
           Expanded(
             child: Stack(
               children: [
@@ -402,10 +419,18 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       ref.watch(planSessionsProvider),
       ref.watch(sessionPlanProvider),
       ref.watch(planFirstDayProvider),
+      ref.watch(planLastDayProvider),
     );
     if (key != _indexKey) {
       _indexKey = key;
-      _indexCache = CalendarIndex(plans: _plans(), sessions: _sessions(), linked: key.$4, sessionPlan: key.$5, firstDay: key.$6);
+      _indexCache = CalendarIndex(
+        plans: _plans(),
+        sessions: _sessions(),
+        linked: key.$4,
+        sessionPlan: key.$5,
+        firstDay: key.$6,
+        lastDay: key.$7,
+      );
     }
     return _indexCache!;
   }
@@ -687,6 +712,68 @@ final planFirstDayProvider = Provider<DateTime?>((ref) {
   return first;
 });
 
+/// "Noch kein Plan" with "Plan erstellen" – the calendar without any workout from today on (none created yet, the
+/// plan ended or was deleted). While the first setup is still creating the plan: nothing (it is on its way).
+class NoPlanCard extends StatelessWidget {
+  const NoPlanCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return ValueListenableBuilder<bool>(
+      valueListenable: PlanService.creating,
+      builder:
+          (context, creating, _) =>
+              creating
+                  ? const SizedBox.shrink()
+                  : Card(
+                    key: const ValueKey('calendarNoPlan'),
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.event_note_rounded, color: AppColors.brand),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(l.noPlanYet, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                Text(
+                                  l.noPlanYetSub,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton.tonal(
+                            key: const ValueKey('calendarCreatePlan'),
+                            style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                            onPressed: () => openPage(context, const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name),
+                            child: Text(l.generatePlan),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+    );
+  }
+}
+
+/// Last day of any plan (the latest planned workout) – days after it are no rest days either: after the plan ended
+/// or was deleted ("Plan löschen", owner round 10) the weeks ahead are empty, not weeks of "Pause".
+final planLastDayProvider = Provider<DateTime?>((ref) {
+  DateTime? last;
+  for (final p in ref.watch(planListProvider)) {
+    if (last == null || p.date.isAfter(last)) last = dayOnly(p.date);
+  }
+  return last;
+});
+
 /// Session id → the planned workout it fulfils (the first one linked to it) – a lookup instead of
 /// a scan of all links for every session shown.
 final sessionPlanProvider = Provider<Map<String, PlannedWorkout>>((ref) {
@@ -714,8 +801,14 @@ final currentFitnessProvider = Provider<FitnessState>((ref) {
 /// The shown plans and sessions of the calendar indexed by day (each day row used to scan all
 /// of them – seven times for every week scrolled into view).
 class CalendarIndex {
-  CalendarIndex({required this.plans, required this.sessions, required this.linked, required this.sessionPlan, required this.firstDay})
-    : byId = {for (final p in plans) p.id: p} {
+  CalendarIndex({
+    required this.plans,
+    required this.sessions,
+    required this.linked,
+    required this.sessionPlan,
+    required this.firstDay,
+    this.lastDay,
+  }) : byId = {for (final p in plans) p.id: p} {
     for (final p in plans) {
       _plansByDay.putIfAbsent(dayKey(p.date), () => []).add(p);
     }
@@ -735,6 +828,9 @@ class CalendarIndex {
 
   /// First day of any plan ([planFirstDayProvider]).
   final DateTime? firstDay;
+
+  /// Last day of any plan ([planLastDayProvider]; null: no limit).
+  final DateTime? lastDay;
 
   /// The shown plans by id.
   final Map<String, PlannedWorkout> byId;
@@ -887,7 +983,7 @@ class _DayRow extends ConsumerWidget {
     final p = dayPlans.where((x) => !doneElsewhere(x)).toList();
     // … but its own day says where it went ("erledigt am Mo") instead of "Pause".
     final elsewhere = dayPlans.where(doneElsewhere).toList();
-    final first = index.firstDay;
+    final first = index.firstDay, last = index.lastDay;
     final s = index.sessionsOn(day).where((x) => !p.any((pl) => pl.sessionId == x.id || linked[pl.id]?.id == x.id)).toList();
     PlannedWorkout? replaced(Session x) {
       final pl = index.byId[index.sessionPlan[x.id]?.id];
@@ -944,9 +1040,10 @@ class _DayRow extends ConsumerWidget {
                           height: 36,
                           child: Align(
                             alignment: Alignment.centerLeft,
-                            // No "Pause" before the plan existed – there was nothing to rest from.
+                            // No "Pause" before the plan existed – there was nothing to rest from – nor after its last
+                            // workout (an ended or deleted plan).
                             child:
-                                first == null || day.isBefore(first)
+                                first == null || day.isBefore(first) || (last != null && day.isAfter(last))
                                     ? const SizedBox.shrink()
                                     : Text(
                                       context.l10n.rest,

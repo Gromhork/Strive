@@ -492,7 +492,12 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
     final l = context.l10n;
     final repo = ref.read(repoProvider)!;
     final profile = _withExtend(ref.read(profileOrDefaultProvider));
-    final start = await confirmReplacePlan(context, ref.read(planListProvider));
+    final start = await confirmReplacePlan(
+      context,
+      ref.read(planListProvider),
+      sessions: ref.read(sessionListProvider),
+      profile: ref.read(profileOrDefaultProvider),
+    );
     if (!mounted) return;
     if (start == null) {
       setState(() => _busy = false);

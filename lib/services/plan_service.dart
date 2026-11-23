@@ -4,6 +4,7 @@ import '../core/format.dart';
 import '../core/sport.dart';
 import '../data/default_programs.dart';
 import '../data/models.dart';
+import '../data/plan_log.dart';
 import '../data/repository.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'compliance.dart';
@@ -11,9 +12,10 @@ import 'plan_gaps.dart';
 import 'plan_generator.dart';
 
 /// The one way to (re)generate the training plan – used by the setup, "align plan with
-/// goal" and "start the plan over". Replaces the upcoming planned workouts from [start]
-/// with a new plan in chunked batches, adds missing built-in programs and stores the plan
-/// metadata (start / length) on the profile.
+/// goal" and "start the plan over" – and to delete it ([deletePlan]). A new plan from [start]
+/// replaces the old one: every open workout of the calendar goes ([openWorkouts] – also missed
+/// past ones; done ones stay as history), the new plan is written in the same chunked batches,
+/// missing built-in programs are added and the plan metadata (start / length) is stored on the profile.
 ///
 /// Guarded against double taps: while a replacement runs – and for [cooldown] after it, until
 /// the plan stream shows the new plan (a second call would still see the old workouts and add
@@ -58,6 +60,7 @@ class PlanService {
     required int weeks,
     bool saveMeta = true,
     List<Session> sessions = const [],
+    DateTime? now,
   }) async {
     if (busy) return null;
     _busy = true;
@@ -87,17 +90,34 @@ class PlanService {
       final reopened = notCountedWorkouts(existing, day, sessions, profile: p);
       // The plan's generation (data-9): its workouts carry it, the profile names the current one.
       final gen = newPlanGen(DateTime.now(), repo.newId());
+      // A plan from next Monday: the old plan's open workouts until then (today to Sunday) stay – the athlete
+      // finishes the week (review r10-N3). They move to the new generation, so no device removes them as left
+      // over ([stalePlanWorkouts]); the athlete's own workouts (no generation) stay as they are.
+      final bridge = [
+        for (final x in bridgeWorkouts(existing, sessions, profile: p, start: day, now: now))
+          if (x.planGen != null) PlannedWorkout.fromMap(x.id, {...x.toMap(), 'planGen': gen}),
+      ];
       final plan = [
         for (final g in relinkNotCounted(withoutCoveredDays(generated, kept), reopened, sessions))
           PlannedWorkout.fromMap(g.id, {...g.toMap(), 'planGen': gen}),
+        ...bridge,
       ];
+      // The old plan goes entirely (owner round 10: "when a new plan is created, the old one is deleted"): every
+      // open workout – also the missed ones before [day], skipped ones, refills and leftovers of older plans –, not
+      // only the planned ones from [day] on (they stayed in the calendar and overlapped the new plan's weeks).
       // Written locally at once (offline persistence); the future is the server commit.
-      final write = repo.replacePlans(existing, day, plan, keep: {for (final k in kept) k.id}, drop: {for (final r in reopened) r.id});
+      // (A reopened workout whose id the new plan's run of that day took over is overwritten, not deleted.)
+      final ids = {for (final g in plan) g.id};
+      final remove = [
+        for (final x in replacedWorkouts(existing, sessions, profile: p, start: day, now: now))
+          if (!ids.contains(x.id)) x.id,
+      ];
+      final write = repo.replacePlans(remove, plan);
       // Plan start / length: lets the plan review rebuild the plan to find gaps.
       if (saveMeta) repo.saveProfile(withPlanMeta(p, day, weeks, gen: gen));
       write.ignore();
       replaced.value++;
-      return plan.length;
+      return plan.length - bridge.length;
     } finally {
       _busy = false;
       _last = DateTime.now();
@@ -109,6 +129,108 @@ class PlanService {
   /// A/B week alternation) continues from them ([PlanGenerator.generate]).
   static List<(DateTime, String)> gymHistory(List<PlannedWorkout> existing, List<Session> sessions, DateTime day, {int days = 21}) =>
       gymHistoryBefore(existing, sessions, day, days: days);
+
+  /// The workouts a new plan or "Plan löschen" removes – the old plan (owner round 10): every workout that is
+  /// still open, of every date and origin – planned ones (also missed past ones, refills, the athlete's own and
+  /// leftovers of older plans), skipped ones and done-marked ones whose linked session was too short to count
+  /// ([notCountedWorkouts]). Done workouts and those a counting session is linked to stay ([keptWorkouts]): the
+  /// recordings, stats and records keep their link to the workout as history.
+  static List<PlannedWorkout> openWorkouts(List<PlannedWorkout> existing, List<Session> sessions, {UserProfile? profile}) {
+    final kept = {for (final k in keptWorkouts(existing, _always, sessions, profile: profile)) k.id};
+    return [
+      for (final p in existing)
+        if (!kept.contains(p.id)) p,
+    ];
+  }
+
+  /// The open workouts ([openWorkouts]) a new plan from [start] removes: all of them, except those from today until
+  /// the day before [start] ([bridgeWorkouts]).
+  static List<PlannedWorkout> replacedWorkouts(
+    List<PlannedWorkout> existing,
+    List<Session> sessions, {
+    UserProfile? profile,
+    required DateTime start,
+    DateTime? now,
+  }) {
+    final keep = {for (final x in bridgeWorkouts(existing, sessions, profile: profile, start: start, now: now)) x.id};
+    return [
+      for (final x in openWorkouts(existing, sessions, profile: profile))
+        if (!keep.contains(x.id)) x,
+    ];
+  }
+
+  /// The open workouts that stay when a new plan starts later than today ("ab nächstem Montag", review r10-N3): those
+  /// from today until the day before [start] – the old plan runs until the new one begins and they never overlap it.
+  /// (Missed past ones go: the old plan is deleted, owner round 10.) Empty for a plan from today.
+  static List<PlannedWorkout> bridgeWorkouts(
+    List<PlannedWorkout> existing,
+    List<Session> sessions, {
+    UserProfile? profile,
+    required DateTime start,
+    DateTime? now,
+  }) {
+    final today = dayOnly(now ?? DateTime.now());
+    final day = dayOnly(start);
+    if (!day.isAfter(today)) return const [];
+    return [
+      for (final x in openWorkouts(existing, sessions, profile: profile))
+        if (!dayOnly(x.date).isBefore(today) && dayOnly(x.date).isBefore(day)) x,
+    ];
+  }
+
+  /// A day before every workout: [keptWorkouts] / [notCountedWorkouts] over the whole calendar.
+  static final _always = DateTime(1970);
+
+  /// "Plan löschen" (owner round 10): removes the open workouts ([openWorkouts]; done ones stay), marks the plan as
+  /// deleted on the profile ([AthleteData.planDeleted]: no start, length 0, a fresh generation – another device's
+  /// copy of the old plan is removed as left over, [stalePlanWorkouts]) and logs it in the plan history. Goals stay.
+  /// Returns what [undoDelete] needs, or null while another plan change is running. [saveMeta] false: no profile
+  /// document yet.
+  static PlanDeletion? deletePlan({
+    required Repository repo,
+    required UserProfile profile,
+    required List<PlannedWorkout> existing,
+    List<Session> sessions = const [],
+    bool saveMeta = true,
+    DateTime? now,
+  }) {
+    if (busy) return null;
+    _busy = true;
+    try {
+      final open = openWorkouts(existing, sessions, profile: profile);
+      final a = profile.athlete;
+      final d = PlanDeletion(removed: open, planStart: a.planStart, planLength: a.planLength);
+      repo.deletePlans([for (final p in open) p.id]).ignore();
+      if (saveMeta) {
+        final gen = newPlanGen(now ?? DateTime.now(), repo.newId());
+        repo.saveProfile(profile.copyWith(athlete: a.merge({'planStart': null, 'planLength': 0, 'planGen': gen})));
+      }
+      repo.logPlanChange(PlanLogEntry.summary(PlanLogEntry.planDelete, open.length, at: now));
+      replaced.value++;
+      return d;
+    } finally {
+      _busy = false;
+      _last = DateTime.now();
+    }
+  }
+
+  /// Undo of [deletePlan] (the snackbar): the deleted workouts are written again and the plan's start / length come
+  /// back on [current] (the profile as it is now). Under a new generation – the restored workouts and the profile
+  /// carry it –, so the deletion marker never removes them again, whichever of the two writes another device (or the
+  /// cleanup on this one, [stalePlanWorkouts]) sees first.
+  static void undoDelete(Repository repo, PlanDeletion d, UserProfile current, {bool saveMeta = true, DateTime? now}) {
+    final gen = newPlanGen(now ?? DateTime.now(), repo.newId());
+    repo.savePlans([
+      for (final p in d.removed) p.planGen == null ? p : PlannedWorkout.fromMap(p.id, {...p.toMap(), 'planGen': gen}),
+    ]).ignore();
+    if (saveMeta) {
+      repo.saveProfile(
+        current.copyWith(athlete: current.athlete.merge({'planStart': d.planStart, 'planLength': d.planLength, 'planGen': gen})),
+      );
+    }
+    repo.logPlanChange(PlanLogEntry.summary(PlanLogEntry.planRestore, d.removed.length, at: now));
+    replaced.value++;
+  }
 
   /// Workouts on or after [day] a new plan keeps: done ones, and planned ones a session is
   /// linked to (started from them) – but not one whose linked session was too short to count
@@ -180,4 +302,16 @@ class PlanService {
         if (!covered.contains(dayKey(g.date))) g,
     ];
   }
+}
+
+/// What [PlanService.deletePlan] removed – for its undo ([PlanService.undoDelete]).
+class PlanDeletion {
+  const PlanDeletion({required this.removed, this.planStart, this.planLength});
+
+  /// The deleted workouts (full documents).
+  final List<PlannedWorkout> removed;
+
+  /// The plan's start / length before the deletion.
+  final DateTime? planStart;
+  final int? planLength;
 }

@@ -1230,7 +1230,7 @@ const l10nPairs = <(String, String)>[
   ('{weeks} wk', '{weeks} Wo.'),
   ('Plan settings', 'Planeinstellungen'),
   ('Start plan over?', 'Plan neu aufsetzen?'),
-  ('Completed workouts and stats stay.', 'Erledigte Einheiten und Statistik bleiben.'),
+  ('Completed workouts stay – with their recordings, stats and records.', 'Erledigte Einheiten bleiben erhalten – mit Aufzeichnungen, Statistik und Rekorden.'),
   ('From today', 'Ab heute'),
   ('From next Monday', 'Ab nächstem Montag'),
   ('Replace', 'Ersetzen'),
@@ -1923,4 +1923,9 @@ const l10nPairs = <(String, String)>[
   ('Start time', 'Startzeit'),
   ('Plan notes', 'Hinweise zum Plan'),
   ('standard', 'Standard'),
+  ('Delete plan', 'Plan löschen'),
+  ('Delete plan?', 'Plan löschen?'),
+  ('Completed workouts, recordings and stats stay. Your goals stay too – you can create a new plan any time.', 'Erledigte Einheiten, Aufzeichnungen und Statistik bleiben erhalten. Deine Ziele bleiben auch – du kannst jederzeit einen neuen Plan erstellen.'),
+  ('Plan deleted', 'Plan gelöscht'),
+  ('Plan restored', 'Plan wiederhergestellt'),
 ];

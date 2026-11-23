@@ -279,9 +279,14 @@ class AthleteData {
   final int? planLength;
 
   /// Generation id of the current plan (written with [planStart]; every workout it generated carries it as
-  /// [PlannedWorkout.planGen]): planned workouts of another generation from [planStart] on are left over from a
-  /// replacement on another device with a stale cache and are removed (review 2026-11 data-9).
+  /// [PlannedWorkout.planGen]): open workouts of an older generation are left over from a replacement (or a
+  /// deletion, [planDeleted]) on another device with a stale cache and are removed (review 2026-11 data-9).
   final String? planGen;
+
+  /// The athlete deleted the plan ("Plan löschen", owner round 10): no start, length 0 (not rule-based – no gap
+  /// refills, no forecast from the deleted plan's start) and a fresh [planGen] that marks every older plan's open
+  /// workout as left over ([stalePlanWorkouts] – also on another device that still had the plan).
+  bool get planDeleted => planStart == null && planLength == 0 && planGen != null;
 
   /// Name of the target event (e.g. taken over from the race search); optional.
   final String? eventName;

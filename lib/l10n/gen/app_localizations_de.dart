@@ -4245,7 +4245,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get replacePlanKeeps => 'Erledigte Einheiten und Statistik bleiben.';
+  String get replacePlanKeeps => 'Erledigte Einheiten bleiben erhalten – mit Aufzeichnungen, Statistik und Rekorden.';
 
   @override
   String get replaceFromToday => 'Ab heute';
@@ -6900,4 +6900,86 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get standardCopySuffix => 'Standard';
+
+  @override
+  String replacePlanBodyAll(String date, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Dein bisheriger Plan wird ersetzt – $n offene Einheiten (auch selbst hinzugefügte) werden gelöscht. Der neue Plan beginnt am $date.',
+      one: 'Dein bisheriger Plan wird ersetzt – 1 offene Einheit (auch selbst hinzugefügte) wird gelöscht. Der neue Plan beginnt am $date.',
+      zero: 'Der neue Plan beginnt am $date.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletePlan => 'Plan löschen';
+
+  @override
+  String get deletePlanTitle => 'Plan löschen?';
+
+  @override
+  String deletePlanBody(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n offene Einheiten werden gelöscht – auch selbst hinzugefügte.',
+      one: '1 offene Einheit wird gelöscht – auch selbst hinzugefügte.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletePlanKeeps => 'Erledigte Einheiten, Aufzeichnungen und Statistik bleiben erhalten. Deine Ziele bleiben auch – du kannst jederzeit einen neuen Plan erstellen.';
+
+  @override
+  String planDeletedToast(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Plan gelöscht · $n offene Einheiten entfernt',
+      one: 'Plan gelöscht · 1 offene Einheit entfernt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planLogDeleted => 'Plan gelöscht';
+
+  @override
+  String planLogDeletedReason(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n offene Einheiten entfernt – erledigte bleiben.',
+      one: '1 offene Einheit entfernt – erledigte bleiben.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planLogRestored => 'Plan wiederhergestellt';
+
+  @override
+  String planLogRestoredReason(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n Einheiten wieder im Kalender.',
+      one: '1 Einheit wieder im Kalender.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String replacePlanBridge(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Bis dahin läuft dein bisheriger Plan weiter – $n offene Einheiten dieser Woche bleiben.',
+      one: 'Bis dahin läuft dein bisheriger Plan weiter – 1 offene Einheit dieser Woche bleibt.',
+    );
+    return '$_temp0';
+  }
 }
