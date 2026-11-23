@@ -1278,7 +1278,7 @@
   "goalEditPlan": "Planeinstellungen",
   "replacePlanTitle": "Plan neu aufsetzen?",
   "replacePlanBody": "{n, plural, =1{1 geplante Einheit ab {date} wird ersetzt.} other{{n} geplante Einheiten ab {date} werden ersetzt.}}",
-  "replacePlanKeeps": "Erledigte Einheiten und Statistik bleiben.",
+  "replacePlanKeeps": "Erledigte Einheiten bleiben erhalten – mit Aufzeichnungen, Statistik und Rekorden.",
   "replaceFromToday": "Ab heute",
   "replaceFromMonday": "Ab nächstem Montag",
   "replacePlanOk": "Ersetzen",
@@ -1994,5 +1994,15 @@
   "startTime": "Startzeit",
   "fcEarlyEndurance": "{count, plural, =1{Noch eine Ausdauereinheit (Laufen, Rad oder Schwimmen), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.} other{Noch {count} Ausdauereinheiten (Laufen, Rad oder Schwimmen), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.}}",
   "planHints": "Hinweise zum Plan",
-  "fcEarlyEnduranceSport": "{count, plural, =1{Noch eine Ausdauereinheit (am besten {sport}), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.} other{Noch {count} Ausdauereinheiten (am besten {sport}), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.}}"
+  "fcEarlyEnduranceSport": "{count, plural, =1{Noch eine Ausdauereinheit (am besten {sport}), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.} other{Noch {count} Ausdauereinheiten (am besten {sport}), dann nutzt die Prognose deine Trainingsdaten – Krafttraining zählt hier nicht.}}",
+  "replacePlanBodyAll": "{n, plural, =0{Der neue Plan beginnt am {date}.} =1{Dein bisheriger Plan wird ersetzt – 1 offene Einheit wird gelöscht. Der neue Plan beginnt am {date}.} other{Dein bisheriger Plan wird ersetzt – {n} offene Einheiten werden gelöscht. Der neue Plan beginnt am {date}.}}",
+  "deletePlan": "Plan löschen",
+  "deletePlanTitle": "Plan löschen?",
+  "deletePlanBody": "{n, plural, =1{1 offene Einheit deines Plans wird gelöscht.} other{{n} offene Einheiten deines Plans werden gelöscht.}}",
+  "deletePlanKeeps": "Erledigte Einheiten, Aufzeichnungen und Statistik bleiben erhalten. Deine Ziele bleiben auch – du kannst jederzeit einen neuen Plan erstellen.",
+  "planDeletedToast": "{n, plural, =1{Plan gelöscht · 1 offene Einheit entfernt} other{Plan gelöscht · {n} offene Einheiten entfernt}}",
+  "planLogDeleted": "Plan gelöscht",
+  "planLogDeletedReason": "{n, plural, =1{1 offene Einheit entfernt – erledigte bleiben.} other{{n} offene Einheiten entfernt – erledigte bleiben.}}",
+  "planLogRestored": "Plan wiederhergestellt",
+  "planLogRestoredReason": "{n, plural, =1{1 Einheit wieder im Kalender.} other{{n} Einheiten wieder im Kalender.}}"
 }

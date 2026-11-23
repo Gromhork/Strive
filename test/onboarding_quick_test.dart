@@ -7,6 +7,7 @@ import 'package:strive/core/format.dart';
 import 'package:strive/core/sport.dart';
 import 'package:strive/core/theme.dart';
 import 'package:strive/data/models.dart';
+import 'package:strive/data/plan_log.dart';
 import 'package:strive/data/repository.dart';
 import 'package:strive/features/onboarding/onboarding_page.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
@@ -35,22 +36,17 @@ class _FakeRepo extends Repository {
   @override
   Future<void> savePlans(List<PlannedWorkout> list) async => savedPlans.addAll(list);
   @override
-  Future<void> deletePlansFrom(List<PlannedWorkout> all, DateTime from) async =>
-      deleted.addAll(all.where((p) => !p.date.isBefore(from) && p.status == 'planned').map((p) => p.id));
-  @override
-  Future<void> replacePlans(
-    List<PlannedWorkout> all,
-    DateTime from,
-    List<PlannedWorkout> plan, {
-    Set<String> keep = const {},
-    Set<String> drop = const {},
-  }) async {
-    await deletePlansFrom(all, from);
+  Future<void> replacePlans(Iterable<String> remove, List<PlannedWorkout> plan) async {
+    deleted.addAll(remove);
     await savePlans(plan);
   }
 
   @override
   Future<List<WorkoutTemplate>?> templatesFromServer() async => null;
+  @override
+  Future<void> deletePlans(Iterable<String> ids) async => deleted.addAll(ids);
+  @override
+  void logPlanChange(PlanLogEntry e) {}
 }
 
 final l = lookupAppLocalizations(const Locale('en'));
@@ -258,6 +254,32 @@ void main() {
     await _finish(tester);
     expect(repo.savedPlans.where((w) => w.sport == Sport.gym), isNotEmpty);
     expect(repo.savedPlans.where((w) => w.sport == Sport.run), isNotEmpty);
+  });
+
+  testWidgets('round 10: plan settings ⋮ → "Delete plan" removes the open workouts and closes the settings', (tester) async {
+    PlanService.reset();
+    final now = DateTime.now();
+    final open = PlannedWorkout(id: 'open', date: now.add(const Duration(days: 1)), sport: Sport.run, title: 'Open');
+    final missed = PlannedWorkout(id: 'missed', date: now.subtract(const Duration(days: 2)), sport: Sport.run, title: 'Missed');
+    final done = PlannedWorkout(id: 'done', date: now.subtract(const Duration(days: 1)), sport: Sport.run, title: 'Done', status: 'done');
+    final repo = await _pump(
+      tester,
+      mode: SetupMode.plan,
+      existing: [open, missed, done],
+      loaded: true,
+      profile: const UserProfile(name: 'Ben', birthYear: 1990, level: 'intermediate', focus: TrainingFocus.run, onboarded: true),
+    );
+    await _tap(tester, find.byKey(const ValueKey('planSettingsMore')));
+    await _tap(tester, find.byKey(const ValueKey('planSettingsDelete')));
+    expect(find.text(l.deletePlanBody(2)), findsOneWidget);
+    expect(repo.deleted, isEmpty, reason: 'nothing is deleted before the confirmation');
+    await _tap(tester, find.byKey(const ValueKey('deletePlanOk')));
+    expect(repo.deleted.toSet(), {'open', 'missed'}, reason: 'the done workout stays');
+    expect(repo.savedProfile!.athlete.planDeleted, isTrue);
+    expect(find.byType(OnboardingPage), findsNothing);
+    expect(find.text(l.planDeletedToast(2)), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 11));
+    PlanService.reset();
   });
 
   testWidgets('plan settings in quick mode ignore a day plan left over from the detailed setup', (tester) async {

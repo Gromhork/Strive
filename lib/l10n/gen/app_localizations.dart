@@ -90,10 +90,7 @@ abstract class AppLocalizations {
   ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[
-    Locale('de'),
-    Locale('en')
-  ];
+  static const List<Locale> supportedLocales = <Locale>[Locale('de'), Locale('en')];
 
   /// No description provided for @tagline.
   ///
@@ -7766,7 +7763,7 @@ abstract class AppLocalizations {
   /// No description provided for @replacePlanKeeps.
   ///
   /// In en, this message translates to:
-  /// **'Completed workouts and stats stay.'**
+  /// **'Completed workouts stay – with their recordings, stats and records.'**
   String get replacePlanKeeps;
 
   /// No description provided for @replaceFromToday.
@@ -12064,6 +12061,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{One more endurance workout (ideally {sport}) and the forecast uses your training data – strength sessions don\'t count here.} other{{count} more endurance workouts (ideally {sport}) and the forecast uses your training data – strength sessions don\'t count here.}}'**
   String fcEarlyEnduranceSport(String sport, int count);
+
+  /// No description provided for @replacePlanBodyAll.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =0{The new plan starts {date}.} =1{Your current plan will be replaced – 1 open workout is deleted. The new plan starts {date}.} other{Your current plan will be replaced – {n} open workouts are deleted. The new plan starts {date}.}}'**
+  String replacePlanBodyAll(String date, int n);
+
+  /// No description provided for @deletePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete plan'**
+  String get deletePlan;
+
+  /// No description provided for @deletePlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete plan?'**
+  String get deletePlanTitle;
+
+  /// No description provided for @deletePlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 open workout of your plan will be deleted.} other{{n} open workouts of your plan will be deleted.}}'**
+  String deletePlanBody(int n);
+
+  /// No description provided for @deletePlanKeeps.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed workouts, recordings and stats stay. Your goals stay too – you can create a new plan any time.'**
+  String get deletePlanKeeps;
+
+  /// No description provided for @planDeletedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{Plan deleted · 1 open workout removed} other{Plan deleted · {n} open workouts removed}}'**
+  String planDeletedToast(int n);
+
+  /// No description provided for @planLogDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan deleted'**
+  String get planLogDeleted;
+
+  /// No description provided for @planLogDeletedReason.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 open workout removed – completed ones stay.} other{{n} open workouts removed – completed ones stay.}}'**
+  String planLogDeletedReason(int n);
+
+  /// No description provided for @planLogRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan restored'**
+  String get planLogRestored;
+
+  /// No description provided for @planLogRestoredReason.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 workout back in the calendar.} other{{n} workouts back in the calendar.}}'**
+  String planLogRestoredReason(int n);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
@@ -12082,18 +12139,18 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'de': return AppLocalizationsDe();
-    case 'en': return AppLocalizationsEn();
+    case 'de':
+      return AppLocalizationsDe();
+    case 'en':
+      return AppLocalizationsEn();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }

@@ -12,12 +12,9 @@ void main() {
   PlannedWorkout w(String id, int dayOffset, {String status = 'planned'}) =>
       PlannedWorkout(id: id, date: today.add(Duration(days: dayOffset)), sport: Sport.run, title: 'Run $id', status: status);
 
-  test('next Monday and counting the planned workouts that would be replaced', () {
+  test('next Monday', () {
     expect(nextMonday(today), DateTime(2026, 11, 16));
     expect(nextMonday(DateTime(2026, 11, 16)), DateTime(2026, 11, 23), reason: 'on a Monday: the following one');
-    final plans = [w('past', -2), w('done', 0, status: 'done'), w('a', 0), w('b', 2), w('c', 5), w('d', 9)];
-    expect(plannedFrom(plans, today), 4);
-    expect(plannedFrom(plans, nextMonday(today)), 2);
   });
 
   Future<DateTime?> open(WidgetTester tester, List<PlannedWorkout> plans, {Future<void> Function()? interact}) async {
@@ -52,25 +49,50 @@ void main() {
     return result;
   }
 
-  testWidgets('nothing planned from today: no dialog, the plan starts today', (tester) async {
-    final r = await open(tester, [w('past', -3), w('done', 1, status: 'done')]);
+  testWidgets('nothing open: no dialog, the plan starts today', (tester) async {
+    final r = await open(tester, [w('done', -3, status: 'done'), w('done2', 1, status: 'done')]);
     expect(find.byType(AlertDialog), findsNothing);
     expect(r, today);
   });
 
-  testWidgets('asks with the count, "from next Monday" starts the plan on Monday', (tester) async {
+  testWidgets('round 10: a missed past workout alone is part of the old plan – asked, counted', (tester) async {
     final de = lookupAppLocalizations(const Locale('de'));
-    final plans = [w('a', 0), w('b', 2), w('c', 5), w('d', 9)];
+    final r = await open(
+      tester,
+      [w('past', -3), w('done', 1, status: 'done')],
+      interact: () async {
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.textContaining('Dein bisheriger Plan wird ersetzt – 1 offene Einheit wird gelöscht'), findsOneWidget);
+        await tester.tap(find.text(de.replacePlanOk));
+        await tester.pumpAndSettle();
+      },
+    );
+    expect(r, today);
+  });
+
+  testWidgets('asks with the count of every open workout, "from next Monday" starts the plan on Monday', (tester) async {
+    final de = lookupAppLocalizations(const Locale('de'));
+    // The old plan goes entirely (round 10): the missed and the skipped workout count, the done one stays.
+    final plans = [
+      w('a', 0),
+      w('b', 2),
+      w('c', 5),
+      w('d', 9),
+      w('missed', -2),
+      w('skip', 3, status: 'skipped'),
+      w('done', -1, status: 'done'),
+    ];
     final r = await open(
       tester,
       plans,
       interact: () async {
         expect(find.byType(AlertDialog), findsOneWidget);
-        expect(find.textContaining('4 geplante Einheiten'), findsOneWidget);
+        expect(find.textContaining('Dein bisheriger Plan wird ersetzt – 6 offene Einheiten werden gelöscht'), findsOneWidget);
         expect(find.text(de.replacePlanKeeps), findsOneWidget);
         await tester.tap(find.text(de.replaceFromMonday));
         await tester.pumpAndSettle();
-        expect(find.textContaining('2 geplante Einheiten ab'), findsOneWidget);
+        // The count does not depend on the start: the whole old plan goes either way.
+        expect(find.textContaining('6 offene Einheiten werden gelöscht. Der neue Plan beginnt am Mo., 16. Nov.'), findsOneWidget);
         await tester.tap(find.text(de.replacePlanOk));
         await tester.pumpAndSettle();
       },

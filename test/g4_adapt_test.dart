@@ -404,7 +404,7 @@ void main() {
     expect(r2.changes.single.$2.status, 'planned');
   });
 
-  test('data-9: workouts of an older plan generation from the plan start on are left-overs', () {
+  test('data-9: open workouts of an older plan generation are left-overs (round 10: of every date)', () {
     final start = DateTime(2027, 1, 4);
     final genA = newPlanGen(DateTime(2027, 1, 3, 9), 'a'), genB = newPlanGen(DateTime(2027, 1, 3, 10), 'b');
     expect(genB.compareTo(genA), greaterThan(0));
@@ -431,11 +431,12 @@ void main() {
       final p = withPlanMeta(a.marathoner(), start, 12, gen: gen);
       expect(p.athlete.planGen, gen);
       final stale = stalePlanWorkouts(p, plans, const []).map((x) => x.id).toSet();
-      expect(stale, {'a1', 'a3'});
+      // Round 10 (owner: "the old plan is deleted"): the older plan's missed past workout a0 goes too.
+      expect(stale, {'a0', 'a1', 'a3'});
     }
     // A workout a session was started from stays; a profile without a generation removes nothing.
     final started = Session(id: 'x', sport: Sport.run, title: 'Lauf', start: start, durationSec: 600, planId: 'a3');
-    expect(stalePlanWorkouts(withPlanMeta(a.marathoner(), start, 12, gen: genB), plans, [started]).map((x) => x.id), ['a1']);
+    expect(stalePlanWorkouts(withPlanMeta(a.marathoner(), start, 12, gen: genB), plans, [started]).map((x) => x.id), ['a1', 'a0']);
     expect(stalePlanWorkouts(withPlanMeta(a.marathoner(), start, 12), plans, const []), isEmpty);
     expect(PlannedWorkout.fromMap('b1', plans[4].toMap()).planGen, genB);
   });
@@ -648,7 +649,7 @@ void main() {
     });
   });
 
-  test("G4V-3: another device's new plan synced before its profile: the old plan's past stays", () {
+  test("G4V-3 / round 10: another device's new plan synced before its profile: the old plan's open workouts go", () {
     final s0 = DateTime(2026, 11, 2), d = DateTime(2026, 11, 17);
     final g0 = newPlanGen(DateTime(2026, 11, 1), 'a'), g1 = newPlanGen(DateTime(2026, 11, 17, 9), 'b');
     PlannedWorkout w(String id, DateTime date, String gen, {String status = 'planned'}) =>
@@ -660,9 +661,10 @@ void main() {
       w('new1', d, g1),
       w('new2', addDays(d, 2), g1),
     ];
-    // The old profile (transient) and the new one: only the overlapping duplicate goes.
+    // The old profile (transient) and the new one: the old plan's open workouts go (also the missed past one – the
+    // device that replaced the plan deleted it too); the done one stays.
     for (final p in [withPlanMeta(a.marathoner(), s0, 12, gen: g0), withPlanMeta(a.marathoner(), d, 12, gen: g1)]) {
-      expect(stalePlanWorkouts(p, plans, const []).map((x) => x.id), ['old-dup']);
+      expect(stalePlanWorkouts(p, plans, const []).map((x) => x.id), ['old-missed', 'old-dup']);
     }
   });
 

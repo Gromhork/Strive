@@ -260,26 +260,14 @@ class Repository {
   Future<void> deletePlans(Iterable<String> ids) => _batched([for (final id in ids) (b) => b.delete(_plans.doc(id))]);
   Future<void> savePlans(List<PlannedWorkout> list) => _batched([for (final p in list) (b) => b.set(_plans.doc(p.id), p.toMap())]);
 
-  Future<void> deletePlansFrom(List<PlannedWorkout> all, DateTime from) =>
-      _batched([for (final p in all.where((p) => !p.date.isBefore(from) && p.status == 'planned')) (b) => b.delete(_plans.doc(p.id))]);
-
-  /// Replaces the planned (not done / skipped) workouts from [from] on with [plan] in as few
-  /// batches as possible – the deletes and the new plan go together, so the calendar never
-  /// shows both or neither for long.
-  /// Replaces the planned workouts from [from] with [plan]; done / skipped ones and those in
-  /// [keep] (linked to a session) stay. [drop]: done-marked workouts that are open all the same (their
-  /// linked session too short to count) – replaced like the planned ones.
-  Future<void> replacePlans(
-    List<PlannedWorkout> all,
-    DateTime from,
-    List<PlannedWorkout> plan, {
-    Set<String> keep = const {},
-    Set<String> drop = const {},
-  }) {
-    final ids = {...keep, for (final p in plan) p.id};
+  /// Replaces the old plan with [plan] in as few batches as possible: the workouts [remove] (every open workout of
+  /// the old plan – [PlanService.openWorkouts]) are deleted and [plan] is written in the same batches, so the
+  /// calendar never shows both or neither for long.
+  Future<void> replacePlans(Iterable<String> remove, List<PlannedWorkout> plan) {
+    final ids = {for (final p in plan) p.id};
     return _batched([
-      for (final p in all.where((p) => !p.date.isBefore(from) && (p.status == 'planned' || drop.contains(p.id)) && !ids.contains(p.id)))
-        (b) => b.delete(_plans.doc(p.id)),
+      for (final id in remove)
+        if (!ids.contains(id)) (b) => b.delete(_plans.doc(id)),
       for (final p in plan) (b) => b.set(_plans.doc(p.id), p.toMap()),
     ]);
   }
@@ -294,7 +282,7 @@ class Repository {
 
   /// Records an applied plan change. Never throws: the history must not break the change itself.
   void logPlanChange(PlanLogEntry e) {
-    if (e.items.isEmpty) return;
+    if (e.items.isEmpty && !PlanLogEntry.summarySources.contains(e.source)) return;
     try {
       _fire(_planLog.doc().set(e.toMap()));
       if (!_logPruned) {

@@ -2559,7 +2559,7 @@
       }
     }
   },
-  "replacePlanKeeps": "Completed workouts and stats stay.",
+  "replacePlanKeeps": "Completed workouts stay – with their recordings, stats and records.",
   "replaceFromToday": "From today",
   "replaceFromMonday": "From next Monday",
   "replacePlanOk": "Replace",
@@ -5101,6 +5101,54 @@
         "type": "String"
       },
       "count": {
+        "type": "int"
+      }
+    }
+  },
+  "replacePlanBodyAll": "{n, plural, =0{The new plan starts {date}.} =1{Your current plan will be replaced – 1 open workout is deleted. The new plan starts {date}.} other{Your current plan will be replaced – {n} open workouts are deleted. The new plan starts {date}.}}",
+  "@replacePlanBodyAll": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "deletePlan": "Delete plan",
+  "deletePlanTitle": "Delete plan?",
+  "deletePlanBody": "{n, plural, =1{1 open workout of your plan will be deleted.} other{{n} open workouts of your plan will be deleted.}}",
+  "@deletePlanBody": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "deletePlanKeeps": "Completed workouts, recordings and stats stay. Your goals stay too – you can create a new plan any time.",
+  "planDeletedToast": "{n, plural, =1{Plan deleted · 1 open workout removed} other{Plan deleted · {n} open workouts removed}}",
+  "@planDeletedToast": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "planLogDeleted": "Plan deleted",
+  "planLogDeletedReason": "{n, plural, =1{1 open workout removed – completed ones stay.} other{{n} open workouts removed – completed ones stay.}}",
+  "@planLogDeletedReason": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "planLogRestored": "Plan restored",
+  "planLogRestoredReason": "{n, plural, =1{1 workout back in the calendar.} other{{n} workouts back in the calendar.}}",
+  "@planLogRestoredReason": {
+    "placeholders": {
+      "n": {
         "type": "int"
       }
     }

@@ -53,7 +53,13 @@ Future<void> applyFeasibilityOption(BuildContext context, WidgetRef ref, Feasibi
   }
   final repo = ref.read(repoProvider);
   if (repo == null) return;
-  final start = await confirmReplacePlan(context, ref.read(planListProvider), change: text);
+  final start = await confirmReplacePlan(
+    context,
+    ref.read(planListProvider),
+    sessions: ref.read(sessionListProvider),
+    profile: ref.read(profileOrDefaultProvider),
+    change: text,
+  );
   if (start == null || !context.mounted) return;
   // The race goal follows a new date / distance (the goal page and Home show it).
   final a0 = stored.athlete, a1 = next.athlete;

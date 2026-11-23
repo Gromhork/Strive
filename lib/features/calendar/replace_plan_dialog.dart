@@ -3,29 +3,33 @@ import 'package:intl/intl.dart';
 
 import '../../core/format.dart';
 import '../../data/models.dart';
+import '../../services/plan_service.dart';
 import '../../widgets/segments.dart';
-
-/// Number of planned (not done / skipped) workouts on or after [from] that a new plan replaces.
-int plannedFrom(List<PlannedWorkout> plans, DateTime from) {
-  final d = dayOnly(from);
-  return plans.where((p) => p.status == 'planned' && !p.date.isBefore(d)).length;
-}
 
 /// The Monday after [now] (a week later when [now] is a Monday).
 DateTime nextMonday(DateTime now) {
   return DateTime(now.year, now.month, now.day + 8 - now.weekday);
 }
 
-/// Asks before a new plan replaces the upcoming planned workouts (calendar "Start plan
-/// over", plan settings, aligning the plan to a goal). Returns the day the new plan starts
-/// – today or next Monday – or null when cancelled. Without planned workouts from today
-/// nothing is lost: no dialog, the plan starts today.
+/// Asks before a new plan replaces the old one (calendar "Start plan over", plan settings, aligning the plan to a
+/// goal, a feasibility option): the old plan's open workouts – all of them, also missed past ones
+/// ([PlanService.openWorkouts], owner round 10) – are deleted, completed ones stay. Returns the day the new plan
+/// starts – today or next Monday – or null when cancelled. Without open workouts nothing is lost: no dialog, the
+/// plan starts today. [sessions] / [profile]: a done-marked workout whose session was too short to count is open.
 ///
 /// [change]: what is changed with the new plan (a feasibility option applied from the calendar, "Übernehmen: …") –
 /// shown first, and the dialog is shown even when no planned workout would be lost (the change is confirmed).
-Future<DateTime?> confirmReplacePlan(BuildContext context, List<PlannedWorkout> plans, {DateTime? now, String? change}) async {
+Future<DateTime?> confirmReplacePlan(
+  BuildContext context,
+  List<PlannedWorkout> plans, {
+  List<Session> sessions = const [],
+  UserProfile? profile,
+  DateTime? now,
+  String? change,
+}) async {
   final today = dayOnly(now ?? DateTime.now());
-  if (plannedFrom(plans, today) == 0 && change == null) return today;
+  final open = PlanService.openWorkouts(plans, sessions, profile: profile).length;
+  if (open == 0 && change == null) return today;
   final monday = nextMonday(today);
   return showDialog<DateTime>(
     context: context,
@@ -49,7 +53,7 @@ Future<DateTime?> confirmReplacePlan(BuildContext context, List<PlannedWorkout> 
                     Text(l.applyChange(change), key: const ValueKey('replaceChange'), style: const TextStyle(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 8),
                   ],
-                  Text(l.replacePlanBody(date, plannedFrom(plans, start))),
+                  Text(l.replacePlanBodyAll(date, open), key: const ValueKey('replaceBody')),
                   const SizedBox(height: 4),
                   Text(l.replacePlanKeeps, style: Theme.of(c).textTheme.bodySmall),
                   const SizedBox(height: 12),

@@ -364,7 +364,7 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
   /// The training focus a race needs (the current one when it fits).
   static TrainingFocus _focusFor(String key, TrainingFocus current) => focusForRace(key, current);
 
-  /// Rebuilds the plan up to race day: completed workouts stay, upcoming planned ones are replaced.
+  /// Rebuilds the plan up to race day: completed workouts stay, the old plan's open ones are replaced.
   void _alignPlan(UserProfile profile, DateTime start) {
     final l = context.l10n;
     PlanService.replacePlan(
@@ -453,7 +453,12 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
     final aligned = wizard ? null : _alignedProfile();
     DateTime? planStart;
     if (aligned != null) {
-      planStart = await confirmReplacePlan(context, ref.read(planListProvider));
+      planStart = await confirmReplacePlan(
+        context,
+        ref.read(planListProvider),
+        sessions: ref.read(sessionListProvider),
+        profile: ref.read(profileOrDefaultProvider),
+      );
       if (planStart == null || !mounted) return;
     }
     final l = context.l10n;

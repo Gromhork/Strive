@@ -223,8 +223,11 @@ class FitnessState {
   ///
   /// A plan re-created mid-plan continues the training block of the plan it replaced ([PlanCarry.fitnessStart],
   /// review 2026-11 adapt-6): the same morning's forecast and the weeks trained don't restart with it.
+  ///
+  /// Null after "Plan löschen" ([AthleteData.planDeleted]): the deleted plan's completed workouts stay in the
+  /// calendar, but there is no running plan – no plan line, no feasibility notes of a plan that is gone.
   static DateTime? currentPlanStart(UserProfile p, List<PlannedWorkout> phased) {
-    if (phased.isEmpty) return null;
+    if (phased.isEmpty || p.athlete.planDeleted) return null;
     final stored = _blockStart(p.athlete) ?? (p.athlete.planStart == null ? null : dayOnly(p.athlete.planStart!));
     if (stored != null) {
       final from = phased.where((x) => !dayOnly(x.date).isBefore(stored)).firstOrNull;

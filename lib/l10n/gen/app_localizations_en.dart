@@ -226,12 +226,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String daysPerWeek(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count days per week',
-      one: '1 day per week',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count days per week', one: '1 day per week');
     return '$_temp0';
   }
 
@@ -820,26 +815,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String generatePlanSub(String focus, int days) {
-    String _temp0 = intl.Intl.pluralLogic(
-      days,
-      locale: localeName,
-      other: '$days days/week',
-      one: '1 day/week',
-    );
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$days days/week', one: '1 day/week');
     return 'Focus: $focus · $_temp0 (change in plan settings)';
   }
 
   @override
-  String get planLocalDesc => 'Periodised plan based on sports science (80/20, progressive overload, a recovery week every 3–5 weeks depending on difficulty). Works offline.';
+  String get planLocalDesc =>
+      'Periodised plan based on sports science (80/20, progressive overload, a recovery week every 3–5 weeks depending on difficulty). Works offline.';
 
   @override
   String planCreated(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count workouts planned',
-      one: '1 workout planned',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count workouts planned', one: '1 workout planned');
     return '$_temp0';
   }
 
@@ -1069,12 +1055,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String daysLeft(int days) {
-    String _temp0 = intl.Intl.pluralLogic(
-      days,
-      locale: localeName,
-      other: '$days days left',
-      one: '1 day left',
-    );
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$days days left', one: '1 day left');
     return '$_temp0';
   }
 
@@ -1664,7 +1645,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setupDetailed => 'Detailed · ~6 min';
 
   @override
-  String get setupDetailedSub => 'Race times, weekly volume, FTP, swim test, max lifts and a weekday plan – for a precise plan from day one.';
+  String get setupDetailedSub =>
+      'Race times, weekly volume, FTP, swim test, max lifts and a weekday plan – for a precise plan from day one.';
 
   @override
   String get recommended => 'Recommended';
@@ -1698,12 +1680,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String sessionsPerWeekN(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: '$n sessions / week',
-      one: '1 session / week',
-    );
+    String _temp0 = intl.Intl.pluralLogic(n, locale: localeName, other: '$n sessions / week', one: '1 session / week');
     return '$_temp0';
   }
 
@@ -1958,7 +1935,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get planScienceNote => 'Plans follow e.g. Seiler (80/20), Daniels (VDOT paces), Bosquet (taper), Schoenfeld (strength volume). Details in the plan view.';
+  String get planScienceNote =>
+      'Plans follow e.g. Seiler (80/20), Daniels (VDOT paces), Bosquet (taper), Schoenfeld (strength volume). Details in the plan view.';
 
   @override
   String get yourPaceZones => 'Your pace zones';
@@ -1988,7 +1966,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hcTitle => 'Connect your Galaxy Watch';
 
   @override
-  String get hcSub => 'Your watch syncs to Samsung Health, Samsung Health shares with Health Connect, and Strive reads your workouts, heart rate, sleep and steps – and writes your Strive workouts back.';
+  String get hcSub =>
+      'Your watch syncs to Samsung Health, Samsung Health shares with Health Connect, and Strive reads your workouts, heart rate, sleep and steps – and writes your Strive workouts back.';
 
   @override
   String get hcUnavailable => 'Health Connect is not available on this device.';
@@ -2050,7 +2029,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hcWhatSynced => 'What is synced?';
 
   @override
-  String get hcWhatSyncedBody => 'Read: workouts (run, ride, swim, strength) incl. avg/max heart rate, distance and calories, resting heart rate, HRV, sleep, steps, weight, body fat. Write: Strive workouts and weight entries.';
+  String get hcWhatSyncedBody =>
+      'Read: workouts (run, ride, swim, strength) incl. avg/max heart rate, distance and calories, resting heart rate, HRV, sleep, steps, weight, body fat. Write: Strive workouts and weight entries.';
 
   @override
   String get steps => 'Steps';
@@ -2345,7 +2325,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gcalHeroTitle => 'Your plan in Google Calendar';
 
   @override
-  String get gcalHeroSub => 'Strive creates its own calendar called \"Strive\" and keeps it up to date automatically. Your other appointments are never read.';
+  String get gcalHeroSub =>
+      'Strive creates its own calendar called \"Strive\" and keeps it up to date automatically. Your other appointments are never read.';
 
   @override
   String get gcalConnect => 'Connect Google Calendar';
@@ -2373,12 +2354,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String gcalSynced(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count workouts synced',
-      one: '1 workout synced',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count workouts synced', one: '1 workout synced');
     return '$_temp0';
   }
 
@@ -2389,7 +2365,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gcalDisconnectTitle => 'Disconnect Google Calendar?';
 
   @override
-  String get gcalDisconnectBody => 'Strive will stop updating the calendar. Do you also want to delete the \"Strive\" calendar and all its events from your Google account?';
+  String get gcalDisconnectBody =>
+      'Strive will stop updating the calendar. Do you also want to delete the \"Strive\" calendar and all its events from your Google account?';
 
   @override
   String get gcalDeleteCalendar => 'Delete calendar';
@@ -2424,7 +2401,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gcalReconnect => 'Connect again';
 
   @override
-  String get gcalErrApiDisabled => 'The Google Calendar API is not enabled for this app yet. The developer needs to enable it in the Google Cloud console (project strive-fitness-app).';
+  String get gcalErrApiDisabled =>
+      'The Google Calendar API is not enabled for this app yet. The developer needs to enable it in the Google Cloud console (project strive-fitness-app).';
 
   @override
   String get gcalErrAuth => 'Google access has expired or was revoked. Please connect again.';
@@ -2475,12 +2453,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String timeCustomDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count days set individually',
-      one: '1 day set individually',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count days set individually', one: '1 day set individually');
     return '$_temp0';
   }
 
@@ -2565,7 +2538,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get splitBroWarning => 'Each muscle only once a week. With the same weekly volume, training a muscle twice a week usually builds a little more muscle (Schoenfeld 2016) – fine if you enjoy it.';
+  String get splitBroWarning =>
+      'Each muscle only once a week. With the same weekly volume, training a muscle twice a week usually builds a little more muscle (Schoenfeld 2016) – fine if you enjoy it.';
 
   @override
   String splitForDays(int count) {
@@ -2769,12 +2743,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nLengths(int lengths) {
-    String _temp0 = intl.Intl.pluralLogic(
-      lengths,
-      locale: localeName,
-      other: '$lengths lengths',
-      one: '1 length',
-    );
+    String _temp0 = intl.Intl.pluralLogic(lengths, locale: localeName, other: '$lengths lengths', one: '1 length');
     return '$_temp0';
   }
 
@@ -2836,16 +2805,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recoveryHowTitle => 'How this works';
 
   @override
-  String get recoveryHowText => 'Every workout gets a load score (duration × intensity, from RPE or heart rate). Strive compares the last 7 days with your average week of the last 28 days (acute:chronic workload ratio, Gabbett 2016). Between 0.8 and 1.3 you build fitness with a low injury risk; above 1.5 the risk rises clearly – plan an easy day. Fitness, fatigue and form follow the Banister model: form = fitness − fatigue.';
+  String get recoveryHowText =>
+      'Every workout gets a load score (duration × intensity, from RPE or heart rate). Strive compares the last 7 days with your average week of the last 28 days (acute:chronic workload ratio, Gabbett 2016). Between 0.8 and 1.3 you build fitness with a low injury risk; above 1.5 the risk rises clearly – plan an easy day. Fitness, fatigue and form follow the Banister model: form = fitness − fatigue.';
 
   @override
   String nWorkouts(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count workouts',
-      one: '1 workout',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count workouts', one: '1 workout');
     return '$_temp0';
   }
 
@@ -2895,10 +2860,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get zoneInfoTitle => 'Intensity zones';
 
   @override
-  String get zoneInfoRun => 'Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.';
+  String get zoneInfoRun =>
+      'Paces come from your race times (VDOT, Jack Daniels). Most of your running – about 80 % – should be easy; the faster zones are used in short, targeted doses.';
 
   @override
-  String get zoneInfoRide => 'Power zones are percentages of your FTP (the power you can hold for about one hour). Without a power meter, ride by heart rate and feel.';
+  String get zoneInfoRide =>
+      'Power zones are percentages of your FTP (the power you can hold for about one hour). Without a power meter, ride by heart rate and feel.';
 
   @override
   String get zoneInfoSwim => 'Paces per 100 m come from your critical swim speed (CSS, from a 400 m and 200 m test).';
@@ -2931,13 +2898,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get zdRunRec => 'Walking or very slow jogging between hard efforts and for warming up. Lets your heart rate come down.';
 
   @override
-  String get zdRunEasy => 'Your everyday pace: relaxed, you can talk in full sentences. Builds the aerobic base, used for easy and long runs.';
+  String get zdRunEasy =>
+      'Your everyday pace: relaxed, you can talk in full sentences. Builds the aerobic base, used for easy and long runs.';
 
   @override
   String get zdRunSteady => 'Controlled but purposeful, about your marathon pace. Used in long-run finishes and steady runs.';
 
   @override
-  String get zdRunThreshold => '\"Comfortably hard\" – a pace you could hold for about an hour. Tempo runs and cruise intervals raise your lactate threshold.';
+  String get zdRunThreshold =>
+      '\"Comfortably hard\" – a pace you could hold for about an hour. Tempo runs and cruise intervals raise your lactate threshold.';
 
   @override
   String get zdRunInterval => 'About your 3–5 km race pace. Efforts of 2–5 minutes with recovery jogs improve your VO2max.';
@@ -2967,7 +2936,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get zdSwimEasy => 'Loose, relaxed swimming for warm-up, cool-down and rests. Focus on long strokes and calm breathing.';
 
   @override
-  String get zdSwimDrills => 'Technique drills: exercises that isolate one part of the stroke (arm pull, body position, rotation, breathing). Speed does not matter – swim slowly and precisely. Tap \"Technique drills\" below for the exercises.';
+  String get zdSwimDrills =>
+      'Technique drills: exercises that isolate one part of the stroke (arm pull, body position, rotation, breathing). Speed does not matter – swim slowly and precisely. Tap \"Technique drills\" below for the exercises.';
 
   @override
   String get zdSwimEndurance => 'Steady aerobic swimming, a few seconds slower than CSS per 100 m. The main zone for longer sets.';
@@ -2982,7 +2952,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swimDrillsTitle => 'Technique drills';
 
   @override
-  String get swimDrillsIntro => 'In a technique set you swim these drills instead of normal freestyle, e.g. 50 m drill / 50 m freestyle. Swim slowly and concentrate on one thing per length.';
+  String get swimDrillsIntro =>
+      'In a technique set you swim these drills instead of normal freestyle, e.g. 50 m drill / 50 m freestyle. Swim slowly and concentrate on one thing per length.';
 
   @override
   String get drillCatchupName => 'Catch-up';
@@ -3006,7 +2977,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get drillSideKickName => '6-1-6 side kick';
 
   @override
-  String get drillSideKickHow => 'Kick 6 times on your side (lower arm stretched forward), take one stroke, kick 6 times on the other side.';
+  String get drillSideKickHow =>
+      'Kick 6 times on your side (lower arm stretched forward), take one stroke, kick 6 times on the other side.';
 
   @override
   String get drillSideKickWhy => 'Body position, rotation and calm breathing.';
@@ -3053,12 +3025,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String streakWeeks(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count weeks in a row',
-      one: '1 week in a row',
-    );
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count weeks in a row', one: '1 week in a row');
     return '$_temp0';
   }
 
@@ -3079,7 +3046,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get streakLastWeeks => 'Last 8 weeks';
 
   @override
-  String get streakHow => 'A week counts when you train on as many days as planned. With a training plan, the goal is the number of days with planned workouts that week (two sessions on one day count as one day); without a plan it is your number of training days. The current week never breaks your streak – it is added as soon as you reach the goal.';
+  String get streakHow =>
+      'A week counts when you train on as many days as planned. With a training plan, the goal is the number of days with planned workouts that week (two sessions on one day count as one day); without a plan it is your number of training days. The current week never breaks your streak – it is added as soon as you reach the goal.';
 
   @override
   String get showPastWeeks => 'Past weeks';
@@ -3152,7 +3120,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scoreHowTitle => 'How the score works';
 
   @override
-  String get scoreHowIntro => 'Every hour gets a score from 0 to 100 for outdoor endurance training. It starts at 100 and loses points for:';
+  String get scoreHowIntro =>
+      'Every hour gets a score from 0 to 100 for outdoor endurance training. It starts at 100 and loses points for:';
 
   @override
   String get scoreHowTemp => 'Feels-like temperature outside 7–16 °C (ideal for running): −3.5 per °C colder, −4.5 per °C warmer';
@@ -3256,7 +3225,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adjustWeekTitle => 'Adjust week';
 
   @override
-  String get adjustWeekIntro => 'Key workouts move to a free day this week – never right next to another key workout. Easy workouts don\'t need to be made up: piling up volume does more harm than good.';
+  String get adjustWeekIntro =>
+      'Key workouts move to a free day this week – never right next to another key workout. Easy workouts don\'t need to be made up: piling up volume does more harm than good.';
 
   @override
   String adjustReplaces(String title) {
@@ -3375,7 +3345,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wCrossRide => 'Easy ride instead of a run';
 
   @override
-  String get wCrossRideDesc => 'Same aerobic training without impact – easier on knees, hips and Achilles tendons. Bike or indoor trainer at a conversational effort.';
+  String get wCrossRideDesc =>
+      'Same aerobic training without impact – easier on knees, hips and Achilles tendons. Bike or indoor trainer at a conversational effort.';
 
   @override
   String get healthRunNote => 'Joints: prefer soft surfaces; stop if pain goes above 3/10 or changes your stride.';
@@ -3387,7 +3358,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get healthSwimShoulderNote => 'Shoulder: no paddles, breathe to both sides, stop if it hurts.';
 
   @override
-  String get healthGymBackNote => 'Back: no heavy axial loading – swap back squats and deadlifts for leg press, split squats or hip thrusts; keep a neutral spine.';
+  String get healthGymBackNote =>
+      'Back: no heavy axial loading – swap back squats and deadlifts for leg press, split squats or hip thrusts; keep a neutral spine.';
 
   @override
   String get healthGymShoulderNote => 'Shoulder: no heavy overhead pressing – use landmine or neutral-grip variants and stay pain-free.';
@@ -3396,7 +3368,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get healthGymJointNote => 'Joints: train in a pain-free range – reduce depth or load if knee or hip hurt.';
 
   @override
-  String get healthGymHeartNote => 'Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.';
+  String get healthGymHeartNote =>
+      'Heart / blood pressure: keep 2–3 reps in reserve and breathe out on the effort – no straining or breath holding.';
 
   @override
   String get recalNote => 'Adjusted to your recent training (effort and completed sessions).';
@@ -3408,7 +3381,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recalTitle => 'Review plan';
 
   @override
-  String get recalIntro => 'Your next two weeks, adapted to the last two: effort (RPE), completed and missed sessions, new best efforts. Completed workouts stay as they are.';
+  String get recalIntro =>
+      'Your next two weeks, adapted to the last two: effort (RPE), completed and missed sessions, new best efforts. Completed workouts stay as they are.';
 
   @override
   String get recalFindings => 'What we see';
@@ -3471,12 +3445,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String recalApply(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: 'Apply $n changes',
-      one: 'Apply 1 change',
-    );
+    String _temp0 = intl.Intl.pluralLogic(n, locale: localeName, other: 'Apply $n changes', one: 'Apply 1 change');
     return '$_temp0';
   }
 
@@ -3503,7 +3472,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wGymProgressNote => 'Progression: first build reps up to the top of the range, then add weight and start again at the bottom.';
 
   @override
-  String get wGymDeloadNote => 'Deload week: weights are entered about 10 % lighter and exercises with 3+ sets lose one. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+  String get wGymDeloadNote =>
+      'Deload week: weights are entered about 10 % lighter and exercises with 3+ sets lose one. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
 
   @override
   String get wGymTaperNote => 'Taper before your race: weights about 10 % lighter, nothing to failure – keep your strength, stay fresh.';
@@ -3514,10 +3484,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wRecoveryWeekNote => 'Deload week: volume is reduced on purpose – keep it easy even if you feel fresh. This is when your body absorbs the last weeks.';
+  String get wRecoveryWeekNote =>
+      'Deload week: volume is reduced on purpose – keep it easy even if you feel fresh. This is when your body absorbs the last weeks.';
 
   @override
-  String get wTaperWeekNote => 'Taper: less volume, short efforts stay sharp. Don\'t make up for anything – freshness for race day counts now.';
+  String get wTaperWeekNote =>
+      'Taper: less volume, short efforts stay sharp. Don\'t make up for anything – freshness for race day counts now.';
 
   @override
   String get wLongRunHmpDesc => 'Easy long run, the last quarter at your half-marathon goal pace – the most race-specific session.';
@@ -3590,16 +3562,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoAdjUndone => 'Original plan restored';
 
   @override
-  String get autoAdjLongCutShort => 'Your last long session ended early at a high effort – this one is held at what you managed plus about 10 % instead of growing.';
+  String get autoAdjLongCutShort =>
+      'Your last long session ended early at a high effort – this one is held at what you managed plus about 10 % instead of growing.';
 
   @override
   String get autoAdjLongHard => 'Your last long session felt harder than intended – this one stays at the same length instead of growing.';
 
   @override
-  String get autoAdjEasyHard => 'Your last easy session was harder than intended (heart rate / effort) – this one is a little shorter. Keep it truly easy: you should be able to talk in full sentences.';
+  String get autoAdjEasyHard =>
+      'Your last easy session was harder than intended (heart rate / effort) – this one is a little shorter. Keep it truly easy: you should be able to talk in full sentences.';
 
   @override
-  String get autoAdjEasyTooFast => 'Your last easy session was faster than the easy pace – this one is a little shorter. Slow down: easy days build the aerobic base (80/20).';
+  String get autoAdjEasyTooFast =>
+      'Your last easy session was faster than the easy pace – this one is a little shorter. Slow down: easy days build the aerobic base (80/20).';
 
   @override
   String get autoAdjQualityHard => 'Your last key workout was harder than intended – this one is not increased.';
@@ -3702,10 +3677,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get recalWhyLongCap => 'Long sessions stay within +10 % of your longest one of the last 30 days – beyond that the injury risk rises.';
+  String get recalWhyLongCap =>
+      'Long sessions stay within +10 % of your longest one of the last 30 days – beyond that the injury risk rises.';
 
   @override
-  String get recalWhyRpeLowHold => 'Your key workouts felt easy – the new targets are this week\'s step up, the volume stays (never both at once).';
+  String get recalWhyRpeLowHold =>
+      'Your key workouts felt easy – the new targets are this week\'s step up, the volume stays (never both at once).';
 
   @override
   String wBrickRun(int min) {
@@ -3713,7 +3690,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wBrickRunDesc => 'Straight off the bike: the first minutes feel heavy – that is normal. Change quickly (≤ 2 min) – transition practice included.';
+  String get wBrickRunDesc =>
+      'Straight off the bike: the first minutes feel heavy – that is normal. Change quickly (≤ 2 min) – transition practice included.';
 
   @override
   String get stepBrickStartNote => 'Find your running rhythm – short, quick steps';
@@ -3736,7 +3714,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feasBeginnerMarathon => 'A marathon is not a beginner goal: build up over 5 km, 10 km and a half marathon first.';
 
   @override
-  String get feasRunWalkLong => 'As long as you can\'t run 30 min continuously, a marathon is too far – build up over 5 km, 10 km and a half marathon first.';
+  String get feasRunWalkLong =>
+      'As long as you can\'t run 30 min continuously, a marathon is too far – build up over 5 km, 10 km and a half marathon first.';
 
   @override
   String get feasRunWalk => 'On race day you will still be on run/walk – continuous running takes longer to build.';
@@ -3776,7 +3755,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feasPlanAnyway => 'The plan is created anyway and builds up as far as is safely possible.';
 
   @override
-  String get wGymDeloadNote2 => 'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+  String get wGymDeloadNote2 =>
+      'Deload week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
 
   @override
   String get glossary => 'Glossary';
@@ -3793,25 +3773,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termRpeTitle => 'RPE – Rating of Perceived Exertion';
 
   @override
-  String get termRpeBody => 'How hard a workout or set felt, on a scale from 1 (very easy) to 10 (maximal). 3–4 = easy, you can chat; 6–7 = hard but controlled; 9–10 = all-out.';
+  String get termRpeBody =>
+      'How hard a workout or set felt, on a scale from 1 (very easy) to 10 (maximal). 3–4 = easy, you can chat; 6–7 = hard but controlled; 9–10 = all-out.';
 
   @override
-  String get termRpeTip => 'Optional. When you enter it, the plan adapts better – e.g. easy runs that feel too hard lead to a lighter next week.';
+  String get termRpeTip =>
+      'Optional. When you enter it, the plan adapts better – e.g. easy runs that feel too hard lead to a lighter next week.';
 
   @override
   String get termRirTitle => 'RIR – Reps in Reserve';
 
   @override
-  String get termRirBody => 'How many more reps you could have done at the end of a set. \"2 in the tank\" means you stop two reps before failure.';
+  String get termRirBody =>
+      'How many more reps you could have done at the end of a set. \"2 in the tank\" means you stop two reps before failure.';
 
   @override
-  String get termRirTip => 'The rating chips map to it: Easy ≈ 4+, Just right ≈ 2–3, Hard ≈ 1, Limit = 0. Most sets should end with 1–3 in the tank.';
+  String get termRirTip =>
+      'The rating chips map to it: Easy ≈ 4+, Just right ≈ 2–3, Hard ≈ 1, Limit = 0. Most sets should end with 1–3 in the tank.';
 
   @override
   String get termE1rmTitle => 'e1RM – estimated one-rep max';
 
   @override
-  String get termE1rmBody => 'The weight you could probably lift exactly once, calculated from a set with more reps (e.g. 80 kg × 8 ≈ 101 kg). No need to test a real max.';
+  String get termE1rmBody =>
+      'The weight you could probably lift exactly once, calculated from a set with more reps (e.g. 80 kg × 8 ≈ 101 kg). No need to test a real max.';
 
   @override
   String get termE1rmTip => 'Good for comparing progress across different weights and rep counts.';
@@ -3820,16 +3805,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termVdotTitle => 'VDOT – running fitness score';
 
   @override
-  String get termVdotBody => 'A score by coach Jack Daniels derived from your race times. All running paces in your plan (easy, tempo, interval) are calculated from it.';
+  String get termVdotBody =>
+      'A score by coach Jack Daniels derived from your race times. All running paces in your plan (easy, tempo, interval) are calculated from it.';
 
   @override
-  String get termVdotTip => '+1 VDOT is roughly 1–2 % faster over any distance. It rises with consistent training and is updated when you run faster.';
+  String get termVdotTip =>
+      '+1 VDOT is roughly 1–2 % faster over any distance. It rises with consistent training and is updated when you run faster.';
 
   @override
   String get termFtpTitle => 'FTP – Functional Threshold Power';
 
   @override
-  String get termFtpBody => 'The power (watts) you can hold on the bike for about one hour. Bike zones such as endurance, sweet spot and threshold are percentages of it.';
+  String get termFtpBody =>
+      'The power (watts) you can hold on the bike for about one hour. Bike zones such as endurance, sweet spot and threshold are percentages of it.';
 
   @override
   String get termFtpTip => 'Without a power meter the plan uses heart rate and feel instead.';
@@ -3838,7 +3826,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termCssTitle => 'CSS – Critical Swim Speed';
 
   @override
-  String get termCssBody => 'Your threshold pace in the pool per 100 m, calculated from a 400 m and a 200 m time trial. Swim intervals are set relative to it.';
+  String get termCssBody =>
+      'Your threshold pace in the pool per 100 m, calculated from a 400 m and a 200 m time trial. Swim intervals are set relative to it.';
 
   @override
   String get termCssTip => 'Example: 400 m in 8:00 and 200 m in 3:40 → CSS ≈ 2:10 /100 m.';
@@ -3847,7 +3836,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termSupersetTitle => 'Superset';
 
   @override
-  String get termSupersetBody => 'Two (or three) exercises done back to back with only a short switch, then the full rest. The app pairs opposing muscles (e.g. press + row), so each recovers while the other works.';
+  String get termSupersetBody =>
+      'Two (or three) exercises done back to back with only a short switch, then the full rest. The app pairs opposing muscles (e.g. press + row), so each recovers while the other works.';
 
   @override
   String get termSupersetTip => 'Saves time without losing performance.';
@@ -3856,7 +3846,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termAmrapTitle => 'AMRAP – as many reps as possible';
 
   @override
-  String get termAmrapBody => 'On the last set do as many clean reps as you can – but stop one rep before failure. The app uses the result to correct your weights.';
+  String get termAmrapBody =>
+      'On the last set do as many clean reps as you can – but stop one rep before failure. The app uses the result to correct your weights.';
 
   @override
   String get termAmrapTip => 'Only appears when it helps: for new exercises and when you reach the top of the rep range.';
@@ -3865,7 +3856,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termVolumeTitle => 'Volume';
 
   @override
-  String get termVolumeBody => 'Weight × reps of all working sets added up (warm-ups don\'t count). Where your body takes the place of a weight – push-ups (≈ 64 % of your body weight, like a bench press), pull-ups and dips (100 %), inverted rows – that share of your body weight counts plus any added weight. Squats, lunges, calf raises, bridges and core exercises count only the added weight, as their loaded versions count only the bar or dumbbells – so the volume doesn\'t drop when you move on from bodyweight to loaded squats. Holds such as planks count as hold time, not as volume.';
+  String get termVolumeBody =>
+      'Weight × reps of all working sets added up (warm-ups don\'t count). Where your body takes the place of a weight – push-ups (≈ 64 % of your body weight, like a bench press), pull-ups and dips (100 %), inverted rows – that share of your body weight counts plus any added weight. Squats, lunges, calf raises, bridges and core exercises count only the added weight, as their loaded versions count only the bar or dumbbells – so the volume doesn\'t drop when you move on from bodyweight to loaded squats. Holds such as planks count as hold time, not as volume.';
 
   @override
   String get termVolumeTip => 'More volume is not automatically better – what matters is progress over weeks.';
@@ -3874,7 +3866,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termPhaseTitle => 'Plan phases';
 
   @override
-  String get termPhaseBody => 'Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Recovery week: a lighter week every 3–5 weeks so your body can adapt.';
+  String get termPhaseBody =>
+      'Base: build endurance and technique, mostly easy. Build: more intensity. Peak: race-specific sessions. Taper: less volume before the race so you start fresh. Recovery week: a lighter week every 3–5 weeks so your body can adapt.';
 
   @override
   String get termPhaseTip => 'Recovery and taper weeks feel easy on purpose – don\'t make up for them.';
@@ -3883,7 +3876,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termZonesTitle => 'Intensity zones';
 
   @override
-  String get termZonesBody => 'Training ranges from very easy to maximal, based on pace, heart rate or power. About 80 % of endurance training should be easy – that\'s what builds your base.';
+  String get termZonesBody =>
+      'Training ranges from very easy to maximal, based on pace, heart rate or power. About 80 % of endurance training should be easy – that\'s what builds your base.';
 
   @override
   String get termZonesTip => 'Tap a zone in a workout for its exact range.';
@@ -3915,7 +3909,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raceSearchButton => 'Search';
 
   @override
-  String get raceIntro => 'Searches public race calendars (German running and triathlon calendars, RunSignup for the USA) – or open a race calendar directly.';
+  String get raceIntro =>
+      'Searches public race calendars (German running and triathlon calendars, RunSignup for the USA) – or open a race calendar directly.';
 
   @override
   String get raceSearching => 'Searching race calendars…';
@@ -3939,7 +3934,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raceEmpty => 'No races found for these filters. Try a longer time window or a wider region – or browse a race calendar.';
 
   @override
-  String get raceUnavailable => 'The AI web search is not available right now (quota or plan of the AI service). Browse a race calendar instead.';
+  String get raceUnavailable =>
+      'The AI web search is not available right now (quota or plan of the AI service). Browse a race calendar instead.';
 
   @override
   String get raceError => 'The search failed. Check your connection and try again – or browse a race calendar.';
@@ -3971,7 +3967,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get recalWhyGapsOmitted => 'Some missing sessions are not refilled: they would sit next to a race or the week already has its planned volume.';
+  String get recalWhyGapsOmitted =>
+      'Some missing sessions are not refilled: they would sit next to a race or the week already has its planned volume.';
 
   @override
   String get recalAdded => 'Added';
@@ -4039,12 +4036,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String planToEventPre(int weeks, int n, int x) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: '$n weeks',
-      one: '1 week',
-    );
+    String _temp0 = intl.Intl.pluralLogic(n, locale: localeName, other: '$n weeks', one: '1 week');
     return '$weeks weeks to race day: $_temp0 of base building first, then the $x-week race plan.';
   }
 
@@ -4070,12 +4062,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String planAligned(int weeks) {
-    String _temp0 = intl.Intl.pluralLogic(
-      weeks,
-      locale: localeName,
-      other: '$weeks weeks',
-      one: '1 week',
-    );
+    String _temp0 = intl.Intl.pluralLogic(weeks, locale: localeName, other: '$weeks weeks', one: '1 week');
     return 'Plan aligned: $_temp0 to race day';
   }
 
@@ -4089,12 +4076,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String goalCountdownDays(int days) {
-    String _temp0 = intl.Intl.pluralLogic(
-      days,
-      locale: localeName,
-      other: '$days days',
-      one: '1 day',
-    );
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$days days', one: '1 day');
     return '$_temp0';
   }
 
@@ -4140,7 +4122,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fcRiskBodyFinish => 'Recent training did not go as planned – at this rate the finish is at risk. Consistent training from now on (or one of the options) can still turn it around.';
+  String get fcRiskBodyFinish =>
+      'Recent training did not go as planned – at this rate the finish is at risk. Consistent training from now on (or one of the options) can still turn it around.';
 
   @override
   String fcAheadBody(String goal) {
@@ -4245,7 +4228,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get replacePlanKeeps => 'Completed workouts and stats stay.';
+  String get replacePlanKeeps => 'Completed workouts stay – with their recordings, stats and records.';
 
   @override
   String get replaceFromToday => 'From today';
@@ -4263,10 +4246,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startOverButton => 'Start over';
 
   @override
-  String get wRecoveryWeekNote2 => 'Recovery week: volume is reduced on purpose – keep it easy even if you feel fresh. This is when your body absorbs the last weeks.';
+  String get wRecoveryWeekNote2 =>
+      'Recovery week: volume is reduced on purpose – keep it easy even if you feel fresh. This is when your body absorbs the last weeks.';
 
   @override
-  String get wGymDeloadNote3 => 'Recovery week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+  String get wGymDeloadNote3 =>
+      'Recovery week: weights are entered about 10 % lighter and each exercise keeps about half its work sets. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
 
   @override
   String get eventQuestion => 'Training for a race?';
@@ -4284,12 +4269,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String todayHiddenByFilter(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: '$n workouts hidden by filter',
-      one: '1 workout hidden by filter',
-    );
+    String _temp0 = intl.Intl.pluralLogic(n, locale: localeName, other: '$n workouts hidden by filter', one: '1 workout hidden by filter');
     return '$_temp0';
   }
 
@@ -4346,7 +4326,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planHistory => 'Plan history';
 
   @override
-  String get planHistoryEmpty => 'No plan changes yet. Automatic adjustments, “Review plan”, “Adjust week” and “Not feeling 100%?” show up here.';
+  String get planHistoryEmpty =>
+      'No plan changes yet. Automatic adjustments, “Review plan”, “Adjust week” and “Not feeling 100%?” show up here.';
 
   @override
   String get planLogRecal => 'Plan reviewed';
@@ -4405,28 +4386,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notFitApplied => 'Plan adjusted';
 
   @override
-  String get notFitHintAboveNeck => 'Above-the-neck rule: only a runny nose or a mild sore throat and no fever – rest or at most a short, easy session. Fever, aching muscles, chest or stomach symptoms: no training until you are well.';
+  String get notFitHintAboveNeck =>
+      'Above-the-neck rule: only a runny nose or a mild sore throat and no fever – rest or at most a short, easy session. Fever, aching muscles, chest or stomach symptoms: no training until you are well.';
 
   @override
-  String get notFitHintReturn => 'Back after being sick: hard sessions of the next two days become easy. After 10 days or more off, use “Review plan” – it rebuilds at 50–70 % of your previous volume.';
+  String get notFitHintReturn =>
+      'Back after being sick: hard sessions of the next two days become easy. After 10 days or more off, use “Review plan” – it rebuilds at 50–70 % of your previous volume.';
 
   @override
-  String get notFitHintPainRule => 'Pain up to 3/10 that has settled by the next morning is acceptable. Stop if it gets worse during the session.';
+  String get notFitHintPainRule =>
+      'Pain up to 3/10 that has settled by the next morning is acceptable. Stop if it gets worse during the session.';
 
   @override
-  String get notFitHintDoctor => 'If the pain lasts more than a few days or keeps coming back, have it checked by a doctor or physiotherapist.';
+  String get notFitHintDoctor =>
+      'If the pain lasts more than a few days or keeps coming back, have it checked by a doctor or physiotherapist.';
 
   @override
   String get notFitHintSwapped => 'Swapped for low-impact cross-training: it keeps your endurance without the impact of running.';
 
   @override
-  String get notFitHintKeyEasy => 'Tired: the key workout becomes an easy session (about 20 % shorter). Quality on tired legs adds fatigue, not fitness.';
+  String get notFitHintKeyEasy =>
+      'Tired: the key workout becomes an easy session (about 20 % shorter). Quality on tired legs adds fatigue, not fitness.';
 
   @override
   String get notFitHintShorter => 'Tired: the easy session is about 25 % shorter – keep it truly easy.';
 
   @override
-  String get notFitHintGymLighter => 'About a third fewer sets with the same weights; end each set with 2–3 reps in reserve. Leave out exercises that hurt.';
+  String get notFitHintGymLighter =>
+      'About a third fewer sets with the same weights; end each set with 2–3 reps in reserve. Leave out exercises that hurt.';
 
   @override
   String get notFitHintGymShorter => 'Fewer sets to fit your time – main lifts first. A few hard sets keep most of the effect.';
@@ -4468,7 +4455,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wProgressionRun => 'Progression run';
 
   @override
-  String get wProgressionRunDesc => 'Start easy, run the last part at a steady marathon-pace effort – aerobic strength without a hard interval day.';
+  String get wProgressionRunDesc =>
+      'Start easy, run the last part at a steady marathon-pace effort – aerobic strength without a hard interval day.';
 
   @override
   String get stepProgressionNote => 'Steady – marathon-pace effort, still controlled';
@@ -4477,10 +4465,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wLongRunProgression => 'Progression long run';
 
   @override
-  String get wLongRunProgressionDesc => 'Easy long run, the last part at a steady marathon-pace effort – fatigue resistance without a race-pace session.';
+  String get wLongRunProgressionDesc =>
+      'Easy long run, the last part at a steady marathon-pace effort – fatigue resistance without a race-pace session.';
 
   @override
-  String get wLongRunShortDesc => 'Shorter long run this week: a lighter week between the longest runs – the body absorbs the load before the next step.';
+  String get wLongRunShortDesc =>
+      'Shorter long run this week: a lighter week between the longest runs – the body absorbs the load before the next step.';
 
   @override
   String wGoalPaceSet(int reps, String dist) {
@@ -4488,7 +4478,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wGoalPaceSetDesc => 'Repeats at your goal race pace with short jog breaks – the race-specific session: rhythm, pace judgement, confidence.';
+  String get wGoalPaceSetDesc =>
+      'Repeats at your goal race pace with short jog breaks – the race-specific session: rhythm, pace judgement, confidence.';
 
   @override
   String get stepGoalPaceNote => 'Goal race pace – even and controlled';
@@ -4594,10 +4585,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get musicIntroSwim => 'Under water you only hear music with special headphones – start it before you get in.';
 
   @override
-  String get musicSwimPoolHint => 'Bluetooth does not work under water: you need waterproof bone-conduction headphones with built-in storage (MP3). Download the playlist beforehand.';
+  String get musicSwimPoolHint =>
+      'Bluetooth does not work under water: you need waterproof bone-conduction headphones with built-in storage (MP3). Download the playlist beforehand.';
 
   @override
-  String get musicSwimOpenHint => 'Open water: only with bone-conduction headphones and quiet enough to hear boats, your group and the safety crew.';
+  String get musicSwimOpenHint =>
+      'Open water: only with bone-conduction headphones and quiet enough to hear boats, your group and the safety crew.';
 
   @override
   String get musicPreSwim => 'Pre-swim warm-up & focus';
@@ -4612,10 +4605,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get musicPodcastsSwim => 'For long, calm sets (bone conduction)';
 
   @override
-  String get musicIntroGym => 'Loud, motivating music at 120–140 BPM helps with strength work; circuits higher, warm-up and stretching lower.';
+  String get musicIntroGym =>
+      'Loud, motivating music at 120–140 BPM helps with strength work; circuits higher, warm-up and stretching lower.';
 
   @override
-  String get musicGymHint => 'Tip: continuous mixes keep the energy up between sets – the rest timer still vibrates when the break is over.';
+  String get musicGymHint =>
+      'Tip: continuous mixes keep the energy up between sets – the rest timer still vibrates when the break is over.';
 
   @override
   String get musicGymWarmup => 'Warm-up & mobility';
@@ -4714,13 +4709,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get raceNoSource => 'There is no direct search for this sport and region yet (connected: German running and triathlon calendars, RunSignup for the USA). Browse a race calendar below.';
+  String get raceNoSource =>
+      'There is no direct search for this sport and region yet (connected: German running and triathlon calendars, RunSignup for the USA). Browse a race calendar below.';
 
   @override
   String get wShakeoutRide => 'Shake-out ride';
 
   @override
-  String get wShakeoutRideDesc => '20–30 min very easy with three short pick-ups – loosen up, check the bike. Prepare food and drinks for tomorrow.';
+  String get wShakeoutRideDesc =>
+      '20–30 min very easy with three short pick-ups – loosen up, check the bike. Prepare food and drinks for tomorrow.';
 
   @override
   String get wShakeoutSwim => 'Shake-out swim';
@@ -4740,7 +4737,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wRaceFuelNote => 'Fuel as practised: 60–90 g carbohydrate per hour from early on, drink to thirst – nothing new on race day.';
 
   @override
-  String get wFuelPracticeNote => 'Practise race fuelling: 60–90 g carbohydrate per hour and 400–800 ml fluid per hour – train the gut like the legs.';
+  String get wFuelPracticeNote =>
+      'Practise race fuelling: 60–90 g carbohydrate per hour and 400–800 ml fluid per hour – train the gut like the legs.';
 
   @override
   String get wTrailNote => 'If your race has climbing: run on hilly terrain and practise power hiking on the steep parts.';
@@ -4768,7 +4766,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wBackToBack => 'Back-to-back run';
 
   @override
-  String get wBackToBackDesc => 'Easy medium-long run on tired legs the day after the long run – ultra endurance without one huge run. Walk breaks are fine.';
+  String get wBackToBackDesc =>
+      'Easy medium-long run on tired legs the day after the long run – ultra endurance without one huge run. Walk breaks are fine.';
 
   @override
   String get stepSwimTestNote => 'Time trial: fastest pace you can hold evenly – note the time';
@@ -4777,7 +4776,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wSwimCssTest => 'CSS test (400 m + 200 m)';
 
   @override
-  String get wSwimCssTestDesc => 'You can swim 400 m in one go now: swim 400 m and, after 5–10 min easy, 200 m as time trials. Enter both times in the plan settings (swimming) – Strive then sets your swim paces and plans CSS sets.';
+  String get wSwimCssTestDesc =>
+      'You can swim 400 m in one go now: swim 400 m and, after 5–10 min easy, 200 m as time trials. Enter both times in the plan settings (swimming) – Strive then sets your swim paces and plans CSS sets.';
 
   @override
   String get stepSwimNoviceWu => 'Easy, with breaks as needed';
@@ -4794,10 +4794,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wSwimBuildDesc => 'Building continuous swimming: swim every repeat relaxed without stopping, rest at the wall as long as you need (~30–45 s). The repeats get longer week by week – goal: 400 m in one go.';
+  String get wSwimBuildDesc =>
+      'Building continuous swimming: swim every repeat relaxed without stopping, rest at the wall as long as you need (~30–45 s). The repeats get longer week by week – goal: 400 m in one go.';
 
   @override
-  String get wSwimNoviceTechDesc => 'Technique for swim starters: breathing out under water, flat body position, relaxed kick – short distances with breaks. No pace targets.';
+  String get wSwimNoviceTechDesc =>
+      'Technique for swim starters: breathing out under water, flat body position, relaxed kick – short distances with breaks. No pace targets.';
 
   @override
   String wLongSwim(int meters) {
@@ -4805,7 +4807,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wLongSwimDesc => 'The long continuous swim of the week – even rhythm, bilateral breathing, no stopping. It grows towards your race distance.';
+  String get wLongSwimDesc =>
+      'The long continuous swim of the week – even rhythm, bilateral breathing, no stopping. It grows towards your race distance.';
 
   @override
   String get wOpenWaterNote => 'Open water when possible: wetsuit, sighting, swimming in a group (drafting) and never alone.';
@@ -4857,7 +4860,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalKindWeeks => 'Plan length only';
 
   @override
-  String get goalKindWeeksHint => 'No race – a plan that builds your fitness over the chosen number of weeks, with recovery weeks and without taper.';
+  String get goalKindWeeksHint =>
+      'No race – a plan that builds your fitness over the chosen number of weeks, with recovery weeks and without taper.';
 
   @override
   String get tabZones => 'Zones';
@@ -4888,12 +4892,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String planStepsLeft(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: 'then $n more sections',
-      one: 'then 1 more section',
-    );
+    String _temp0 = intl.Intl.pluralLogic(n, locale: localeName, other: 'then $n more sections', one: 'then 1 more section');
     return '$_temp0';
   }
 
@@ -4907,10 +4906,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get zoneCurrent => 'Current zone';
 
   @override
-  String get wLongRunWalkDesc => 'Long run/walk: the same rhythm as your other runs, more repeats – time on your feet for the race. Talking pace, walk briskly. Grows about 10 min a week.';
+  String get wLongRunWalkDesc =>
+      'Long run/walk: the same rhythm as your other runs, more repeats – time on your feet for the race. Talking pace, walk briskly. Grows about 10 min a week.';
 
   @override
-  String get wWalkBreaksNote => 'Walk 1 min after every 10 min of running (Galloway) – the breaks keep the long run easy on legs and joints. Drop them once it feels easy.';
+  String get wWalkBreaksNote =>
+      'Walk 1 min after every 10 min of running (Galloway) – the breaks keep the long run easy on legs and joints. Drop them once it feels easy.';
 
   @override
   String wSwimContinuous(int meters) {
@@ -4918,7 +4919,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wSwimContinuousDesc => 'Swim the main set in one go at an easy, steady pace – it grows about 100 m a week towards the distance your race needs without stopping.';
+  String get wSwimContinuousDesc =>
+      'Swim the main set in one go at an easy, steady pace – it grows about 100 m a week towards the distance your race needs without stopping.';
 
   @override
   String get progTitle => 'Your build-up is falling behind';
@@ -5018,7 +5020,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAccountSub => 'Permanently deletes your account and all your data';
 
   @override
-  String get deleteAccountConfirm1 => 'All your workouts, plans, programs, goals and body data will be deleted permanently – on all devices. This cannot be undone.';
+  String get deleteAccountConfirm1 =>
+      'All your workouts, plans, programs, goals and body data will be deleted permanently – on all devices. This cannot be undone.';
 
   @override
   String get deleteAccountConfirm2Title => 'Really delete?';
@@ -5071,13 +5074,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wShakeoutRunWalkDesc => 'Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.';
+  String get wShakeoutRunWalkDesc =>
+      'Easy shake-out in your run/walk rhythm – just loosen up, nothing more. Lay out your race kit tonight.';
 
   @override
   String get wShakeoutEasyDesc => '15 min very easy – just loosen up, nothing more. Lay out your race kit tonight.';
 
   @override
-  String get wMastersStrengthNote => 'Strength tip: add 15–20 min of strength after this session (squats, lunges, calf raises, a plank) – twice a week it keeps muscle, bones and tendons strong as you get older.';
+  String get wMastersStrengthNote =>
+      'Strength tip: add 15–20 min of strength after this session (squats, lunges, calf raises, a plank) – twice a week it keeps muscle, bones and tendons strong as you get older.';
 
   @override
   String wRaceLeg(String leg, String dist) {
@@ -5085,16 +5090,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wRaceFinishDesc => 'Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.';
+  String get wRaceFinishDesc =>
+      'Finish goal: no target time yet – start slower than feels right, keep your rhythm and enjoy reaching the finish.';
 
   @override
-  String get wTriOpenWaterNote => 'Race preparation: practise sighting in the pool (look forward every 6–9 strokes); once the water allows, swim some sessions in open water in your wetsuit – in a group, never alone.';
+  String get wTriOpenWaterNote =>
+      'Race preparation: practise sighting in the pool (look forward every 6–9 strokes); once the water allows, swim some sessions in open water in your wetsuit – in a group, never alone.';
 
   @override
   String get stepSwimRaceFinishNote => 'Last third at race pace – steady, keep your technique';
 
   @override
-  String get wLongSwimRaceDesc => 'This week the last third of the long swim is at race pace: practise holding the pace when you are already tired.';
+  String get wLongSwimRaceDesc =>
+      'This week the last third of the long swim is at race pace: practise holding the pace when you are already tired.';
 
   @override
   String wLongRideRacePace(int reps, int each) {
@@ -5102,7 +5110,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wLongRideRacePaceDesc => 'Long Z2 ride with blocks at the power you want to hold on race day: steady, aero, and eat and drink as in the race (every 20–30 min).';
+  String get wLongRideRacePaceDesc =>
+      'Long Z2 ride with blocks at the power you want to hold on race day: steady, aero, and eat and drink as in the race (every 20–30 min).';
 
   @override
   String get stepRacePowerNote => 'Race power – steady, as on race day';
@@ -5111,7 +5120,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wRideTempoDescIm => 'Race-specific tempo at 75–85 % FTP – the effort of an Ironman bike leg: steady, aero, with fuelling.';
 
   @override
-  String get wRideTempoDescFondo => 'Race-specific tempo at 75–85 % FTP – the steady effort of long climbs and a fast group ride: even pacing, with fuelling.';
+  String get wRideTempoDescFondo =>
+      'Race-specific tempo at 75–85 % FTP – the steady effort of long climbs and a fast group ride: even pacing, with fuelling.';
 
   @override
   String get wRideTempoBaseDesc => 'Tempo at 76–90 % FTP: aerobic strength for long efforts – controlled, a step below sweet spot.';
@@ -5125,7 +5135,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wHillRepsDesc => 'Uphill repeats on a steady climb (5–8 %): strong, short steps, upright posture; jog or walk down easily. Builds the climbing strength your ultra needs.';
+  String get wHillRepsDesc =>
+      'Uphill repeats on a steady climb (5–8 %): strong, short steps, upright posture; jog or walk down easily. Builds the climbing strength your ultra needs.';
 
   @override
   String get stepHillNote => 'Uphill – hard but controlled, by feel (no pace)';
@@ -5139,22 +5150,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wGymRegressionNote => 'First weeks: easier variants of the technically demanding lifts (lat pulldown instead of pull-ups, dumbbell Romanian deadlift instead of the barbell deadlift, reverse crunches instead of hanging leg raises) – the full lifts follow once the technique is solid.';
+  String get wGymRegressionNote =>
+      'First weeks: easier variants of the technically demanding lifts (lat pulldown instead of pull-ups, dumbbell Romanian deadlift instead of the barbell deadlift, reverse crunches instead of hanging leg raises) – the full lifts follow once the technique is solid.';
 
   @override
-  String get recalWhyFatigueRecovery => 'Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.';
+  String get recalWhyFatigueRecovery =>
+      'Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.';
 
   @override
-  String get recalWhyFatigueCheck => 'Still harder than intended after the recovery week: check sleep, illness and stress – and consider a slower target time. Quality stays, with fewer repeats.';
+  String get recalWhyFatigueCheck =>
+      'Still harder than intended after the recovery week: check sleep, illness and stress – and consider a slower target time. Quality stays, with fewer repeats.';
 
   @override
-  String get recalWhyGoalAtRisk => 'With the training of the last weeks the race goal is hard to reach (long runs or weekly volume far from what the race needs) – consider a later race or a shorter distance.';
+  String get recalWhyGoalAtRisk =>
+      'With the training of the last weeks the race goal is hard to reach (long runs or weekly volume far from what the race needs) – consider a later race or a shorter distance.';
 
   @override
-  String get recalWhyRepeatStage => 'The run/walk sessions felt hard (RPE above 5) or were cut short: the coming week repeats your current stage instead of moving up.';
+  String get recalWhyRepeatStage =>
+      'The run/walk sessions felt hard (RPE above 5) or were cut short: the coming week repeats your current stage instead of moving up.';
 
   @override
-  String get recalWhyMoveLong => 'Long runs were missed while the other runs were done: the next long run moves to a training day with more time – the easy runs stay as they are.';
+  String get recalWhyMoveLong =>
+      'Long runs were missed while the other runs were done: the next long run moves to a training day with more time – the easy runs stay as they are.';
 
   @override
   String get fcReasonFatigue => 'Sessions felt harder than intended recently';
@@ -5293,12 +5310,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String planWeeksN(int weeks) {
-    String _temp0 = intl.Intl.pluralLogic(
-      weeks,
-      locale: localeName,
-      other: '$weeks weeks',
-      one: '1 week',
-    );
+    String _temp0 = intl.Intl.pluralLogic(weeks, locale: localeName, other: '$weeks weeks', one: '1 week');
     return '$_temp0';
   }
 
@@ -5430,12 +5442,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String maxRepsN(int reps) {
-    String _temp0 = intl.Intl.pluralLogic(
-      reps,
-      locale: localeName,
-      other: '$reps reps',
-      one: '1 rep',
-    );
+    String _temp0 = intl.Intl.pluralLogic(reps, locale: localeName, other: '$reps reps', one: '1 rep');
     return '$_temp0';
   }
 
@@ -5459,7 +5466,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termKeyTitle => 'Key session';
 
   @override
-  String get termKeyBody => 'The one or two sessions of a week that move your fitness forward most – e.g. intervals, a tempo run or the long run. The other sessions are easy and help you recover for them.';
+  String get termKeyBody =>
+      'The one or two sessions of a week that move your fitness forward most – e.g. intervals, a tempo run or the long run. The other sessions are easy and help you recover for them.';
 
   @override
   String get termKeyTip => 'Missed one? “Adjust week” moves it to a free day – never right next to another key session.';
@@ -5468,7 +5476,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termLoadWeekTitle => 'Loading week';
 
   @override
-  String get termLoadWeekBody => 'A normal training week in which volume or intensity rises a little. Two to four loading weeks are followed by a recovery week.';
+  String get termLoadWeekBody =>
+      'A normal training week in which volume or intensity rises a little. Two to four loading weeks are followed by a recovery week.';
 
   @override
   String get termLoadWeekTip => 'Feeling tired at the end of a loading week is normal – the recovery week turns it into fitness.';
@@ -5477,7 +5486,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termDeloadTitle => 'Recovery week';
 
   @override
-  String get termDeloadBody => 'Every 3–5 weeks a lighter week (about 60–70 % of the volume, little intensity). Your body adapts to the training in this time.';
+  String get termDeloadBody =>
+      'Every 3–5 weeks a lighter week (about 60–70 % of the volume, little intensity). Your body adapts to the training in this time.';
 
   @override
   String get termDeloadTip => 'Don’t make up the missing volume – the week is meant to feel easy.';
@@ -5486,7 +5496,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termStridesTitle => 'Strides';
 
   @override
-  String get termStridesBody => 'Short accelerations of 15–30 s up to a fast but relaxed pace, with full recovery in between. They improve running economy and technique without tiring you.';
+  String get termStridesBody =>
+      'Short accelerations of 15–30 s up to a fast but relaxed pace, with full recovery in between. They improve running economy and technique without tiring you.';
 
   @override
   String get termStridesTip => 'Stay relaxed: shoulders loose, quick steps – it is not a sprint.';
@@ -5495,7 +5506,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termFartlekTitle => 'Fartlek';
 
   @override
-  String get termFartlekBody => '“Speed play”: faster and easier sections alternate by feel or by time, without fixed distances. A playful way to bring speed into a run.';
+  String get termFartlekBody =>
+      '“Speed play”: faster and easier sections alternate by feel or by time, without fixed distances. A playful way to bring speed into a run.';
 
   @override
   String get termFartlekTip => 'Use landmarks: faster to the next lamp post, easy to the next corner.';
@@ -5504,19 +5516,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termAcwrTitle => 'ACWR – acute:chronic workload ratio';
 
   @override
-  String get termAcwrBody => 'Your load of the last 7 days (acute, ATL) compared with your average week of the last 28 days (chronic, CTL). Between 0.8 and 1.3 you build fitness at a low injury risk; above 1.5 the risk rises clearly.';
+  String get termAcwrBody =>
+      'Your load of the last 7 days (acute, ATL) compared with your average week of the last 28 days (chronic, CTL). Between 0.8 and 1.3 you build fitness at a low injury risk; above 1.5 the risk rises clearly.';
 
   @override
   String get termAcwrTip => 'A high value? Plan an easy day instead of adding more.';
 
   @override
   String daysLeftInline(int days) {
-    String _temp0 = intl.Intl.pluralLogic(
-      days,
-      locale: localeName,
-      other: '$days days left',
-      one: '1 day left',
-    );
+    String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$days days left', one: '1 day left');
     return '$_temp0';
   }
 
@@ -5551,10 +5559,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get recalWhyRpeLowSpaced => 'Your key workouts felt easy again – but the volume only just went up, so it stays this week (at most every other week, 3 times per plan). If it keeps feeling easy, the targets follow.';
+  String get recalWhyRpeLowSpaced =>
+      'Your key workouts felt easy again – but the volume only just went up, so it stays this week (at most every other week, 3 times per plan). If it keeps feeling easy, the targets follow.';
 
   @override
-  String get recalWhyTaper => 'Taper: less is more – the volume is reduced on purpose and stays that way. Fitness doesn\'t drop in two weeks; freshness for race day comes from the rest.';
+  String get recalWhyTaper =>
+      'Taper: less is more – the volume is reduced on purpose and stays that way. Fitness doesn\'t drop in two weeks; freshness for race day comes from the rest.';
 
   @override
   String recalWhyTaperOverdo(int pct) {
@@ -5660,7 +5670,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planLogUnlink => 'Link reopened';
 
   @override
-  String get planLogUnlinkReason => 'Older versions ticked workouts off with sessions more than a day away. They are open again – on the session you can count it as a replacement.';
+  String get planLogUnlinkReason =>
+      'Older versions ticked workouts off with sessions more than a day away. They are open again – on the session you can count it as a replacement.';
 
   @override
   String get planLogTickedOff => 'ticked off';
@@ -5739,7 +5750,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fromPlanHintGym => 'Saved with the exercises, sets and weights of the plan. Did something differ? Correct it afterwards on the session under “Edit”.';
+  String get fromPlanHintGym =>
+      'Saved with the exercises, sets and weights of the plan. Did something differ? Correct it afterwards on the session under “Edit”.';
 
   @override
   String get fromPlanHintCardio => 'Duration and distance come from the plan – change them to what you actually did.';
@@ -5748,10 +5760,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fromPlanBadge => 'Taken over from the plan';
 
   @override
-  String get fromPlanNoteGym => 'not recorded: counts for volume, sets, statistics and the plan, but sets no records. Use “Edit” to enter what you really lifted.';
+  String get fromPlanNoteGym =>
+      'not recorded: counts for volume, sets, statistics and the plan, but sets no records. Use “Edit” to enter what you really lifted.';
 
   @override
-  String get fromPlanNoteCardio => 'not recorded: counts for distance, time and the plan, but sets no records and doesn’t adjust your paces. Use “Edit” to enter your real values.';
+  String get fromPlanNoteCardio =>
+      'not recorded: counts for distance, time and the plan, but sets no records and doesn’t adjust your paces. Use “Edit” to enter your real values.';
 
   @override
   String get summaryTooShortGym => 'Less than a minute of training.';
@@ -5763,13 +5777,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryNoDistanceTitle => 'No distance recorded';
 
   @override
-  String get summaryNoDistanceBody => 'GPS recorded no distance. Save anyway and enter the distance afterwards under “Edit” – or discard the session.';
+  String get summaryNoDistanceBody =>
+      'GPS recorded no distance. Save anyway and enter the distance afterwards under “Edit” – or discard the session.';
 
   @override
   String get summaryNoLapsTitle => 'No laps counted';
 
   @override
-  String get summaryNoLapsBody => 'No laps were counted. Save anyway and enter laps or distance afterwards under “Edit” – or discard the session.';
+  String get summaryNoLapsBody =>
+      'No laps were counted. Save anyway and enter laps or distance afterwards under “Edit” – or discard the session.';
 
   @override
   String get summaryTooLittle => 'Less than 10 % of the plan – this doesn’t count as done yet.';
@@ -5879,7 +5895,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raceByWeeks => 'Plan length';
 
   @override
-  String get raceByWeeksHint => 'No date yet? Choose the plan length: the race goes on the day of your long session in the last week, and the plan builds up to it – taper included.';
+  String get raceByWeeksHint =>
+      'No date yet? Choose the plan length: the race goes on the day of your long session in the last week, and the plan builds up to it – taper included.';
 
   @override
   String raceOnDate(String date) {
@@ -5923,10 +5940,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wOpenWaterSafety => 'Open-water safety: never swim alone (group or escort boat), wetsuit, swim buoy and a bright cap; with cold, cramp or panic roll onto your back and raise a hand.';
+  String get wOpenWaterSafety =>
+      'Open-water safety: never swim alone (group or escort boat), wetsuit, swim buoy and a bright cap; with cold, cramp or panic roll onto your back and raise a hand.';
 
   @override
-  String get wGymRaceWeekNote => 'Race coming up: no heavy leg work any more (the last heavy leg session is 7–10 days before the race) – upper body, core and mobility only, easy.';
+  String get wGymRaceWeekNote =>
+      'Race coming up: no heavy leg work any more (the last heavy leg session is 7–10 days before the race) – upper body, core and mobility only, easy.';
 
   @override
   String get stepFartlekSoftNote => 'Pick it up, but controlled – effort 6–7 out of 10, short sentences still possible, no sprint';
@@ -5946,7 +5965,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryRemoveRaceGoalOn => 'Your new plan has no race – the goal the previous plan was built for is removed with it.';
 
   @override
-  String get summaryRemoveRaceGoalOff => 'The goal stays: its countdown and the hint “Goal and plan don’t match” remain until you align a plan with it again.';
+  String get summaryRemoveRaceGoalOff =>
+      'The goal stays: its countdown and the hint “Goal and plan don’t match” remain until you align a plan with it again.';
 
   @override
   String fcEarlyMore(int count) {
@@ -6021,7 +6041,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swimTestOnly200 => 'The CSS test needs the 400 m time too – the 200 m alone is not enough.';
 
   @override
-  String get swimTestImplausible => 'These two times don’t fit together: usually the 400 m takes a little more than twice as long as the 200 m (about 2.0–2.4 ×). Please check them – until then the CSS is estimated from the 400 m.';
+  String get swimTestImplausible =>
+      'These two times don’t fit together: usually the 400 m takes a little more than twice as long as the 200 m (about 2.0–2.4 ×). Please check them – until then the CSS is estimated from the 400 m.';
 
   @override
   String get calJumpCurrentWeek => 'Back to the current week';
@@ -6079,7 +6100,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get holdRange => 'Hold-time range';
 
   @override
-  String get holdRangeHint => 'Every set held its target → next time 5–10 s longer, up to the top of the range; then with added weight and shorter again.';
+  String get holdRangeHint =>
+      'Every set held its target → next time 5–10 s longer, up to the top of the range; then with added weight and shorter again.';
 
   @override
   String get volumeInclBody => 'incl. body weight';
@@ -6106,13 +6128,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logRirSettingShort => 'Reps in the tank (RIR) after each set';
 
   @override
-  String get logRirSettingInfo => 'After every set you note how many more reps you could have done (reps in reserve, RIR). When an exercise has no quick rating, Strive uses these values for your next progression. The quick rating per exercise stays either way.';
+  String get logRirSettingInfo =>
+      'After every set you note how many more reps you could have done (reps in reserve, RIR). When an exercise has no quick rating, Strive uses these values for your next progression. The quick rating per exercise stays either way.';
 
   @override
   String get trainingReminderShort => 'On planned training days';
 
   @override
-  String get vibrationInfo => 'Vibrates when a rest or hold timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity – also with touch vibration switched off in the system settings.';
+  String get vibrationInfo =>
+      'Vibrates when a rest or hold timer ends, at every new step of a structured workout and at every kilometre split of a recorded activity – also with touch vibration switched off in the system settings.';
 
   @override
   String get reorderHint => 'Long-press folders and programs to move them.';
@@ -6158,10 +6182,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wGymDeloadNote4 => 'Recovery week: same sets as in the program, the weights are entered about 10 % lighter. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+  String get wGymDeloadNote4 =>
+      'Recovery week: same sets as in the program, the weights are entered about 10 % lighter. Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
 
   @override
-  String get wGymLegsEasyNote => 'Leg exercises today with all their sets but about 10–15 % lighter (about 4 reps in the tank) – tomorrow’s key session needs fresh legs.';
+  String get wGymLegsEasyNote =>
+      'Leg exercises today with all their sets but about 10–15 % lighter (about 4 reps in the tank) – tomorrow’s key session needs fresh legs.';
 
   @override
   String wGymOverTimeNote(int total, int min) {
@@ -6172,7 +6198,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gymAssignTitle => 'Assign programs yourself';
 
   @override
-  String get gymAssignSub => 'Choose which program you train on each gym day – your own or a built-in one. Sets and exercises come from the program; the plan adjusts load and reps in reserve.';
+  String get gymAssignSub =>
+      'Choose which program you train on each gym day – your own or a built-in one. Sets and exercises come from the program; the plan adjusts load and reps in reserve.';
 
   @override
   String get gymAssignAB => 'Alternate week A / week B';
@@ -6227,7 +6254,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerSoundSub => 'Countdown and end of holds, end of rests';
 
   @override
-  String get wGymDeloadNote5 => 'Recovery week: same sets as in the program, the weights are entered about 10 % lighter (bodyweight exercises: a few reps fewer). Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
+  String get wGymDeloadNote5 =>
+      'Recovery week: same sets as in the program, the weights are entered about 10 % lighter (bodyweight exercises: a few reps fewer). Train cleanly with about 4 reps in the tank – fatigue drops and you come back stronger.';
 
   @override
   String get loadRaceLighter => 'race coming up';
@@ -6317,7 +6345,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feasCapWhy => 'Longer single runs add more injury risk and recovery cost than fitness.';
 
   @override
-  String get feasCapWhyTri => 'In triathlon and duathlon training this limit is fixed: the bike carries the endurance, and an even longer run would cost you the key sessions of the following days.';
+  String get feasCapWhyTri =>
+      'In triathlon and duathlon training this limit is fixed: the bike carries the endurance, and an even longer run would cost you the key sessions of the following days.';
 
   @override
   String feasCapOffer(String time, String dist) {
@@ -6330,13 +6359,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get feasCapExtendedNoGain => 'You allowed longer runs, but this plan cannot use them: there are too few weeks left to build beyond the limit safely.';
+  String get feasCapExtendedNoGain =>
+      'You allowed longer runs, but this plan cannot use them: there are too few weeks left to build beyond the limit safely.';
 
   @override
-  String get feasCapFinish => 'So finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).';
+  String get feasCapFinish =>
+      'So finishing is the goal – start easy and plan short walk breaks from the beginning (e.g. 1 min every 10 min).';
 
   @override
-  String get feasCapFinishTri => 'For the run of your race that means: start easy and plan short walk breaks from the beginning, e.g. at every aid station.';
+  String get feasCapFinishTri =>
+      'For the run of your race that means: start easy and plan short walk breaks from the beginning, e.g. at every aid station.';
 
   @override
   String longRunExtendSwitch(String time) {
@@ -6380,7 +6412,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get feasCapExtendedNoGainVolume => 'You allowed longer runs, but this plan cannot use them: your weekly running volume does not carry a longer long run – that takes more or longer runs on the other days, not fewer weeks.';
+  String get feasCapExtendedNoGainVolume =>
+      'You allowed longer runs, but this plan cannot use them: your weekly running volume does not carry a longer long run – that takes more or longer runs on the other days, not fewer weeks.';
 
   @override
   String feasRunFrequencyLong(String have, String time, String need) {
@@ -6482,7 +6515,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signOutUnsyncedTitle => 'Changes not synced yet';
 
   @override
-  String get signOutUnsyncedBody => 'Some changes – e.g. workouts recorded offline – have not reached the server yet. If you log out now, they are lost. Go online and wait a moment to keep them.';
+  String get signOutUnsyncedBody =>
+      'Some changes – e.g. workouts recorded offline – have not reached the server yet. If you log out now, they are lost. Go online and wait a moment to keep them.';
 
   @override
   String get signOutAnyway => 'Log out anyway';
@@ -6491,10 +6525,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get guestExistsTitle => 'This account already has Strive data';
 
   @override
-  String get guestExistsBody => 'Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.';
+  String get guestExistsBody =>
+      'Your guest account cannot be linked to it. You can switch to this account and take your guest data along – or switch and discard the guest data.';
 
   @override
-  String get guestExistsMergeInfo => 'Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.';
+  String get guestExistsMergeInfo =>
+      'Taken along: your workouts, body values, own programs and goals. The account keeps its profile and training plan.';
 
   @override
   String get guestExistsMerge => 'Take data along';
@@ -6520,31 +6556,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get guestSwitchSignInAgain => 'Please sign in again to continue.';
 
   @override
-  String get wGymRegressionNote2 => 'First weeks: easier variations of the technically demanding exercises – the full exercises follow once the technique is solid.';
+  String get wGymRegressionNote2 =>
+      'First weeks: easier variations of the technically demanding exercises – the full exercises follow once the technique is solid.';
 
   @override
-  String get wGymProgressNoteLinear => 'Progression: on the main lifts the weight goes up in small steps as long as you make every rep; on the other exercises first build the reps to the top of the range, then add weight.';
+  String get wGymProgressNoteLinear =>
+      'Progression: on the main lifts the weight goes up in small steps as long as you make every rep; on the other exercises first build the reps to the top of the range, then add weight.';
 
   @override
-  String get wGymProgressNoteBw => 'Progression: first more reps – also beyond the range – then a harder variation (pull-ups and dips: added weight).';
+  String get wGymProgressNoteBw =>
+      'Progression: first more reps – also beyond the range – then a harder variation (pull-ups and dips: added weight).';
 
   @override
-  String get healthGymBackSwapNote => 'Back: squats, deadlifts, bent-over rows and standing presses are replaced by leg press, glute bridges and supported variations – no heavy axial load, neutral spine.';
+  String get healthGymBackSwapNote =>
+      'Back: squats, deadlifts, bent-over rows and standing presses are replaced by leg press, glute bridges and supported variations – no heavy axial load, neutral spine.';
 
   @override
-  String get healthGymShoulderSwapNote => 'Shoulder: overhead pressing, overhead triceps work and dips are replaced by incline and close-grip variations – stay pain-free.';
+  String get healthGymShoulderSwapNote =>
+      'Shoulder: overhead pressing, overhead triceps work and dips are replaced by incline and close-grip variations – stay pain-free.';
 
   @override
   String get healthGymNoJumpNote => 'No jumps: jump squats are replaced by squats without a jump.';
 
   @override
-  String get splitHomeNote2 => 'For training at home or with body weight Strive uses full-body programs (2 alternating); from 4 strength days a week upper and lower body alternate.';
+  String get splitHomeNote2 =>
+      'For training at home or with body weight Strive uses full-body programs (2 alternating); from 4 strength days a week upper and lower body alternate.';
 
   @override
   String get equipBodyweightSub2 => 'No equipment – a sturdy table, a chair and a door are enough';
 
   @override
-  String get splitFullbodyWarning => 'Full body on 4 or more days loads every muscle on consecutive days – from 4 days upper / lower is the better choice.';
+  String get splitFullbodyWarning =>
+      'Full body on 4 or more days loads every muscle on consecutive days – from 4 days upper / lower is the better choice.';
 
   @override
   String gymAssignUneven(int n, int days) {
@@ -6552,10 +6595,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get healthGymBackSwapNoteHome => 'Back: deadlift variations, bent-over rows, standing presses and jumps are replaced by glute bridges, chest-supported rows, seated presses and squats without a jump – no heavy axial load, neutral spine.';
+  String get healthGymBackSwapNoteHome =>
+      'Back: deadlift variations, bent-over rows, standing presses and jumps are replaced by glute bridges, chest-supported rows, seated presses and squats without a jump – no heavy axial load, neutral spine.';
 
   @override
-  String get wGymProgressNoteBw2 => 'Progression: first more reps – also beyond the range – then a harder variation (e.g. feet raised, single-leg or a slower lowering).';
+  String get wGymProgressNoteBw2 =>
+      'Progression: first more reps – also beyond the range – then a harder variation (e.g. feet raised, single-leg or a slower lowering).';
 
   @override
   String wGymShortNote(int min) {
@@ -6563,38 +6608,24 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eventGymNoRace => 'A pure strength plan trains for no race. For a running race choose the Hybrid focus (strength + running) or Running – here you set how long the plan runs.';
+  String get eventGymNoRace =>
+      'A pure strength plan trains for no race. For a running race choose the Hybrid focus (strength + running) or Running – here you set how long the plan runs.';
 
   @override
   String feasNoRuns(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: 'at least $n runs',
-      one: 'at least 1 run',
-    );
+    String _temp0 = intl.Intl.pluralLogic(n, locale: localeName, other: 'at least $n runs', one: 'at least 1 run');
     return 'Your week has no run day yet – this race needs $_temp0 a week. Add run days.';
   }
 
   @override
   String feasNoRides(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: 'at least $n rides',
-      one: 'at least 1 ride',
-    );
+    String _temp0 = intl.Intl.pluralLogic(n, locale: localeName, other: 'at least $n rides', one: 'at least 1 ride');
     return 'Your week has no bike day yet – this race needs $_temp0 a week. Add bike days.';
   }
 
   @override
   String feasNoSwims(int n) {
-    String _temp0 = intl.Intl.pluralLogic(
-      n,
-      locale: localeName,
-      other: 'at least $n swims',
-      one: 'at least 1 swim',
-    );
+    String _temp0 = intl.Intl.pluralLogic(n, locale: localeName, other: 'at least $n swims', one: 'at least 1 swim');
     return 'Your week has no swim session yet – this race needs $_temp0 a week. Add swim days.';
   }
 
@@ -6629,16 +6660,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wGymLoadDescOneRep => 'Loading week: end every work set with about 1 rep in the tank – the reserve shrinks week by week until the next recovery week. Sets, rep range and suggested weight are shown for each exercise.';
+  String get wGymLoadDescOneRep =>
+      'Loading week: end every work set with about 1 rep in the tank – the reserve shrinks week by week until the next recovery week. Sets, rep range and suggested weight are shown for each exercise.';
 
   @override
-  String get wGymLoadDescNoDeloadOneRep => 'Finish every work set with about 1 rep in reserve. Sets, rep range and suggested weight are shown with each exercise.';
+  String get wGymLoadDescNoDeloadOneRep =>
+      'Finish every work set with about 1 rep in reserve. Sets, rep range and suggested weight are shown with each exercise.';
 
   @override
-  String get legacyRecalWhyFatigueRecovery => 'Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.';
+  String get legacyRecalWhyFatigueRecovery =>
+      'Sessions have felt harder than intended for two weeks: the next 7 days are a recovery week (less volume, no intensity). Quality comes back after it with fewer repeats.';
 
   @override
-  String get legacyRecalWhyFatigueCheck => 'Still harder than intended after the recovery week: check sleep, illness and stress – and consider a slower target time. Quality stays, with fewer repeats.';
+  String get legacyRecalWhyFatigueCheck =>
+      'Still harder than intended after the recovery week: check sleep, illness and stress – and consider a slower target time. Quality stays, with fewer repeats.';
 
   @override
   String planMoveBeforeLong(String title) {
@@ -6672,7 +6707,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planLogRedate => 'Session date corrected';
 
   @override
-  String get planLogRedateReason => 'A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off.';
+  String get planLogRedateReason =>
+      'A session was moved to another day: the workout of its old day is open again, the one of the new day is ticked off.';
 
   @override
   String feasLongDayDefault2(String day, String day2, String time, String time2) {
@@ -6683,7 +6719,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stepRideTempoNote2 => 'Tempo – 76–90 % FTP, steady';
 
   @override
-  String get wRideTempoDescIm2 => 'Tempo at 75–85 % FTP – a notch above your Ironman race power (about 65–75 % FTP, the race-pace blocks of your long rides): it makes race pace feel easy. Steady, aero, with fuelling.';
+  String get wRideTempoDescIm2 =>
+      'Tempo at 75–85 % FTP – a notch above your Ironman race power (about 65–75 % FTP, the race-pace blocks of your long rides): it makes race pace feel easy. Steady, aero, with fuelling.';
 
   @override
   String wRidePickups(int n) {
@@ -6691,7 +6728,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wRidePickupsDesc => 'Zone 2 with a few 1 min pick-ups – the time on this day is too short for proper sweet-spot or threshold blocks (at least 2 × 8 min after a warm-up). More time on this day brings them back.';
+  String get wRidePickupsDesc =>
+      'Zone 2 with a few 1 min pick-ups – the time on this day is too short for proper sweet-spot or threshold blocks (at least 2 × 8 min after a warm-up). More time on this day brings them back.';
 
   @override
   String get stepRidePickupNote => 'Short pick-up – brisk, not all-out, then easy again';
@@ -6700,7 +6738,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wFtpTest => 'FTP test (20 min)';
 
   @override
-  String get wFtpTestDesc => 'Warm up well, then ride 20 min as hard as you can hold evenly (start a little conservatively). Your FTP is 95 % of the 20 min average power – enter it in the plan settings (cycling): Strive then sets your watt targets from it.';
+  String get wFtpTestDesc =>
+      'Warm up well, then ride 20 min as hard as you can hold evenly (start a little conservatively). Your FTP is 95 % of the 20 min average power – enter it in the plan settings (cycling): Strive then sets your watt targets from it.';
 
   @override
   String get stepFtpTestNote => '20 min time trial: as hard as you can hold evenly – note the average power';
@@ -6711,13 +6750,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get healthRideKneeNote => 'Knee / hip: high cadence (85–95 rpm), easy gears on climbs – no grinding in heavy gears; check your saddle height. Stop if it hurts.';
+  String get healthRideKneeNote =>
+      'Knee / hip: high cadence (85–95 rpm), easy gears on climbs – no grinding in heavy gears; check your saddle height. Stop if it hurts.';
 
   @override
   String get wRideOpenersDesc => 'Race week: easy riding with a few short pick-ups – they keep the legs sharp without tiring them.';
 
   @override
-  String get wLongRunWalkDescSingle => 'Long run/walk: the rhythm of your current stage, a few more repeats – time on your feet for the race. Talking pace, walk briskly. It grows slowly, a little each week.';
+  String get wLongRunWalkDescSingle =>
+      'Long run/walk: the rhythm of your current stage, a few more repeats – time on your feet for the race. Talking pace, walk briskly. It grows slowly, a little each week.';
 
   @override
   String wLongSwim2(int meters) {
@@ -6778,10 +6819,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wRideTaperPickupsDesc => 'Taper: easy riding with a few short pick-ups – they keep the legs sharp while the volume comes down.';
+  String get wRideTaperPickupsDesc =>
+      'Taper: easy riding with a few short pick-ups – they keep the legs sharp while the volume comes down.';
 
   @override
-  String get planToEventRaceWeek => 'Your race is already this week – the plan is just the race week: easy sessions, a short opener and the race. For a build-up, pick a later race.';
+  String get planToEventRaceWeek =>
+      'Your race is already this week – the plan is just the race week: easy sessions, a short opener and the race. For a build-up, pick a later race.';
 
   @override
   String get summaryPlanLengthRaceWeek => 'Length: race week only';
@@ -6795,13 +6838,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wRunContinuousDesc => 'Run easy without stopping – walk only if you need to. If it feels too hard, repeat last week.';
 
   @override
-  String get wLongRunWalkContDesc => 'Long session with walk breaks: run 10 min, walk 1 min – time on your feet for the race. Your other runs are continuous now; the breaks keep the long one safe. Talking pace. Grows about 10 min a week.';
+  String get wLongRunWalkContDesc =>
+      'Long session with walk breaks: run 10 min, walk 1 min – time on your feet for the race. Your other runs are continuous now; the breaks keep the long one safe. Talking pace. Grows about 10 min a week.';
 
   @override
-  String get feasCapFinishTarget => 'So plan short walk breaks from the beginning of the race (e.g. 1 min every 10 min) – your target time stays, but start easy: finishing comes first.';
+  String get feasCapFinishTarget =>
+      'So plan short walk breaks from the beginning of the race (e.g. 1 min every 10 min) – your target time stays, but start easy: finishing comes first.';
 
   @override
-  String get feasRunFrequencyFinish => 'The plan therefore treats the race as a finish goal, without a target time – set one of your own if you have it.';
+  String get feasRunFrequencyFinish =>
+      'The plan therefore treats the race as a finish goal, without a target time – set one of your own if you have it.';
 
   @override
   String wRaceRealisticPace(String time, String pace) {
@@ -6878,7 +6924,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count more endurance workouts (run, ride or swim) and the forecast uses your training data – strength sessions don\'t count here.',
+      other:
+          '$count more endurance workouts (run, ride or swim) and the forecast uses your training data – strength sessions don\'t count here.',
       one: 'One more endurance workout (run, ride or swim) and the forecast uses your training data – strength sessions don\'t count here.',
     );
     return '$_temp0';
@@ -6892,8 +6939,80 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count more endurance workouts (ideally $sport) and the forecast uses your training data – strength sessions don\'t count here.',
+      other:
+          '$count more endurance workouts (ideally $sport) and the forecast uses your training data – strength sessions don\'t count here.',
       one: 'One more endurance workout (ideally $sport) and the forecast uses your training data – strength sessions don\'t count here.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String replacePlanBodyAll(String date, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Your current plan will be replaced – $n open workouts are deleted. The new plan starts $date.',
+      one: 'Your current plan will be replaced – 1 open workout is deleted. The new plan starts $date.',
+      zero: 'The new plan starts $date.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletePlan => 'Delete plan';
+
+  @override
+  String get deletePlanTitle => 'Delete plan?';
+
+  @override
+  String deletePlanBody(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n open workouts of your plan will be deleted.',
+      one: '1 open workout of your plan will be deleted.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletePlanKeeps => 'Completed workouts, recordings and stats stay. Your goals stay too – you can create a new plan any time.';
+
+  @override
+  String planDeletedToast(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Plan deleted · $n open workouts removed',
+      one: 'Plan deleted · 1 open workout removed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planLogDeleted => 'Plan deleted';
+
+  @override
+  String planLogDeletedReason(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n open workouts removed – completed ones stay.',
+      one: '1 open workout removed – completed ones stay.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planLogRestored => 'Plan restored';
+
+  @override
+  String planLogRestoredReason(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n workouts back in the calendar.',
+      one: '1 workout back in the calendar.',
     );
     return '$_temp0';
   }
