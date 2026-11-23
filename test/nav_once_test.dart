@@ -1,7 +1,9 @@
 // Round 10 (owner): "On some pages, e.g. body composition, tapping the tile opens the same page again
 // and I have to close it twice." The body page shows the body-composition card, whose tap opened the
-// body page again; a fast double tap on any tile stacked its page twice as well. Every tile/row now
-// opens its page through [openPage]: one tap → one route, back once → where you came from.
+// body page again. Every tile/row now opens its page through [openPage]: one tap → one route, back
+// once → where you came from. Pointer taps right after a push are already absorbed by the Navigator;
+// a tile activated twice through its callback (keyboard Enter, TalkBack double tap – not absorbed) or
+// mid-transition is caught by openPage's own guard, which the tests drive through the callbacks.
 import 'dart:async';
 import 'dart:io';
 
@@ -105,6 +107,12 @@ class _Target extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(appBar: AppBar(), body: const _Tile(_Target(), label: 'self'));
 }
 
+class _Other extends StatelessWidget {
+  const _Other();
+  @override
+  Widget build(BuildContext context) => const Scaffold(body: Text('other'));
+}
+
 void main() {
   group('openPage', () {
     testWidgets('one tap → one route; back once → the previous page', (t) async {
@@ -119,13 +127,14 @@ void main() {
       expect(find.text('tile'), findsOneWidget);
     });
 
-    testWidgets('a fast double tap opens the page once', (t) async {
+    testWidgets('a tile activated twice (same frame, then mid-transition) opens the page once', (t) async {
       final obs = _Pushes();
       await t.pumpWidget(_app(const _Tile(_Target()), obs));
-      await t.tap(find.text('tile'));
-      await t.tap(find.text('tile')); // before the next frame: still hits the tile
+      final tap = t.widget<InkWell>(find.ancestor(of: find.text('tile'), matching: find.byType(InkWell))).onTap!;
+      tap();
+      tap(); // before the next frame
       await t.pump(const Duration(milliseconds: 50));
-      await t.tap(find.text('tile'), warnIfMissed: false); // during the transition
+      tap(); // during the transition
       await t.pumpAndSettle();
       expect(obs.names, ['_Target']);
     });
@@ -138,6 +147,69 @@ void main() {
       await t.tap(find.text('self'));
       await t.pumpAndSettle();
       expect(obs.names, ['_Target']);
+    });
+
+    testWidgets('a page pushed directly via pageRoute is recognised as open', (t) async {
+      final obs = _Pushes();
+      await t.pumpWidget(_app(const Scaffold(body: Text('root')), obs));
+      Navigator.of(t.element(find.text('root'))).push(pageRoute(const _Target()));
+      await t.pumpAndSettle();
+      expect(obs.names, ['_Target']);
+      await t.tap(find.text('self'));
+      await t.pumpAndSettle();
+      expect(obs.names, ['_Target'], reason: 'no second _Target on top of the directly pushed one');
+    });
+
+    testWidgets('another tile tapped while a page is being pushed does nothing', (t) async {
+      final obs = _Pushes();
+      await t.pumpWidget(
+        _app(
+          Scaffold(
+            body: Builder(
+              builder:
+                  (context) => Column(
+                    children: [
+                      TextButton(onPressed: () => openPage(context, const _Target()), child: const Text('a')),
+                      TextButton(onPressed: () => openPage(context, const _Other()), child: const Text('b')),
+                    ],
+                  ),
+            ),
+          ),
+          obs,
+        ),
+      );
+      await t.tap(find.text('a'));
+      await t.pump(const Duration(milliseconds: 50));
+      t.widget<TextButton>(find.ancestor(of: find.text('b'), matching: find.byType(TextButton))).onPressed!(); // e.g. keyboard
+      await t.pumpAndSettle();
+      expect(obs.names, ['_Target']);
+    });
+
+    testWidgets('opening a page does not rebuild the tapped tile (no route dependency)', (t) async {
+      final obs = _Pushes();
+      var builds = 0;
+      await t.pumpWidget(
+        _app(
+          Scaffold(
+            body: Builder(
+              builder: (context) {
+                builds++;
+                return TextButton(onPressed: () => openPage(context, const _Target()), child: const Text('tile'));
+              },
+            ),
+          ),
+          obs,
+        ),
+      );
+      expect(builds, 1);
+      await t.tap(find.text('tile'));
+      await t.pumpAndSettle();
+      await t.binding.handlePopRoute();
+      await t.pumpAndSettle();
+      await t.tap(find.text('tile'));
+      await t.pumpAndSettle();
+      expect(obs.names, ['_Target']);
+      expect(builds, 1);
     });
 
     test('route names tell records apart', () {
@@ -208,13 +280,26 @@ void main() {
     testWidgets('a double tap on "this week" opens the week page once', (t) async {
       final obs = await home(t);
       final l = AppLocalizations.of(t.element(find.byType(HomePage)));
-      final week = find.text(l.trainedThisWeek);
-      await t.tap(week);
-      await t.tap(week);
+      // The tile's activation callback, as keyboard / TalkBack trigger it (pointer taps after a push are
+      // absorbed by the Navigator anyway): twice in the same frame, then once more mid-transition.
+      final tap = t.widget<InkWell>(find.ancestor(of: find.text(l.trainedThisWeek), matching: find.byType(InkWell)).first).onTap!;
+      tap();
+      tap();
+      await t.pump(const Duration(milliseconds: 50));
+      tap();
       await t.pumpAndSettle();
       expect(obs.names, hasLength(1));
       expect(find.byType(WeekPage), findsOneWidget);
     });
+  });
+
+  test('every page route in the features is named (openPage / pageRoute), so the same-page check sees it', () {
+    final raw = RegExp(r'MaterialPageRoute');
+    final offenders = [
+      for (final f in Directory('lib/features').listSync(recursive: true).whereType<File>())
+        if (f.path.endsWith('.dart') && raw.hasMatch(f.readAsStringSync())) f.path,
+    ];
+    expect(offenders, isEmpty);
   });
 
   test('tiles open their pages through openPage, not a bare push', () {

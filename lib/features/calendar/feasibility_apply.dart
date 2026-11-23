@@ -11,6 +11,7 @@ import '../../widgets/common.dart';
 import '../onboarding/onboarding_page.dart';
 import 'feasibility_card.dart';
 import 'replace_plan_dialog.dart';
+import '../../widgets/nav.dart';
 
 /// The athlete settings a feasibility option ([FeasibilityAction]) changes, as an [AthleteData.merge] map – the one
 /// mapping of the setup, the goal page and the calendar. Null for the options that are no athlete setting (the long
@@ -48,7 +49,7 @@ Future<void> applyFeasibilityOption(BuildContext context, WidgetRef ref, Feasibi
   final stored = ref.read(profileOrDefaultProvider);
   final next = profileWithFeasibility(stored, x, l);
   if (next == null) {
-    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+    await Navigator.of(context).push(pageRoute(const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name));
     return;
   }
   final repo = ref.read(repoProvider);

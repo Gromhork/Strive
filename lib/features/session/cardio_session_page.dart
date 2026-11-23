@@ -23,6 +23,7 @@ import 'session_summary_page.dart';
 import 'step_list.dart';
 import 'step_text.dart';
 import 'zone_info.dart' show showSwimDrills;
+import '../../widgets/nav.dart';
 
 /// Pages of the live recording screen.
 enum CardioTab { data, zones, plan, splits, map }
@@ -110,7 +111,7 @@ class _CardioSessionPageState extends ConsumerState<CardioSessionPage> {
     }
     if (!mounted) return;
     final session = n.finish(ref.read(repoProvider)!.newId(), manualDistanceM: manual);
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SessionSummaryPage(draft: session)));
+    Navigator.pushReplacement(context, pageRoute(SessionSummaryPage(draft: session)));
   }
 
   void _goTo(List<CardioTab> tabs, CardioTab t) {

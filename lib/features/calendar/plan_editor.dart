@@ -27,6 +27,7 @@ import 'replace_plan_dialog.dart';
 import '../train/program_duplicate.dart';
 import '../train/gym_exercise_editor.dart';
 import '../../services/plan_exercises.dart';
+import '../../widgets/nav.dart';
 
 /// Result of [showPlanEditor] when the workout was deleted (the page showing it closes too).
 const planDeleted = 'deleted';
@@ -35,7 +36,7 @@ const planDeleted = 'deleted';
 Future<Object?> showPlanEditor(BuildContext context, WidgetRef ref, {PlannedWorkout? existing, DateTime? date}) {
   return Navigator.push<Object?>(
     context,
-    MaterialPageRoute(fullscreenDialog: existing == null, builder: (_) => _PlanEditor(existing: existing, date: date ?? DateTime.now())),
+    pageRoute(_PlanEditor(existing: existing, date: date ?? DateTime.now()), id: existing?.id, fullscreenDialog: existing == null),
   );
 }
 
@@ -544,7 +545,7 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
                 onAdjust: () {
                   final nav = Navigator.of(context);
                   nav.pop();
-                  nav.push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+                  nav.push(pageRoute(const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name));
                 },
               ),
               Card(
@@ -557,7 +558,7 @@ class _PlanGeneratorState extends ConsumerState<_PlanGenerator> {
                   onTap: () {
                     final nav = Navigator.of(context);
                     nav.pop();
-                    nav.push(MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan)));
+                    nav.push(pageRoute(const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name));
                   },
                 ),
               ),

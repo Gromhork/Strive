@@ -70,7 +70,7 @@ class _GymSessionPageState extends ConsumerState<GymSessionPage> {
     }
     final total = w.plannedWorkSets; // work sets, like setsDone – at least the program's
     final session = n.finish(ref.read(repoProvider)!.newId());
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SessionSummaryPage(draft: session, plannedSets: total)));
+    Navigator.pushReplacement(context, pageRoute(SessionSummaryPage(draft: session, plannedSets: total)));
   }
 
   Future<void> _addExercises() async {

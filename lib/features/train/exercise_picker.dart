@@ -12,10 +12,7 @@ import '../../widgets/nav.dart';
 
 /// Opens the library in selection mode and returns the chosen exercises.
 Future<List<Exercise>> pickExercises(BuildContext context, {bool single = false}) async {
-  final r = await Navigator.push<List<Exercise>>(
-    context,
-    MaterialPageRoute(builder: (_) => ExerciseLibraryPage(selectMode: true, single: single)),
-  );
+  final r = await Navigator.push<List<Exercise>>(context, pageRoute(ExerciseLibraryPage(selectMode: true, single: single)));
   return r ?? const [];
 }
 

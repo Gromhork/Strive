@@ -13,6 +13,7 @@ import '../../widgets/common.dart';
 import '../session/cardio_session_page.dart';
 import '../session/gym_session_page.dart';
 import '../session/session_summary_page.dart';
+import '../../widgets/nav.dart';
 
 /// Whether this app run already looked for a workout left over from a killed process
 /// (a plain flag: nothing rebuilds on it).
@@ -72,7 +73,7 @@ class _WorkoutRestoreGateState extends ConsumerState<WorkoutRestoreGate> {
     );
     if (!mounted) return;
     if (open == true) {
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => SessionSummaryPage(draft: draft, restored: true)));
+      await Navigator.push(context, pageRoute(SessionSummaryPage(draft: draft, restored: true)));
     } else if (open == false) {
       await store.clearSummary();
     }
@@ -92,14 +93,14 @@ class _WorkoutRestoreGateState extends ConsumerState<WorkoutRestoreGate> {
       final gym = saved.gym;
       if (gym != null) {
         ref.read(activeGymProvider.notifier).restore(gym);
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const GymSessionPage()));
+        Navigator.push(context, pageRoute(const GymSessionPage()));
       } else {
         final err = await ref
             .read(trackerProvider.notifier)
             .restore(saved.cardio!, l: l, lang: Localizations.localeOf(context).languageCode, savedAt: saved.savedAt);
         if (!mounted) return;
         if (err != null) toast(context, err == 'service' ? l.gpsServiceOff : l.gpsPermissionDenied);
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const CardioSessionPage()));
+        Navigator.push(context, pageRoute(const CardioSessionPage()));
       }
     } else if (resume == false) {
       await store.clearActive();

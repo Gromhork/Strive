@@ -11,6 +11,7 @@ import '../../services/cardio_progression.dart';
 import '../calendar/auto_adjust.dart';
 import '../calendar/plan_history_page.dart';
 import 'adjust_week.dart';
+import '../../widgets/nav.dart';
 
 /// Prefs key of the automatic adjustments the athlete has already reviewed.
 const autoAdjSeenKey = 'autoAdjSeen';
@@ -182,7 +183,7 @@ class _AutoAdjustReviewSheetState extends ConsumerState<AutoAdjustReviewSheet> {
                   child: OutlinedButton(
                     onPressed: () {
                       final nav = Navigator.of(context)..pop();
-                      nav.push(MaterialPageRoute(builder: (_) => const PlanHistoryPage()));
+                      nav.push(pageRoute(const PlanHistoryPage()));
                     },
                     child: Text(l.planHistory, overflow: TextOverflow.ellipsis),
                   ),
