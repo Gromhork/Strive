@@ -1,0 +1,84 @@
+# Checks for every pull request and every push to main: format, analyze, tests.
+# No APK is built here – see release.yml (version tags + manual test builds).
+# release.yml reuses this workflow (workflow_call) as its quality gate.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+# A newer push to the same PR / to main supersedes the running check.
+# Tag builds (called from release.yml) are never cancelled.
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
+
+env:
+  FLUTTER_VERSION: '3.29.3'
+
+jobs:
+  analyze:
+    name: Format & analyze
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          pub-cache: true
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: Generated l10n is up to date
+        run: |
+          flutter gen-l10n
+          if ! git diff --quiet -- lib/l10n/gen; then
+            git --no-pager diff --stat -- lib/l10n/gen
+            echo "::error::lib/l10n/gen is out of date – run 'flutter gen-l10n' and commit the result."
+            exit 1
+          fi
+
+      - name: dart format (-l 140, without lib/l10n/gen and third_party)
+        run: |
+          git ls-files -z '*.dart' \
+            | grep -zvE '^(lib/l10n/gen|third_party)/' \
+            | xargs -0 dart format -l 140 --output=none --set-exit-if-changed \
+            || { echo "::error::Unformatted Dart files – run 'dart format -l 140' on the files listed above."; exit 1; }
+
+      - name: flutter analyze
+        run: flutter analyze
+
+  test:
+    name: Tests
+    runs-on: ubuntu-24.04
+    # The full suite takes ~5–10 min locally; leave headroom for slower runners.
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          pub-cache: true
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: flutter test
+        run: flutter test
