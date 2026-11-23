@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import '../core/sport.dart';
-import '../data/builtin_upgrade.dart' show builtinKeysNamed;
+import '../data/builtin_upgrade.dart' show builtinKeysNamed, programForBuiltin;
 import '../data/default_programs.dart';
 import '../data/models.dart';
 import 'exercise_class.dart';
@@ -289,11 +289,12 @@ String gymProgramRef(WorkoutTemplate t, {List<WorkoutTemplate> among = const []}
 /// The built-in key of a program reference ([gymProgramRef]), null for the athlete's own programs.
 String? gymRefKey(String ref) => ref.startsWith('key:') ? ref.substring(4) : null;
 
-/// The program [ref] ([gymProgramRef]) stands for among [templates] (the athlete's programs),
-/// else the built-in program from [builtins] (not yet added), else null.
+/// The program [ref] ([gymProgramRef]) stands for among [templates] (the athlete's programs – for
+/// `key:` the one the plan uses, [programForBuiltin]), else the built-in program from [builtins]
+/// (not yet added), else null.
 WorkoutTemplate? gymProgramOf(String ref, List<WorkoutTemplate> templates, {List<WorkoutTemplate> builtins = const []}) {
   final key = gymRefKey(ref);
-  if (key != null) return templates.where((t) => t.key == key).firstOrNull ?? builtins.where((t) => t.key == key).firstOrNull;
+  if (key != null) return programForBuiltin(templates, key) ?? builtins.where((t) => t.key == key).firstOrNull;
   if (ref.startsWith('id:')) return templates.where((t) => t.id == ref.substring(3)).firstOrNull;
   return null;
 }

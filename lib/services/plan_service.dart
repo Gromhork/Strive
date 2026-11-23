@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/format.dart';
+import '../core/sport.dart';
 import '../data/default_programs.dart';
 import '../data/models.dart';
 import '../data/repository.dart';
@@ -65,7 +66,14 @@ class PlanService {
       final p = withReachedVolume(profile, plans: existing, sessions: sessions, start: day);
       // The programs of the chosen split must exist (built-ins added on demand).
       // (Also the built-in programs the athlete assigned to gym days.)
-      final added = missingBuiltins(templates, repo.newId, de: l.localeName.startsWith('de'), only: PlanGenerator.gymKeysFor(p).toSet());
+      final gymKeys = PlanGenerator.gymKeysFor(p).toSet();
+      // An empty list may be a program list not loaded yet or an empty local cache (first start
+      // offline): the athlete's programs on the server decide – else every built-in of the split
+      // was added a second time next to the athlete's own versions (owner report r10).
+      if (templates.isEmpty && p.focus.sports.contains(Sport.gym) && gymKeys.isNotEmpty) {
+        templates = await repo.templatesFromServer() ?? templates;
+      }
+      final added = missingBuiltins(templates, repo.newId, de: l.localeName.startsWith('de'), only: gymKeys);
       if (added.isNotEmpty) repo.saveTemplates(added);
       // The gym rotation continues from the last gym workouts (no Push right after Push).
       final generated = PlanGenerator(l, p, [

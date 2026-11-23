@@ -1,0 +1,3 @@
+{
+ 'standardCopySuffix': ['standard', 'Standard'],
+}
