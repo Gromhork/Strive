@@ -6,6 +6,7 @@ import 'package:strive/data/builtin_upgrade.dart';
 import 'package:strive/data/default_programs.dart';
 import 'package:strive/data/models.dart';
 import 'package:strive/data/repository.dart';
+import 'package:strive/features/shell/builtin_dup_cleanup_sync.dart';
 import 'package:strive/l10n/gen/app_localizations.dart';
 import 'package:strive/services/guest_merge.dart';
 import 'package:strive/services/plan_exercises.dart';
@@ -33,6 +34,25 @@ class _Repo extends Repository {
     return server;
   }
 
+  List<PlannedWorkout> serverPlans = const [];
+  List<Session> serverSessions = const [];
+  final deleted = <String>{};
+  final updated = <String, Map<String, dynamic>>{};
+  @override
+  Future<List<PlannedWorkout>> plansFromServer() async => serverPlans;
+  @override
+  Future<List<Session>> sessionsFromServer() async => serverSessions;
+  @override
+  Future<void> deleteTemplates(Iterable<String> ids) async => deleted.addAll(ids);
+  @override
+  Future<void> updateMany({
+    Map<String, Map<String, dynamic>> plans = const {},
+    Map<String, Map<String, dynamic>> templates = const {},
+    Map<String, Map<String, dynamic>> sessions = const {},
+  }) async =>
+      updated
+        ..addAll(templates)
+        ..addAll(plans);
   @override
   Future<void> saveTemplates(List<WorkoutTemplate> list) async => saved.addAll(list);
   @override
@@ -65,6 +85,21 @@ WorkoutTemplate _edited(WorkoutTemplate t) {
 }
 
 WorkoutTemplate _with(WorkoutTemplate t, Map<String, dynamic> m, {String? id}) => WorkoutTemplate.fromMap(id ?? t.id, {...t.toMap(), ...m});
+
+/// The athlete's edits that leave the plan-relevant fields (work sets, rep ranges, rest) as shipped.
+WorkoutTemplate _warmUp(WorkoutTemplate t, {String? id}) {
+  final ex = [for (final e in t.exercises) e.copy()];
+  ex.first.sets.insert(0, GymSet(reps: 10, type: SetType.warmup));
+  return WorkoutTemplate.fromMap(id ?? t.id, t.copyWith(exercises: ex).toMap());
+}
+
+WorkoutTemplate _noted(WorkoutTemplate t, {String? id}) {
+  final ex = [for (final e in t.exercises) e.copy()];
+  ex.first.note = 'Griff schulterbreit';
+  return WorkoutTemplate.fromMap(id ?? t.id, t.copyWith(exercises: ex).toMap());
+}
+
+WorkoutTemplate _described(WorkoutTemplate t, {String? id}) => _with(t, {'description': 'Mein Drücktag'}, id: id);
 
 UserProfile _ppl({Map<String, dynamic> extra = const {}}) => UserProfile(
   level: 'intermediate',
@@ -402,6 +437,149 @@ void main() {
       expect(c.delete, {for (final t in all.where((t) => pplKeys.contains(t.key))) '${t.id}x'});
       final after = apply(twins, c);
       expect(after.length, all.length);
+    });
+
+    group('the athlete\'s warm-ups, notes and description are never deleted (review r10 N2)', () {
+      final edits = <String, WorkoutTemplate Function(WorkoutTemplate, {String? id})>{
+        'warm-up': _warmUp,
+        'note': _noted,
+        'description': _described,
+      };
+
+      test('isUntouchedBuiltin ignores them, isPristineBuiltin does not', () {
+        final push = _byKey(_builtins(), 'ppl_push');
+        expect(isPristineBuiltin(push), isTrue);
+        expect(isPristineBuiltin(_byKey(_builtins(de: false), 'ppl_push')), isTrue);
+        for (final e in edits.entries) {
+          final t = e.value(push);
+          expect(isUntouchedBuiltin(t), isTrue, reason: e.key);
+          expect(isPristineBuiltin(t), isFalse, reason: e.key);
+        }
+        final weighted = [for (final e in push.exercises) e.copy()];
+        weighted.first.sets.first.weight = 60;
+        expect(isPristineBuiltin(push.copyWith(exercises: weighted)), isFalse);
+      });
+
+      test('twin branch: an edited keyed Push next to an automatic copy – in either list order only the copy goes', () {
+        for (final e in edits.entries) {
+          final all = _builtins();
+          final push = _byKey(all, 'ppl_push');
+          final mine = e.value(push, id: 'mine');
+          final auto = WorkoutTemplate.fromMap('auto', push.toMap());
+          final rest = [
+            for (final t in all)
+              if (t.id != push.id) t,
+          ];
+          for (final order in [
+            [auto, mine],
+            [mine, auto],
+          ]) {
+            final c = clean([...rest, ...order], plans: [_plan('open', 'auto')]);
+            expect(c.delete, {'auto'}, reason: e.key);
+            expect(c.plans, {
+              'open': {'templateId': 'mine'},
+            }, reason: e.key);
+          }
+        }
+      });
+
+      test('two edited keyed copies (each with own warm-ups / notes) both stay', () {
+        final all = _builtins();
+        final push = _byKey(all, 'ppl_push');
+        final mine = [
+          for (final t in all)
+            if (t.id != push.id) t,
+          _warmUp(push, id: 'a'),
+          _noted(push, id: 'b'),
+        ];
+        expect(clean(mine).isEmpty, isTrue);
+      });
+
+      test('changed branch: a keyed copy with only notes / warm-ups is not deleted next to an edited one', () {
+        for (final e in edits.entries) {
+          final all = _builtins();
+          final push = _byKey(all, 'ppl_push');
+          final mine = [
+            for (final t in all)
+              if (t.id != push.id) t,
+            _edited(push),
+            e.value(push, id: 'noted'),
+          ];
+          expect(clean(mine).isEmpty, isTrue, reason: e.key);
+        }
+      });
+
+      test('same-folder rebuild: the keyed original carrying the athlete\'s notes / description stays', () {
+        for (final e in edits.entries) {
+          final all = _builtins();
+          final push = _byKey(all, 'ppl_push');
+          final mine = [
+            for (final t in all)
+              if (t.id != push.id) t,
+            e.value(push),
+            _with(_edited(push), {'key': null}, id: 'rebuilt'),
+          ];
+          expect(clean(mine).isEmpty, isTrue, reason: e.key);
+        }
+      });
+    });
+
+    test('twins: the one a workout refers to stays; copies differing in language both stay', () {
+      final all = _builtins();
+      final push = _byKey(all, 'ppl_push');
+      final mine = [...all, WorkoutTemplate.fromMap('x', push.toMap())];
+      expect(clean(mine, sessions: [_session(push.id)]).delete, {'x'});
+      final c = clean(mine, sessions: [_session('x')]);
+      expect(c.delete, {push.id});
+      expect(c.templates, isEmpty);
+
+      final en = _byKey(_builtins(de: false, prefix: 'e'), 'ppl_push');
+      expect(clean([...all, en]).isEmpty, isTrue, reason: '"Push" (en) and "Push" (de) differ in the description');
+    });
+
+    test('a kept "Push (Standard)" next to the keyed version still counts as Push for the gym rotation (origKey)', () {
+      final all = _builtins();
+      final push = _byKey(all, 'ppl_push');
+      final mine = [for (final t in all) t.id == push.id ? _edited(t) : t, WorkoutTemplate.fromMap('auto', push.toMap())];
+      final c = clean(mine, sessions: [_session('auto')]);
+      expect(c.templates, {
+        'auto': {'key': null, 'name': 'Push (Standard)', 'origKey': 'ppl_push'},
+      });
+      final after = apply(mine, c);
+      expect(programForBuiltin(after, 'ppl_push')?.id, push.id, reason: 'the athlete\'s keyed version stays the plan\'s Push');
+      expect(clean(after, sessions: [_session('auto')]).isEmpty, isTrue);
+    });
+
+    group('runs against the server\'s data (review r10 N2)', () {
+      List<WorkoutTemplate> withDup() {
+        final all = _builtins();
+        final push = _byKey(all, 'ppl_push');
+        return [for (final t in all) t.id == push.id ? _edited(t) : t, WorkoutTemplate.fromMap('auto', push.toMap())];
+      }
+
+      test('a copy only a workout on the server refers to (not in the local cache) is renamed, not deleted', () async {
+        final repo = _Repo(server: withDup())..serverSessions = [_session('auto')];
+        final c = await confirmedDuplicateCleanup(repo, athlete: const AthleteData(), suffix: 'Standard');
+        expect(c!.delete, isEmpty);
+        expect(repo.deleted, isEmpty);
+        expect(repo.updated['auto']?['name'], 'Push (Standard)');
+      });
+
+      test('server unreachable or empty: nothing is changed', () async {
+        for (final server in [null, <WorkoutTemplate>[]]) {
+          final repo = _Repo(server: server);
+          expect(await confirmedDuplicateCleanup(repo, athlete: const AthleteData(), suffix: 'Standard'), isNull);
+          expect(repo.deleted, isEmpty);
+          expect(repo.updated, isEmpty);
+        }
+      });
+
+      test('a duplicate added later (after an earlier repair) is removed too', () async {
+        final repo = _Repo(server: withDup());
+        final c = await confirmedDuplicateCleanup(repo, athlete: const AthleteData(), suffix: 'Standard');
+        expect(c!.delete, {'auto'});
+        expect(repo.deleted, {'auto'});
+      });
     });
   });
 }
