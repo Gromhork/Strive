@@ -4,6 +4,7 @@ import 'dart:ui' show Locale;
 import '../core/event_distances.dart';
 import '../core/format.dart';
 import '../core/sport.dart';
+import '../data/builtin_upgrade.dart';
 import '../data/default_programs.dart';
 import '../data/models.dart';
 import '../l10n/gen/app_localizations.dart';
@@ -4791,39 +4792,9 @@ class PlanGenerator {
     return const [];
   }
 
-  /// Old (pre-key) template names, so existing users keep their programs.
-  static const _legacyNames = {
-    'fb_a': 'Full Body A',
-    'fb_b': 'Full Body B',
-    'ul_upper_a': 'Upper',
-    'ul_upper_b': 'Upper',
-    'ul_lower_a': 'Lower',
-    'ul_lower_b': 'Lower',
-    'ppl_push': 'Push',
-    'ppl_pull': 'Pull',
-    'ppl_legs': 'Legs',
-  };
-
-  WorkoutTemplate? _template(String key) => templates.where((t) => t.key == key).firstOrNull ?? _legacyTemplate(_legacyNames[key]);
-
-  /// The pre-key program called [name]. Several can share the name – a duplicated folder holds
-  /// "Push" / "Pull" / "Legs" again: the one in the folder with the shortest name wins ("Push Pull
-  /// Legs" before "Push Pull Legs (copy)"), then folder name and id – never the document order.
-  WorkoutTemplate? _legacyTemplate(String? name) {
-    WorkoutTemplate? best;
-    for (final t in templates) {
-      if (t.name != name) continue;
-      if (best == null || _legacyRank(t, best) < 0) best = t;
-    }
-    return best;
-  }
-
-  static int _legacyRank(WorkoutTemplate a, WorkoutTemplate b) {
-    final length = a.folder.length.compareTo(b.folder.length);
-    if (length != 0) return length;
-    final folder = a.folder.compareTo(b.folder);
-    return folder != 0 ? folder : a.id.compareTo(b.id);
-  }
+  /// The athlete's program for built-in [key] ([programForBuiltin]: the program with the key, else their own
+  /// version of it, an own program under its shipped name or a pre-key program).
+  WorkoutTemplate? _template(String key) => programForBuiltin(templates, key);
 
   /// Built-in programs in the plan's language (names and muscle groups of programs the athlete
   /// does not have).
@@ -4841,10 +4812,7 @@ class PlanGenerator {
     final t = _templateOfRef(ref);
     if (t == null) return ref;
     if (t.key != null) return t.key!;
-    for (final k in _legacyNames.keys) {
-      if (_template(k)?.id == t.id) return k;
-    }
-    return ref;
+    return builtinKeyOf(templates, t) ?? ref;
   }
 
   /// The rotation reference of a gym workout done with program [id] ([gymHistory]): [_normRef], but

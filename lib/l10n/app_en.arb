@@ -5104,5 +5104,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "standardCopySuffix": "standard"
 }

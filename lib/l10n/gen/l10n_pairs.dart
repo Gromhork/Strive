@@ -1922,4 +1922,5 @@ const l10nPairs = <(String, String)>[
   ('Change: {change}', 'Änderung: {change}'),
   ('Start time', 'Startzeit'),
   ('Plan notes', 'Hinweise zum Plan'),
+  ('standard', 'Standard'),
 ];

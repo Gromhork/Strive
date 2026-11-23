@@ -126,7 +126,9 @@ GuestTransfer guestTransfer({
   final copies = <Doc>[];
   for (final (id, data) in guest['templates']) {
     final key = data['key'];
-    final same = key is String ? targetByKey[key] : null;
+    // The target's program for that built-in: with the key, else the one standing for it (its own
+    // version of it, [programForBuiltin]) – the guest's unchanged copy must not come along next to it.
+    final same = key is String ? targetByKey[key] ?? _docOf(target['templates'], programForBuiltin(targetTemplates, key)?.id) : null;
     if (key is String && _unchangedBuiltin(id, data)) {
       // Without a counterpart it stays behind: the target's plan adds that built-in on demand.
       if (same != null) templateIds[id] = same.$1;
@@ -305,3 +307,6 @@ String _structure(Map<String, dynamic> t) {
     steps is List ? steps.length : 0,
   ].join('|');
 }
+
+/// The document [id] of [docs] (null for a null id).
+Doc? _docOf(List<Doc> docs, String? id) => id == null ? null : docs.where((d) => d.$1 == id).firstOrNull;
