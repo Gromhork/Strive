@@ -19,6 +19,7 @@ import '../../widgets/term_info.dart';
 import '../calendar/recalibrate_sheet.dart';
 import '../onboarding/onboarding_page.dart';
 import 'goal_forecast_widgets.dart';
+import '../../widgets/nav.dart';
 
 /// "Where I stand": countdown, plan phases, forecast vs. target, completion, long run and the
 /// fitness trend of the athlete's event goal.
@@ -45,7 +46,7 @@ class GoalStatusPage extends ConsumerWidget {
                 completion: shownCompletion(f, plans, sessions, profile, DateTime.now()),
                 onAdjustTarget: (sec) => applyTargetTime(context, ref, sec),
                 onRecalibrate: () => showRecalibration(context, ref),
-                onSettings: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingPage(mode: SetupMode.plan))),
+                onSettings: () => openPage(context, const OnboardingPage(mode: SetupMode.plan), id: SetupMode.plan.name),
               ),
     );
   }

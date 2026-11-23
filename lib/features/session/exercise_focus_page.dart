@@ -26,6 +26,7 @@ import '../../widgets/term_info.dart';
 import '../train/exercise_detail_page.dart';
 import 'gym_session_page.dart';
 import 'music.dart';
+import '../../widgets/nav.dart';
 
 /// One exercise per screen (swipe between exercises): demo animation, sets,
 /// big steppers for weight & reps, RPE, warm-up & plate calculator,
@@ -209,10 +210,7 @@ class _FocusExerciseState extends ConsumerState<_FocusExercise> {
                       children: [
                         _GlassButton(
                           icon: Icons.info_outline_rounded,
-                          onTap:
-                              info == null
-                                  ? null
-                                  : () => Navigator.push(context, MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: info))),
+                          onTap: info == null ? null : () => openPage(context, ExerciseDetailPage(exercise: info), id: info.id),
                         ),
                         const SizedBox(height: 8),
                         _GlassButton(

@@ -14,6 +14,7 @@ import '../../widgets/plan_amount.dart';
 import '../calendar/planned_workout_page.dart';
 import '../stats/fitness_cards.dart';
 import '../stats/session_detail_page.dart';
+import '../../widgets/nav.dart';
 
 /// Week overview (from the "This week" tile): plan vs. done per sport and per day.
 class WeekPage extends ConsumerStatefulWidget {
@@ -236,7 +237,7 @@ class _DayRow extends ConsumerWidget {
 
           compliance: planCompliance(p, linked[p.id], profile: profile),
           skipped: p.status == 'skipped',
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlannedWorkoutPage(planId: p.id))),
+          onTap: () => openPage(context, PlannedWorkoutPage(planId: p.id), id: p.id),
         ),
       for (final s in sessions)
         _Item(
@@ -248,7 +249,7 @@ class _DayRow extends ConsumerWidget {
             if (s.distanceM > 0) s.sport == Sport.swim ? units.swimDist(s.distanceM) : units.dist(s.distanceM, digits: 1),
           ].join(' · '),
           compliance: const Compliance(ComplianceLevel.green),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SessionDetailPage(sessionId: s.id))),
+          onTap: () => openPage(context, SessionDetailPage(sessionId: s.id), id: s.id),
         ),
     ];
     return Padding(

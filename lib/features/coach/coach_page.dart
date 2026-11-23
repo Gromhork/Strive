@@ -11,6 +11,7 @@ import '../../services/coach_service.dart';
 import '../../services/goal_alignment.dart';
 import '../goals/goal_mismatch_card.dart';
 import '../goals/goals_page.dart';
+import '../../widgets/nav.dart';
 
 /// Starter questions that fit the athlete: the race goal ("Wie bereite ich mich auf Hamburg
 /// Triathlon vor?") and the sport of the race / focus – no "10 km faster" for a triathlete.
@@ -128,7 +129,7 @@ class _CoachPageState extends ConsumerState<CoachPage> with AutomaticKeepAliveCl
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(minimumSize: const Size(0, 42)),
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())),
+                  onPressed: () => openPage(context, const GoalsPage()),
                   icon: const Icon(Icons.flag_outlined, size: 18),
                   label: Text(l.goals),
                 ),

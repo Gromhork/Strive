@@ -15,6 +15,7 @@ import 'manual_entry_page.dart';
 import '../../widgets/segments.dart';
 import '../../services/plan_exercises.dart';
 import '../calendar/plan_editor.dart' show showPlanEditor;
+import '../../widgets/nav.dart';
 
 /// Starts a planned workout from the calendar / home screen. A gym workout whose program was
 /// deleted ([plannedProgramMissing]) asks first: choose a program (the workout's editor) or start
@@ -85,7 +86,7 @@ Future<void> startGym(
   final list = ref.read(loadPrescriberProvider).apply(exercises ?? template?.exercises ?? const [], phase: phase);
   ref.read(activeGymProvider.notifier).start(title: title, templateId: template?.id, planId: planId, exercises: list);
   if (context.mounted) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const GymSessionPage()));
+    Navigator.push(context, pageRoute(const GymSessionPage()));
   }
 }
 
@@ -167,7 +168,7 @@ Future<void> showQuickStart(BuildContext context, WidgetRef ref) {
                   title: Text(l.logManually),
                   onTap: () {
                     Navigator.pop(c);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ManualEntryPage()));
+                    Navigator.push(context, pageRoute(const ManualEntryPage()));
                   },
                 ),
               ],
@@ -289,5 +290,5 @@ Future<void> showCardioStart(
     toast(context, err == 'service' ? l.gpsServiceOff : l.gpsPermissionDenied);
     return;
   }
-  Navigator.push(context, MaterialPageRoute(builder: (_) => const CardioSessionPage()));
+  Navigator.push(context, pageRoute(const CardioSessionPage()));
 }
