@@ -1,6 +1,6 @@
 # Release pipeline (see docs/ci-release.md).
 #
-#  * Push a version tag vX.Y.Z  -> CI checks -> signed release APK + AAB -> GitHub Release
+#  * Push a version tag vX.Y.Z  -> version check (seconds) -> CI checks -> signed release APK + AAB -> GitHub Release
 #                                  (notes = commits since the previous v* tag).
 #  * "Run workflow" (manual)    -> optional CI checks -> test APK as a workflow artifact only.
 #
@@ -16,7 +16,9 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    # Only tags that start like a version (v1..., v2...). Other tags such as "very-old" never
+    # start this workflow; the exact format is checked by the "version" job.
+    tags: ['v[0-9]*']
   workflow_dispatch:
     inputs:
       skip_tests:
@@ -40,22 +42,17 @@ env:
   BUILD_NUMBER_OFFSET: '0'
 
 jobs:
-  checks:
-    name: CI checks
-    if: github.event_name != 'workflow_dispatch' || !inputs.skip_tests
-    uses: ./.github/workflows/ci.yml
-
-  build:
-    name: Build Android
-    needs: checks
-    # Also run when the checks were skipped on purpose (manual build with skip_tests).
-    if: ${{ !cancelled() && (needs.checks.result == 'success' || needs.checks.result == 'skipped') }}
+  # Runs first and only reads pubspec.yaml, so a wrong tag fails within seconds instead of
+  # after the full test suite.
+  version:
+    name: Version
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 5
     outputs:
       tag: ${{ steps.version.outputs.tag }}
-      signed: ${{ steps.signing.outputs.signed }}
-      artifact: ${{ steps.assets.outputs.artifact }}
+      name: ${{ steps.version.outputs.name }}
+      number: ${{ steps.version.outputs.number }}
+      label: ${{ steps.version.outputs.label }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -101,6 +98,27 @@ jobs:
             echo "label=$label"
           } >> "$GITHUB_OUTPUT"
           echo "versionName=$name, versionCode=$build_number ($label)" >> "$GITHUB_STEP_SUMMARY"
+
+  checks:
+    name: CI checks
+    needs: version
+    if: github.event_name != 'workflow_dispatch' || !inputs.skip_tests
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: Build Android
+    needs: [version, checks]
+    # Also run when the checks were skipped on purpose (manual build with skip_tests).
+    if: ${{ !cancelled() && needs.version.result == 'success' && (needs.checks.result == 'success' || needs.checks.result == 'skipped') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      signed: ${{ steps.signing.outputs.signed }}
+      artifact: ${{ steps.assets.outputs.artifact }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
@@ -153,16 +171,15 @@ jobs:
           # storeFile is resolved relative to android/app (file() in app/build.gradle.kts).
           # *.jks and key.properties are git-ignored.
           printf '%s' "$KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > android/app/upload-keystore.jks
-          if ! keytool -list -keystore android/app/upload-keystore.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null; then
-            echo "::error::Keystore check failed: wrong ANDROID_KEYSTORE_PASSWORD, wrong ANDROID_KEY_ALIAS or broken ANDROID_KEYSTORE_BASE64."
-            exit 1
-          fi
-          {
-            echo "storePassword=$KEYSTORE_PASSWORD"
-            echo "keyPassword=$KEY_PASSWORD"
-            echo "keyAlias=$KEY_ALIAS"
-            echo "storeFile=upload-keystore.jks"
-          } > android/key.properties
+          # Opens the keystore and reads the key like the Android Gradle plugin does, so a wrong
+          # password/alias or a broken keystore fails here with a clear message instead of as an
+          # obscure Gradle signing error (keytool ignores -keypass for PKCS12 keystores).
+          java .github/scripts/CheckKey.java android/app/upload-keystore.jks
+          # Gradle reads key.properties with java.util.Properties (ISO-8859-1, backslash escapes,
+          # leading blanks dropped). Values are escaped like Properties.store() does (backslash,
+          # blanks, = : # !, control characters, non-ASCII as \uXXXX), so passwords may contain
+          # any character.
+          python3 .github/scripts/write_key_properties.py android/key.properties
           echo "signed=true" >> "$GITHUB_OUTPUT"
 
       - name: flutter pub get
@@ -170,22 +187,22 @@ jobs:
 
       - name: Build APK
         env:
-          BUILD_NAME: ${{ steps.version.outputs.name }}
-          BUILD_NUMBER: ${{ steps.version.outputs.number }}
+          BUILD_NAME: ${{ needs.version.outputs.name }}
+          BUILD_NUMBER: ${{ needs.version.outputs.number }}
         run: flutter build apk --release --build-name="$BUILD_NAME" --build-number="$BUILD_NUMBER"
 
       - name: Build App Bundle (tags only)
-        if: steps.version.outputs.tag != ''
+        if: needs.version.outputs.tag != ''
         env:
-          BUILD_NAME: ${{ steps.version.outputs.name }}
-          BUILD_NUMBER: ${{ steps.version.outputs.number }}
+          BUILD_NAME: ${{ needs.version.outputs.name }}
+          BUILD_NUMBER: ${{ needs.version.outputs.number }}
         run: flutter build appbundle --release --build-name="$BUILD_NAME" --build-number="$BUILD_NUMBER"
 
       - name: Verify signature and collect assets
         id: assets
         env:
           SIGNED: ${{ steps.signing.outputs.signed }}
-          LABEL: ${{ steps.version.outputs.label }}
+          LABEL: ${{ needs.version.outputs.label }}
         run: |
           set -euo pipefail
           suffix=""
@@ -219,8 +236,8 @@ jobs:
 
   release:
     name: GitHub Release
-    needs: build
-    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.tag != '' }}
+    needs: [version, build]
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.version.outputs.tag != '' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -240,7 +257,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          TAG: ${{ needs.build.outputs.tag }}
+          TAG: ${{ needs.version.outputs.tag }}
           SIGNED: ${{ needs.build.outputs.signed }}
         run: |
           set -euo pipefail
